@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/ui/theme-provider";
 
 export const metadata: Metadata = {
   title: {
     default: "AIBTC Champions Sprint",
-    template: "%s | AIBTC Champions Sprint"
+    template: "%s | AIBTC Champions Sprint",
   },
   description: "Compete with AI on Stacks, the leading Bitcoin L2",
   keywords: ["Bitcoin", "AI", "Stacks", "L2", "Trading"],
@@ -21,14 +19,14 @@ export const metadata: Metadata = {
         url: "/aibtcdev-champions-sprint-trading-series-800px.png",
         width: 800,
         height: 800,
-        alt: "AIBTC Champions Sprint"
-      }
-    ]
+        alt: "AIBTC Champions Sprint",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/aibtcdev-champions-sprint-trading-series-800px.png"]
-  }
+    images: ["/aibtcdev-champions-sprint-trading-series-800px.png"],
+  },
 };
 
 const rocGroteskRegular = localFont({
@@ -82,6 +80,8 @@ const rocGroteskExtraWide = localFont({
   display: "swap",
 });
 
+import { Providers } from "./providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -92,15 +92,7 @@ export default function RootLayout({
       <body
         className={`${rocGroteskRegular.variable} ${rocGroteskWide.variable} ${rocGroteskExtraWide.variable} antialiased`}
       >
-        {" "}
-        <ThemeProvider
-          defaultTheme="dark"
-          attribute="class"
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

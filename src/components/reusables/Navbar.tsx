@@ -18,95 +18,69 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { useAgentBalance } from "@/hooks/useAgentBalance";
 
 interface UserData {
   stxAddress: string;
   role: string;
   agentAddress: string | null;
-  agentBalance: number | null;
 }
 
 export function Nav() {
-  const [userData, setUserData] = React.useState<UserData>({
-    stxAddress: "",
-    role: "",
-    agentAddress: null,
-    agentBalance: null,
-  });
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const {
+    data: userData,
+    isLoading,
+    error,
+  } = useQuery<UserData, Error>({
+    queryKey: ["userData"],
+    queryFn: async () => {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-  React.useEffect(() => {
-    async function fetchUserData() {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-        if (userError) throw userError;
+      if (user?.email) {
+        const address = user.email.split("@")[0];
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("role, assigned_agent_address")
+          .eq("id", user.id)
+          .single();
 
-        if (user?.email) {
-          const address = user.email.split("@")[0];
-          const { data: profileData, error: profileError } = await supabase
-            .from("profiles")
-            .select("role, assigned_agent_address")
-            .eq("id", user.id)
-            .single();
+        if (profileError) throw profileError;
 
-          if (profileError) throw profileError;
-
-          let agentBalance = null;
-          if (profileData.assigned_agent_address) {
-            try {
-              const upperAgentAddress =
-                profileData.assigned_agent_address.toUpperCase();
-              const agentResponse = await fetch(
-                `https://api.hiro.so/extended/v1/address/${upperAgentAddress}/balances`
-              );
-              if (agentResponse.ok) {
-                const balanceData = await agentResponse.json();
-                agentBalance = balanceData.stx?.balance
-                  ? parseInt(balanceData.stx.balance) / 1000000
-                  : 0;
-              }
-            } catch (err) {
-              console.error("Error fetching agent balance:", err);
-            }
-          }
-
-          setUserData({
-            stxAddress: address.toUpperCase(),
-            role: profileData.role,
-            agentAddress:
-              profileData.assigned_agent_address?.toUpperCase() || null,
-            agentBalance,
-          });
-        } else {
-          throw new Error("User or email not found");
-        }
-      } catch (e) {
-        setError("Failed to fetch user data");
-        console.error("Error fetching user data:", e);
-      } finally {
-        setIsLoading(false);
+        return {
+          stxAddress: address.toUpperCase(),
+          role: profileData.role,
+          agentAddress:
+            profileData.assigned_agent_address?.toUpperCase() || null,
+        };
+      } else {
+        throw new Error("User or email not found");
       }
-    }
+    },
+  });
 
-    fetchUserData();
-  }, []);
+  const { data: agentBalance, isLoading: isBalanceLoading } = useAgentBalance(
+    userData?.agentAddress ?? null
+  );
 
   const displayAddress = React.useMemo(() => {
-    const shortened = `${userData.stxAddress.slice(
-      0,
-      5
-    )}...${userData.stxAddress.slice(-5)}`;
-    return shortened;
-  }, [userData.stxAddress]);
+    if (!userData?.stxAddress) return "";
+    return `${userData.stxAddress.slice(0, 5)}...${userData.stxAddress.slice(
+      -5
+    )}`;
+  }, [userData?.stxAddress]);
 
   const displayAgentAddress = React.useMemo(() => {
-    if (!userData.agentAddress) return null;
-    return `${userData.agentAddress}`;
-  }, [userData.agentAddress]);
+    if (!userData?.agentAddress) return null;
+    return `${userData.agentAddress.slice(
+      0,
+      5
+    )}...${userData.agentAddress.slice(-5)}`;
+  }, [userData?.agentAddress]);
 
   return (
     <header className="px-4 lg:px-6 h-auto flex flex-col md:flex-row items-center justify-between mt-4 mb-8 gap-4 md:gap-0">
@@ -129,7 +103,7 @@ export function Nav() {
                 <>
                   <span className="font-mono">{displayAddress}</span>
                   <Badge variant="secondary" className="ml-2">
-                    {userData.role}
+                    {userData?.role}
                   </Badge>
                 </>
               )}
@@ -140,19 +114,19 @@ export function Nav() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuItem className="font-mono">
               <a
-                href={`https://explorer.hiro.so/address/${userData.stxAddress}`}
+                href={`https://explorer.hiro.so/address/${userData?.stxAddress}`}
                 rel="noopener noreferrer"
                 target="_blank"
                 className="flex items-center gap-2"
               >
-                {userData.stxAddress}
+                {userData?.stxAddress}
               </a>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 
             <DropdownMenuLabel>Agent Details</DropdownMenuLabel>
-            {userData.agentAddress ? (
+            {userData?.agentAddress ? (
               <>
                 <DropdownMenuItem className="font-mono">
                   <a
@@ -168,9 +142,11 @@ export function Nav() {
                   <div className="flex items-center gap-2">
                     <Wallet className="h-4 w-4" />
                     <span>
-                      {userData.agentBalance !== null
-                        ? `${userData.agentBalance.toFixed(5)} STX`
-                        : "Loading balance..."}
+                      {isBalanceLoading
+                        ? "Loading balance..."
+                        : agentBalance !== null && agentBalance !== undefined
+                        ? `${agentBalance.toFixed(5)} STX`
+                        : "-"}
                     </span>
                   </div>
                 </DropdownMenuItem>
@@ -206,7 +182,7 @@ export function Nav() {
         <Button variant="outline">
           <Link href="/leaderboard">Leaderboard</Link>
         </Button>
-        {userData.role === "Admin" && (
+        {userData?.role === "Admin" && (
           <Button variant="outline">
             <Link href="/admin">Admin Panel</Link>
           </Button>
