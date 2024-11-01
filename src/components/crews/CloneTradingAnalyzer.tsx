@@ -135,8 +135,10 @@ export function CloneTradingAnalyzer({
         throw new Error("Failed to create crew");
       }
 
+      console.log("Creating agents for crew:", crew.id);
       // Create agents and their tasks
       for (const agent of agents) {
+        console.log("Creating agent:", agent.name);
         const { data: createdAgent, error: agentError } = await supabase
           .from("agents")
           .insert({
@@ -144,7 +146,7 @@ export function CloneTradingAnalyzer({
             role: agent.role,
             goal: agent.goal,
             backstory: agent.backstory,
-            agent_tools: `{${agent.agent_tools.join(",")}}`,
+            agent_tools: agent.agent_tools,
             crew_id: crew.id,
             profile_id: profile.user.id,
           })
@@ -152,8 +154,9 @@ export function CloneTradingAnalyzer({
           .single();
 
         if (agentError || !createdAgent) {
-          console.error("Error creating agent:", agentError);
-          continue;
+          const error = `Error creating agent ${agent.name}: ${agentError?.message}`;
+          console.error(error);
+          throw new Error(error);
         }
 
         // Create task for agent
