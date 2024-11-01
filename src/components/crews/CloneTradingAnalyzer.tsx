@@ -6,78 +6,47 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
-import { getToolsByCategory } from "@/lib/tools";
+import { getTool } from "@/lib/tools";
 import { CloneAgent, CloneTask } from "@/types/supabase";
 
 const getDefaultAgents = async (): Promise<CloneAgent[]> => {
-  const alexTools = await getToolsByCategory("alex");
-  const bitflowTools = await getToolsByCategory("bitflow");
-  const lunarcrushTools = await getToolsByCategory("lunarcrush");
-  const webSearchTools = await getToolsByCategory("web_search");
+  // must match tool name in backend for specific tools
+  const alexPriceHistory = await getTool("alex_get_price_history");
+  const alexGetTokenPoolVolume = await getTool("alex_get_token_pool_volume");
+  const bitflowExecuteTrade = await getTool("bitflow_execute_trade");
+
+  // can also get all tools in category, e.g.
+  // const bitflowTools = await getToolsByCategory("bitflow");
 
   return [
-  {
-    name: "Research agent for ALEX",
-    role: "Market Researcher",
-    goal: "Analyze and provide insights on market trends using ALEX data",
-    backstory:
-      "Specialized in processing and analyzing ALEX market data to identify trading opportunities and market patterns",
-    agent_tools: [
-      ...alexTools.map((t) => t.id),
-      ...webSearchTools.map((t) => t.id),
-    ],
-  },
-  {
-    name: "Research agent for bitflow",
-    role: "Bitflow Analyst",
-    goal: "Monitor and analyze Bitflow trading signals and market data",
-    backstory:
-      "Expert in interpreting Bitflow signals and correlating them with market movements",
-    agent_tools: [
-      ...bitflowTools.map((t) => t.id),
-      ...webSearchTools.map((t) => t.id),
-    ],
-  },
-  {
-    name: "Research agent for lunarcrush",
-    role: "Social Sentiment Analyst",
-    goal: "Track and analyze social sentiment data from LunarCrush",
-    backstory:
-      "Specialized in social media sentiment analysis and its correlation with crypto markets",
-    agent_tools: [...lunarcrushTools.map((t) => t.id)],
-  },
-  {
-    name: "Trade executor for bitflow",
-    role: "Trade Executor",
-    goal: "Execute trades based on analyzed signals and market conditions",
-    backstory:
-      "Experienced in implementing trading strategies and managing trade execution",
-    agent_tools: [...bitflowTools.map((t) => t.id)],
-  },
+    {
+      name: "Alexia",
+      role: "Market Data Researcher",
+      goal: "Analyze and provide insights on market trends using ALEX data from your available tools to help inform future decisions.",
+      backstory:
+        "An extremely knowledgeable expert on all things ALEX: the DeFi protocol on Stacks, a Bitcoin L2. Specialized in processing and analyzing ALEX market data to identify trading opportunities and market patterns.",
+      agent_tools: [alexPriceHistory.id, alexGetTokenPoolVolume.id],
+    },
+    {
+      name: "Bert",
+      role: "Bitflow Trade Executor",
+      goal: "Execute a trade based on information gathered by other agents and tools.",
+      backstory:
+        "An experienced trainer on Stacks, a Bitcoin L2, who leverages Bitflow for seamless aggregation of trades across several DEXs in the eocsystem. Experienced in implementing trading strategies and managing trade execution using the available tools.",
+      agent_tools: [bitflowExecuteTrade.id],
+    },
   ];
 };
 
 const createTaskForAgent = (agent: CloneAgent): CloneTask => {
   const taskMap: { [key: string]: CloneTask } = {
-    "Research agent for ALEX": {
+    Alexia: {
       description:
         "Analyze available data from ALEX and provide insights on market trends related to the user's input.",
       expected_output:
         "Report on market trends, potential entry/exit points, and risk analysis.",
     },
-    "Research agent for bitflow": {
-      description:
-        "Analyze available tokens on Bitflow and provide insights on potential trading opportunities related to the user's input.",
-      expected_output:
-        "Report on signal strength, trade recommendations, and risk assessment.",
-    },
-    "Research agent for lunarcrush": {
-      description:
-        "Track social sentiment metrics and their correlation with market movements related to the user's input.",
-      expected_output:
-        "Real-time updates on social sentiment shifts and their market implications.",
-    },
-    "Trade executor for bitflow": {
+    Bert: {
       description:
         "Execute trades if requested based on confirmed signals and risk parameters.",
       expected_output:
@@ -97,7 +66,7 @@ interface CloneTradingAnalyzerProps {
   onCloneComplete: () => void;
 }
 
-export function CloneTradingAnalyzer({ 
+export function CloneTradingAnalyzer({
   onCloneComplete,
 }: CloneTradingAnalyzerProps) {
   const [isCloning, setIsCloning] = useState(false);
@@ -156,8 +125,7 @@ export function CloneTradingAnalyzer({
         .from("crews")
         .insert({
           name: "Trading Analyzer",
-          description:
-            "A pre-configured crew with agents and tasks for trading analysis and execution.",
+          description: "Analyze and trade with our starter crew!",
           profile_id: profile.user.id,
         })
         .select()
