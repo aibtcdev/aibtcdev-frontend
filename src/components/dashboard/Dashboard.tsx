@@ -115,10 +115,10 @@ export default function Dashboard() {
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Chat with your Crews</CardTitle>
+          <CardTitle>Chat</CardTitle>
         </CardHeader>
         <CardContent>
-          <DashboardChat selectedCrew={selectedCrew} />
+          <DashboardChat />
         </CardContent>
       </Card>
 

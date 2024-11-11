@@ -12,10 +12,6 @@ import remarkGfm from "remark-gfm";
 import { Loader2 } from "lucide-react";
 import { Crew } from "@/types/supabase";
 
-interface DashboardChatProps {
-  selectedCrew: Crew | null;
-}
-
 interface StreamMessage {
   type: "task" | "step" | "result";
   content: string;
@@ -34,13 +30,14 @@ interface Message {
   streamMessages?: StreamMessage[];
 }
 
-export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
+export default function DashboardChat() {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [conversationId, setConverationId] = useState<string | null>(null);
   const [streamingMessages, setStreamingMessages] = useState<StreamMessage[]>(
     []
   );
@@ -57,16 +54,125 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
     }
   };
 
+  const handleResetHistory = async () => {
+    if (!authToken) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/${conversationId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setMessages([]);
+      setStreamingMessages([]);
+      setConverationId(null);
+      toast({
+        title: "Success",
+        description: "Chat history has been reset.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Failed to reset chat history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reset chat history.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
-    const initialMessage: Message = {
-      role: "assistant",
-      content: selectedCrew
-        ? `# Selected: ${selectedCrew.name}\n\n${selectedCrew.description}\n\nHow can I help you today?`
-        : "Please select a crew to start chatting.",
-      timestamp: new Date(),
+    const fetchHistory = async () => {
+      if (!authToken) return;
+
+      try {
+        const conversationRequest = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/latest`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!conversationRequest.ok) {
+          throw new Error(`HTTP error! status: ${conversationRequest.status}`);
+        }
+
+        const conversationData = await conversationRequest.json();
+        setConverationId(conversationData.id);
+
+        const detaildConversationResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/${conversationData.id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+
+        if (!detaildConversationResponse.ok) {
+          throw new Error(
+            `HTTP error! status: ${detaildConversationResponse.status}`
+          );
+        }
+
+        const detailedConversationData =
+          await detaildConversationResponse.json();
+
+        // Map the history messages to the Message format
+        const formattedJobs = detailedConversationData.jobs.map((job: any) => ({
+          id: job.id,
+          created_at: job.created_at,
+          conversation_id: job.conversation_id,
+          crew_id: job.crew_id,
+          profile_id: job.profile_id,
+          input: job.input,
+          result: job.result,
+          messages: job.messages.map((msg: string) => {
+            const parsedMsg = JSON.parse(msg);
+            return {
+              role: parsedMsg.role as "user" | "assistant", // Ensure the role matches the expected type
+              content: parsedMsg.content,
+              timestamp: new Date(parsedMsg.timestamp), // Convert timestamp to Date object
+            };
+          }),
+        }));
+
+        // Set the initial message and history messages
+        const initialMessage: Message = {
+          role: "assistant",
+          content: "How can I help you today?",
+          timestamp: new Date(),
+        };
+
+        setMessages([initialMessage, ...formattedJobs[0].messages]);
+      } catch (error) {
+        console.error("Failed to fetch history:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load chat history.",
+          variant: "destructive",
+        });
+      }
     };
-    setMessages([initialMessage]);
-  }, [selectedCrew]);
+
+    fetchHistory();
+  }, [authToken]);
 
   useEffect(() => {
     scrollToBottom();
@@ -87,7 +193,7 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading || !selectedCrew) return;
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
       role: "user",
@@ -101,20 +207,16 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
     setStreamingMessages([]);
 
     try {
-      const requestBody = `# Current Input\n${input}\n\n# Conversation History\n${messages
-        .map((m) => `${m.role.toUpperCase()} (${m.timestamp}): ${m.content}`)
-        .join("\n\n")}`;
-
       // Get a connection token
       const tokenResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/execute_crew/${selectedCrew.id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/chat?conversation_id=${conversationId}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(input),
         }
       );
 
@@ -122,11 +224,11 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
         throw new Error(`HTTP error! status: ${tokenResponse.status}`);
       }
 
-      const { task_id } = await tokenResponse.json();
+      const { job_id } = await tokenResponse.json();
 
       // Start SSE connection
       const eventSource = new EventSource(
-        `${process.env.NEXT_PUBLIC_API_URL}/sse?task_id=${task_id}`
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/${job_id}/stream`
       );
 
       eventSource.onmessage = (event) => {
@@ -211,7 +313,7 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
   return (
     <Card className="w-full">
       <CardContent className="space-y-4 p-4">
-        <div className="h-[300px] overflow-y-auto space-y-4">
+        <div className="h-[550px] overflow-y-auto space-y-4">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -229,6 +331,9 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {message.content}
                 </ReactMarkdown>
+                <div className="text-xs uppercase mt-5 text-muted-foreground">
+                  {String(message.timestamp)}
+                </div>
                 {message.tokenUsage && (
                   <div className="text-xs text-muted-foreground mt-2">
                     Token usage: {message.tokenUsage.total_tokens}
@@ -276,15 +381,11 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={
-              selectedCrew
-                ? "Type your message..."
-                : "Select a crew to start chatting"
-            }
-            disabled={isLoading || !selectedCrew}
+            placeholder="Type your message..."
+            disabled={isLoading}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !selectedCrew}>
+          <Button type="submit" disabled={isLoading}>
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -293,6 +394,9 @@ export default function DashboardChat({ selectedCrew }: DashboardChatProps) {
             ) : (
               "Send"
             )}
+          </Button>
+          <Button onClick={handleResetHistory} variant="destructive">
+            Reset
           </Button>
         </form>
       </CardContent>

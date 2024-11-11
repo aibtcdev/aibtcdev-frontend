@@ -1,33 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
 import { supabase } from "@/utils/supabase/client";
 
-export interface ApiResponse {
-  result: {
-    raw: string;
-    token_usage: {
-      total_tokens: number;
-      prompt_tokens: number;
-      completion_tokens: number;
-      successful_requests: number;
-    };
-  };
+interface StreamMessage {
+  type: "task" | "step" | "result";
+  content: string;
+}
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  streamMessages?: StreamMessage[];
 }
 
 interface ExecutionPanelProps {
@@ -40,8 +29,9 @@ export default function ExecutionPanel({
   crewId,
 }: ExecutionPanelProps) {
   const [inputStr, setInputStr] = useState("");
-  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessages, setStreamingMessages] = useState<StreamMessage[]>(
+    []
+  );
   const [authToken, setAuthToken] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -51,7 +41,6 @@ export default function ExecutionPanel({
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        console.log(session.access_token);
         setAuthToken(session.access_token);
       }
     };
@@ -62,10 +51,11 @@ export default function ExecutionPanel({
   const handleExecuteCrew = async () => {
     if (!inputStr.trim()) return;
 
-    setIsLoading(true);
+    setStreamingMessages([]);
+
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/execute_crew/${crewId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/crew/execute/${crewId}`,
         {
           method: "POST",
           headers: {
@@ -80,8 +70,50 @@ export default function ExecutionPanel({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: ApiResponse = await response.json();
-      setApiResponse(data);
+      const { task_id } = await response.json();
+
+      // Start SSE connection
+      const eventSource = new EventSource(
+        `${process.env.NEXT_PUBLIC_API_URL}/crew/tasks/${task_id}/stream`
+      );
+
+      eventSource.onmessage = (event) => {
+        try {
+          if (!event.data || event.data.trim() === "") return;
+
+          const data = JSON.parse(event.data);
+          if (!data || typeof data !== "object") return;
+
+          switch (data.type) {
+            case "step":
+            case "task":
+            case "result":
+              setStreamingMessages((prev) => [
+                ...prev,
+                { type: data.type, content: data.content },
+              ]);
+              break;
+            default:
+              console.warn("Unknown message type:", data.type);
+          }
+
+          if (data.type === "result") {
+            eventSource.close();
+          }
+        } catch (error) {
+          console.error("Error parsing SSE data:", error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("EventSource failed:", error);
+        toast({
+          title: "Connection Failed",
+          description:
+            "There was a problem with the connection. Please try again.",
+          variant: "destructive",
+        });
+      };
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -90,90 +122,8 @@ export default function ExecutionPanel({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setInputStr("");
     }
-
-    setInputStr("");
-  };
-
-  const COLORS = [
-    "hsl(var(--primary))",
-    "hsl(var(--secondary))",
-    "hsl(var(--accent))",
-  ];
-
-  const renderResult = () => {
-    if (!apiResponse) return null;
-
-    const { raw, token_usage } = apiResponse.result;
-    const tokenUsageData = [
-      { name: "Prompt Tokens", tokens: token_usage.prompt_tokens },
-      { name: "Completion Tokens", tokens: token_usage.completion_tokens },
-      {
-        name: "Other Tokens",
-        tokens:
-          token_usage.total_tokens -
-          token_usage.prompt_tokens -
-          token_usage.completion_tokens,
-      },
-    ].filter((item) => item.tokens > 0);
-
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Result</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose dark:prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{raw}</ReactMarkdown>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Token Usage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={tokenUsageData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="tokens"
-                    nameKey="name"
-                    label={(entry) => entry.name}
-                  >
-                    {tokenUsageData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm text-muted-foreground">
-                Total Tokens: {token_usage.total_tokens.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Successful Requests: {token_usage.successful_requests}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
   };
 
   return (
@@ -190,25 +140,17 @@ export default function ExecutionPanel({
             placeholder="Enter input data"
             onKeyUp={(e) => e.key === "Enter" && handleExecuteCrew()}
           />
-          <Button onClick={handleExecuteCrew} disabled={isLoading}>
+          <Button onClick={handleExecuteCrew}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        ) : apiResponse ? (
-          renderResult()
-        ) : (
-          <p>No result to display</p>
-        )}
+        <div>
+          {streamingMessages.map((msg, index) => (
+            <div key={index}>
+              <p>{msg.content}</p>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
