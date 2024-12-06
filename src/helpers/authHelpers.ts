@@ -16,16 +16,17 @@ export const checkSessionToken = async (): Promise<AuthResult | null> => {
     // Retrieve stored session token and STX address from local storage
     const storedSessionToken = localStorage.getItem("sessionToken");
     const storedStxAddress = localStorage.getItem("stxAddress");
+    console.log(process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!)
 
     // If both token and address exist, attempt to verify
     if (storedSessionToken && storedStxAddress) {
         try {
             // Send a request to backend to verify the session token
-            const response = await fetch(`${process.env.AIBTC_SERVICE_URL}/auth/verify-session-token`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/verify-session-token`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: process.env.FRONTEND_SECRET_KEY!,
+                    Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
                 },
                 body: JSON.stringify({ data: storedSessionToken }),
             });
@@ -119,11 +120,11 @@ export const verifyAndSendSignedMessage = async (
         }
 
         // Send signature to backend to request authentication token
-        const response = await fetch(`${process.env.AIBTC_SERVICE_URL}/auth/request-auth-token`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/request-auth-token`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: process.env.FRONTEND_SECRET_KEY!,
+                Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
             },
             body: JSON.stringify({
                 data: signature,
