@@ -3,22 +3,14 @@ import { StacksMainnet } from "@stacks/network";
 import { showConnect, openSignatureRequestPopup } from "@stacks/connect";
 import { verifyMessageSignatureRsv } from "@stacks/encryption";
 
-// Configuration constants for authentication
-const FRONTEND_SECRET_KEY = "c4cf807d-acb2-497c-84e8-3098957b5339";
-const API_BASE_URL = "https://services.aibtc.dev/auth";
 
-// Create an app configuration with required permissions
 export const appConfig = new AppConfig(["store_write", "publish_data"]);
-
-// Initialize a user session with the app configuration
 export const userSession = new UserSession({ appConfig });
-
 
 export interface AuthResult {
     stxAddress: string;
     sessionToken: string;
 }
-
 
 export const checkSessionToken = async (): Promise<AuthResult | null> => {
     // Retrieve stored session token and STX address from local storage
@@ -29,11 +21,11 @@ export const checkSessionToken = async (): Promise<AuthResult | null> => {
     if (storedSessionToken && storedStxAddress) {
         try {
             // Send a request to backend to verify the session token
-            const response = await fetch(`${API_BASE_URL}/verify-session-token`, {
+            const response = await fetch(`${process.env.AIBTC_SERVICE_URL}/auth/verify-session-token`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: FRONTEND_SECRET_KEY,
+                    Authorization: process.env.FRONTEND_SECRET_KEY!,
                 },
                 body: JSON.stringify({ data: storedSessionToken }),
             });
@@ -127,11 +119,11 @@ export const verifyAndSendSignedMessage = async (
         }
 
         // Send signature to backend to request authentication token
-        const response = await fetch(`${API_BASE_URL}/request-auth-token`, {
+        const response = await fetch(`${process.env.AIBTC_SERVICE_URL}/auth/request-auth-token`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: FRONTEND_SECRET_KEY,
+                Authorization: process.env.FRONTEND_SECRET_KEY!,
             },
             body: JSON.stringify({
                 data: signature,
