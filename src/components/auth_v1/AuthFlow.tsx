@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,58 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  checkSessionToken,
-  initiateAuthentication,
-  promptSignMessage,
-  logout,
-} from "@/helpers/authHelpers";
 
 export default function AuthFlow() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const verifySession = async () => {
-      try {
-        const authResult = await checkSessionToken();
-        if (authResult) {
-          setIsAuthenticated(true);
-          console.log("STX Address:", authResult.stxAddress);
-          console.log("Session Token:", authResult.sessionToken);
-        }
-      } catch (err) {
-        console.error("Session verification error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifySession();
-  }, []);
-
-  const handleAuthenticate = () => {
-    initiateAuthentication((address) => {
-      promptSignMessage(
-        address,
-        () => {
-          setIsAuthenticated(true);
-          setError(null);
-          console.log("Authentication successful.");
-        },
-        (errorMessage) => {
-          setError(errorMessage);
-        }
-      );
-    });
-  };
-
-  const handleLogout = () => {
-    logout();
-    setIsAuthenticated(false);
-    console.log("Logged out successfully");
-  };
+  const {
+    isAuthenticated,
+    isLoading,
+    userAddress,
+    error,
+    initiateAuthentication,
+    logout,
+  } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -77,17 +35,18 @@ export default function AuthFlow() {
         </CardHeader>
         <CardContent>
           {!isAuthenticated ? (
-            <Button onClick={handleAuthenticate} className="w-full">
+            <Button onClick={initiateAuthentication} className="w-full">
               Connect Wallet and Authenticate
             </Button>
           ) : (
             <div className="space-y-4">
               <p className="text-sm font-medium text-green-600">
-                Authenticated Successfully! ..session and is stored in
-                localstorage
+                Authenticated Successfully
+                <br />
+                Address: {userAddress}
               </p>
               <Button
-                onClick={handleLogout}
+                onClick={logout}
                 variant="destructive"
                 className="w-full mt-4"
               >
