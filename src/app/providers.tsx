@@ -10,14 +10,14 @@ import { usePathname } from "next/navigation";
 const queryClient = new QueryClient();
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  // const pathname = usePathname();
 
-  const content =
-    pathname === "/" ? (
-      children
-    ) : (
-      <ApplicationLayout>{children}</ApplicationLayout>
-    );
+  // const content =
+  //   pathname === "/" ? (
+  //     children
+  //   ) : (
+  //     <ApplicationLayout>{children}</ApplicationLayout>
+  //   );
 
   return (
     <ThemeProvider
@@ -26,7 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        {content}
+        <ApplicationLayout>{children}</ApplicationLayout>
         <Toaster />
       </QueryClientProvider>
     </ThemeProvider>
