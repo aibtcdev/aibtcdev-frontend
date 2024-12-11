@@ -74,7 +74,24 @@ function AccountDropdownMenu({
 
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: userData, isLoading } = useUserData();
+  const { data: userData, isLoading, refetch } = useUserData();
+
+  // Add a listener for auth state changes
+  React.useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          // Refetch user data when signed in or token is refreshed
+          await refetch();
+        }
+      }
+    );
+
+    // Cleanup subscription
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [refetch]);
 
   const displayAddress = React.useMemo(() => {
     if (!userData?.stxAddress) return "";
@@ -137,10 +154,6 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
           <SidebarBody>
             <SidebarSection>
-              {/* <SidebarItem href="/dashboard" current={pathname === "/"}>
-                <DashboardIcon />
-                <SidebarLabel>Dashboard</SidebarLabel>
-              </SidebarItem> */}
               <SidebarItem href="/chat" current={pathname === "/chat"}>
                 <ChatBubbleBottomCenterTextIcon />
                 <SidebarLabel>Chat</SidebarLabel>
@@ -201,17 +214,17 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
           </SidebarBody>
 
           {userData && !isLoading && (
-            <SidebarFooter className=" p-4">
+            <SidebarFooter className="p-4">
               <Dropdown>
                 <DropdownButton as={SidebarItem}>
                   <span className="flex min-w-0 items-center gap-3">
                     <Avatar initials="P" className="size-10" square alt="" />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium text-zinc-950 dark:text-white">
-                        {isLoading ? "Loading..." : displayAddress}
+                        {displayAddress}
                       </span>
                       <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                        {isLoading ? "Loading..." : displayRole}
+                        {displayRole}
                       </span>
                     </span>
                   </span>
