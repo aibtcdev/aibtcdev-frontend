@@ -79,7 +79,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   // Add a listener for auth state changes
   React.useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event) => {
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           // Refetch user data when signed in or token is refreshed
           await refetch();
