@@ -42,7 +42,7 @@ export const useAuth = () => {
             }
 
             toast({
-                description: "Redirecting to dashboard...",
+                description: "Redirecting...",
                 variant: "default",
             });
 

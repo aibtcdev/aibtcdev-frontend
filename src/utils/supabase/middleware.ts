@@ -37,13 +37,35 @@ export const updateSession = async (request: NextRequest) => {
       },
     });
 
+    // Protected routes array
+    const protectedRoutes = [
+      "/dashboard",
+      "/chat",
+      "/marketplace",
+      "/profile",
+      "/admin"
+    ];
+
+    // Check if current path is a protected route
+    const isProtectedRoute = protectedRoutes.some(route =>
+      request.nextUrl.pathname.startsWith(route)
+    );
+
     // Get the user
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    // If trying to access admin route
+    // If it's a protected route and there's no user
+    if (isProtectedRoute && (userError || !user)) {
+      // Redirect to connect page with original destination
+      const connectUrl = new URL("/connect", request.url);
+      connectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(connectUrl);
+    }
+
+    // Admin route specific logic
     if (request.nextUrl.pathname.startsWith("/admin")) {
       if (userError || !user) {
         // If no user, redirect to login
@@ -63,34 +85,14 @@ export const updateSession = async (request: NextRequest) => {
       }
     }
 
-    // Regular route protection
-    if (request.nextUrl.pathname.startsWith("/dashboard") && userError) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    // Add chat to protected route
-    if (request.nextUrl.pathname.startsWith("/chat") && (userError || !user)) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    if (
-      request.nextUrl.pathname.startsWith("/public-crew") &&
-      (userError || !user)
-    ) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    if(request.nextUrl.pathname.startsWith("/profile")&&(userError || !user)){
-      return NextResponse.redirect(new URL("/", request.url))
-    }
-
-    if (request.nextUrl.pathname === "/" && !userError) {
+    // Redirect logged-in users from root to chat
+    if (request.nextUrl.pathname === "/" && !userError && user) {
       return NextResponse.redirect(new URL("/chat", request.url));
     }
 
     return response;
   } catch (error) {
-    console.error(error);
+    console.error("Middleware authentication error:", error);
     return NextResponse.next({
       request: {
         headers: request.headers,
