@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { AppConfig, showConnect, UserSession } from "@stacks/connect";
 import { supabase } from "@/utils/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from 'next/navigation';
 
 const appConfig = new AppConfig(["store_write", "publish_data"]);
 const userSession = new UserSession({ appConfig });
 
 export const useAuth = () => {
+    const router = useRouter()
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
@@ -75,6 +77,7 @@ export const useAuth = () => {
                         toast({
                             description: "Wallet connection cancelled.",
                         });
+                        router.push("/")
                         setIsLoading(false);
                     },
                     onFinish: () => resolve(),

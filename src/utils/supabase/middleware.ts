@@ -43,7 +43,8 @@ export const updateSession = async (request: NextRequest) => {
       "/chat",
       "/marketplace",
       "/profile",
-      "/admin"
+      "/admin",
+      "/crews"
     ];
 
     // Check if current path is a protected route
