@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import Chat from "@/components/chat/Chat";
 import Link from "next/link";
 
+export const runtime = "edge";
+
 const page = () => {
   const headersList = headers();
   const authStatus = headersList.get("x-auth-status");

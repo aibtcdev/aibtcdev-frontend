@@ -50,7 +50,7 @@ export const updateSession = async (request: NextRequest) => {
 
     // Check if current path matches a protected route
     const pathname = request.nextUrl.pathname;
-    const matchedPath = Object.entries(protectedPaths).find(([route, _]) => {
+    const matchedPath = Object.entries(protectedPaths).find(([route]) => {
       const pattern = new RegExp(
         `^${route.replace(/\/:path\*/, '(/.*)?').replace(/\//g, '\\/')}$`
       );
@@ -71,7 +71,7 @@ export const updateSession = async (request: NextRequest) => {
 
     // If it's a protected route and there's no user
     if (matchedPath && (userError || !user)) {
-      const [_, config] = matchedPath;
+      const [, config] = matchedPath;
 
       switch (config.type) {
         case 'redirect': {
@@ -123,3 +123,4 @@ export const updateSession = async (request: NextRequest) => {
     });
   }
 };
+

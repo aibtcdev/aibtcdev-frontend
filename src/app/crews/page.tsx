@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: "Crews",
 };
 
+export const runtime = "edge";
+
 const page = () => {
   const headersList = headers();
   const authStatus = headersList.get("x-auth-status");
