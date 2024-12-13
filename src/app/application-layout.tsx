@@ -42,6 +42,7 @@ import { useUserData } from "@/hooks/useUserData";
 import { Wallet } from "lucide-react";
 import SignOut from "@/components/auth/SignOut";
 import Image from "next/image";
+import { supabase } from "@/utils/supabase/client";
 
 function AccountDropdownMenu({
   anchor,
@@ -73,7 +74,24 @@ function AccountDropdownMenu({
 
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: userData, isLoading } = useUserData();
+  const { data: userData, isLoading, refetch } = useUserData();
+
+  // Add a listener for auth state changes
+  React.useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          // Refetch user data when signed in or token is refreshed
+          await refetch();
+        }
+      }
+    );
+
+    // Cleanup subscription
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [refetch]);
 
   const displayAddress = React.useMemo(() => {
     if (!userData?.stxAddress) return "";
@@ -136,10 +154,6 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
           <SidebarBody>
             <SidebarSection>
-              {/* <SidebarItem href="/dashboard" current={pathname === "/"}>
-                <DashboardIcon />
-                <SidebarLabel>Dashboard</SidebarLabel>
-              </SidebarItem> */}
               <SidebarItem href="/chat" current={pathname === "/chat"}>
                 <ChatBubbleBottomCenterTextIcon />
                 <SidebarLabel>Chat</SidebarLabel>
@@ -181,41 +195,45 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <DocumentTextIcon />
                 <SidebarLabel>Terms of Service</SidebarLabel>
               </SidebarItem>
-              <SidebarItem>
-                <Wallet />
-                <SidebarLabel className="flex flex-col">
-                  {isLoading ? "Loading..." : displayAgentAddress}
-                  {userData?.agentAddress && (
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {userData.agentBalance !== null
-                        ? `${userData.agentBalance.toFixed(5)} STX`
-                        : "Loading balance..."}
-                    </span>
-                  )}
-                </SidebarLabel>
-              </SidebarItem>
+              {userData && !isLoading && (
+                <SidebarItem>
+                  <Wallet />
+                  <SidebarLabel className="flex flex-col">
+                    {isLoading ? "Loading..." : displayAgentAddress}
+                    {userData?.agentAddress && (
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {userData.agentBalance !== null
+                          ? `${userData.agentBalance.toFixed(5)} STX`
+                          : "Loading balance..."}
+                      </span>
+                    )}
+                  </SidebarLabel>
+                </SidebarItem>
+              )}
             </SidebarSection>
           </SidebarBody>
 
-          <SidebarFooter className=" p-4">
-            <Dropdown>
-              <DropdownButton as={SidebarItem}>
-                <span className="flex min-w-0 items-center gap-3">
-                  <Avatar initials="P" className="size-10" square alt="" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-zinc-950 dark:text-white">
-                      {isLoading ? "Loading..." : displayAddress}
-                    </span>
-                    <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                      {isLoading ? "Loading..." : displayRole}
+          {userData && !isLoading && (
+            <SidebarFooter className="p-4">
+              <Dropdown>
+                <DropdownButton as={SidebarItem}>
+                  <span className="flex min-w-0 items-center gap-3">
+                    <Avatar initials="P" className="size-10" square alt="" />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium text-zinc-950 dark:text-white">
+                        {displayAddress}
+                      </span>
+                      <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                        {displayRole}
+                      </span>
                     </span>
                   </span>
-                </span>
-                <ChevronUpIcon />
-              </DropdownButton>
-              <AccountDropdownMenu userData={userData} anchor="top start" />
-            </Dropdown>
-          </SidebarFooter>
+                  <ChevronUpIcon />
+                </DropdownButton>
+                <AccountDropdownMenu userData={userData} anchor="top start" />
+              </Dropdown>
+            </SidebarFooter>
+          )}
         </Sidebar>
       }
     >
