@@ -61,7 +61,7 @@ interface ExtendedDAO {
   description: string;
 }
 
-export const exampleDaos: ExtendedDAO[] = [
+const exampleDaos: ExtendedDAO[] = [
   {
     id: 1,
     name: "BTC Market Sentinel",
