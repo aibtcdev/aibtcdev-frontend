@@ -28,6 +28,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+export const runtime = "edge";
+
 export default function DaoManagement() {
   const [isLoading] = useState(false);
 
