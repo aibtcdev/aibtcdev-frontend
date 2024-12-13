@@ -69,7 +69,31 @@ export const updateSession = async (request: NextRequest) => {
       !userError && !!user ? 'true' : 'false'
     );
 
-    // If it's a protected route and there's no user
+    // Special handling for admin routes
+    if (pathname.startsWith("/admin")) {
+      // If no user immediately redirect to home without showing connect popup
+      if (userError || !user) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+
+      // Check user role in profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      // If not admin, redirect to chat
+      if (profileError || !profileData || profileData.role !== "Admin") {
+        return NextResponse.redirect(new URL("/chat", request.url));
+      }
+
+      // Admin user, allow access
+      response.headers.set('x-auth-status', 'authorized');
+      return response;
+    }
+
+    // Handle other protected routes
     if (matchedPath && (userError || !user)) {
       const [, config] = matchedPath;
 
@@ -85,26 +109,6 @@ export const updateSession = async (request: NextRequest) => {
           response.headers.set('x-auth-status', 'unauthorized');
           break;
         }
-      }
-    }
-
-    // Admin route specific logic
-    if (pathname.startsWith("/admin")) {
-      if (userError || !user) {
-        // If no user, redirect to home
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-
-      // Check user role in profiles table
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || !profileData || profileData.role !== "Admin") {
-        // If not admin, redirect to chat
-        return NextResponse.redirect(new URL("/chat", request.url));
       }
     }
 
@@ -124,3 +128,6 @@ export const updateSession = async (request: NextRequest) => {
   }
 };
 
+export const config = {
+  matcher: ['/admin/:path*', '/chat', '/crews', '/marketplace', '/profile'],
+};

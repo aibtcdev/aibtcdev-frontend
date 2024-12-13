@@ -38,7 +38,6 @@ export default function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "All">("All");
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [editingProfile, setEditingProfile] = useState<{
     [key: string]: {
       assigned_agent_address: string;
@@ -49,31 +48,8 @@ export default function AdminPanel() {
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
 
   useEffect(() => {
-    checkAdminStatus();
     fetchProfiles();
   }, []);
-
-  const checkAdminStatus = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (error) throw error;
-      setIsAdmin(data.role === "Admin");
-    } catch (error) {
-      console.error("Failed to verify admin status:", error);
-      setError("Failed to verify admin status");
-      setIsAdmin(false);
-    }
-  };
 
   const formatEmail = (email: string): string => {
     return email.split("@")[0].toUpperCase();
@@ -123,11 +99,6 @@ export default function AdminPanel() {
   };
 
   const updateProfile = async (userId: string): Promise<void> => {
-    if (!isAdmin) {
-      setError("Only admins can update profiles");
-      return;
-    }
-
     try {
       setError(null);
       const updates: Partial<Profile> = {
@@ -219,20 +190,6 @@ export default function AdminPanel() {
 
   if (loading) {
     return <Loader />;
-  }
-
-  if (!isAdmin) {
-    return (
-      <Card className="max-w-4xl mx-auto my-8">
-        <CardContent className="pt-6">
-          <Alert>
-            <AlertDescription>
-              Access denied. Only administrators can manage profiles.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
   }
 
   return (
