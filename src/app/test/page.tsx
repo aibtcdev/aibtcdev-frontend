@@ -1,10 +1,10 @@
-import AuthFlow from "@/components/auth_v1/AuthFlow";
 import React from "react";
+import { ConnectWallet } from "@/components/new/ConnectWallet";
 
 const page = () => {
   return (
     <div>
-      <AuthFlow />
+      <ConnectWallet />
     </div>
   );
 };

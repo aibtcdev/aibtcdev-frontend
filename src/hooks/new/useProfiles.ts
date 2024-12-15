@@ -1,67 +1,60 @@
 import { useState } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
+
+interface ProfileData {
+    stx_address: string;
+}
+
+interface CreateProfileData extends ProfileData {
+    user_role: 'normal' | 'admin';
+}
+
 export function useProfiles() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
-
-    const getUserRole = async (address: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { role } = await fetchWithAuth(`/profiles/role?address=${address}`);
-            return role;
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getUserProfile = async (address: string) => {
         setLoading(true);
         setError(null);
         try {
-            const { profile } = await fetchWithAuth(`/profiles/get?address=${address}`);
-            return profile;
+            const data = await fetchWithAuth(`/profiles/get?address=${address}`);
+            return data.profile;
         } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
+            setError(err instanceof Error ? err : new Error('Failed to fetch user profile'));
             throw err;
         } finally {
             setLoading(false);
         }
     };
 
-    const createUserProfile = async (profileData: any) => {
+    const createUserProfile = async (profileData: CreateProfileData) => {
         setLoading(true);
         setError(null);
         try {
-            const { profile } = await fetchWithAuth('/profiles/create', {
+            const data = await fetchWithAuth('/profiles/create', {
                 method: 'POST',
                 body: JSON.stringify(profileData),
-                headers: { 'Content-Type': 'application/json' },
             });
-            return profile;
+            return data.profile;
         } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
+            setError(err instanceof Error ? err : new Error('Failed to create user profile'));
             throw err;
         } finally {
             setLoading(false);
         }
     };
 
-    const updateUserProfile = async (address: string, profileData: any) => {
+    const updateUserProfile = async (address: string, profileData: Partial<ProfileData>) => {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/profiles/update?address=${address}`, {
+            const data = await fetchWithAuth(`/profiles/update?stx_address=${address}`, {
                 method: 'PUT',
                 body: JSON.stringify(profileData),
-                headers: { 'Content-Type': 'application/json' },
             });
-            return result;
+            return data.result;
         } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
+            setError(err instanceof Error ? err : new Error('Failed to update user profile'));
             throw err;
         } finally {
             setLoading(false);
@@ -72,42 +65,29 @@ export function useProfiles() {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/profiles/delete?address=${address}`, { method: 'DELETE' });
-            return result;
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getAllUserProfiles = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { profiles } = await fetchWithAuth('/profiles/admin/list');
-            return profiles;
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const updateUserProfileById = async (userId: number, updates: any) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { result } = await fetchWithAuth(`/profiles/admin/update?userId=${userId}`, {
-                method: 'PUT',
-                body: JSON.stringify(updates),
-                headers: { 'Content-Type': 'application/json' },
+            const data = await fetchWithAuth(`/profiles/delete?stx_address=${address}`, {
+                method: 'DELETE',
             });
-            return result;
+            return data.result;
         } catch (err) {
-            setError(err instanceof Error ? err : new Error('An error occurred'));
+            setError(err instanceof Error ? err : new Error('Failed to delete user profile'));
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateUserProfileById = async (userId: number, profileData: Partial<ProfileData>) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await fetchWithAuth(`/profiles/admin/update?userId=${userId}`, {
+                method: 'PUT',
+                body: JSON.stringify(profileData),
+            });
+            return data.result;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Failed to update user profile by ID'));
             throw err;
         } finally {
             setLoading(false);
@@ -115,12 +95,10 @@ export function useProfiles() {
     };
 
     return {
-        getUserRole,
         getUserProfile,
         createUserProfile,
         updateUserProfile,
         deleteUserProfile,
-        getAllUserProfiles,
         updateUserProfileById,
         loading,
         error,
