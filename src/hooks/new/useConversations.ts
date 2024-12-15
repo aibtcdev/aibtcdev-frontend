@@ -5,11 +5,12 @@ export function useConversations() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getConversations = async () => {
+    const getConversations = async (address: string) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/conversations');
+            const { conversations } = await fetchWithAuth(`/conversations?address=${address}`);
+            return conversations;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -18,11 +19,12 @@ export function useConversations() {
         }
     };
 
-    const getLatestConversation = async () => {
+    const getLatestConversation = async (address: string) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/conversations/latest');
+            const { conversation } = await fetchWithAuth(`/conversations/latest?address=${address}`);
+            return conversation;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -31,11 +33,12 @@ export function useConversations() {
         }
     };
 
-    const getConversationHistory = async () => {
+    const getConversationHistory = async (id: number) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/conversations/history');
+            const { history } = await fetchWithAuth(`/conversations/history?id=${id}`);
+            return history;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;

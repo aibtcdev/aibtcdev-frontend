@@ -9,7 +9,8 @@ export function useCrons() {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/crons/enabled');
+            const { crons } = await fetchWithAuth('/crons/enabled');
+            return crons;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -22,7 +23,8 @@ export function useCrons() {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/crons/enabled/detailed');
+            const { crons } = await fetchWithAuth('/crons/enabled/detailed');
+            return crons;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -31,11 +33,12 @@ export function useCrons() {
         }
     };
 
-    const getCron = async (id: string) => {
+    const getCronsByCrew = async (crewId: number) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crons/get?id=${id}`);
+            const { crons } = await fetchWithAuth(`/crons/get?crewId=${crewId}`);
+            return crons;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -44,15 +47,16 @@ export function useCrons() {
         }
     };
 
-    const createCron = async (data: any) => {
+    const createCron = async (cronData: any) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/crons/create', {
+            const { cron } = await fetchWithAuth('/crons/create', {
                 method: 'POST',
-                body: JSON.stringify(data),
+                body: JSON.stringify(cronData),
                 headers: { 'Content-Type': 'application/json' },
             });
+            return cron;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -61,15 +65,16 @@ export function useCrons() {
         }
     };
 
-    const updateCron = async (id: string, data: any) => {
+    const updateCronInput = async (id: number, cronInput: string) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crons/update?id=${id}`, {
+            const { result } = await fetchWithAuth(`/crons/update?id=${id}`, {
                 method: 'PUT',
-                body: JSON.stringify(data),
+                body: JSON.stringify({ cron_input: cronInput }),
                 headers: { 'Content-Type': 'application/json' },
             });
+            return result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -78,11 +83,16 @@ export function useCrons() {
         }
     };
 
-    const toggleCron = async (id: string) => {
+    const toggleCronStatus = async (id: number, enabled: boolean) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crons/toggle?id=${id}`, { method: 'PUT' });
+            const { result } = await fetchWithAuth(`/crons/toggle?id=${id}`, {
+                method: 'PUT',
+                body: JSON.stringify({ cron_enabled: enabled }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+            return result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -94,10 +104,10 @@ export function useCrons() {
     return {
         getEnabledCrons,
         getEnabledCronsDetailed,
-        getCron,
+        getCronsByCrew,
         createCron,
-        updateCron,
-        toggleCron,
+        updateCronInput,
+        toggleCronStatus,
         loading,
         error,
     };

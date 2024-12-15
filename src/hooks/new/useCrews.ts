@@ -9,7 +9,8 @@ export function useCrews() {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/crews/public');
+            const { crews } = await fetchWithAuth('/crews/public');
+            return crews;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -18,11 +19,12 @@ export function useCrews() {
         }
     };
 
-    const getCrew = async (id: string) => {
+    const getCrew = async (id: number) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crews/get?id=${id}`);
+            const { crew } = await fetchWithAuth(`/crews/get?id=${id}`);
+            return crew;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -31,15 +33,16 @@ export function useCrews() {
         }
     };
 
-    const createCrew = async (data: any) => {
+    const createCrew = async (crewData: any) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth('/crews/create', {
+            const { crew } = await fetchWithAuth('/crews/create', {
                 method: 'POST',
-                body: JSON.stringify(data),
+                body: JSON.stringify(crewData),
                 headers: { 'Content-Type': 'application/json' },
             });
+            return crew;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -48,15 +51,16 @@ export function useCrews() {
         }
     };
 
-    const updateCrew = async (id: string, data: any) => {
+    const updateCrew = async (id: number, updates: any) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crews/update?id=${id}`, {
+            const { result } = await fetchWithAuth(`/crews/update?id=${id}`, {
                 method: 'PUT',
-                body: JSON.stringify(data),
+                body: JSON.stringify(updates),
                 headers: { 'Content-Type': 'application/json' },
             });
+            return result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -65,11 +69,12 @@ export function useCrews() {
         }
     };
 
-    const deleteCrew = async (id: string) => {
+    const deleteCrew = async (id: number) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crews/delete?id=${id}`, { method: 'DELETE' });
+            const { result } = await fetchWithAuth(`/crews/delete?id=${id}`, { method: 'DELETE' });
+            return result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -78,11 +83,12 @@ export function useCrews() {
         }
     };
 
-    const getCrewExecutions = async (id: string) => {
+    const getCrewExecutions = async (address: string) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crews/executions?id=${id}`);
+            const { executions } = await fetchWithAuth(`/crews/executions?address=${address}`);
+            return executions;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -91,15 +97,16 @@ export function useCrews() {
         }
     };
 
-    const addCrewExecution = async (id: string, data: any) => {
+    const addCrewExecution = async (data: { address: string; crewId: number; conversationId: number; input: string }) => {
         setLoading(true);
         setError(null);
         try {
-            return await fetchWithAuth(`/crews/executions/add?id=${id}`, {
+            const { execution } = await fetchWithAuth('/crews/executions/add', {
                 method: 'POST',
                 body: JSON.stringify(data),
                 headers: { 'Content-Type': 'application/json' },
             });
+            return execution;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
