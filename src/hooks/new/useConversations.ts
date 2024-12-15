@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
-
 export function useConversations() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
