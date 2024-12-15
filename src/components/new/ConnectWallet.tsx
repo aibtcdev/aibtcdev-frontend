@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useProfiles } from "@/hooks/new/useProfiles";
 import { Button } from "@/components/ui/button";
@@ -21,40 +20,36 @@ export function ConnectWallet() {
     loading: profileLoading,
     error: profileError,
   } = useProfiles();
+
   const [profileChecked, setProfileChecked] = useState(false);
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkAndCreateProfile = async () => {
-      if (isAuthenticated && userAddress && !profileChecked) {
-        try {
-          let profile = await getUserProfile(userAddress);
-          console.log("Fetched profile:", profile);
+  const checkAndCreateProfile = useCallback(async () => {
+    if (isAuthenticated && userAddress && !profileChecked) {
+      try {
+        let profile = await getUserProfile(userAddress);
+        console.log("Fetched profile:", profile);
 
-          if (!profile) {
-            console.log("Creating new profile for address:", userAddress);
-            const newProfileData = {
-              stx_address: userAddress,
-              user_role: "normal" as const,
-            };
-            console.log("New profile data:", newProfileData);
-
-            profile = await createUserProfile(newProfileData);
-            console.log("Created profile:", profile);
-          }
-
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("Error checking/creating profile:", error);
-          setError(error instanceof Error ? error.message : String(error));
-        } finally {
-          setProfileChecked(true);
+        if (!profile) {
+          console.log("Creating new profile for address:", userAddress);
+          const newProfileData = {
+            stx_address: userAddress,
+            user_role: "normal" as const,
+          };
+          console.log("New profile data:", newProfileData);
+          profile = await createUserProfile(newProfileData);
+          console.log("Created profile:", profile);
         }
-      }
-    };
 
-    checkAndCreateProfile();
+        setUserProfile(profile);
+      } catch (error) {
+        console.error("Error checking/creating profile:", error);
+        setError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setProfileChecked(true);
+      }
+    }
   }, [
     isAuthenticated,
     userAddress,
@@ -63,12 +58,16 @@ export function ConnectWallet() {
     createUserProfile,
   ]);
 
-  const handleConnect = async () => {
+  useEffect(() => {
+    checkAndCreateProfile();
+  }, [checkAndCreateProfile]);
+
+  const handleConnect = useCallback(() => {
     setProfileChecked(false);
     setUserProfile(null);
     setError(null);
     initiateAuthentication();
-  };
+  }, [initiateAuthentication]);
 
   if (isLoading || profileLoading) {
     return <Button disabled>Loading...</Button>;
@@ -102,7 +101,7 @@ export function ConnectWallet() {
           <CardTitle>User Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className=" p-4 rounded-md overflow-auto max-h-96">
+          <pre className="p-4 rounded-md overflow-auto max-h-96">
             {JSON.stringify(userProfile, null, 2)}
           </pre>
           <Button onClick={logout} className="mt-4">
