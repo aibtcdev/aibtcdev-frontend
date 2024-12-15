@@ -28,25 +28,36 @@ export const useAuth = () => {
                 return;
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/verify-session-token`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
-                },
-                body: JSON.stringify({ data: storedSessionToken }),
-            });
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/verify-session-token`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
+                    },
+                    body: JSON.stringify({ data: storedSessionToken }),
+                });
 
-            setIsAuthenticated(response.ok);
-            setUserAddress(response.ok ? storedStxAddress : null);
-            setIsLoading(false);
+                if (response.ok) {
+                    setIsAuthenticated(true);
+                    setUserAddress(storedStxAddress);
+                    // Set cookies for the middleware
+                    document.cookie = `sessionToken=${storedSessionToken}; path=/; max-age=604800; SameSite=Strict; Secure`;
+                    document.cookie = `stxAddress=${storedStxAddress}; path=/; max-age=604800; SameSite=Strict; Secure`;
+                } else {
+                    // Clear invalid session data
+                    localStorage.removeItem("sessionToken");
+                    localStorage.removeItem("stxAddress");
+                }
+            } catch (error) {
+                console.error("Session verification error:", error);
+                setAuthError(String(error));
+            } finally {
+                setIsLoading(false);
+            }
         };
 
-        verifySession().catch((error) => {
-            console.error("Session verification error:", error);
-            setAuthError(String(error));
-            setIsLoading(false);
-        });
+        verifySession();
     }, []);
 
     const verifyAndSendSignedMessage = useCallback(async (
@@ -68,29 +79,36 @@ export const useAuth = () => {
             return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/request-auth-token`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
-            },
-            body: JSON.stringify({ data: signature }),
-        });
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/request-auth-token`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY!,
+                },
+                body: JSON.stringify({ data: signature }),
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok) {
-            localStorage.setItem("sessionToken", data.sessionToken);
-            localStorage.setItem("stxAddress", stxAddress);
+            if (response.ok) {
+                localStorage.setItem("sessionToken", data.sessionToken);
+                localStorage.setItem("stxAddress", stxAddress);
 
-            const authResult = {
-                stxAddress,
-                sessionToken: data.sessionToken
-            };
-            onSuccess(authResult);
-            console.log(authResult)
-        } else {
-            onError(data.error || "Authentication failed. Please try again.");
+                // Set cookies for the middleware
+                document.cookie = `sessionToken=${data.sessionToken}; path=/; max-age=604800; SameSite=Strict; Secure`;
+                document.cookie = `stxAddress=${stxAddress}; path=/; max-age=604800; SameSite=Strict; Secure`;
+
+                const authResult = {
+                    stxAddress,
+                    sessionToken: data.sessionToken
+                };
+                onSuccess(authResult);
+            } else {
+                onError(data.error || "Authentication failed. Please try again.");
+            }
+        } catch (error) {
+            onError(String(error));
         }
     }, []);
 
@@ -153,6 +171,9 @@ export const useAuth = () => {
     const logout = useCallback(() => {
         localStorage.removeItem("sessionToken");
         localStorage.removeItem("stxAddress");
+        // Clear cookies
+        document.cookie = "sessionToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure";
+        document.cookie = "stxAddress=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict; Secure";
         setIsAuthenticated(false);
         setUserAddress(null);
     }, []);
@@ -173,3 +194,4 @@ export const useAuth = () => {
         logout
     ]);
 };
+
