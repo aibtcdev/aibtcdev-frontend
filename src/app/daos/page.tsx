@@ -12,13 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   AlertCircle,
   ArrowUpRight,
   Globe,
@@ -29,7 +22,6 @@ import {
   Bot,
   LineChart,
   Router,
-  PlusIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +37,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Heading } from "@/components/catalyst/heading";
+import CreateDaoDialog from "@/components/daos/create-dao-dialog";
+import { useRouter } from "next/navigation";
 
 // Extended DAO type with additional fields
 interface ExtendedDAO {
@@ -90,39 +84,39 @@ const exampleDaos: ExtendedDAO[] = [
     agents: 5,
     last_active: "2024-03-15T11:45:00.000Z",
   },
-  {
-    id: 3,
-    name: "Cross-Chain Arbitrage",
-    description:
-      "Multi-chain arbitrage detection and execution with BTC/STX pairs",
-    created_at: "2024-01-20T00:00:00.000Z",
-    is_public: false,
-    profile_id: "2",
-    status: "paused",
-    type: "arbitrage",
-    treasury: 75000,
-    agents: 4,
-    last_active: "2024-03-14T22:15:00.000Z",
-  },
-  {
-    id: 4,
-    name: "Chain Analytics DAO",
-    description: "On-chain data analysis and market intelligence gathering",
-    created_at: "2024-02-28T00:00:00.000Z",
-    is_public: true,
-    profile_id: "1",
-    status: "configuring",
-    type: "monitoring",
-    treasury: 5000,
-    agents: 2,
-    last_active: "2024-03-15T09:20:00.000Z",
-  },
+  // {
+  //   id: 3,
+  //   name: "Cross-Chain Arbitrage",
+  //   description:
+  //     "Multi-chain arbitrage detection and execution with BTC/STX pairs",
+  //   created_at: "2024-01-20T00:00:00.000Z",
+  //   is_public: false,
+  //   profile_id: "2",
+  //   status: "paused",
+  //   type: "arbitrage",
+  //   treasury: 75000,
+  //   agents: 4,
+  //   last_active: "2024-03-14T22:15:00.000Z",
+  // },
+  // {
+  //   id: 4,
+  //   name: "Chain Analytics DAO",
+  //   description: "On-chain data analysis and market intelligence gathering",
+  //   created_at: "2024-02-28T00:00:00.000Z",
+  //   is_public: true,
+  //   profile_id: "1",
+  //   status: "configuring",
+  //   type: "monitoring",
+  //   treasury: 5000,
+  //   agents: 2,
+  //   last_active: "2024-03-15T09:20:00.000Z",
+  // },
 ];
 
 export default function Daos() {
+  const router = useRouter();
   const [daos] = useState<ExtendedDAO[]>(exampleDaos);
   const [error] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const getTypeIcon = (type: ExtendedDAO["type"]) => {
     switch (type) {
@@ -153,6 +147,15 @@ export default function Daos() {
     );
   };
 
+  const handleRowClick = (daoId: number) => {
+    router.push(`/daos/${daoId}/manage`);
+  };
+
+  const handleManageClick = (e: React.MouseEvent, daoId: number) => {
+    e.stopPropagation(); // Prevent row click event
+    router.push(`/daos/${daoId}/manage`);
+  };
+
   return (
     <div className="container mx-auto p-4">
       {error && (
@@ -164,20 +167,8 @@ export default function Daos() {
       )}
 
       <div className="flex w-full flex-wrap items-end justify-between gap-4 border-zinc-950/10 pb-6 dark:border-white/10">
-        <Heading>Your DAOs</Heading>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="h-4 w-4 mr-2" /> Create DAO
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New DAO</DialogTitle>
-            </DialogHeader>
-            {/* DAO creation form would go here */}
-          </DialogContent>
-        </Dialog>
+        <Heading>All DAOs</Heading>
+        <CreateDaoDialog />
       </div>
 
       <div className="mt-6">
@@ -196,8 +187,12 @@ export default function Daos() {
             </TableHeader>
             <TableBody>
               {daos.map((dao) => (
-                <TableRow key={dao.id}>
-                  <TableCell className="font-medium">
+                <TableRow
+                  key={dao.id}
+                  className="cursor-pointer hover:bg-accent/50"
+                  onClick={() => handleRowClick(dao.id)}
+                >
+                  <TableCell className="font-medium min-w-[250px]">
                     <div className="flex items-center gap-2">
                       {getTypeIcon(dao.type)}
                       <span>{dao.name}</span>
@@ -221,23 +216,29 @@ export default function Daos() {
                     {dao.description}
                   </TableCell>
                   <TableCell>{getStatusBadge(dao.status)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right min-w-[150px]">
                     {dao.treasury.toLocaleString()} STX
                   </TableCell>
                   <TableCell className="text-center">{dao.agents}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => e.stopPropagation()} // Prevent row click when opening dropdown
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Play className="h-4 w-4 mr-2" /> Execute
+                        <DropdownMenuItem
+                          onClick={(e) => handleManageClick(e, dao.id)}
+                        >
+                          <Settings2 className="h-4 w-4 mr-2" /> Manage
                         </DropdownMenuItem>
                         <DropdownMenuItem>
-                          <Settings2 className="h-4 w-4 mr-2" /> Configure
+                          <Play className="h-4 w-4 mr-2" /> Execute
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <ArrowUpRight className="h-4 w-4 mr-2" /> View on

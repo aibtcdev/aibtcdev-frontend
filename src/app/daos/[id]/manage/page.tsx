@@ -1,68 +1,146 @@
-"use client";
-
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Heading } from "@/components/catalyst/heading";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-} from "@/components/ui/table";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
-import {
-  Wallet,
-  MessageSquare,
-  CircleDollarSign,
-  ArrowUpRight,
-  Check,
-  HelpCircle,
-  ExternalLink,
-} from "lucide-react";
+import BankSettings from "@/components/daos/bank-settings";
+import ExtensionsTable from "@/components/daos/extensions-table";
+import DaoStats from "@/components/daos/stats";
+import { Button } from "@/components/ui/button";
+import { ArrowUpRight } from "lucide-react";
 
-export const runtime = "edge";
+// Types
+interface Extension {
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  status: string;
+  lastUsed: string;
+}
 
-export default function DaoManagement() {
-  const [isLoading] = useState(false);
+interface DaoData {
+  treasuryBalance: number;
+  totalRevenue: number;
+  activeExtensions: number;
+  totalExtensions: number;
+  extensions: Extension[];
+}
 
-  // Example extension data
-  const extensions = [
-    {
-      id: 1,
-      name: "Treasury",
-      type: "treasury",
-      description: "Manages DAO assets and funds",
-      status: "Active",
-      lastUsed: "2024-03-15",
-      icon: <Wallet className="h-4 w-4" />,
-    },
-    {
-      id: 2,
-      name: "Payments",
-      type: "payments",
-      description: "Handles payments and resource management",
-      status: "Active",
-      lastUsed: "2024-03-14",
-      icon: <CircleDollarSign className="h-4 w-4" />,
-    },
-    {
-      id: 3,
-      name: "Messaging",
-      type: "messaging",
-      description: "On-chain communication system",
-      status: "Active",
-      lastUsed: "2024-03-13",
-      icon: <MessageSquare className="h-4 w-4" />,
-    },
-  ];
+// Server-side data fetching
+async function getDaoData(id: string): Promise<DaoData> {
+  console.log("Fetching DAO data for ID:", id);
+  // In a real app, this would fetch from your API/database
+  return {
+    treasuryBalance: 0,
+    totalRevenue: 0,
+    activeExtensions: 0,
+    totalExtensions: 0,
+    extensions: [
+      {
+        id: 1,
+        name: "Treasury",
+        type: "treasury",
+        description: "Manages DAO assets and funds",
+        status: "Active",
+        lastUsed: "2024-03-15",
+      },
+      {
+        id: 2,
+        name: "Payments",
+        type: "payments",
+        description: "Handles payments and resource management",
+        status: "Active",
+        lastUsed: "2024-03-14",
+      },
+      {
+        id: 3,
+        name: "Messaging",
+        type: "messaging",
+        description: "On-chain communication system",
+        status: "Active",
+        lastUsed: "2024-03-13",
+      },
+      {
+        id: 4,
+        name: "Governance",
+        type: "governance",
+        description: "Proposal creation and voting management",
+        status: "Inactive",
+        lastUsed: "2024-02-28",
+      },
+      {
+        id: 5,
+        name: "Analytics",
+        type: "analytics",
+        description: "On-chain data analysis and reporting",
+        status: "Inactive",
+        lastUsed: "2024-02-15",
+      },
+      {
+        id: 6,
+        name: "Arbitrage",
+        type: "trading",
+        description: "Automated cross-chain arbitrage execution",
+        status: "Inactive",
+        lastUsed: "2024-02-10",
+      },
+      {
+        id: 7,
+        name: "Yield Farming",
+        type: "defi",
+        description: "Automated yield optimization and harvesting",
+        status: "Inactive",
+        lastUsed: "2024-01-30",
+      },
+      {
+        id: 8,
+        name: "NFT Manager",
+        type: "nft",
+        description: "NFT minting and collection management",
+        status: "Inactive",
+        lastUsed: "2024-01-25",
+      },
+      {
+        id: 9,
+        name: "Liquidity",
+        type: "defi",
+        description: "Automated liquidity provision and management",
+        status: "Inactive",
+        lastUsed: "2024-01-20",
+      },
+      {
+        id: 10,
+        name: "Security",
+        type: "security",
+        description: "Contract security monitoring and alerts",
+        status: "Inactive",
+        lastUsed: "2024-01-15",
+      },
+      {
+        id: 11,
+        name: "Bridge",
+        type: "bridge",
+        description: "Cross-chain asset bridging and transfers",
+        status: "Inactive",
+        lastUsed: "2024-01-10",
+      },
+      {
+        id: 12,
+        name: "Staking",
+        type: "staking",
+        description: "Stake management and reward distribution",
+        status: "Inactive",
+        lastUsed: "2024-01-05",
+      },
+    ],
+  };
+}
+
+// export const runtime = "edge";
+
+export default async function DaoManagement({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const daoData = await getDaoData(params.id);
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -74,167 +152,16 @@ export default function DaoManagement() {
         </Button>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Wallet className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Treasury Balance</span>
-                </div>
-                <span className="text-xl font-bold">1,234 STX</span>
-              </div>
-            </div>
+      <DaoStats
+        treasuryBalance={daoData.treasuryBalance}
+        totalRevenue={daoData.totalRevenue}
+        activeExtensions={daoData.activeExtensions}
+        totalExtensions={daoData.totalExtensions}
+      />
 
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <CircleDollarSign className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Total Revenue</span>
-                </div>
-                <span className="text-xl font-bold">5,678 STX</span>
-              </div>
-            </div>
+      <ExtensionsTable extensions={daoData.extensions} />
 
-            <div className="rounded-lg border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Check className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Active Extensions</span>
-                </div>
-                <span className="text-xl font-bold">3/3</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Extensions</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <HelpCircle className="h-4 w-4 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{`Manage your DAO's active extensions`}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        {/* Desktop view */}
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px]">Name</TableHead>
-                <TableHead className="w-full">Description</TableHead>
-                <TableHead className="w-[150px]">Status</TableHead>
-                <TableHead className="w-[150px]">Last Used</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {extensions.map((extension) => (
-                <TableRow key={extension.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center">
-                      {extension.icon}
-                      <span className="ml-2">{extension.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-md truncate">
-                    {extension.description}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
-                      {extension.status}
-                    </div>
-                  </TableCell>
-                  <TableCell>{extension.lastUsed}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Mobile view */}
-        <div className="grid grid-cols-1 gap-4 md:hidden">
-          {extensions.map((extension) => (
-            <div
-              key={extension.id}
-              className="rounded-lg border bg-card text-card-foreground shadow-sm"
-            >
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center">
-                    {extension.icon}
-                    <h3 className="text-lg font-semibold ml-2">
-                      {extension.name}
-                    </h3>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
-                    {extension.status}
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {extension.description}
-                </p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Last used: {extension.lastUsed}</span>
-                  <Button variant="ghost" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Bank Account Settings</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Withdrawal Period (blocks)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={144}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Withdrawal Amount (STX)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={10}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <Button disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <BankSettings />
     </div>
   );
 }
