@@ -1,6 +1,6 @@
-import React from "react";
 import { ConnectWallet } from "@/components/new/ConnectWallet";
 import { CrewManagement } from "@/components/new/CrewManagement";
+import React from "react";
 
 const page = () => {
   return (
