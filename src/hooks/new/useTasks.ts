@@ -1,16 +1,39 @@
 import { useState } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
+// Task interface based on the response structure
+export interface Task {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    profile_id: string;
+    crew_id: number;
+    agent_id: number;
+    task_name: string;
+    task_description: string;
+    task_expected_output: string;
+}
+
+// Interface for creating a task
+export interface CreateTaskData {
+    profile_id: string;
+    crew_id: number;
+    agent_id: number;
+    task_name: string;
+    task_description: string;
+    task_expected_output: string;
+}
+
 export function useTasks() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getTask = async (id: number) => {
+    const getTask = async (id: number): Promise<Task> => {
         setLoading(true);
         setError(null);
         try {
-            const { task } = await fetchWithAuth(`/tasks/get?id=${id}`);
-            return task;
+            const response = await fetchWithAuth(`/tasks/get?id=${id}`);
+            return response.task;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -19,12 +42,12 @@ export function useTasks() {
         }
     };
 
-    const listTasks = async (agentId: number) => {
+    const listTasks = async (agentId: number): Promise<Task[]> => {
         setLoading(true);
         setError(null);
         try {
-            const { tasks } = await fetchWithAuth(`/tasks/list?agentId=${agentId}`);
-            return tasks;
+            const response = await fetchWithAuth(`/tasks/list?agentId=${agentId}`);
+            return response.tasks.tasks;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -33,16 +56,16 @@ export function useTasks() {
         }
     };
 
-    const createTask = async (taskData: any) => {
+    const createTask = async (taskData: CreateTaskData): Promise<Task> => {
         setLoading(true);
         setError(null);
         try {
-            const { task } = await fetchWithAuth('/tasks/create', {
+            const response = await fetchWithAuth('/tasks/create', {
                 method: 'POST',
                 body: JSON.stringify(taskData),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return task;
+            return response.task;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -51,16 +74,16 @@ export function useTasks() {
         }
     };
 
-    const updateTask = async (id: number, updates: any) => {
+    const updateTask = async (id: number, updates: Partial<Task>) => {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/tasks/update?id=${id}`, {
+            const response = await fetchWithAuth(`/tasks/update?id=${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(updates),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return result;
+            return response.result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -73,8 +96,10 @@ export function useTasks() {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/tasks/delete?id=${id}`, { method: 'DELETE' });
-            return result;
+            const response = await fetchWithAuth(`/tasks/delete?id=${id}`, {
+                method: 'DELETE'
+            });
+            return response.result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -87,8 +112,10 @@ export function useTasks() {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/tasks/delete-all?agentId=${agentId}`, { method: 'DELETE' });
-            return result;
+            const response = await fetchWithAuth(`/tasks/delete-all?agentId=${agentId}`, {
+                method: 'DELETE'
+            });
+            return response.result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -108,4 +135,3 @@ export function useTasks() {
         error,
     };
 }
-
