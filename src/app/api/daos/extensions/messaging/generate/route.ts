@@ -18,7 +18,7 @@ function generateContract(params: RequestBody): string {
 ;; summary: An extension to send messages on-chain to anyone listening to this contract.
 
 ;; traits
-;;
+(impl-trait .aibtcdev-messaging-trait.messaging-trait)
 (impl-trait ${extensionTraitContractId}.extension-trait)
 
 ;; constants
@@ -31,7 +31,7 @@ function generateContract(params: RequestBody): string {
   (ok true)
 )
 
-(define-public (send (msg (string-ascii 1048576)))
+(define-public (send (msg (string-ascii 1048576)) (opcode (optional (buff 16))))
   (begin
     (asserts! (> (len msg) u0) INPUT_ERROR)
     ;; print the message as the first event

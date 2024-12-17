@@ -41,24 +41,34 @@ const CreateDaoDialog = () => {
       // Filter out empty extensions
       const validExtensions = extensions.filter((ext) => ext.trim() !== "");
 
+      // Prepare request payload
+      const payload = {
+        name,
+        description,
+        extensions: validExtensions,
+        includeDeployer,
+      };
+
+      console.log("Submitting request with payload:", payload);
+
       // Make API call to generate contract
       const response = await fetch("/api/daos/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          description,
-          extensions: validExtensions,
-          includeDeployer,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      // Log the response
-      console.log("API Response:", data);
+      // Log detailed response information
+      console.log("API Response Status:", response.status);
+      console.log(
+        "API Response Headers:",
+        Object.fromEntries(response.headers)
+      );
+      console.log("API Response Data:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate contract");
@@ -66,7 +76,10 @@ const CreateDaoDialog = () => {
 
       setIsOpen(false);
     } catch (error) {
-      console.error("Error generating contract:", error);
+      console.error("Error generating contract:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        error,
+      });
       // You might want to add error handling UI here
     }
   };

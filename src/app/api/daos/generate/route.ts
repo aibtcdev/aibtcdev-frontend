@@ -43,9 +43,9 @@ function generateContract(params: { extensions: string[]; includeDeployer: boole
 ;; summary: An ExecutorDAO implementation for aibtcdev
 ;; traits
 ;;
-(impl-trait .aibtcdev-executor-trait.executor-trait)
-(use-trait proposal-trait .aibtcdev-proposal-trait.proposal-trait)
-(use-trait extension-trait .aibtcdev-extension-trait.extension-trait)
+;; (impl-trait .aibtcdev-executor-trait.executor-trait)
+;; (use-trait proposal-trait .aibtcdev-proposal-trait.proposal-trait)
+;; (use-trait extension-trait .aibtcdev-extension-trait.extension-trait)
 
 ;; constants
 ;;
