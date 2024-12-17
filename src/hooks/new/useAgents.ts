@@ -1,16 +1,40 @@
 import { useState } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
+// Define Agent interface based on the response structure
+export interface Agent {
+    id: number;
+    created_at: string;
+    updated_at: string;
+    profile_id: string;
+    crew_id: number;
+    agent_name: string;
+    agent_role: string;
+    agent_goal: string;
+    agent_backstory: string;
+    agent_tools: string | null;
+}
+
+// Interface for creating an agent
+export interface CreateAgentData {
+    profile_id: string;
+    crew_id: number;
+    agent_name: string;
+    agent_role: string;
+    agent_goal: string;
+    agent_backstory: string;
+}
+
 export function useAgents() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getAgents = async (crewId: number) => {
+    const getAgents = async (crewId: number): Promise<Agent[]> => {
         setLoading(true);
         setError(null);
         try {
-            const { agents } = await fetchWithAuth(`/agents/get?crewId=${crewId}`);
-            return agents;
+            const response = await fetchWithAuth(`/agents/get?crewId=${crewId}`);
+            return response.agents.agents; // Extract the agents array
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -19,16 +43,16 @@ export function useAgents() {
         }
     };
 
-    const createAgent = async (agentData: any) => {
+    const createAgent = async (agentData: CreateAgentData): Promise<Agent> => {
         setLoading(true);
         setError(null);
         try {
-            const { agent } = await fetchWithAuth('/agents/create', {
+            const response = await fetchWithAuth('/agents/create', {
                 method: 'POST',
                 body: JSON.stringify(agentData),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return agent;
+            return response.agent;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -37,16 +61,16 @@ export function useAgents() {
         }
     };
 
-    const updateAgent = async (id: number, updates: any) => {
+    const updateAgent = async (id: number, updates: Partial<Agent>) => {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/agents/update?id=${id}`, {
+            const response = await fetchWithAuth(`/agents/update?id=${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(updates),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return result;
+            return response.result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -59,8 +83,10 @@ export function useAgents() {
         setLoading(true);
         setError(null);
         try {
-            const { result } = await fetchWithAuth(`/agents/delete?id=${id}`, { method: 'DELETE' });
-            return result;
+            const response = await fetchWithAuth(`/agents/delete?id=${id}`, {
+                method: 'DELETE'
+            });
+            return response.result;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -69,6 +95,12 @@ export function useAgents() {
         }
     };
 
-    return { getAgents, createAgent, updateAgent, deleteAgent, loading, error };
+    return {
+        getAgents,
+        createAgent,
+        updateAgent,
+        deleteAgent,
+        loading,
+        error
+    };
 }
-
