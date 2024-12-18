@@ -1,12 +1,11 @@
-import { ConnectWallet } from "@/components/new/ConnectWallet";
-import { CrewManagement } from "@/components/new/CrewManagement";
+import Link from "next/link";
 import React from "react";
 
 const page = () => {
   return (
     <div>
-      <ConnectWallet />
-      <CrewManagement />
+      Available routes:
+      <Link href={"/new/crews"}>New Crew Management</Link>
     </div>
   );
 };

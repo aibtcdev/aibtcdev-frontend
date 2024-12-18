@@ -1,104 +1,96 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { fetchWithAuth } from './helpers/fetchWithAuth';
 
 // Define routes with different authentication strategies
-const protectedPaths = {
-    '/chat': { type: 'component' },
-    '/crews': { type: 'component' },
-    '/marketplace': { type: 'component' },
-    '/profile': { type: 'component' },
-    '/admin': { type: 'redirect' },
-    '/admin/:path*': { type: 'redirect' },
-} as const;
+const protectedPaths = [
+    '/new/chat',
+    '/new/crews',
+    '/new/marketplace',
+    '/new/profile',
+    '/new/admin',
+    '/new/admin/:path*',
+];
 
 export async function middleware(request: NextRequest) {
-    // Create an unmodified response
-    let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
-    });
-
-    // Check if current path matches a protected route
-    const pathname = request.nextUrl.pathname;
-    const matchedPath = Object.entries(protectedPaths).find(([route]) => {
-        const pattern = new RegExp(
-            `^${route.replace(/\/:path\*/, '(/.*)?').replace(/\//g, '\\/')}$`
-        );
-        return pattern.test(pathname);
-    });
-
     // Get the session token from the cookies
     const sessionToken = request.cookies.get('sessionToken')?.value;
     const stxAddress = request.cookies.get('stxAddress')?.value;
+    // console.log(stxAddress)
+    // Check current pathname
+    const pathname = request.nextUrl.pathname;
 
-    // Verify the session
+    // Default route handling
+    if (pathname === '/') {
+        return NextResponse.redirect(new URL('/new', request.url));
+    }
+
+    // Authentication verification
     let isAuthenticated = false;
-    let userRole = null;
-
     if (sessionToken && stxAddress) {
+        console.log('Attempting to verify session token:', sessionToken);
         try {
-            const verifyResponse = await fetchWithAuth('/auth/verify-session-token', {
+            const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_AIBTC_SERVICE_URL}/auth/verify-session-token`, {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': process.env.NEXT_PUBLIC_AIBTC_SECRET_KEY || '',
+                },
                 body: JSON.stringify({ data: sessionToken }),
             });
 
-            if (verifyResponse.success) {
-                isAuthenticated = true;
-                // Fetch user role if needed for admin routes
-                if (pathname.startsWith('/admin')) {
-                    const { role } = await fetchWithAuth(`/profiles/role?address=${stxAddress}`);
-                    userRole = role;
+            if (verifyResponse.ok) {
+                const responseData = await verifyResponse.json();
+                console.log('Verify response:', responseData);
+
+                if (responseData.address === stxAddress) {
+                    isAuthenticated = true;
+                    console.log('Session verified successfully');
+                } else {
+                    console.log('Session verification failed: address mismatch');
                 }
+            } else {
+                console.log('Session verification failed: invalid response');
             }
         } catch (error) {
             console.error('Error verifying session token:', error);
         }
+    } else {
+        console.log('No session token or STX address found in cookies');
     }
 
-    // Set authentication headers
-    response.headers.set('x-authenticated', isAuthenticated ? 'true' : 'false');
+    // Log the current path and authentication status
+    console.log('Current path:', pathname);
+    console.log('Is authenticated:', isAuthenticated);
 
-    // Special handling for admin routes
-    if (pathname.startsWith('/admin')) {
-        if (!isAuthenticated) {
-            return NextResponse.redirect(new URL('/', request.url));
-        }
-
-        if (userRole !== 'Admin') {
-            return NextResponse.redirect(new URL('/chat', request.url));
-        }
-
-        response.headers.set('x-auth-status', 'authorized');
-        return response;
+    // Redirect authenticated users to /new/chat
+    if (isAuthenticated && (pathname === '/new' || pathname === '/new/connect')) {
+        return NextResponse.redirect(new URL('/new/chat', request.url));
     }
 
-    // Handle other protected routes
-    if (matchedPath && !isAuthenticated) {
-        const [, config] = matchedPath;
+    // Handle protected routes for unauthenticated users
+    const isProtectedRoute = protectedPaths.some(route =>
+        new RegExp(`^${route.replace(/\/:path\*/, '(/.*)?')}$`).test(pathname)
+    );
 
-        switch (config.type) {
-            case 'redirect': {
-                const connectUrl = new URL('/connect', request.url);
-                connectUrl.searchParams.set('redirect', pathname);
-                return NextResponse.redirect(connectUrl);
-            }
-            case 'component': {
-                response.headers.set('x-auth-status', 'unauthorized');
-                break;
-            }
-        }
+    if (!isAuthenticated && (isProtectedRoute || pathname === '/new')) {
+        const connectUrl = new URL('/new/connect', request.url);
+        connectUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(connectUrl);
     }
 
-    // Authenticated routes
-    if (isAuthenticated) {
-        response.headers.set('x-auth-status', 'authorized');
-    }
-
-    return response;
+    return NextResponse.next();
 }
 
 export const config = {
-    matcher: ['/admin/:path*', '/chat', '/crews', '/marketplace', '/profile'],
+    matcher: [
+        '/',
+        '/new',
+        '/new/connect',
+        '/new/chat',
+        '/new/crews',
+        '/new/marketplace',
+        '/new/profile',
+        '/new/admin/:path*'
+    ],
 };
+

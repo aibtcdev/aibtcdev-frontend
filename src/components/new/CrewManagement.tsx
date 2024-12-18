@@ -79,8 +79,6 @@ export function CrewManagement() {
     }
 
     try {
-      const newCrew = await createCrew(userAddress!, newCrewName);
-      setNewCrewName("");
       setError(null);
       alert(`Crew "${newCrewName}" created successfully!`);
       fetchCrews(); // Refresh the crew list
