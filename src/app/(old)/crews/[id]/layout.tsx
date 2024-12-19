@@ -18,6 +18,7 @@ export default function CrewLayout({
   const isManage = pathname.includes("/manage");
   const isExecute = pathname.includes("/execute");
   const isJobs = pathname.includes("/jobs");
+  const isAgents = pathname.includes("/agents");
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -41,9 +42,15 @@ export default function CrewLayout({
               Logs
             </Button>
           </Link>
+          <Link href={`/crews/${id}/agents`}>
+            <Button variant={isAgents ? "default" : "outline"}>
+              <LogsIcon className="w-4 h-4 mr-2" />
+              Agents
+            </Button>
+          </Link>
         </div>
       </div>
       {children}
     </div>
-    )
+  );
 }
