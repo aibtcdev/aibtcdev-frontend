@@ -22,6 +22,7 @@ export function useChat() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentJobRef = useRef<{
     steps: Message[];
@@ -40,15 +41,29 @@ export function useChat() {
     }
   }, []);
 
+    // Fetch current user and their profile
+    useEffect(() => {
+      async function fetchUserAndProfile() {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          console.error("Error fetching user:", error);
+          return;
+        }
+        if (user) {
+          setProfileId(user.id);
+        }
+      }
+      fetchUserAndProfile();
+    }, []);
+
   const handleResetHistory = useCallback(async () => {
-    if (!authToken) return;
+    if (!profileId) return;
 
     try {
-      setIsLoading(true); // Set loading state during reset
+      setIsLoading(true);
 
       // Close existing WebSocket connection if any
       if (ws) {
-        // Create a promise that resolves when the WebSocket is closed
         await new Promise<void>((resolve) => {
           const closeHandler = () => {
             console.log("WebSocket closed during reset");
@@ -65,39 +80,35 @@ export function useChat() {
         setWs(null);
       }
 
-      // Delete current conversation
-      const deleteResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/${conversationId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      // Delete current conversation if it exists
+      if (conversationId) {
+        const { error: deleteError } = await supabase
+          .from('conversations')
+          .delete()
+          .eq('id', conversationId)
+          .eq('profile_id', profileId);
 
-      if (!deleteResponse.ok) {
-        throw new Error(`HTTP error! status: ${deleteResponse.status}`);
+        if (deleteError) {
+          throw deleteError;
+        }
       }
 
       // Create a new conversation
-      const newConversationResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      const { data: newConversation, error: insertError } = await supabase
+        .from('conversations')
+        .insert([
+          { 
+            profile_id: profileId,
+            name: "New Conversation",
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
 
-      if (!newConversationResponse.ok) {
-        throw new Error(`HTTP error! status: ${newConversationResponse.status}`);
+      if (insertError) {
+        throw insertError;
       }
-
-      const newConversation = await newConversationResponse.json();
 
       // Reset current job state
       currentJobRef.current = {
@@ -113,10 +124,9 @@ export function useChat() {
         content: "Welcome back! Let's see what your ai can pull off today.",
         timestamp: new Date(),
       };
+
       setMessages([initialMessage]);
       setConversationId(newConversation.id);
-
-      // Note: loading state will be reset when new WebSocket connects in the useEffect
 
     } catch (error) {
       console.error("Error resetting history:", error);
@@ -126,53 +136,73 @@ export function useChat() {
         description: "Failed to reset chat history",
         variant: "destructive",
       });
-      setIsLoading(false); // Reset loading state on error
+      setIsLoading(false);
     }
-  }, [authToken, conversationId, ws, toast]);
+  }, [profileId, conversationId, ws, toast]);
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!authToken) return;
+      if (!profileId) return;
 
       try {
-        const conversationRequest = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/chat/conversations/latest`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
+        // Get the latest conversation for the user
+        const { data: conversation, error: conversationError } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('profile_id', profileId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (!conversationRequest.ok) {
-          throw new Error(`HTTP error! status: ${conversationRequest.status}`);
+        if (conversationError) {
+          throw conversationError;
         }
 
-        const conversationData = await conversationRequest.json();
-        setConversationId(conversationData.id);
+        if (!conversation) {
+          // Create a new conversation if none exists
+          const { data: newConversation, error: createError } = await supabase
+            .from('conversations')
+            .insert([
+              { 
+                profile_id: profileId,
+                name: "New Conversation",
+                created_at: new Date().toISOString()
+              }
+            ])
+            .select()
+            .single();
 
-        const initialMessage: Message = {
-          role: "assistant",
-          type: null,
-          content: "Welcome back! Let's see what your ai can pull off today.",
-          timestamp: new Date(),
-        };
-        setMessages([initialMessage]);
+          if (createError) {
+            throw createError;
+          }
+
+          const initialMessage: Message = {
+            role: "assistant",
+            type: null,
+            content: "Welcome! Let's see what your ai can pull off today.",
+            timestamp: new Date(),
+          };
+
+          setConversationId(newConversation.id);
+          setMessages([initialMessage]);
+        } else {
+          setConversationId(conversation.id);
+        }
+
       } catch (error) {
         console.error("Failed to fetch history:", error);
         Sentry.captureException(error);
         toast({
           title: "Error",
-          description: "Failed to load chat history.",
+          description: "Failed to fetch chat history",
           variant: "destructive",
         });
       }
     };
 
     fetchHistory();
-  }, [authToken, toast]);
+  }, [profileId, toast]);
+
 
   useEffect(() => {
     scrollToBottom();
