@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 // import Authentication from "../auth/Authentication"; #FOR GITHUB AUTH
 import SignIn from "../auth/StacksAuth";
+import { ConnectWallet } from "../new/ConnectWallet";
 
 export default function Home() {
   return (
@@ -20,7 +21,7 @@ export default function Home() {
         <div className="w-full max-w-md px-4">
           {/* Authentication component */}
           <div className="pt-4">
-            <SignIn />
+            <ConnectWallet />
           </div>
         </div>
       </div>

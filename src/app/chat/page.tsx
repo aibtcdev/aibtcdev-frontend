@@ -1,10 +1,7 @@
 import React from "react";
-import Chat from "@/components/chat/Chat";
 
-const page = () => {
-  return (
-      <Chat />
-  );
+const Chat = () => {
+  return <div>Chat Yet remaining to implement...</div>;
 };
 
-export default page;
+export default Chat;

@@ -1,14 +1,13 @@
-
 import React from "react";
-import Crews from "@/components/crews/Crews";
-import { Metadata } from "next";
+import { CrewManagement } from "@/components/new/CrewManagement";
 
-export const metadata: Metadata = {
-  title: "Crews",
-};
-
+// I should be able to see the list of crews and create it
 const page = () => {
-  return <Crews />;
+  return (
+    <div>
+      <CrewManagement />
+    </div>
+  );
 };
 
 export default page;
