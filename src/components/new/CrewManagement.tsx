@@ -92,7 +92,7 @@ export function CrewManagement() {
   };
 
   const handleManageCrew = (crewId: number) => {
-    router.push(`/new/crews/${crewId}/manage`);
+    router.push(`/crews/${crewId}/manage`);
   };
 
   const renderCrewContent = (crew: Crew | { error: string }) => {
