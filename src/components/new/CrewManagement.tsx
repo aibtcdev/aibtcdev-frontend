@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useCrews } from "@/hooks/new/useCrews";
@@ -9,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// Define a more specific type for Crew
 interface Crew {
   id: number;
   created_at: string;
@@ -31,6 +31,7 @@ export function CrewManagement() {
     {}
   );
   const [newCrewName, setNewCrewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isFetchingCrews, setIsFetchingCrews] = useState(false);
   const [crewsFetched, setCrewsFetched] = useState(false);
@@ -80,7 +81,13 @@ export function CrewManagement() {
 
     try {
       setError(null);
+      const profileId = localStorage.getItem("stxAddress");
+      if (!profileId) {
+        throw new Error("Profile ID not found");
+      }
+      await createCrew(profileId, newCrewName, newDescription);
       alert(`Crew "${newCrewName}" created successfully!`);
+      setNewCrewName("");
       fetchCrews(); // Refresh the crew list
     } catch (err) {
       setError(
@@ -186,6 +193,13 @@ export function CrewManagement() {
                 id="newCrewName"
                 value={newCrewName}
                 onChange={(e) => setNewCrewName(e.target.value)}
+                placeholder="Enter crew name"
+              />
+              <Label htmlFor="newCrewName">Crew Description</Label>
+              <Input
+                id="newCrewName"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Enter crew name"
               />
             </div>

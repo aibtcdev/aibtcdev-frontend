@@ -33,13 +33,13 @@ export function useCrews() {
         }
     };
 
-    const createCrew = async (profile_id: string, crew_name: string) => {
+    const createCrew = async (profile_id: string, crew_name: string, crew_description: string) => {
         setLoading(true);
         setError(null);
         try {
             const { crew } = await fetchWithAuth('/crews/create', {
                 method: 'POST',
-                body: JSON.stringify({ profile_id, crew_name }),
+                body: JSON.stringify({ profile_id, crew_name, crew_description }),
                 headers: { 'Content-Type': 'application/json' },
             });
             return crew;
