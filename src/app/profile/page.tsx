@@ -16,7 +16,7 @@ export default function ProfilePage() {
     error: profileError,
   } = useProfiles();
 
-  const [userProfile, setUserProfile] = useState<any | null>(null);
+  const [userProfile, setUserProfile] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

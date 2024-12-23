@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useTasks, Task, CreateTaskData } from "@/hooks/new/useTasks";
@@ -43,19 +43,7 @@ export function TaskManagement() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated && userAddress && crewId) {
-      fetchAgents();
-    }
-  }, [isAuthenticated, userAddress, crewId]);
-
-  useEffect(() => {
-    if (selectedAgent) {
-      fetchTasks();
-    }
-  }, [selectedAgent]);
-
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       const fetchedAgents = await getAgents(crewId);
       setAgents(fetchedAgents);
@@ -66,9 +54,9 @@ export function TaskManagement() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch agents");
     }
-  };
+  }, [crewId, getAgents, setSelectedAgent]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     if (!selectedAgent) return;
 
     try {
@@ -77,7 +65,19 @@ export function TaskManagement() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch tasks");
     }
-  };
+  }, [selectedAgent, listTasks]);
+
+  useEffect(() => {
+    if (isAuthenticated && userAddress && crewId) {
+      fetchAgents();
+    }
+  }, [isAuthenticated, userAddress, crewId, fetchAgents]);
+
+  useEffect(() => {
+    if (selectedAgent) {
+      fetchTasks();
+    }
+  }, [selectedAgent, fetchTasks]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();

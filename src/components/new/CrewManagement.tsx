@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useCrews } from "@/hooks/new/useCrews";
 import { Button } from "@/components/ui/button";
@@ -36,18 +36,10 @@ export function CrewManagement() {
   const [isFetchingCrews, setIsFetchingCrews] = useState(false);
   const [crewsFetched, setCrewsFetched] = useState(false);
 
-  // THIS IS STATIC AND SHOULD BE FETCHED USING PROFILE ID
-  const crewIds = [1, 2, 3];
+  const fetchCrews = useCallback(async () => {
+    // Move crewIds inside the useCallback
+    const crewIds = [1, 2, 3];
 
-  useEffect(() => {
-    if (isAuthenticated && userAddress) {
-      fetchCrews();
-    } else {
-      setCrews({});
-    }
-  }, [isAuthenticated, userAddress]);
-
-  const fetchCrews = async () => {
     setError(null);
     setIsFetchingCrews(true);
     const newCrews: Record<number, Crew | { error: string }> = {};
@@ -69,7 +61,15 @@ export function CrewManagement() {
     setCrews(newCrews);
     setIsFetchingCrews(false);
     setCrewsFetched(true);
-  };
+  }, [getCrew]);
+
+  useEffect(() => {
+    if (isAuthenticated && userAddress) {
+      fetchCrews();
+    } else {
+      setCrews({});
+    }
+  }, [isAuthenticated, userAddress, fetchCrews]);
 
   const handleCreateCrew = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +88,7 @@ export function CrewManagement() {
       await createCrew(profileId, newCrewName, newDescription);
       alert(`Crew "${newCrewName}" created successfully!`);
       setNewCrewName("");
+      setNewDescription("");
       fetchCrews(); // Refresh the crew list
     } catch (err) {
       setError(
@@ -195,12 +196,12 @@ export function CrewManagement() {
                 onChange={(e) => setNewCrewName(e.target.value)}
                 placeholder="Enter crew name"
               />
-              <Label htmlFor="newCrewName">Crew Description</Label>
+              <Label htmlFor="newCrewDescription">Crew Description</Label>
               <Input
-                id="newCrewName"
+                id="newCrewDescription"
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Enter crew name"
+                placeholder="Enter crew description"
               />
             </div>
             <Button type="submit">Create Crew</Button>

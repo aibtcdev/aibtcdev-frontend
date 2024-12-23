@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 // import Authentication from "../auth/Authentication"; #FOR GITHUB AUTH
-import SignIn from "../auth/StacksAuth";
+// import SignIn from "../auth/StacksAuth";
 import { ConnectWallet } from "../new/ConnectWallet";
 
 export default function Home() {

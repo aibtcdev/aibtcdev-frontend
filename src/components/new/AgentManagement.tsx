@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useAgents, Agent, CreateAgentData } from "@/hooks/new/useAgents";
@@ -19,7 +19,7 @@ export function AgentManagement() {
   const {
     getAgents,
     createAgent,
-    deleteAgent,
+    // deleteAgent,
     loading,
     error: agentError,
   } = useAgents();
@@ -33,20 +33,20 @@ export function AgentManagement() {
   });
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated && userAddress && crewId) {
-      fetchAgents();
-    }
-  }, [isAuthenticated, userAddress, crewId]);
-
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       const fetchedAgents = await getAgents(crewId);
       setAgents(fetchedAgents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch agents");
     }
-  };
+  }, [crewId, getAgents]);
+
+  useEffect(() => {
+    if (isAuthenticated && userAddress && crewId) {
+      fetchAgents();
+    }
+  }, [isAuthenticated, userAddress, crewId, fetchAgents]);
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();

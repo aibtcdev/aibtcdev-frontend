@@ -47,7 +47,8 @@ export function useCrons() {
         }
     };
 
-    const createCron = async (cronData: any) => {
+    // TODO: UPDATE THE TYPES LATER.
+    const createCron = async (cronData: string) => {
         setLoading(true);
         setError(null);
         try {

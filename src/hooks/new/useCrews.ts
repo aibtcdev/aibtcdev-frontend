@@ -51,7 +51,8 @@ export function useCrews() {
         }
     };
 
-    const updateCrew = async (id: number, updates: any) => {
+    // TODO: UPDATE THE TYPES AFTERWARDS
+    const updateCrew = async (id: number, updates: string) => {
         setLoading(true);
         setError(null);
         try {
