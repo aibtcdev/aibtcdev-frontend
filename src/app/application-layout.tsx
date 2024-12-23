@@ -1,6 +1,22 @@
 "use client";
 
 import * as React from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { Wallet } from "lucide-react";
+import {
+  ArrowRightStartOnRectangleIcon,
+  ChevronUpIcon,
+  WrenchScrewdriverIcon,
+  ChartBarIcon,
+  UserGroupIcon,
+  ChartPieIcon,
+  ChatBubbleBottomCenterTextIcon,
+  BuildingStorefrontIcon,
+  DocumentTextIcon,
+} from "@heroicons/react/16/solid";
+
 import { Avatar } from "@/components/catalyst/avatar";
 import {
   Dropdown,
@@ -26,36 +42,48 @@ import {
   SidebarSpacer,
 } from "@/components/catalyst/sidebar";
 import { SidebarLayout } from "@/components/catalyst/sidebar-layout";
-import {
-  ArrowRightStartOnRectangleIcon,
-  ChevronUpIcon,
-  WrenchScrewdriverIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  ChartPieIcon,
-  ChatBubbleBottomCenterTextIcon,
-  BuildingStorefrontIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/16/solid";
-import { usePathname } from "next/navigation";
-import { useUserData } from "@/hooks/useUserData";
-import { Wallet } from "lucide-react";
-import SignOut from "@/components/auth/SignOut";
-import Image from "next/image";
+import { useAuth } from "@/hooks/new/useAuth";
+import { useProfiles } from "@/hooks/new/useProfiles";
 
-function AccountDropdownMenu({
-  anchor,
-  userData,
-}: {
+interface AccountDropdownMenuProps {
+  role: string | null;
   anchor: "top start" | "bottom end";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  userData: any;
-}) {
+}
+
+interface ApplicationState {
+  role: string | null;
+  agentBalance: number | null;
+  agentAddress: string | null;
+}
+
+interface SignOutProps {
+  className?: string;
+}
+
+const SignOut: React.FC<SignOutProps> = ({ className }) => {
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const signOut = () => {
+    logout();
+    router.push("/");
+  };
+  return (
+    <DropdownLabel onClick={signOut} className={className}>
+      Sign Out
+    </DropdownLabel>
+  );
+};
+
+const AccountDropdownMenu: React.FC<AccountDropdownMenuProps> = ({
+  role,
+  anchor,
+}) => {
   return (
     <DropdownMenu className="min-w-64" anchor={anchor}>
-      {userData?.role === "Admin" && (
+      {role === "Admin" && (
         <DropdownItem href="/admin">
-          <WrenchScrewdriverIcon />
+          <WrenchScrewdriverIcon className="h-5 w-5" />
           <DropdownLabel>Admin</DropdownLabel>
         </DropdownItem>
       )}
@@ -64,42 +92,57 @@ function AccountDropdownMenu({
         <DropdownLabel>Profile Settings</DropdownLabel>
       </DropdownItem>
       <DropdownItem>
-        <ArrowRightStartOnRectangleIcon />
+        <ArrowRightStartOnRectangleIcon className="h-5 w-5" />
         <SignOut />
       </DropdownItem>
     </DropdownMenu>
   );
+};
+
+interface ApplicationLayoutProps {
+  children: React.ReactNode;
 }
 
-export function ApplicationLayout({ children }: { children: React.ReactNode }) {
+export const ApplicationLayout: React.FC<ApplicationLayoutProps> = ({
+  children,
+}) => {
   const pathname = usePathname();
-  const { data: userData, isLoading } = useUserData();
+  const { getUserRole } = useProfiles();
+  const { isAuthenticated, isLoading, userAddress } = useAuth();
 
-  const displayAddress = React.useMemo(() => {
-    if (!userData?.stxAddress) return "";
-    return `${userData.stxAddress.slice(0, 5)}...${userData.stxAddress.slice(
+  const [profile, setProfile] = useState<ApplicationState>({
+    role: null,
+    agentBalance: null,
+    agentAddress: null,
+  });
+
+  const fetchUserData = useCallback(async () => {
+    if (userAddress && isAuthenticated) {
+      try {
+        const userRole = await getUserRole(userAddress);
+        setProfile((prev) => ({ ...prev, role: userRole }));
+        // TODO: Fetch agent balance and address here
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    }
+  }, [userAddress, isAuthenticated, getUserRole]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  const displayAddress = useMemo(() => {
+    if (!userAddress) return "";
+    return `${userAddress.slice(0, 5)}...${userAddress.slice(-5)}`;
+  }, [userAddress]);
+
+  const displayAgentAddress = useMemo(() => {
+    if (!profile.agentAddress) return "No agents assigned";
+    return `${profile.agentAddress.slice(0, 5)}...${profile.agentAddress.slice(
       -5
     )}`;
-  }, [userData?.stxAddress]);
-
-  const displayAgentAddress = React.useMemo(() => {
-    if (!userData?.agentAddress) return "No agents assigned";
-    return `${userData.agentAddress.slice(
-      0,
-      5
-    )}...${userData.agentAddress.slice(-5)}`;
-  }, [userData?.agentAddress]);
-
-  const displayRole = React.useMemo(() => {
-    if (
-      !userData?.role ||
-      userData.role === "" ||
-      userData.role.toLowerCase() === "normal"
-    ) {
-      return "Normal User";
-    }
-    return userData.role;
-  }, [userData?.role]);
+  }, [profile.agentAddress]);
 
   return (
     <SidebarLayout
@@ -111,7 +154,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
               <DropdownButton as={NavbarItem}>
                 <Avatar src="/logos/aibtcdev-avatar-250px.png" square />
               </DropdownButton>
-              <AccountDropdownMenu userData={userData} anchor="bottom end" />
+              <AccountDropdownMenu role={profile.role} anchor="bottom end" />
             </Dropdown>
           </NavbarSection>
         </Navbar>
@@ -125,9 +168,10 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <SidebarLabel>
                   <Image
                     src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-                    alt=""
+                    alt="Logo"
                     width={400}
                     height={20}
+                    priority
                   />
                 </SidebarLabel>
               </DropdownButton>
@@ -136,40 +180,36 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
           <SidebarBody>
             <SidebarSection>
-              {/* <SidebarItem href="/dashboard" current={pathname === "/"}>
-                <DashboardIcon />
-                <SidebarLabel>Dashboard</SidebarLabel>
-              </SidebarItem> */}
               <SidebarItem href="/chat" current={pathname === "/chat"}>
-                <ChatBubbleBottomCenterTextIcon />
+                <ChatBubbleBottomCenterTextIcon className="h-5 w-5" />
                 <SidebarLabel>Chat</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/crews"
                 current={pathname.startsWith("/crews")}
               >
-                <UserGroupIcon />
+                <UserGroupIcon className="h-5 w-5" />
                 <SidebarLabel>Crews</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/marketplace"
                 current={pathname.startsWith("/marketplace")}
               >
-                <BuildingStorefrontIcon />
+                <BuildingStorefrontIcon className="h-5 w-5" />
                 <SidebarLabel>Marketplace</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/leaderboard"
                 current={pathname.startsWith("/leaderboard")}
               >
-                <ChartBarIcon />
+                <ChartBarIcon className="h-5 w-5" />
                 <SidebarLabel>Leaderboard</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/stats"
                 current={pathname.startsWith("/stats")}
               >
-                <ChartPieIcon />
+                <ChartPieIcon className="h-5 w-5" />
                 <SidebarLabel>Stats</SidebarLabel>
               </SidebarItem>
             </SidebarSection>
@@ -178,17 +218,17 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
             <SidebarSection>
               <SidebarItem href="/terms" current={pathname === "/terms"}>
-                <DocumentTextIcon />
+                <DocumentTextIcon className="h-5 w-5" />
                 <SidebarLabel>Terms of Service</SidebarLabel>
               </SidebarItem>
               <SidebarItem>
-                <Wallet />
+                <Wallet className="h-5 w-5" />
                 <SidebarLabel className="flex flex-col">
                   {isLoading ? "Loading..." : displayAgentAddress}
-                  {userData?.agentAddress && (
+                  {profile.agentAddress && (
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {userData.agentBalance !== null
-                        ? `${userData.agentBalance.toFixed(5)} STX`
+                      {profile.agentBalance !== null
+                        ? `${profile.agentBalance.toFixed(5)} STX`
                         : "Loading balance..."}
                     </span>
                   )}
@@ -197,23 +237,25 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
             </SidebarSection>
           </SidebarBody>
 
-          <SidebarFooter className=" p-4">
+          <SidebarFooter className="p-4">
             <Dropdown>
               <DropdownButton as={SidebarItem}>
                 <span className="flex min-w-0 items-center gap-3">
                   <Avatar initials="P" className="size-10" square alt="" />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium text-zinc-950 dark:text-white">
-                      {isLoading ? "Loading..." : displayAddress}
+                      {isLoading
+                        ? "Loading..."
+                        : displayAddress || "Not Connected"}
                     </span>
                     <span className="block truncate text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                      {isLoading ? "Loading..." : displayRole}
+                      {isLoading ? "Loading..." : profile.role || "Normal User"}
                     </span>
                   </span>
                 </span>
-                <ChevronUpIcon />
+                <ChevronUpIcon className="h-5 w-5" />
               </DropdownButton>
-              <AccountDropdownMenu userData={userData} anchor="top start" />
+              <AccountDropdownMenu role={profile.role} anchor="top start" />
             </Dropdown>
           </SidebarFooter>
         </Sidebar>
@@ -222,4 +264,4 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
       {children}
     </SidebarLayout>
   );
-}
+};

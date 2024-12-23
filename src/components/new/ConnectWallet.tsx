@@ -1,120 +1,35 @@
-"use client";
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
-import { useProfiles } from "@/hooks/new/useProfiles";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 export function ConnectWallet() {
-  const {
-    isAuthenticated,
-    isLoading,
-    userAddress,
-    error: authError,
-    initiateAuthentication,
-    logout,
-  } = useAuth();
-  const {
-    getUserProfile,
-    createUserProfile,
-    loading: profileLoading,
-    error: profileError,
-  } = useProfiles();
-
-  const [profileChecked, setProfileChecked] = useState(false);
-  const [userProfile, setUserProfile] = useState<any | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const checkAndCreateProfile = useCallback(async () => {
-    if (isAuthenticated && userAddress && !profileChecked) {
-      try {
-        let profile = await getUserProfile(userAddress);
-        console.log("Fetched profile:", profile);
-
-        if (!profile) {
-          console.log("Creating new profile for address:", userAddress);
-          const newProfileData = {
-            stx_address: userAddress,
-            user_role: "normal" as const,
-          };
-          console.log("New profile data:", newProfileData);
-          profile = await createUserProfile(newProfileData);
-          console.log("Created profile:", profile);
-        }
-
-        setUserProfile(profile);
-      } catch (error) {
-        console.error("Error checking/creating profile:", error);
-        setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        setProfileChecked(true);
-      }
-    }
-  }, [
-    isAuthenticated,
-    userAddress,
-    profileChecked,
-    getUserProfile,
-    createUserProfile,
-  ]);
-
-  useEffect(() => {
-    checkAndCreateProfile();
-  }, [checkAndCreateProfile]);
+  const { isAuthenticated, isLoading, initiateAuthentication } = useAuth();
+  const router = useRouter();
 
   const handleConnect = useCallback(() => {
-    setProfileChecked(false);
-    setUserProfile(null);
-    setError(null);
     initiateAuthentication();
   }, [initiateAuthentication]);
 
-  if (isLoading || profileLoading) {
-    return <Button disabled>Loading...</Button>;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/chat");
+    }
+  }, [isAuthenticated, router]);
 
-  if (error || authError || profileError) {
+  if (!isAuthenticated) {
     return (
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">
-            {error ||
-              authError?.toString() ||
-              profileError?.toString() ||
-              "An unknown error occurred"}
-          </p>
-          <Button onClick={handleConnect} className="mt-4">
-            connect wallet
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Button
+          onClick={handleConnect}
+          disabled={isLoading}
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-bold"
+        >
+          Connect Wallet
+        </Button>
+      </div>
     );
   }
 
-  if (isAuthenticated && userAddress && userProfile) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>User Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="p-4 rounded-md overflow-auto max-h-96">
-            {JSON.stringify(userProfile, null, 2)}
-          </pre>
-          <Button onClick={logout} className="mt-4">
-            Disconnect
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <Button onClick={handleConnect}>Connect Wallet</Button>
-    </div>
-  );
+  return null;
 }

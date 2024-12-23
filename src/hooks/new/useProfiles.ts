@@ -27,6 +27,20 @@ export function useProfiles() {
         }
     };
 
+    const getUserRole = async (address: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await fetchWithAuth(`/profiles/role?address=${address}`);
+            return data.role.role;
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error('Failed to fetch user role'));
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const createUserProfile = async (profileData: CreateProfileData) => {
         setLoading(true);
         setError(null);
@@ -96,6 +110,7 @@ export function useProfiles() {
 
     return {
         getUserProfile,
+        getUserRole,
         createUserProfile,
         updateUserProfile,
         deleteUserProfile,
@@ -104,4 +119,3 @@ export function useProfiles() {
         error,
     };
 }
-
