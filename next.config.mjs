@@ -8,6 +8,16 @@ if (process.env.NODE_ENV === "development") {
 }
 
 export default withSentryConfig(nextConfig, {
+  webpack: (config, { isServer }) => {
+    config.resolve.extensionAlias = {
+      ".js": [".js", ".ts", ".tsx"],
+    };
+    return config;
+  },
+  transpilePackages: ["@aibtcdev/tools"],
+  experimental: {
+    serverComponentsExternalPackages: ["@aibtcdev/tools"],
+  },
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
