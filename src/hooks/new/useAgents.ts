@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
 // Define Agent interface based on the response structure
@@ -29,7 +29,7 @@ export function useAgents() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getAgents = async (crewId: number): Promise<Agent[]> => {
+    const getAgents = useCallback(async (crewId: number): Promise<Agent[]> => {
         setLoading(true);
         setError(null);
         try {
@@ -41,9 +41,9 @@ export function useAgents() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const createAgent = async (agentData: CreateAgentData): Promise<Agent> => {
+    const createAgent = useCallback(async (agentData: CreateAgentData): Promise<Agent> => {
         setLoading(true);
         setError(null);
         try {
@@ -59,9 +59,9 @@ export function useAgents() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const updateAgent = async (id: number, updates: Partial<Agent>) => {
+    const updateAgent = useCallback(async (id: number, updates: Partial<Agent>) => {
         setLoading(true);
         setError(null);
         try {
@@ -77,9 +77,9 @@ export function useAgents() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const deleteAgent = async (id: number) => {
+    const deleteAgent = useCallback(async (id: number) => {
         setLoading(true);
         setError(null);
         try {
@@ -93,7 +93,7 @@ export function useAgents() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     return {
         getAgents,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
 interface ProfileData {
@@ -13,7 +13,7 @@ export function useProfiles() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getUserProfile = async (address: string) => {
+    const getUserProfile = useCallback(async (address: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -25,9 +25,9 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getUserRole = async (address: string) => {
+    const getUserRole = useCallback(async (address: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -39,9 +39,9 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const createUserProfile = async (profileData: CreateProfileData) => {
+    const createUserProfile = useCallback(async (profileData: CreateProfileData) => {
         setLoading(true);
         setError(null);
         try {
@@ -56,9 +56,9 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const updateUserProfile = async (address: string, profileData: Partial<ProfileData>) => {
+    const updateUserProfile = useCallback(async (address: string, profileData: Partial<ProfileData>) => {
         setLoading(true);
         setError(null);
         try {
@@ -73,9 +73,9 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const deleteUserProfile = async (address: string) => {
+    const deleteUserProfile = useCallback(async (address: string) => {
         setLoading(true);
         setError(null);
         try {
@@ -89,9 +89,9 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const updateUserProfileById = async (userId: number, profileData: Partial<ProfileData>) => {
+    const updateUserProfileById = useCallback(async (userId: number, profileData: Partial<ProfileData>) => {
         setLoading(true);
         setError(null);
         try {
@@ -106,7 +106,7 @@ export function useProfiles() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     return {
         getUserProfile,

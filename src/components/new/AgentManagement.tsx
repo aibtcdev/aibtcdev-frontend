@@ -41,8 +41,10 @@ export function AgentManagement() {
   }, [crewId, getAgents, isAuthenticated, userAddress]);
 
   useEffect(() => {
-    fetchAgents();
-  }, [fetchAgents]);
+    if (isAuthenticated && userAddress && crewId) {
+      fetchAgents();
+    }
+  }, [isAuthenticated, userAddress, crewId, fetchAgents]);
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +79,6 @@ export function AgentManagement() {
       setError(err instanceof Error ? err.message : "Failed to create agent");
     }
   };
-
-  const memoizedAgents = useMemo(() => agents, [agents]);
 
   if (!isAuthenticated) {
     return (
@@ -176,10 +176,10 @@ export function AgentManagement() {
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Existing Agents</h3>
-          {memoizedAgents.length === 0 ? (
+          {agents.length === 0 ? (
             <p className="text-gray-500">No agents found for this crew.</p>
           ) : (
-            memoizedAgents.map((agent) => (
+            agents.map((agent) => (
               <Card key={agent.id} className="mb-2">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">

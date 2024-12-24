@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
 // Task interface based on the response structure
@@ -28,7 +28,7 @@ export function useTasks() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const getTask = async (id: number): Promise<Task> => {
+    const getTask = useCallback(async (id: number): Promise<Task> => {
         setLoading(true);
         setError(null);
         try {
@@ -40,9 +40,9 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const listTasks = async (agentId: number): Promise<Task[]> => {
+    const listTasks = useCallback(async (agentId: number): Promise<Task[]> => {
         setLoading(true);
         setError(null);
         try {
@@ -54,9 +54,9 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const createTask = async (taskData: CreateTaskData): Promise<Task> => {
+    const createTask = useCallback(async (taskData: CreateTaskData): Promise<Task> => {
         setLoading(true);
         setError(null);
         try {
@@ -72,9 +72,9 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const updateTask = async (id: number, updates: Partial<Task>) => {
+    const updateTask = useCallback(async (id: number, updates: Partial<Task>) => {
         setLoading(true);
         setError(null);
         try {
@@ -90,9 +90,9 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const deleteTask = async (id: number) => {
+    const deleteTask = useCallback(async (id: number) => {
         setLoading(true);
         setError(null);
         try {
@@ -106,9 +106,9 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const deleteAllTasks = async (agentId: number) => {
+    const deleteAllTasks = useCallback(async (agentId: number) => {
         setLoading(true);
         setError(null);
         try {
@@ -122,7 +122,7 @@ export function useTasks() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     return {
         getTask,

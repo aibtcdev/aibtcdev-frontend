@@ -149,7 +149,9 @@ export function CrewManagement() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex w-full flex-wrap items-end justify-between gap-4 border-zinc-950/10 pb-6 dark:border-white/10">
-        <h1 className="text-2xl font-bold">Your Crews</h1>
+        <h1 className="text-2xl font-bold">
+          Your Crews (It's static and fetched using crewid 1,2,3 for now)
+        </h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>

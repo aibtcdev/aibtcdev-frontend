@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useTasks, Task, CreateTaskData } from "@/hooks/new/useTasks";
@@ -21,10 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function TaskManagement() {
   const { id: crewIdString } = useParams();
-  const crewId = useMemo(
-    () => parseInt(crewIdString as string, 10),
-    [crewIdString]
-  );
+  const crewId = parseInt(crewIdString as string, 10);
 
   const { isAuthenticated, userAddress } = useAuth();
   const {
@@ -126,9 +123,6 @@ export function TaskManagement() {
     }
   };
 
-  const memoizedAgents = useMemo(() => agents, [agents]);
-  const memoizedTasks = useMemo(() => tasks, [tasks]);
-
   if (!isAuthenticated) {
     return (
       <Card className="w-full max-w-3xl">
@@ -163,13 +157,13 @@ export function TaskManagement() {
           <Select
             value={selectedAgent}
             onValueChange={setSelectedAgent}
-            disabled={memoizedAgents.length === 0}
+            disabled={agents.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
-              {memoizedAgents.map((agent) => (
+              {agents.map((agent) => (
                 <SelectItem key={agent.id} value={agent.id.toString()}>
                   {agent.agent_name}
                 </SelectItem>
@@ -181,7 +175,7 @@ export function TaskManagement() {
         <form onSubmit={handleCreateTask} className="mb-6 space-y-4">
           <h3 className="text-lg font-semibold">
             Create New Task for{" "}
-            {memoizedAgents.find((a) => a.id.toString() === selectedAgent)
+            {agents.find((a) => a.id.toString() === selectedAgent)
               ?.agent_name || "Selected Agent"}
           </h3>
           <div className="grid grid-cols-1 gap-4">
@@ -239,10 +233,10 @@ export function TaskManagement() {
 
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Existing Tasks</h3>
-          {memoizedTasks.length === 0 ? (
+          {tasks.length === 0 ? (
             <p className="text-gray-500">No tasks found for this agent.</p>
           ) : (
-            memoizedTasks.map((task) => (
+            tasks.map((task) => (
               <Card key={task.id} className="mb-2">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
