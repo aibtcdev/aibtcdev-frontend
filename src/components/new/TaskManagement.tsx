@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useTasks, Task, CreateTaskData } from "@/hooks/new/useTasks";
@@ -21,7 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function TaskManagement() {
   const { id: crewIdString } = useParams();
-  const crewId = parseInt(crewIdString as string, 10);
+  const crewId = useMemo(
+    () => parseInt(crewIdString as string, 10),
+    [crewIdString]
+  );
 
   const { isAuthenticated, userAddress } = useAuth();
   const {
@@ -44,21 +47,20 @@ export function TaskManagement() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAgents = useCallback(async () => {
+    if (!isAuthenticated || !userAddress || !crewId) return;
     try {
       const fetchedAgents = await getAgents(crewId);
       setAgents(fetchedAgents);
-      // Optionally set first agent as default
-      if (fetchedAgents.length > 0) {
+      if (fetchedAgents.length > 0 && !selectedAgent) {
         setSelectedAgent(fetchedAgents[0].id.toString());
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch agents");
     }
-  }, [crewId, getAgents, setSelectedAgent]);
+  }, [crewId, getAgents, isAuthenticated, userAddress, selectedAgent]);
 
   const fetchTasks = useCallback(async () => {
     if (!selectedAgent) return;
-
     try {
       const fetchedTasks = await listTasks(parseInt(selectedAgent, 10));
       setTasks(fetchedTasks);
@@ -68,10 +70,8 @@ export function TaskManagement() {
   }, [selectedAgent, listTasks]);
 
   useEffect(() => {
-    if (isAuthenticated && userAddress && crewId) {
-      fetchAgents();
-    }
-  }, [isAuthenticated, userAddress, crewId, fetchAgents]);
+    fetchAgents();
+  }, [fetchAgents]);
 
   useEffect(() => {
     if (selectedAgent) {
@@ -82,7 +82,6 @@ export function TaskManagement() {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate input
     if (!newTask.task_name?.trim()) {
       setError("Task name is required");
       return;
@@ -105,7 +104,6 @@ export function TaskManagement() {
 
       await createTask(taskData);
 
-      // Reset form and fetch updated tasks
       setNewTask({
         task_name: "",
         task_description: "",
@@ -113,7 +111,6 @@ export function TaskManagement() {
       });
       setError(null);
 
-      // Refetch tasks
       fetchTasks();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create task");
@@ -123,11 +120,14 @@ export function TaskManagement() {
   const handleDeleteTask = async (taskId: number) => {
     try {
       await deleteTask(taskId);
-      fetchTasks(); // Refresh the list
+      fetchTasks();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete task");
     }
   };
+
+  const memoizedAgents = useMemo(() => agents, [agents]);
+  const memoizedTasks = useMemo(() => tasks, [tasks]);
 
   if (!isAuthenticated) {
     return (
@@ -158,19 +158,18 @@ export function TaskManagement() {
           <p className="text-red-500 mb-4">{agentsError.message}</p>
         )}
 
-        {/* Agent Selection */}
         <div className="mb-4">
           <Label>Select Agent</Label>
           <Select
             value={selectedAgent}
             onValueChange={setSelectedAgent}
-            disabled={agents.length === 0}
+            disabled={memoizedAgents.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select an agent" />
             </SelectTrigger>
             <SelectContent>
-              {agents.map((agent) => (
+              {memoizedAgents.map((agent) => (
                 <SelectItem key={agent.id} value={agent.id.toString()}>
                   {agent.agent_name}
                 </SelectItem>
@@ -179,11 +178,10 @@ export function TaskManagement() {
           </Select>
         </div>
 
-        {/* Create Task Form */}
         <form onSubmit={handleCreateTask} className="mb-6 space-y-4">
           <h3 className="text-lg font-semibold">
             Create New Task for{" "}
-            {agents.find((a) => a.id.toString() === selectedAgent)
+            {memoizedAgents.find((a) => a.id.toString() === selectedAgent)
               ?.agent_name || "Selected Agent"}
           </h3>
           <div className="grid grid-cols-1 gap-4">
@@ -239,13 +237,12 @@ export function TaskManagement() {
           </Button>
         </form>
 
-        {/* Tasks List */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Existing Tasks</h3>
-          {tasks.length === 0 ? (
+          {memoizedTasks.length === 0 ? (
             <p className="text-gray-500">No tasks found for this agent.</p>
           ) : (
-            tasks.map((task) => (
+            memoizedTasks.map((task) => (
               <Card key={task.id} className="mb-2">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">

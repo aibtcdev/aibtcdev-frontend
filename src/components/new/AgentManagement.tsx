@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useAgents, Agent, CreateAgentData } from "@/hooks/new/useAgents";
@@ -13,16 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function AgentManagement() {
   const { id: crewIdString } = useParams();
-  const crewId = parseInt(crewIdString as string, 10);
+  const crewId = useMemo(
+    () => parseInt(crewIdString as string, 10),
+    [crewIdString]
+  );
 
   const { isAuthenticated, userAddress } = useAuth();
-  const {
-    getAgents,
-    createAgent,
-    // deleteAgent,
-    loading,
-    error: agentError,
-  } = useAgents();
+  const { getAgents, createAgent, loading, error: agentError } = useAgents();
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [newAgent, setNewAgent] = useState<Partial<CreateAgentData>>({
@@ -34,24 +31,22 @@ export function AgentManagement() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchAgents = useCallback(async () => {
+    if (!isAuthenticated || !userAddress || !crewId) return;
     try {
       const fetchedAgents = await getAgents(crewId);
       setAgents(fetchedAgents);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch agents");
     }
-  }, [crewId, getAgents]);
+  }, [crewId, getAgents, isAuthenticated, userAddress]);
 
   useEffect(() => {
-    if (isAuthenticated && userAddress && crewId) {
-      fetchAgents();
-    }
-  }, [isAuthenticated, userAddress, crewId, fetchAgents]);
+    fetchAgents();
+  }, [fetchAgents]);
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate input
     if (!newAgent.agent_name?.trim()) {
       setError("Agent name is required");
       return;
@@ -69,7 +64,6 @@ export function AgentManagement() {
 
       await createAgent(agentData);
 
-      // Reset form and fetch updated agents
       setNewAgent({
         agent_name: "",
         agent_role: "",
@@ -78,21 +72,13 @@ export function AgentManagement() {
       });
       setError(null);
 
-      // Refetch agents
       fetchAgents();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create agent");
     }
   };
 
-  // const handleDeleteAgent = async (agentId: number) => {
-  //   try {
-  //     await deleteAgent(agentId);
-  //     fetchAgents(); // Refresh the list
-  //   } catch (err) {
-  //     setError(err instanceof Error ? err.message : "Failed to delete agent");
-  //   }
-  // };
+  const memoizedAgents = useMemo(() => agents, [agents]);
 
   if (!isAuthenticated) {
     return (
@@ -120,7 +106,6 @@ export function AgentManagement() {
           <p className="text-red-500 mb-4">{agentError.message}</p>
         )}
 
-        {/* Create Agent Form */}
         <form onSubmit={handleCreateAgent} className="mb-6 space-y-4">
           <h3 className="text-lg font-semibold">Create New Agent</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -189,13 +174,12 @@ export function AgentManagement() {
           </Button>
         </form>
 
-        {/* Agents List */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Existing Agents</h3>
-          {agents.length === 0 ? (
+          {memoizedAgents.length === 0 ? (
             <p className="text-gray-500">No agents found for this crew.</p>
           ) : (
-            agents.map((agent) => (
+            memoizedAgents.map((agent) => (
               <Card key={agent.id} className="mb-2">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">
@@ -210,13 +194,6 @@ export function AgentManagement() {
                         <strong>Goal:</strong> {agent.agent_goal || "N/A"}
                       </p>
                     </div>
-                    {/* <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => handleDeleteAgent(agent.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button> */}
                   </div>
                 </CardContent>
               </Card>
