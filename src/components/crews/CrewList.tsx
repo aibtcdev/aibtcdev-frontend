@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
 import { useCrews } from "@/hooks/new/useCrews";
 import { useRouter } from "next/navigation";
@@ -57,8 +57,8 @@ export function CrewList() {
   const [isFetchingCrews, setIsFetchingCrews] = useState(false);
   const [crewsFetched, setCrewsFetched] = useState(false);
 
-  // NEEDS TO BE UPDATED TO GET LIST OF ALL THE CREWS FROM PROFILE ID
-  const crewIds = [1, 2, 3];
+  // Use useMemo to memoize the crewIds array
+  const crewIds = useMemo(() => [1, 2, 3], []);
 
   const fetchCrews = useCallback(async () => {
     if (!isAuthenticated || !userAddress) return;
@@ -89,7 +89,7 @@ export function CrewList() {
       setIsFetchingCrews(false);
       setCrewsFetched(true);
     }
-  }, [getCrew, isAuthenticated, userAddress]);
+  }, [getCrew, isAuthenticated, userAddress, crewIds]);
 
   useEffect(() => {
     if (isAuthenticated && userAddress && !crewsFetched && !isFetchingCrews) {
