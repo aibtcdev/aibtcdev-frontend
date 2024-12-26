@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
-// Define Agent interface based on the response structure
 export interface Agent {
     id: number;
     created_at: string;
@@ -12,17 +11,20 @@ export interface Agent {
     agent_role: string;
     agent_goal: string;
     agent_backstory: string;
-    agent_tools: string | null;
+    agent_tools: string[];
 }
 
-// Interface for creating an agent
-export interface CreateAgentData {
-    profile_id: string;
-    crew_id: number;
+export interface AgentFormData {
     agent_name: string;
     agent_role: string;
     agent_goal: string;
     agent_backstory: string;
+    agent_tools: string[];
+}
+
+export interface CreateAgentData extends AgentFormData {
+    profile_id: string;
+    crew_id: number;
 }
 
 export function useAgents() {
@@ -34,7 +36,7 @@ export function useAgents() {
         setError(null);
         try {
             const response = await fetchWithAuth(`/agents/get?crewId=${crewId}`);
-            return response.agents.agents; // Extract the agents array
+            return response.agents.agents;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -61,7 +63,7 @@ export function useAgents() {
         }
     }, []);
 
-    const updateAgent = useCallback(async (id: number, updates: Partial<Agent>) => {
+    const updateAgent = useCallback(async (id: number, updates: Partial<AgentFormData>): Promise<Agent> => {
         setLoading(true);
         setError(null);
         try {
@@ -70,7 +72,7 @@ export function useAgents() {
                 body: JSON.stringify(updates),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return response.result;
+            return response.agent;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -79,14 +81,14 @@ export function useAgents() {
         }
     }, []);
 
-    const deleteAgent = useCallback(async (id: number) => {
+    const deleteAgent = useCallback(async (id: number): Promise<boolean> => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetchWithAuth(`/agents/delete?id=${id}`, {
+            await fetchWithAuth(`/agents/delete?id=${id}`, {
                 method: 'DELETE'
             });
-            return response.result;
+            return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fetchWithAuth } from '@/helpers/fetchWithAuth';
 
-// Task interface based on the response structure
 export interface Task {
     id: number;
     created_at: string;
@@ -14,14 +13,16 @@ export interface Task {
     task_expected_output: string;
 }
 
-// Interface for creating a task
-export interface CreateTaskData {
-    profile_id: string;
-    crew_id: number;
-    agent_id: number;
+export interface TaskFormData {
     task_name: string;
     task_description: string;
     task_expected_output: string;
+}
+
+export interface CreateTaskData extends TaskFormData {
+    profile_id: string;
+    crew_id: number;
+    agent_id: number;
 }
 
 export function useTasks() {
@@ -74,7 +75,7 @@ export function useTasks() {
         }
     }, []);
 
-    const updateTask = useCallback(async (id: number, updates: Partial<Task>) => {
+    const updateTask = useCallback(async (id: number, updates: Partial<TaskFormData>): Promise<Task> => {
         setLoading(true);
         setError(null);
         try {
@@ -83,7 +84,7 @@ export function useTasks() {
                 body: JSON.stringify(updates),
                 headers: { 'Content-Type': 'application/json' },
             });
-            return response.result;
+            return response.task;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -92,14 +93,14 @@ export function useTasks() {
         }
     }, []);
 
-    const deleteTask = useCallback(async (id: number) => {
+    const deleteTask = useCallback(async (id: number): Promise<boolean> => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetchWithAuth(`/tasks/delete?id=${id}`, {
+            await fetchWithAuth(`/tasks/delete?id=${id}`, {
                 method: 'DELETE'
             });
-            return response.result;
+            return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -108,14 +109,14 @@ export function useTasks() {
         }
     }, []);
 
-    const deleteAllTasks = useCallback(async (agentId: number) => {
+    const deleteAllTasks = useCallback(async (agentId: number): Promise<boolean> => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetchWithAuth(`/tasks/delete-all?agentId=${agentId}`, {
+            await fetchWithAuth(`/tasks/delete-all?agentId=${agentId}`, {
                 method: 'DELETE'
             });
-            return response.result;
+            return true;
         } catch (err) {
             setError(err instanceof Error ? err : new Error('An error occurred'));
             throw err;
@@ -132,6 +133,6 @@ export function useTasks() {
         deleteTask,
         deleteAllTasks,
         loading,
-        error,
+        error
     };
 }

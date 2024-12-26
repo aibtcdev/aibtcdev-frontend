@@ -1,12 +1,10 @@
 import React from "react";
-import { AgentManagement } from "@/components/new/AgentManagement";
-import { TaskManagement } from "@/components/new/TaskManagement";
+import CrewManagement from "@/components/crews/CrewManagement";
 export const runtime = "edge";
 const page = () => {
   return (
     <div>
-      <AgentManagement />
-      <TaskManagement />
+      <CrewManagement />
     </div>
   );
 };

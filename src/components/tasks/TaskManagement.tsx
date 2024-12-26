@@ -1,190 +1,207 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/utils/supabase/client";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { useAuth } from "@/hooks/new/useAuth";
+import { useTasks, Task, TaskFormData } from "@/hooks/new/useTasks";
+import { useAgents, Agent } from "@/hooks/new/useAgents";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { PlusIcon, Edit2Icon, Trash2Icon } from "lucide-react";
-import TaskForm from "./TaskForm";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Task, TaskManagementProps } from "@/types/supabase";
-export default function TaskManagement({
-  crewId,
-  onTaskAdded,
-  tasks,
-  agents,
-  currentUser,
-  onEditTask,
-}: TaskManagementProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+import { Loader2, Plus } from "lucide-react";
+import { AgentSelect } from "./AgentSelect";
+import { TaskList } from "./TaskList";
+import { TaskDialog } from "./TaskDialog";
+import { DeleteConfirmDialog } from "../agents/DeleteConfirmDialog";
+
+export function TaskManagement() {
+  const { id: crewIdString } = useParams();
+  const crewId = parseInt(crewIdString as string, 10);
+
+  const { isAuthenticated, userAddress } = useAuth();
+  const {
+    listTasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    loading: tasksLoading,
+    error: tasksError,
+  } = useTasks();
+  const { getAgents, loading: agentsLoading, error: agentsError } = useAgents();
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const { toast } = useToast();
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
-  const handleTaskSubmitted = () => {
-    onTaskAdded();
-    setIsDialogOpen(false);
-    setEditingTask(null);
-  };
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsDialogOpen(true);
-    onEditTask(task);
-  };
-
-  const handleDeleteTask = async (taskId: number) => {
+  const fetchAgents = useCallback(async () => {
+    if (!isAuthenticated || !userAddress || !crewId) return;
     try {
-      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+      const fetchedAgents = await getAgents(crewId);
+      setAgents(fetchedAgents);
+      if (fetchedAgents.length > 0 && !selectedAgent) {
+        setSelectedAgent(fetchedAgents[0].id.toString());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch agents");
+    }
+  }, [crewId, getAgents, isAuthenticated, userAddress, selectedAgent]);
 
-      if (error) throw error;
+  const fetchTasks = useCallback(async () => {
+    if (!selectedAgent) return;
+    try {
+      const fetchedTasks = await listTasks(parseInt(selectedAgent, 10));
+      setTasks(fetchedTasks);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch tasks");
+    }
+  }, [selectedAgent, listTasks]);
 
-      toast({
-        title: "Success",
-        description: "Task deleted successfully",
-      });
-      onTaskAdded(); // Refresh the task list
-    } catch (error) {
-      console.error("Error deleting task:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete the task. Please try again.",
-        variant: "destructive",
-      });
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
+
+  useEffect(() => {
+    if (selectedAgent) {
+      fetchTasks();
+    }
+  }, [selectedAgent, fetchTasks]);
+
+  const handleCreateTask = async (formData: TaskFormData) => {
+    if (!selectedAgent) {
+      setError("Please select an agent");
+      return;
+    }
+
+    try {
+      const taskData = {
+        ...formData,
+        profile_id: userAddress!,
+        crew_id: crewId,
+        agent_id: parseInt(selectedAgent, 10),
+      };
+
+      await createTask(taskData);
+      fetchTasks();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create task");
+      throw err;
     }
   };
 
-  const getAgentName = (agentId: number) => {
-    const agent = agents.find((a) => a.id === agentId);
-    return agent ? agent.name : "Unassigned";
+  const handleUpdateTask = async (formData: TaskFormData) => {
+    if (!editingTask) return;
+
+    try {
+      await updateTask(editingTask.id, formData);
+      fetchTasks();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task");
+      throw err;
+    }
   };
 
-  const filteredTasks = tasks.filter((task) =>
-    task.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDeleteTask = async () => {
+    if (!deletingTask) return;
+
+    try {
+      await deleteTask(deletingTask.id);
+      fetchTasks();
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete task");
+      throw err;
+    }
+  };
+
+  const selectedAgentName = agents.find(
+    (a) => a.id.toString() === selectedAgent
+  )?.agent_name;
+
+  if (!isAuthenticated) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Task Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">
+            Please connect your wallet to manage tasks.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mt-4">
-        <h2 className="text-3xl font-bold tracking-tight">Tasks</h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingTask ? "Edit Task" : "Create New Task"}
-              </DialogTitle>
-            </DialogHeader>
-            <TaskForm
-              crewId={crewId}
-              agents={agents}
-              task={editingTask || undefined}
-              onTaskSubmitted={handleTaskSubmitted}
-              onClose={() => {
-                setIsDialogOpen(false);
-                setEditingTask(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <Input
-        placeholder="Search tasks..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="max-w-sm mb-4"
-      />
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Description</TableHead>
-              <TableHead>Expected Output</TableHead>
-              <TableHead>Assigned Agent</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTasks.map((task) => (
-              <TableRow key={task.id}>
-                <TableCell>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="link">
-                        {task.description.substring(0, 30)}...
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p>{task.description}</p>
-                    </PopoverContent>
-                  </Popover>
-                </TableCell>
-                <TableCell>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="link">
-                        {task.expected_output.substring(0, 30)}...
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <p>{task.expected_output}</p>
-                    </PopoverContent>
-                  </Popover>
-                </TableCell>
-                <TableCell>{getAgentName(task.agent_id)}</TableCell>
-                <TableCell>
-                  {currentUser === task.profile_id && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditTask(task)}
-                      >
-                        <Edit2Icon className="h-4 w-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteTask(task.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2Icon className="h-4 w-4 mr-2" />
-                        Delete
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Task Management</CardTitle>
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          disabled={!selectedAgent}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Task
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {tasksError && (
+          <p className="text-red-500 mb-4">{tasksError.message}</p>
+        )}
+        {agentsError && (
+          <p className="text-red-500 mb-4">{agentsError.message}</p>
+        )}
+
+        <AgentSelect
+          agents={agents}
+          selectedAgent={selectedAgent}
+          onAgentChange={setSelectedAgent}
+          disabled={agentsLoading}
+        />
+
+        <TaskList
+          tasks={tasks}
+          onEdit={setEditingTask}
+          onDelete={setDeletingTask}
+        />
+
+        {(tasksLoading || agentsLoading) && (
+          <div className="flex justify-center items-center mt-4">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+        )}
+
+        <TaskDialog
+          isOpen={isCreateDialogOpen}
+          onClose={() => setIsCreateDialogOpen(false)}
+          onSubmit={handleCreateTask}
+          title="Create New Task"
+          agentName={selectedAgentName}
+        />
+
+        <TaskDialog
+          isOpen={!!editingTask}
+          onClose={() => setEditingTask(null)}
+          onSubmit={handleUpdateTask}
+          task={editingTask || undefined}
+          title="Edit Task"
+          agentName={selectedAgentName}
+        />
+
+        <DeleteConfirmDialog
+          isOpen={!!deletingTask}
+          onClose={() => setDeletingTask(null)}
+          onConfirm={handleDeleteTask}
+          title="Delete Task"
+          description={`Are you sure you want to delete ${deletingTask?.task_name}? This action cannot be undone.`}
+        />
+      </CardContent>
+    </Card>
   );
 }

@@ -1,212 +1,157 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React from "react";
+import { AgentFormData } from "@/hooks/new/useAgents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, X } from "lucide-react";
-import { AgentFormProps } from "@/types/supabase";
-import { TOOL_CATEGORIES, ToolCategory, fetchTools, Tool } from "@/lib/tools";
+import { Plus, Save } from "lucide-react";
 
-export default function AgentForm({
-  agent,
+interface AgentFormProps {
+  initialData?: Partial<AgentFormData>;
+  onSubmit: (data: AgentFormData) => Promise<void>;
+  isEditing?: boolean;
+}
+
+export function AgentForm({
+  initialData,
   onSubmit,
-  loading,
+  isEditing = false,
 }: AgentFormProps) {
-  const [agentName, setAgentName] = useState(agent?.name || "");
-  const [role, setRole] = useState(agent?.role || "");
-  const [goal, setGoal] = useState(agent?.goal || "");
-  const [backstory, setBackstory] = useState(agent?.backstory || "");
-  const [selectedTools, setSelectedTools] = useState<string[]>(
-    agent?.agent_tools || []
-  );
-  const [availableTools, setAvailableTools] = useState<Tool[]>([]);
-  const [isLoadingTools, setIsLoadingTools] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isToolDialogOpen, setIsToolDialogOpen] = useState(false);
+  const [formData, setFormData] = React.useState<AgentFormData>({
+    agent_name: initialData?.agent_name || "",
+    agent_role: initialData?.agent_role || "",
+    agent_goal: initialData?.agent_goal || "",
+    agent_backstory: initialData?.agent_backstory || "",
+    agent_tools: initialData?.agent_tools || [],
+  });
 
-  useEffect(() => {
-    const loadTools = async () => {
-      setIsLoadingTools(true);
-      try {
-        const tools = await fetchTools();
-        setAvailableTools(tools);
-      } catch (error) {
-        console.error("Failed to load tools:", error);
-      } finally {
-        setIsLoadingTools(false);
-      }
-    };
-    loadTools();
-  }, []);
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit({
-      name: agentName,
-      role,
-      goal,
-      backstory,
-      agent_tools: selectedTools,
-    });
-  };
 
-  const handleToolToggle = (tool: string) => {
-    setSelectedTools((prev) =>
-      prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]
-    );
-  };
+    if (!formData.agent_name?.trim()) {
+      setError("Agent name is required");
+      return;
+    }
 
-  const filteredTools = availableTools.filter((tool) =>
-    tool.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    try {
+      await onSubmit(formData);
+      if (!isEditing) {
+        // Reset form only if creating new agent
+        setFormData({
+          agent_name: "",
+          agent_role: "",
+          agent_goal: "",
+          agent_backstory: "",
+          agent_tools: [],
+        });
+      }
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="agentName">Agent Name</Label>
-        <Input
-          id="agentName"
-          value={agentName}
-          onChange={(e) => setAgentName(e.target.value)}
-          placeholder="Enter agent name"
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="role">Role</Label>
-        <Input
-          id="role"
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          placeholder="Enter role"
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="goal">Goal</Label>
-        <Input
-          id="goal"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          placeholder="Enter goal"
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="backstory">Backstory</Label>
-        <Textarea
-          id="backstory"
-          value={backstory}
-          onChange={(e) => setBackstory(e.target.value)}
-          placeholder="Enter backstory"
-        />
-      </div>
-      <div>
-        <Label>Agent Tools</Label>
-        <Dialog open={isToolDialogOpen} onOpenChange={setIsToolDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
-              {selectedTools.length > 0
-                ? `${selectedTools.length} tool${
-                    selectedTools.length > 1 ? "s" : ""
-                  } selected`
-                : "Select tools"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
-            <DialogHeader className="p-6 pb-2">
-              <DialogTitle>Select Tools</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="flex-grow px-6">
-              <div className="sticky top-0 bg-background pt-4 pb-2 z-10">
-                <div className="flex items-center space-x-2">
-                  <Search className="w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search tools..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-grow"
-                  />
-                </div>
-              </div>
-              {isLoadingTools ? (
-                <div className="p-4 text-center">Loading tools...</div>
-              ) : (
-                Object.keys(TOOL_CATEGORIES).map((category) => {
-                  const categoryTools = filteredTools.filter(
-                    (tool) => tool.category === category
-                  );
-                  if (categoryTools.length === 0) return null;
+      <h3 className="text-lg font-semibold">
+        {isEditing ? "Edit Agent" : "Create New Agent"}
+      </h3>
 
-                  return (
-                    <div key={category} className="mb-6">
-                      <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-                        {TOOL_CATEGORIES[category as ToolCategory]}
-                      </h3>
-                      {categoryTools.map((tool) => (
-                        <div
-                          key={tool.id}
-                          className="flex items-start space-x-2 p-2"
-                        >
-                          <Checkbox
-                            id={tool.id}
-                            checked={selectedTools.includes(tool.id)}
-                            onCheckedChange={() => handleToolToggle(tool.id)}
-                          />
-                          <div className="flex flex-col">
-                            <label
-                              htmlFor={tool.id}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                              {tool.name}
-                            </label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {tool.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })
-              )}
-            </ScrollArea>
-            <div className="p-6 pt-2 border-t">
-              <Button onClick={() => setIsToolDialogOpen(false)}>Close</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="agentName">Agent Name *</Label>
+          <Input
+            id="agentName"
+            value={formData.agent_name}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                agent_name: e.target.value,
+              }))
+            }
+            placeholder="Enter agent name"
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor="agentRole">Agent Role</Label>
+          <Input
+            id="agentRole"
+            value={formData.agent_role}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                agent_role: e.target.value,
+              }))
+            }
+            placeholder="Enter agent role"
+          />
+        </div>
+        <div className="col-span-2">
+          <Label htmlFor="agentGoal">Agent Goal</Label>
+          <Input
+            id="agentGoal"
+            value={formData.agent_goal}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                agent_goal: e.target.value,
+              }))
+            }
+            placeholder="Enter agent goal"
+          />
+        </div>
+        <div className="col-span-2">
+          <Label htmlFor="agentBackstory">Agent Backstory</Label>
+          <Textarea
+            id="agentBackstory"
+            value={formData.agent_backstory}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                agent_backstory: e.target.value,
+              }))
+            }
+            placeholder="Enter agent backstory"
+            rows={3}
+          />
+        </div>
+        <div className="col-span-2">
+          <Label htmlFor="agentTools">Agent Tools (comma-separated)</Label>
+          <Input
+            id="agentTools"
+            value={formData.agent_tools.join(", ")}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                agent_tools: e.target.value
+                  .split(",")
+                  .map((tool) => tool.trim()),
+              }))
+            }
+            placeholder="Enter agent tools (e.g., tool1, tool2, tool3)"
+          />
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {selectedTools.map((tool) => (
-          <div
-            key={tool}
-            className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm flex items-center"
-          >
-            {tool}
-            <button
-              type="button"
-              onClick={() => handleToolToggle(tool)}
-              className="ml-2 text-primary-foreground hover:text-red-500"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
-      <Button type="submit" disabled={loading}>
-        {loading ? "Saving..." : agent ? "Update Agent" : "Create Agent"}
+
+      <Button type="submit" className="w-full">
+        {isEditing ? (
+          <>
+            <Save className="mr-2 h-4 w-4" />
+            Update Agent
+          </>
+        ) : (
+          <>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Agent
+          </>
+        )}
       </Button>
     </form>
   );

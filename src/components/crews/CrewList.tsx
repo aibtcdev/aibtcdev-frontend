@@ -42,7 +42,7 @@ interface Crew {
   crew_is_cron: 0 | 1;
 }
 
-export function CrewManagement() {
+export function CrewList() {
   const router = useRouter();
   const { isAuthenticated, userAddress } = useAuth();
   const { getCrew, createCrew, loading, error: crewError } = useCrews();
