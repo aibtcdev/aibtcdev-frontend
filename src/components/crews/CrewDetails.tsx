@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+// import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 
 interface CrewDetailsProps {
@@ -21,9 +21,9 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
     updateCrew,
     getCronConfig,
     // createCronConfig,
-    updateCronConfig,
-    toggleCron,
-    loading,
+    // updateCronConfig,
+    // toggleCron,
+    // loading,
     error,
   } = useCrews();
 
