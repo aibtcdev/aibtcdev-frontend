@@ -71,7 +71,7 @@ export function CrewList() {
       for (const id of crewIds) {
         try {
           const response = await getCrew(id);
-          newCrews[id] = response.crew;
+          newCrews[id] = response;
         } catch (err) {
           console.error(`Failed to fetch crew with ID ${id}:`, err);
           newCrews[id] = {
