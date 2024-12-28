@@ -54,11 +54,11 @@ export function useCrews() {
         ),
         [handleRequest]);
 
-    const createCrew = useCallback((profile_id: string, crew_name: string, crew_description: string, crewId: string) =>
+    const createCrew = useCallback((profile_id: string, crew_name: string, crew_description: string) =>
         handleRequest<Crew>(
             fetchWithAuth('/crews/create', {
                 method: 'POST',
-                body: JSON.stringify({ profile_id, crew_name, crew_description, crewId }),
+                body: JSON.stringify({ profile_id, crew_name, crew_description }),
                 headers: { 'Content-Type': 'application/json' },
             }).then(res => res.crew),
             'Failed to create crew'
