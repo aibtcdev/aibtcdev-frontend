@@ -13,15 +13,6 @@ export interface Crew {
     crew_is_cron: 0 | 1;
 }
 
-export interface CronConfig {
-    id: number;
-    crewId: number;
-    enabled: boolean;
-    schedule: string;
-    last_run?: string;
-    next_run?: string;
-}
-
 export interface CrewFormData {
     crew_name: string;
     crew_description: string;
@@ -33,12 +24,6 @@ export interface CrewExecution {
     crewId: number;
     conversationId: number;
     input: string;
-}
-
-export interface CreateCronConfig {
-    profile_id: string;
-    crew_id: string;
-    cron_enabled: boolean;
 }
 
 export function useCrews() {
@@ -69,11 +54,11 @@ export function useCrews() {
         ),
         [handleRequest]);
 
-    const createCrew = useCallback((profile_id: string, crew_name: string, crew_description: string) =>
+    const createCrew = useCallback((profile_id: string, crew_name: string, crew_description: string, crewId: string) =>
         handleRequest<Crew>(
             fetchWithAuth('/crews/create', {
                 method: 'POST',
-                body: JSON.stringify({ profile_id, crew_name, crew_description }),
+                body: JSON.stringify({ profile_id, crew_name, crew_description, crewId }),
                 headers: { 'Content-Type': 'application/json' },
             }).then(res => res.crew),
             'Failed to create crew'
@@ -118,47 +103,6 @@ export function useCrews() {
         ),
         [handleRequest]);
 
-    const getCronConfig = useCallback((crewId: number) =>
-        handleRequest<CronConfig>(
-            fetchWithAuth(`/crons/get?crewId=${crewId}`).then(res => res.cron),
-            'Failed to fetch cron config'
-        ),
-        [handleRequest]);
-
-    // YET TO IMPLEMENT
-    // const createCronConfig = useCallback((data: CreateCronConfig) =>
-    //     handleRequest<CronConfig>(
-    //         fetchWithAuth('/database/crons/create', {
-    //             method: 'POST',
-    //             body: JSON.stringify(data),
-    //             headers: { 'Content-Type': 'application/json' },
-    //         }).then(res => res.cron),
-    //         'Failed to create cron config'
-    //     ),
-    //     [handleRequest]);
-
-    const updateCronConfig = useCallback((crewId: number, schedule: string) =>
-        handleRequest<CronConfig>(
-            fetchWithAuth('/crons/update', {
-                method: 'POST',
-                body: JSON.stringify({ crewId: crewId, schedule }),
-                headers: { 'Content-Type': 'application/json' },
-            }).then(res => res.cron),
-            'Failed to update cron config'
-        ),
-        [handleRequest]);
-
-    const toggleCron = useCallback((crewId: number, enabled: boolean) =>
-        handleRequest<CronConfig>(
-            fetchWithAuth('/crons/toggle', {
-                method: 'POST',
-                body: JSON.stringify({ crewId: crewId, enabled }),
-                headers: { 'Content-Type': 'application/json' },
-            }).then(res => res.cron),
-            'Failed to toggle cron'
-        ),
-        [handleRequest]);
-
     return {
         loading,
         error,
@@ -168,10 +112,5 @@ export function useCrews() {
         deleteCrew,
         getCrewExecutions,
         addCrewExecution,
-        getCronConfig,
-        // createCronConfig,
-        updateCronConfig,
-        toggleCron,
     };
 }
-

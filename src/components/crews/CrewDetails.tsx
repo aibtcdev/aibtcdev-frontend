@@ -2,12 +2,15 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/new/useAuth";
-import { useCrews, Crew, CronConfig, CrewFormData } from "@/hooks/new/useCrews";
+import { useCrews, Crew, CrewFormData } from "@/hooks/new/useCrews";
+import { useCrons } from "@/hooks/new/useCrons";
+import type { CronResponse } from "@/hooks/new/useCrons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-// import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 interface CrewDetailsProps {
@@ -16,26 +19,25 @@ interface CrewDetailsProps {
 
 export function CrewDetails({ crewId }: CrewDetailsProps) {
   const { isAuthenticated, userAddress } = useAuth();
+  const { getCrew, updateCrew, error: crewError } = useCrews();
   const {
-    getCrew,
-    updateCrew,
-    getCronConfig,
-    // createCronConfig,
-    // updateCronConfig,
-    // toggleCron,
-    // loading,
-    error,
-  } = useCrews();
+    getCronsByCrew,
+    createCron,
+    updateCronInput,
+    toggleCronStatus,
+    loading: cronLoading,
+    error: cronError,
+  } = useCrons();
 
   const [crew, setCrew] = useState<Crew | null>(null);
-  const [cronConfig, setCronConfig] = useState<CronConfig | null>(null);
+  const [cronConfig, setCronConfig] = useState<CronResponse | null>(null);
   const [formData, setFormData] = useState<CrewFormData>({
     crew_name: "",
     crew_description: "",
   });
   const [isLoading, setIsLoading] = useState(true);
   const [localError, setLocalError] = useState<Error | null>(null);
-  const [cronSchedule, setCronSchedule] = useState("");
+  const [cronInput, setCronInput] = useState("");
 
   const fetchData = useCallback(async () => {
     if (!isAuthenticated || !userAddress) {
@@ -45,15 +47,15 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
 
     try {
       setIsLoading(true);
-      const [crewData, cronData] = await Promise.all([
+      const [crewData, cronsData] = await Promise.all([
         getCrew(parseInt(crewId, 10)),
-        getCronConfig(parseInt(crewId, 10)).catch(() => null),
+        getCronsByCrew(parseInt(crewId, 10)),
       ]);
 
       setCrew(crewData);
-      setCronConfig(cronData);
-      if (cronData) {
-        setCronSchedule(cronData.schedule);
+      if (cronsData && cronsData.length > 0) {
+        setCronConfig(cronsData[0]);
+        setCronInput(cronsData[0].cron_input);
       }
       setFormData({
         crew_name: crewData.crew_name,
@@ -67,7 +69,7 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [crewId, isAuthenticated, userAddress, getCrew, getCronConfig]);
+  }, [crewId, isAuthenticated, userAddress, getCrew, getCronsByCrew]);
 
   useEffect(() => {
     fetchData();
@@ -99,51 +101,41 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
     }
   };
 
-  //   const handleCronToggle = async (enabled: boolean) => {
-  //     if (!crew) return;
-  //     try {
-  //         if (!cronConfig && enabled) {
-  //             const profileId = localStorage.getItem("stxAddress");
-  //             if (!profileId) {
-  //                 throw new Error("Profile ID not found");
-  //             }
-  //             const newConfig = await createCronConfig({
-  //                 profile_id: profileId,
-  //                 crew_id: crewId,
-  //                 cron_enabled: true,
-  //             });
-  //             setCronConfig(newConfig);
-  //             setCronSchedule(newConfig.schedule);
-  //         } else if (cronConfig) {
-  //             const updatedConfig = await toggleCron(crew.id, enabled);
-  //             setCronConfig(updatedConfig);
-  //         }
-  //     } catch (err) {
-  //         setLocalError(
-  //             err instanceof Error ? err : new Error("Failed to toggle cron")
-  //         );
-  //         console.error("Error toggling cron:", err);
-  //     }
-  // };
+  const handleCronToggle = async (enabled: boolean) => {
+    if (!crew) return;
+    try {
+      if (!cronConfig && enabled) {
+        const newCron = await createCron({
+          profile_id: userAddress,
+          crew_id: crewId,
+          cron_enabled: enabled ? 1 : 0,
+          cron_input: cronInput,
+        });
+        setCronConfig(newCron);
+      } else if (cronConfig) {
+        const updatedCron = await toggleCronStatus(cronConfig.id, enabled);
+        setCronConfig(updatedCron);
+      }
+    } catch (err) {
+      setLocalError(
+        err instanceof Error ? err : new Error("Failed to toggle cron")
+      );
+      console.error("Error toggling cron:", err);
+    }
+  };
 
-  //   const handleCronScheduleUpdate = async () => {
-  //     if (!crew || !cronSchedule) return;
-  //     try {
-  //         const updatedConfig = cronConfig
-  //             ? await updateCronConfig(crew.id, cronSchedule)
-  //             : await createCronConfig({
-  //                 profile_id: crew.profile_id,
-  //                 crew_id: crewId,
-  //                 cron_enabled: true,
-  //             });
-  //         setCronConfig(updatedConfig);
-  //     } catch (err) {
-  //         setLocalError(
-  //             err instanceof Error ? err : new Error("Failed to update cron schedule")
-  //         );
-  //         console.error("Error updating cron schedule:", err);
-  //     }
-  // };
+  const handleCronInputUpdate = async () => {
+    if (!crew || !cronConfig) return;
+    try {
+      const updatedCron = await updateCronInput(cronConfig.id, cronInput);
+      setCronConfig(updatedCron);
+    } catch (err) {
+      setLocalError(
+        err instanceof Error ? err : new Error("Failed to update cron input")
+      );
+      console.error("Error updating cron input:", err);
+    }
+  };
 
   if (!isAuthenticated) {
     return (
@@ -160,7 +152,7 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || cronLoading) {
     return (
       <Card>
         <CardContent className="flex justify-center items-center p-6">
@@ -170,12 +162,12 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
     );
   }
 
-  if (localError || error) {
+  if (localError || crewError || cronError) {
     return (
       <Card>
         <CardContent className="p-6">
           <p className="text-red-500">
-            Error: {(localError || error)?.message}
+            Error: {(localError || crewError || cronError)?.message}
           </p>
         </CardContent>
       </Card>
@@ -221,41 +213,34 @@ export function CrewDetails({ crewId }: CrewDetailsProps) {
                 Enable scheduled executions
               </p>
             </div>
-            {/* <Switch
+            <Switch
               id="cronToggle"
-              checked={cronConfig?.enabled ?? false}
+              checked={cronConfig?.cron_enabled === 1}
               onCheckedChange={handleCronToggle}
-            /> */}
+            />
           </div>
 
-          {(cronConfig?.enabled ||
-            (!cronConfig && crew?.crew_is_cron === 1)) && (
+          {cronConfig?.cron_enabled === 1 && (
             <div>
-              <Label htmlFor="cronSchedule">Cron Schedule</Label>
+              <Label htmlFor="cronInput">Cron Input</Label>
               <div className="flex gap-2">
                 <Input
-                  id="cronSchedule"
-                  value={cronSchedule}
-                  onChange={(e) => setCronSchedule(e.target.value)}
-                  placeholder="Enter cron schedule (e.g., * * * * *)"
+                  id="cronInput"
+                  value={cronInput}
+                  onChange={(e) => setCronInput(e.target.value)}
+                  placeholder="Enter cron input"
                 />
-
-                {/* YET TO IMPLEMENT */}
-                {/* <button
-                  onClick={handleCronScheduleUpdate}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-                >
-                  Save
-                </button> */}
+                <Button onClick={handleCronInputUpdate}>Save Input</Button>
               </div>
-              {cronConfig?.last_run && (
+              {cronConfig?.created_at && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Last run: {new Date(cronConfig.last_run).toLocaleString()}
+                  Created: {new Date(cronConfig.created_at).toLocaleString()}
                 </p>
               )}
-              {cronConfig?.next_run && (
+              {cronConfig?.updated_at && (
                 <p className="text-sm text-gray-500">
-                  Next run: {new Date(cronConfig.next_run).toLocaleString()}
+                  Last updated:{" "}
+                  {new Date(cronConfig.updated_at).toLocaleString()}
                 </p>
               )}
             </div>
