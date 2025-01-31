@@ -78,6 +78,7 @@ export function useDAODetails(id: string) {
         symbol: "",
         decimals: 0,
         image_url: "",
+        max_supply: 10000000,
     });
     const [marketStats, setMarketStats] = useState<MarketStats>({
         price: 0,

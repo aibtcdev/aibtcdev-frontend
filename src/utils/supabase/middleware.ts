@@ -78,7 +78,7 @@ export const updateSession = async (request: NextRequest) => {
     }
 
     if (request.nextUrl.pathname === "/" && !userError) {
-      return NextResponse.redirect(new URL("/chat", request.url));
+      return NextResponse.redirect(new URL("/daos", request.url));
     }
 
     return response;

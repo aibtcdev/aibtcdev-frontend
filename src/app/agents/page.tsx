@@ -4,24 +4,27 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, Archive, Copy, Check } from "lucide-react";
 import { Heading } from "@/components/ui/heading";
-import { useAgentsList } from "@/hooks/use-agents-list";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAgents } from "@/queries/agentQueries";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useWalletStore } from "@/store/wallet";
 import { useSessionStore } from "@/store/session";
 import { useToast } from "@/hooks/use-toast";
-import { Agent } from "@/types/supabase";
+import type { Agent } from "@/types/supabase";
 
 export default function AgentsPage() {
-  const { agents } = useAgentsList();
+  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: fetchAgents,
+    staleTime: 1000000,
+  });
+
   const [showArchived, setShowArchived] = useState(false);
   const { userId } = useSessionStore();
   const { agentWallets, balances, fetchWallets } = useWalletStore();
   const { toast } = useToast();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-
-  const activeAgents = agents.filter((agent) => !agent.is_archived);
-  const archivedAgents = agents.filter((agent) => agent.is_archived);
 
   useEffect(() => {
     if (userId) {
@@ -35,6 +38,13 @@ export default function AgentsPage() {
       });
     }
   }, [userId, fetchWallets, toast]);
+
+  if (isLoadingAgents) {
+    return <div>Loading agents...</div>;
+  }
+
+  const activeAgents = agents?.filter((agent) => !agent.is_archived) ?? [];
+  const archivedAgents = agents?.filter((agent) => agent.is_archived) ?? [];
 
   const getWalletAddress = (agentId: string) => {
     const wallet = agentWallets.find((w) => w.agent_id === agentId);

@@ -29,20 +29,34 @@ export interface Token {
   symbol: string;
   decimals: number;
   image_url: string;
+  max_supply: number;
 }
+
+export type SortField =
+  | "price"
+  | "price24hChanges"
+  | "marketCap"
+  | "created_at";
 
 export interface DAO {
   id: string;
-  created_at: string;
   name: string;
+  website_url: string;
+  x_url: string;
+  telegram_url: string;
   mission: string;
   description: string;
   image_url: string;
   is_graduated: boolean;
   is_deployed: boolean;
-  x_url?: string;
-  telegram_url?: string;
-  website_url?: string;
+  created_at: string;
+  author_id: string;
+  user_id?: string;
+  extensions?: Array<{
+    id: string;
+    type: string;
+    contract_principal?: string;
+  }>;
 }
 
 export interface Holder {
@@ -67,6 +81,20 @@ export interface Extension {
   description: string | null;
   is_deployed: boolean;
   status: string | null;
+}
+
+export interface Proposal {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string;
+  code: string | null;
+  link: string | null;
+  monetary_ask: null;
+  status: "DRAFT" | "PENDING" | "DEPLOYED" | "FAILED";
+  contract_principal: string;
+  tx_id: string;
+  dao_id: string;
 }
 
 export interface CronEntry {

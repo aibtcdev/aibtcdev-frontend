@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpRight } from "lucide-react";
-import { Extension } from "@/types/supabase";
+import type { Extension } from "@/types/supabase";
 
 interface DAOExtensionsProps {
   extensions: Extension[];

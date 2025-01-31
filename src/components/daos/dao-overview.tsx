@@ -18,7 +18,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 
 interface DAOOverviewProps {
   dao: DAO;
-  token: Token;
+  token?: Token;
   treasuryTokens?: {
     type: "FT" | "NFT";
     name: string;
@@ -46,14 +46,13 @@ function DAOOverview({
 }: DAOOverviewProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
-  const formatNumber = (num: number, isPrice: boolean = false) => {
+  const formatNumber = (num: number, isPrice = false) => {
     if (isPrice) {
       if (num === 0) return "$0.00";
       if (num < 0.01) return `$${num.toFixed(8)}`;
       return `$${num.toFixed(2)}`;
     }
 
-    // For non-price values (market cap, treasury, etc.)
     if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
     if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
     if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
@@ -62,7 +61,6 @@ function DAOOverview({
 
   return (
     <div className="relative w-full">
-      {/* Social Links Section */}
       <div className="flex justify-center sm:justify-start gap-3 mb-8">
         {dao.website_url && (
           <a
@@ -96,9 +94,7 @@ function DAOOverview({
         )}
       </div>
 
-      {/* Main Content */}
-      <div className="mx-auto  space-y-8 sm:space-y-12">
-        {/* Key Metrics */}
+      <div className="mx-auto space-y-8 sm:space-y-12">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -142,7 +138,6 @@ function DAOOverview({
           </Card>
         </div>
 
-        {/* Description Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">About</h2>
@@ -178,7 +173,6 @@ function DAOOverview({
           </p>
         </div>
 
-        {/* Treasury Section */}
         {treasuryTokens.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Treasury Holdings</h2>

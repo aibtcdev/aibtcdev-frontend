@@ -1,104 +1,186 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/utils/supabase/client";
-import Image from "next/image";
 import { Loader2, Search } from "lucide-react";
 import { Heading } from "@/components/ui/heading";
-import { Token } from "@/types/supabase";
-import { Card } from "@/components/ui/card";
+import { fetchTokenPrice } from "@/queries/daoQueries";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DAOCard } from "./daos-card";
+import type { DAO, Token, SortField } from "@/types/supabase";
+import { createDaoAgent } from "../agents/dao-agent";
+import { useToast } from "@/hooks/use-toast";
 
-interface DAO {
-  id: string;
-  name: string;
-  mission: string;
-  description: string;
-  image_url: string;
-  is_graduated: boolean;
-  is_deployed: boolean;
-  created_at: string;
-  extensions?: Array<{
-    id: string;
-    type: string;
-  }>;
-}
+const fetchDAOs = async (): Promise<DAO[]> => {
+  const { data: daosData, error: daosError } = await supabase
+    .from("daos")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .eq("is_broadcasted", true);
+
+  if (daosError) throw daosError;
+  if (!daosData) return [];
+
+  const { data: xUsersData, error: xUsersError } = await supabase
+    .from("x_users")
+    .select("id, user_id");
+
+  if (xUsersError) throw xUsersError;
+
+  const { data: extensionsData, error: extensionsError } = await supabase
+    .from("extensions")
+    .select("*");
+
+  if (extensionsError) throw extensionsError;
+
+  return daosData.map((dao) => {
+    const xUser = xUsersData?.find((user) => user.id === dao.author_id);
+    return {
+      ...dao,
+      user_id: xUser?.user_id,
+      extensions: extensionsData?.filter((cap) => cap.dao_id === dao.id) || [],
+    };
+  });
+};
+
+const fetchTokens = async (): Promise<Token[]> => {
+  const { data: tokensData, error: tokensError } = await supabase
+    .from("tokens")
+    .select("*");
+  if (tokensError) throw tokensError;
+  return tokensData || [];
+};
+
+const fetchTokenPrices = async (
+  daos: DAO[],
+  tokens: Token[]
+): Promise<
+  Record<
+    string,
+    {
+      price: number;
+      marketCap: number;
+      holders: number;
+      price24hChanges: number | null;
+    }
+  >
+> => {
+  const prices: Record<
+    string,
+    {
+      price: number;
+      marketCap: number;
+      holders: number;
+      price24hChanges: number | null;
+    }
+  > = {};
+
+  for (const dao of daos) {
+    const extension = dao.extensions?.find((ext) => ext.type === "dex");
+    const token = tokens?.find((t) => t.dao_id === dao.id);
+    if (extension && token) {
+      try {
+        const priceUsd = await fetchTokenPrice(extension.contract_principal!);
+        prices[dao.id] = priceUsd;
+      } catch (error) {
+        console.error(`Error fetching price for DAO ${dao.id}:`, error);
+        prices[dao.id] = {
+          price: 0,
+          marketCap: 0,
+          holders: 0,
+          price24hChanges: null,
+        };
+      }
+    }
+  }
+  return prices;
+};
 
 export default function DAOs() {
-  const [daos, setDAOs] = useState<DAO[]>([]);
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const { toast } = useToast();
+  const agentInitialized = useRef(false);
+
+  const initializeAgent = useCallback(async () => {
+    if (agentInitialized.current) return;
+
+    try {
+      const agent = await createDaoAgent();
+      if (agent) {
+        toast({
+          title: "DAO Agent Initialized",
+          description: "Your DAO agent has been set up successfully.",
+          variant: "default",
+        });
+        agentInitialized.current = true;
+      }
+    } catch (error) {
+      console.error("Error initializing DAO agent:", error);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    fetchDAOs();
-    fetchTokens();
-  }, []);
+    initializeAgent();
+  }, [initializeAgent]);
 
-  const fetchTokens = async () => {
-    try {
-      setLoading(true);
-      const { data: tokensData, error: tokensError } = await supabase
-        .from("tokens")
-        .select("*");
-      if (tokensError) throw tokensError;
-      setTokens(tokensData);
-    } catch (error) {
-      console.error("Error fetching tokens:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: daos, isLoading: isLoadingDAOs } = useQuery({
+    queryKey: ["daos"],
+    queryFn: fetchDAOs,
+    staleTime: 1000000,
+  });
 
-  const fetchDAOs = async () => {
-    try {
-      setLoading(true);
-      const { data: daosData, error: daosError } = await supabase
-        .from("daos")
-        .select("*")
-        .order("created_at", { ascending: false });
+  const { data: tokens } = useQuery({
+    queryKey: ["tokens"],
+    queryFn: fetchTokens,
+    staleTime: 100000,
+  });
 
-      if (daosError) throw daosError;
-      if (!daosData) return;
+  const { data: tokenPrices, isFetching: isFetchingTokenPrices } = useQuery({
+    queryKey: ["tokenPrices", daos, tokens],
+    queryFn: () => fetchTokenPrices(daos || [], tokens || []),
+    enabled: !!daos && !!tokens,
+    staleTime: 1000000,
+  });
 
-      const { data: extensionsData, error: extensionsError } = await supabase
-        .from("extensions")
-        .select("*");
+  const filteredAndSortedDAOs = (() => {
+    const filtered =
+      daos?.filter(
+        (dao) =>
+          dao.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          dao.mission.toLowerCase().includes(searchQuery.toLowerCase())
+      ) || [];
 
-      if (extensionsError) throw extensionsError;
+    return filtered.sort((a, b) => {
+      if (sortField === "created_at") {
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      }
 
-      const enrichedDAOs = daosData.map((dao) => ({
-        ...dao,
-        extensions:
-          extensionsData?.filter((cap) => cap.dao_id === dao.id) || [],
-      }));
-
-      setDAOs(enrichedDAOs);
-    } catch (error) {
-      console.error("Error fetching daos:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredDAOs = daos.filter(
-    (dao) =>
-      dao.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dao.mission.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+      const valueA = tokenPrices?.[a.id]?.[sortField] ?? 0;
+      const valueB = tokenPrices?.[b.id]?.[sortField] ?? 0;
+      return valueB - valueA;
+    });
+  })();
 
   return (
-    <div className="container mx-auto space-y-6 px-4 py-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Heading className="text-2xl font-bold sm:text-3xl">DAOs</Heading>
+    <div className="container mx-auto space-y-8 px-4 py-8">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <Heading className="text-3xl font-bold sm:text-4xl">DAOs</Heading>
+          <p className="text-lg text-muted-foreground">
+            Explore and discover AI DAOs
+          </p>
+        </div>
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
           <Input
@@ -110,53 +192,56 @@ export default function DAOs() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredDAOs.map((dao) => {
-          const token = tokens.find((token) => token.dao_id === dao.id);
-          const placeholderPrice = " TBD";
-          return (
-            <Card
-              key={dao.id}
-              className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg"
-              onClick={() => (window.location.href = `/daos/${dao.id}`)}
-            >
-              <div className="p-4">
-                <div className="flex items-center gap-3">
-                  {token?.image_url && (
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
-                      <Image
-                        src={token.image_url || dao.image_url}
-                        alt={dao.name}
-                        width={48}
-                        height={48}
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-semibold group-hover:text-primary">
-                      {dao.name}
-                    </h3>
-                    {token?.symbol && (
-                      <p className="text-sm text-muted-foreground">
-                        {token.symbol}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">${placeholderPrice}</p>
-                  </div>
-                </div>
-                <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
-                  {dao.mission}
-                </p>
-              </div>
-            </Card>
-          );
-        })}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-start">
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">Sort by:</p>
+          <Select
+            value={sortField}
+            onValueChange={(value) => setSortField(value as SortField)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at">Date Added</SelectItem>
+              <SelectItem value="price">Token Price</SelectItem>
+              <SelectItem value="price24hChanges">24h Change</SelectItem>
+              <SelectItem value="marketCap">Market Cap</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {!isLoadingDAOs && (
+          <p className="text-sm text-muted-foreground">
+            Showing {filteredAndSortedDAOs.length} DAOs
+          </p>
+        )}
       </div>
 
-      {filteredDAOs.length === 0 && (
+      {isLoadingDAOs ? (
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredAndSortedDAOs.map((dao) => {
+            const token = tokens?.find((token) => token.dao_id === dao.id);
+            const tokenPrice = tokenPrices?.[dao.id];
+
+            return (
+              <DAOCard
+                key={dao.id}
+                dao={dao}
+                token={token}
+                tokenPrice={tokenPrice}
+                isFetchingPrice={isFetchingTokenPrices}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {filteredAndSortedDAOs.length === 0 && !isLoadingDAOs && (
         <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-dashed">
           <p className="text-center text-muted-foreground">
             No DAOs found matching your search.

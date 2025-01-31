@@ -135,7 +135,7 @@ export default function StacksAuth() {
       const success = await handleAuthentication(stxAddress, signature);
 
       if (success) {
-        router.push("/chat");
+        router.push("/daos");
       }
     } catch (error) {
       console.error("Authentication error:", error);

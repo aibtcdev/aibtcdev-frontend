@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import type React from "react";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
   Info,
@@ -12,7 +13,7 @@ import {
   Blocks,
   Loader2,
 } from "lucide-react";
-import { supabase } from "@/utils/supabase/client";
+import { fetchDAO, fetchToken } from "@/queries/daoQueries";
 
 interface DAO {
   id: string;
@@ -36,36 +37,27 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const id = params.id as string;
   const pathname = usePathname();
-  const [dao, setDao] = useState<DAO | null>(null);
-  const [token, setToken] = useState<Token | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const { data: dao, isLoading: isLoadingDao } = useQuery<DAO>({
+    queryKey: ["dao", id],
+    queryFn: () => fetchDAO(id),
+    staleTime: 1000000,
+  });
+
+  const { data: token, isLoading: isLoadingToken } = useQuery<Token>({
+    queryKey: ["token", id],
+    queryFn: () => fetchToken(id),
+    staleTime: 1000000,
+  });
+
+  const isLoading = isLoadingDao || isLoadingToken;
 
   const isOverview = pathname === `/daos/${id}`;
   const isExtensions = pathname === `/daos/${id}/extensions`;
   const isHolders = pathname === `/daos/${id}/holders`;
   const isProposals = pathname === `/daos/${id}/proposals`;
 
-  useEffect(() => {
-    const fetchDAOAndToken = async () => {
-      try {
-        const [{ data: daoData }, { data: tokenData }] = await Promise.all([
-          supabase.from("daos").select("*").eq("id", id).single(),
-          supabase.from("tokens").select("image_url").eq("dao_id", id).single(),
-        ]);
-
-        if (daoData) setDao(daoData);
-        if (tokenData) setToken(tokenData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDAOAndToken();
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -96,7 +88,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
           {token?.image_url && (
             <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0">
               <Image
-                src={token.image_url}
+                src={token.image_url || "/placeholder.svg"}
                 alt={`${dao?.name} token`}
                 fill
                 className="rounded-2xl object-cover"
