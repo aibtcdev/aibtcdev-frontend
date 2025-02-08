@@ -23,6 +23,17 @@ interface TokenBalance {
     total_received: string;
 }
 
+interface TokenTrade {
+    txId: string;
+    tokenContract: string;
+    type: string;
+    tokensAmount: number;
+    ustxAmount: number;
+    pricePerToken: number;
+    maker: string;
+    timestamp: number;
+}
+
 interface HiroBalanceResponse {
     stx: TokenBalance;
     fungible_tokens: {
@@ -84,7 +95,6 @@ export const fetchDAOs = async (): Promise<DAO[]> => {
         return {
             ...dao,
             user_id: xUser?.user_id,
-            // filter the extensions basedo on the dao_id
             extensions: extensionsData?.filter((cap) => cap.dao_id === dao.id) || [],
         };
     });
@@ -130,6 +140,11 @@ export const fetchTokenPrice = async (
     };
 };
 
+export const fetchTokenTrades = async (tokenContract: string): Promise<TokenTrade[]> => {
+    const { data } = await sdkFaktory.getTokenTrades(tokenContract);
+    return data || [];
+};
+
 export const fetchTokenPrices = async (
     daos: DAO[],
     tokens: Token[]
@@ -144,6 +159,7 @@ export const fetchTokenPrices = async (
             if (extension && token) {
                 try {
                     const { data } = await sdkFaktory.getToken(extension.contract_principal!);
+                    console.log(data)
                     prices[dao.id] = {
                         price: data.priceUsd ? Number(data.priceUsd) : 0,
                         marketCap: data.marketCap ? Number(data.marketCap) : 0,

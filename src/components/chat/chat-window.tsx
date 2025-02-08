@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useCallback, useState } from "react";
 import { ChatInput } from "./chat-input";
 import { MessageList } from "./message-list";
@@ -30,12 +32,14 @@ export function ChatWindow() {
 
   const memoizedConnect = useCallback(
     (token: string) => {
+      console.log("Attempting to connect...");
       connect(token);
     },
     [connect]
   );
 
   const memoizedDisconnect = useCallback(() => {
+    console.log("Disconnecting...");
     disconnect();
   }, [disconnect]);
 
@@ -52,14 +56,28 @@ export function ChatWindow() {
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // console.log("Page is now visible. Checking connection...");
+        if (!isConnected) {
+          // console.log("Not connected. Attempting to reconnect...");
+          connectWithDelay();
+        } else {
+          // console.log("Already connected. No action needed.");
+        }
+      }
+    };
+
     connectWithDelay();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (process.env.NODE_ENV !== "development") {
         memoizedDisconnect();
       }
     };
-  }, [accessToken, memoizedConnect, memoizedDisconnect]);
+  }, [accessToken, memoizedConnect, memoizedDisconnect, isConnected]);
 
   if (!accessToken) {
     return (

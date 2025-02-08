@@ -33,10 +33,13 @@ export interface Token {
 }
 
 export type SortField =
+  | "created_at"
   | "price"
   | "price24hChanges"
   | "marketCap"
-  | "created_at";
+  | "newest"
+  | "oldest"
+  | "holders";
 
 export interface DAO {
   id: string;

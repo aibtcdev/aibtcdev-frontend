@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import { Heading } from "@/components/ui/heading";
@@ -12,14 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DAOTable } from "./daos-table";
-import type { SortField } from "@/types/supabase";
+import type { DAO, SortField } from "@/types/supabase";
 import { createDaoAgent } from "../agents/dao-agent";
 import { useToast } from "@/hooks/use-toast";
-import { fetchDAOs, fetchTokens, fetchTokenPrices } from "@/queries/daoQueries";
+import {
+  fetchDAOs,
+  fetchTokens,
+  fetchTokenPrices,
+  fetchTokenTrades,
+} from "@/queries/daoQueries";
 
 export default function DAOs() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortField, setSortField] = useState<SortField>("price");
   const { toast } = useToast();
   const agentInitialized = useRef(false);
 
@@ -69,6 +74,37 @@ export default function DAOs() {
     refetchInterval: 300000, // Refetch every 5 minutes for price updates
   });
 
+  // Helper function to get dex principal and token contract
+  const getTokenContract = useCallback((dao: DAO) => {
+    const dexExtension = dao.extensions?.find((ext) => ext.type === "dex");
+    const dexPrincipal = dexExtension?.contract_principal;
+    return dexPrincipal ? dexPrincipal.replace(/-dex$/, "") : null;
+  }, []);
+
+  // Fetch token trades for all DAOs
+  const tradeQueries = useQueries({
+    queries: (daos || []).map((dao) => {
+      const tokenContract = getTokenContract(dao);
+
+      return {
+        queryKey: ["tokenTrades", tokenContract],
+        queryFn: async () => {
+          if (!tokenContract) return [];
+          const trades = await fetchTokenTrades(tokenContract);
+          return trades
+            .map((trade) => ({
+              timestamp: trade.timestamp,
+              price: trade.pricePerToken,
+            }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+        },
+        enabled: !!tokenContract,
+        staleTime: 300000, // 5 minutes
+        cacheTime: 600000, // 10 minutes
+      };
+    }),
+  });
+
   // Filter and sort DAOs
   const filteredAndSortedDAOs = (() => {
     const filtered =
@@ -79,9 +115,14 @@ export default function DAOs() {
       ) || [];
 
     return filtered.sort((a, b) => {
-      if (sortField === "created_at") {
+      if (sortField === "created_at" || sortField === "newest") {
         return (
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+      }
+      if (sortField === "oldest") {
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       }
 
@@ -90,6 +131,17 @@ export default function DAOs() {
       return valueB - valueA;
     });
   })();
+
+  // Create a map of trades data for each DAO
+  const tradesMap = Object.fromEntries(
+    tradeQueries.map((query, index) => [
+      daos?.[index]?.id,
+      {
+        data: query.data || [],
+        isLoading: query.isLoading,
+      },
+    ])
+  );
 
   return (
     <div className="container mx-auto space-y-6 px-4 py-6">
@@ -113,7 +165,9 @@ export default function DAOs() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="created_at">Date Added</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="oldest">Oldest</SelectItem>
+                <SelectItem value="holders">Holders</SelectItem>
                 <SelectItem value="price">Token Price</SelectItem>
                 <SelectItem value="price24hChanges">24h Change</SelectItem>
                 <SelectItem value="marketCap">Market Cap</SelectItem>
@@ -142,6 +196,7 @@ export default function DAOs() {
           tokens={tokens}
           tokenPrices={tokenPrices}
           isFetchingPrice={isFetchingTokenPrices}
+          trades={tradesMap}
         />
       )}
 
