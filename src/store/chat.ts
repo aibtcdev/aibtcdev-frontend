@@ -63,6 +63,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   error: null,
   ws: globalWs,
+  reconnectAttempts: 0,
+  maxReconnectAttempts: 5,
+  reconnectTimeout: null,
+  heartbeatInterval: null,
 
   setSelectedAgent: (agentId) => {
     set({ selectedAgentId: agentId });
