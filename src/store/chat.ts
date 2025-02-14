@@ -22,7 +22,7 @@ interface ChatState {
   ws: WebSocket | null;
   reconnectAttempts: number;
   maxReconnectAttempts: number;
-  reconnectTimeout: number | null;
+  reconnectTimeout: NodeJS.Timeout | null;
   heartbeatInterval: NodeJS.Timeout | null;
 
   // Connection
