@@ -20,6 +20,10 @@ interface ChatState {
   isLoading: boolean;
   error: string | null;
   ws: WebSocket | null;
+  reconnectAttempts: number;
+  maxReconnectAttempts: number;
+  reconnectTimeout: number | null;
+  heartbeatInterval: number | null;
 
   // Connection
   connect: (accessToken: string) => void;
@@ -65,9 +69,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   connect: (accessToken: string) => {
+    const state = get();
+    // Clear any existing reconnection attempts
+    if (state.reconnectTimeout) {
+      clearTimeout(state.reconnectTimeout);
+    }
+
     // Don't reconnect if already connected or connecting
     if (globalWs && (globalWs.readyState === WebSocket.OPEN || globalWs.readyState === WebSocket.CONNECTING)) {
-      // console.log('WebSocket already connected or connecting, skipping connection');
       return;
     }
 
@@ -77,12 +86,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
         throw new Error("WebSocket URL not configured");
       }
 
-      // console.log('Creating new WebSocket connection');
       globalWs = new WebSocket(`${wsUrl}?token=${accessToken}`);
 
       globalWs.onopen = () => {
-        // console.log('WebSocket connected');
-        set({ isConnected: true, error: null, ws: globalWs });
+        // Set up heartbeat
+        const heartbeat = setInterval(() => {
+          if (globalWs?.readyState === WebSocket.OPEN) {
+            globalWs.send(JSON.stringify({ type: "ping" }));
+          }
+        }, 30000);
+
+        set({ 
+          isConnected: true, 
+          error: null, 
+          ws: globalWs,
+          reconnectAttempts: 0,
+          heartbeatInterval: heartbeat
+        });
 
         // Fetch thread history for stored thread if it exists
         const storedThreadId = getStoredThreadId();
@@ -92,9 +112,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       };
 
       globalWs.onclose = () => {
-        // console.log('WebSocket disconnected');
+        const state = get();
         set({ isConnected: false, ws: null });
         globalWs = null;
+
+        // Implement exponential backoff for reconnection
+        if (state.reconnectAttempts < state.maxReconnectAttempts) {
+          const timeout = setTimeout(() => {
+            set(state => ({ reconnectAttempts: state.reconnectAttempts + 1 }));
+            get().connect(accessToken);
+          }, Math.min(1000 * Math.pow(2, state.reconnectAttempts), 30000));
+          
+          set({ reconnectTimeout: timeout });
+        }
       };
 
       globalWs.onerror = (error) => {
@@ -122,11 +152,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   disconnect: () => {
+    const state = get();
+    // Clear any pending reconnection attempts
+    if (state.reconnectTimeout) {
+      clearTimeout(state.reconnectTimeout);
+    }
+    // Clear heartbeat interval
+    if (state.heartbeatInterval) {
+      clearInterval(state.heartbeatInterval);
+    }
+
     if (globalWs?.readyState === WebSocket.OPEN || globalWs?.readyState === WebSocket.CONNECTING) {
-      // console.log('Closing WebSocket connection');
       globalWs.close();
       globalWs = null;
-      set({ isConnected: false, ws: null });
+      set({ 
+        isConnected: false, 
+        ws: null, 
+        reconnectAttempts: 0,
+        reconnectTimeout: null,
+        heartbeatInterval: null
+      });
     }
   },
 

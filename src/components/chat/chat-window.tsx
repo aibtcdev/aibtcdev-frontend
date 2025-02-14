@@ -46,36 +46,21 @@ export function ChatWindow() {
   useEffect(() => {
     if (!accessToken) return;
 
-    const connectWithDelay = () => {
-      if (process.env.NODE_ENV === "development") {
-        setTimeout(() => {
-          memoizedConnect(accessToken);
-        }, 100);
-      } else {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !isConnected) {
         memoizedConnect(accessToken);
       }
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        // console.log("Page is now visible. Checking connection...");
-        if (!isConnected) {
-          // console.log("Not connected. Attempting to reconnect...");
-          connectWithDelay();
-        } else {
-          // console.log("Already connected. No action needed.");
-        }
-      }
-    };
-
-    connectWithDelay();
+    // Initial connection
+    memoizedConnect(accessToken);
+    
+    // Visibility change listener
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (process.env.NODE_ENV !== "development") {
-        memoizedDisconnect();
-      }
+      memoizedDisconnect();
     };
   }, [accessToken, memoizedConnect, memoizedDisconnect, isConnected]);
 
