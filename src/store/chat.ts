@@ -23,7 +23,7 @@ interface ChatState {
   reconnectAttempts: number;
   maxReconnectAttempts: number;
   reconnectTimeout: number | null;
-  heartbeatInterval: number | null;
+  heartbeatInterval: NodeJS.Timeout | null;
 
   // Connection
   connect: (accessToken: string) => void;
