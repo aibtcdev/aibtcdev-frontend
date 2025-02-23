@@ -1,6 +1,10 @@
-"use client";
-
+import { Metadata } from "next";
 import React from "react";
+
+export const metadata: Metadata = {
+  title: "Chat",
+  description: "Chat with your AI agents",
+};
 
 export default function ChatLayout({
   children,

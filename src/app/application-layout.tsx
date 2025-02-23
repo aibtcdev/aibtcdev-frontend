@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getStacksAddress } from "@/lib/address";
 import AuthButton from "@/components/home/auth-button";
+import { SocialLinks } from "@/components/reusables/social-links";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -108,31 +109,35 @@ export default function ApplicationLayout({
             height={300}
           />
         </div>
-        {hasUser && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-zinc-400">
-                <User className="h-5 w-5" />
-                <ChevronDown className="h-4 w-4 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleSignOut}
-                className="flex items-center"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <div className="flex items-center gap-2">
+          {hasUser ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-zinc-400">
+                  <User className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="flex items-center"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <AuthButton />
+          )}
+        </div>
       </div>
 
       {/* Desktop Header */}
@@ -160,7 +165,7 @@ export default function ApplicationLayout({
                   key={item.id}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                    "flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors",
                     isActive
                       ? "text-white"
                       : "text-zinc-400 hover:bg-zinc-800/50 hover:text-white"
@@ -171,17 +176,18 @@ export default function ApplicationLayout({
                 </Link>
               );
             })}
+            <SocialLinks />
           </div>
         </nav>
-        <div className="w-1/4 flex justify-end">
+        <div className="w-1/4 flex justify-end items-center gap-4">
           {hasUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-10 px-4 flex items-center gap-2"
+                  className="h-8 px-3 flex items-center gap-2"
                 >
-                  <User className="h-5 w-5 text-zinc-400" />
+                  <User className="h-6 w-6 text-zinc-400" />
                   <span className="text-sm text-white">
                     {truncateAddress(stacksAddress)}
                   </span>

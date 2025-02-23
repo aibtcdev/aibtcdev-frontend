@@ -148,11 +148,7 @@ export default function StacksAuth() {
 
   return (
     <StacksProvider>
-      <Button
-        onClick={handleAuth}
-        disabled={isLoading}
-        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg font-bold transition-all duration-200 border-0"
-      >
+      <Button onClick={handleAuth} disabled={isLoading} variant="primary">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
