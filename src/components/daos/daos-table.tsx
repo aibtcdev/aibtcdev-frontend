@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { DAO, Token } from "@/types/supabase";
 import { Loader } from "../reusables/loader";
 import { AgentSelectorSheet } from "./DaoAgentSelector";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { LineChart, Line, Tooltip as RechartsTooltip, XAxis } from "recharts";
 
 interface DAOTableProps {
   daos: DAO[];
@@ -74,6 +74,59 @@ export const DAOTable = ({
     return endPrice >= startPrice ? "#22c55e" : "#ef4444";
   };
 
+  const renderChart = (tradeData: {
+    data: Array<{ timestamp: number; price: number }>;
+    isLoading: boolean;
+  }) => {
+    if (tradeData.isLoading) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <Loader />
+        </div>
+      );
+    }
+    if (tradeData.data.length > 0) {
+      return (
+        <LineChart data={tradeData.data} width={200} height={100}>
+          <XAxis dataKey="timestamp" className="hidden" />
+          <RechartsTooltip
+            content={({ active, payload }) => {
+              if (
+                active &&
+                payload &&
+                payload.length > 0 &&
+                payload[0].value !== undefined
+              ) {
+                return (
+                  <div className="bg-popover text-popover-foreground rounded-md shadow-md p-2 text-xs">
+                    <p>Price: ${Number(payload[0].value).toFixed(4)}</p>
+                    <p>
+                      Time:{" "}
+                      {new Date(payload[0].payload.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="price"
+            stroke={getChartColor(tradeData.data)}
+            dot={false}
+            strokeWidth={2}
+          />
+        </LineChart>
+      );
+    }
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        No trades
+      </div>
+    );
+  };
+
   const renderDAOCard = (dao: DAO) => {
     const token = tokens?.find((t) => t.dao_id === dao.id);
     const tokenPrice = tokenPrices?.[dao.id];
@@ -131,9 +184,9 @@ export const DAOTable = ({
                   <div
                     className={`font-semibold ${
                       isPriceUp
-                        ? "text-green-500"
+                        ? "text-emerald-500"
                         : isPriceDown
-                        ? "text-red-500"
+                        ? "text-rose-500"
                         : "text-gray-500"
                     }`}
                   >
@@ -157,29 +210,7 @@ export const DAOTable = ({
               </div>
             </div>
           </div>
-          <div className="mt-4 h-24 w-full">
-            {tradeData?.isLoading ? (
-              <div className="flex h-full items-center justify-center">
-                <Loader />
-              </div>
-            ) : tradeData?.data.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={tradeData.data}>
-                  <Line
-                    type="monotone"
-                    dataKey="price"
-                    stroke={getChartColor(tradeData.data)}
-                    dot={false}
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                No trades
-              </div>
-            )}
-          </div>
+          <div className="mt-4 h-24 w-full">{renderChart(tradeData)}</div>
           <div className="mt-4 flex justify-between items-center">
             <div>
               <div className="text-sm font-semibold">Prompted By</div>
@@ -201,6 +232,7 @@ export const DAOTable = ({
                 <Button
                   size="default"
                   onClick={() => handleParticipate(dao.id)}
+                  className="bg-primary"
                 >
                   Participate
                 </Button>
@@ -288,29 +320,7 @@ export const DAOTable = ({
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="h-32 w-full">
-                      {tradeData?.isLoading ? (
-                        <div className="flex h-full items-center justify-center">
-                          <Loader />
-                        </div>
-                      ) : tradeData?.data.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={tradeData.data}>
-                            <Line
-                              type="monotone"
-                              dataKey="price"
-                              stroke={getChartColor(tradeData.data)}
-                              dot={false}
-                              strokeWidth={2}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                          No trades
-                        </div>
-                      )}
-                    </div>
+                    <div className="h-32 w-full">{renderChart(tradeData)}</div>
                   </td>
                   <td className="p-4">
                     <Card className="w-full mx-auto max-w-[200px]">
@@ -324,7 +334,7 @@ export const DAOTable = ({
                                 Price:
                               </span>
                               <span className="font-semibold">
-                                ${tokenPrice?.price?.toFixed(4) || "0.00"}
+                                ${tokenPrice?.price?.toFixed(9) || "0.00"}
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -334,9 +344,9 @@ export const DAOTable = ({
                               <span
                                 className={`font-semibold ${
                                   isPriceUp
-                                    ? "text-green-500"
+                                    ? "text-emerald-500"
                                     : isPriceDown
-                                    ? "text-red-500"
+                                    ? "text-rose-500"
                                     : "text-gray-500"
                                 }`}
                               >
@@ -364,7 +374,7 @@ export const DAOTable = ({
                     {isFetchingPrice ? (
                       <Loader />
                     ) : (
-                      <span className="text-gray-600">
+                      <span className="text-muted-foreground">
                         {tokenPrice?.holders || 0}
                       </span>
                     )}
@@ -388,6 +398,7 @@ export const DAOTable = ({
                       <Button
                         size="sm"
                         onClick={() => handleParticipate(dao.id)}
+                        className="bg-primary hover:bg-secondary"
                       >
                         Participate
                       </Button>

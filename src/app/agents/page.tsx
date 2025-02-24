@@ -41,10 +41,8 @@ export default function AgentsPage() {
 
   if (!accessToken) {
     return (
-      <div className=" text-center">
-        <p className="text-muted-foreground">
-          Please connect your wallet to use agents
-        </p>
+      <div className="text-zinc-500 text-center">
+        Please sign in to use agents
       </div>
     );
   }

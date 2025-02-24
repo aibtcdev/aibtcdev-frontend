@@ -135,7 +135,15 @@ export function AgentSelectorSheet({
     const tasks = [
       {
         name: "Send Proposal",
-        prompt: `Send a new proposal to the ${tokenSymbol} based on their ${daoMission}`,
+        prompt: `Create and submit a structured proposal for the ${tokenSymbol} DAO. The proposal must include:
+        - **Title**: A clear and concise title.
+        - **Objective**: Describe the goal and what this proposal aims to achieve.
+        - **Benefits**: Explain the advantages and how it aligns with the DAO's mission.
+        - **Execution Plan**: Outline step-by-step how the proposal will be implemented.
+        - **Resources Needed**: Detail any funding, tools, or expertise required.
+        - **Call to Action**: Clearly state the next steps and request for approval.
+        
+        Submit the proposal automatically without waiting for confirmation.`,
         agent_id: agentId,
         is_scheduled: true,
         cron: "0 * * * *",
@@ -143,7 +151,14 @@ export function AgentSelectorSheet({
       },
       {
         name: "Vote on proposal",
-        prompt: `Vote on the proposal for ${tokenSymbol} which you like`,
+        prompt: `Analyze the active proposals in the ${tokenSymbol} DAO and vote on the most beneficial one based on:
+        - Alignment with the DAO's mission:\n
+        ${daoMission}
+        - Feasibility of execution.
+        - Potential positive impact.
+        - Required resources and funding.
+
+        Cast the vote automatically without requiring confirmation.`,
         agent_id: agentId,
         is_scheduled: true,
         cron: "0 * * * *",

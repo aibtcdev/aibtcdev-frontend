@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -24,8 +23,6 @@ import {
 } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import {
-  //ThumbsUp,
-  //ThumbsDown,
   Timer,
   CheckCircle2,
   FileEdit,
@@ -33,10 +30,10 @@ import {
   Link as LinkIcon,
   Code,
   DollarSign,
-  // ExternalLink,
+  ExternalLink,
   Filter,
   Hash,
-  // Building,
+  Building,
   Wallet,
 } from "lucide-react";
 
@@ -54,8 +51,82 @@ interface Proposal {
   dao_id: string;
 }
 
+// Sample Data
+const SAMPLE_PROPOSALS: Proposal[] = [
+  {
+    id: "1",
+    created_at: "2024-02-23T10:00:00Z",
+    title: "Implement Smart Contract Upgrades",
+    description:
+      "Proposal to upgrade our core smart contracts to implement new security features and optimizations. This includes improvements to the voting mechanism and better gas efficiency for common operations.",
+    code: "contract.clar",
+    link: "https://docs.example.com/proposal-1",
+    monetary_ask: null,
+    status: "DEPLOYED",
+    contract_principal: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    tx_id: "0x1234567890abcdef",
+    dao_id: "dao_main",
+  },
+  {
+    id: "2",
+    created_at: "2024-02-24T08:30:00Z",
+    title: "Treasury Allocation for Q2 2024",
+    description:
+      "Proposal to allocate 100,000 tokens from the treasury for Q2 2024 initiatives, including developer grants, marketing campaigns, and community events. Detailed breakdown of planned expenditures included.",
+    code: null,
+    link: null,
+    monetary_ask: null,
+    status: "PENDING",
+    contract_principal: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    tx_id: "0xabcdef1234567890",
+    dao_id: "dao_main",
+  },
+  {
+    id: "3",
+    created_at: "2024-02-22T15:45:00Z",
+    title: "Governance Parameter Updates",
+    description:
+      "Draft proposal to adjust governance parameters including voting period duration, quorum requirements, and proposal submission thresholds. Aims to improve participation and decision-making efficiency.",
+    code: "params.clar",
+    link: "https://forum.example.com/governance-updates",
+    monetary_ask: null,
+    status: "DRAFT",
+    contract_principal: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    tx_id: "0x2468101214161820",
+    dao_id: "dao_main",
+  },
+  {
+    id: "4",
+    created_at: "2024-02-21T09:15:00Z",
+    title: "Community Rewards Program",
+    description:
+      "Failed proposal to implement a new community rewards program. The program aimed to distribute tokens to active contributors based on participation metrics and contribution quality.",
+    code: "rewards.clar",
+    link: null,
+    monetary_ask: null,
+    status: "FAILED",
+    contract_principal: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    tx_id: "0x1357911131517919",
+    dao_id: "dao_main",
+  },
+  {
+    id: "5",
+    created_at: "2024-02-24T11:20:00Z",
+    title: "Protocol Integration Partnership",
+    description:
+      "Proposal to integrate with DeFi protocol XYZ to expand our ecosystem's capabilities. This integration would enable new features including cross-chain transactions and improved liquidity options.",
+    code: "integration.clar",
+    link: "https://xyz.protocol.com/integration",
+    monetary_ask: null,
+    status: "PENDING",
+    contract_principal: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+    tx_id: "0x9876543210fedcba",
+    dao_id: "dao_main",
+  },
+];
+
 interface DAOProposalsProps {
-  proposals: Proposal[];
+  proposals?: Proposal[];
 }
 
 const StatusBadge = ({ status }: { status: Proposal["status"] }) => {
@@ -191,6 +262,10 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
                 Principal: {proposal.contract_principal}
               </span>
             </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Building className="h-4 w-4" />
+              <span className="font-mono">DAO: {proposal.dao_id}</span>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -202,12 +277,16 @@ const ProposalCard = ({ proposal }: { proposal: Proposal }) => {
         >
           {isExpanded ? "Show less" : "Show more"}
         </Button>
+        <Button variant="outline" size="sm">
+          <ExternalLink className="mr-2 h-4 w-4" />
+          View Details
+        </Button>
       </CardFooter>
     </Card>
   );
 };
 
-function DAOProposals({ proposals }: DAOProposalsProps) {
+function DAOProposals({ proposals = SAMPLE_PROPOSALS }: DAOProposalsProps) {
   const [statusFilter, setStatusFilter] = useState<Proposal["status"] | "all">(
     "all"
   );
@@ -297,5 +376,4 @@ function DAOProposals({ proposals }: DAOProposalsProps) {
   );
 }
 
-export { DAOProposals };
 export default DAOProposals;
