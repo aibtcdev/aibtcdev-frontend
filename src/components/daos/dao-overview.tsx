@@ -60,41 +60,51 @@ function DAOOverview({
   };
 
   return (
-    <div className="relative w-full">
-      <div className="flex justify-center sm:justify-start gap-3 mb-8">
-        {dao.website_url && (
-          <a
-            href={dao.website_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BsGlobe className="h-5 w-5" />
-          </a>
-        )}
-        {dao.x_url && (
-          <a
-            href={dao.x_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BsTwitterX className="h-5 w-5" />
-          </a>
-        )}
-        {dao.telegram_url && (
-          <a
-            href={dao.telegram_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BsTelegram className="h-5 w-5" />
-          </a>
-        )}
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-8">
+        {/* Header section */}
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
+          <p className="text-muted-foreground mt-2">
+            Key information and statistics about the DAO
+          </p>
+        </div>
 
-      <div className="mx-auto space-y-8 sm:space-y-12">
+        {/* Social links */}
+        <div className="flex gap-3 mb-4">
+          {dao.website_url && (
+            <a
+              href={dao.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <BsGlobe className="h-5 w-5" />
+            </a>
+          )}
+          {dao.x_url && (
+            <a
+              href={dao.x_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <BsTwitterX className="h-5 w-5" />
+            </a>
+          )}
+          {dao.telegram_url && (
+            <a
+              href={dao.telegram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <BsTelegram className="h-5 w-5" />
+            </a>
+          )}
+        </div>
+
+        {/* Stats cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -138,44 +148,48 @@ function DAOOverview({
           </Card>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">About</h2>
-            {dao.description && dao.description.length > 200 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                className="text-xs"
-              >
-                {isDescriptionExpanded ? (
-                  <>
-                    Show Less <ChevronUp className="ml-1 h-3 w-3" />
-                  </>
-                ) : (
-                  <>
-                    Show More <ChevronDown className="ml-1 h-3 w-3" />
-                  </>
-                )}
-              </Button>
-            )}
+        {/* About section - only show if there's a description */}
+        {dao.description && (
+          <div className="space-y-4 rounded-lg border bg-background/50 backdrop-blur-sm p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-medium">About</h3>
+              {dao.description.length > 200 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setIsDescriptionExpanded(!isDescriptionExpanded)
+                  }
+                  className="text-xs"
+                >
+                  {isDescriptionExpanded ? (
+                    <>
+                      Show Less <ChevronUp className="ml-1 h-3 w-3" />
+                    </>
+                  ) : (
+                    <>
+                      Show More <ChevronDown className="ml-1 h-3 w-3" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            <p
+              className={`text-muted-foreground leading-relaxed ${
+                !isDescriptionExpanded && dao.description.length > 200
+                  ? "line-clamp-4"
+                  : ""
+              }`}
+            >
+              {dao.description}
+            </p>
           </div>
-          <p
-            className={`text-muted-foreground leading-relaxed ${
-              !isDescriptionExpanded &&
-              dao.description &&
-              dao.description.length > 200
-                ? "line-clamp-4"
-                : ""
-            }`}
-          >
-            {dao.description}
-          </p>
-        </div>
+        )}
 
+        {/* Treasury Holdings */}
         {treasuryTokens.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Treasury Holdings</h2>
+            <h3 className="text-base font-medium">Treasury Holdings</h3>
             <div className="rounded-lg border bg-background/50 backdrop-blur-sm overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -218,7 +232,11 @@ function DAOOverview({
             </div>
           </div>
         )}
-        <DAOCreationDate createdAt={dao.created_at} />
+
+        {/* Creation Date */}
+        <div className="p-4">
+          <DAOCreationDate createdAt={dao.created_at} />
+        </div>
       </div>
     </div>
   );
