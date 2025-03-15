@@ -116,7 +116,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
                 <DAOChatButton daoId={id} />
               ) : (
                 <Button className="cursor-not-allowed" disabled>
-                  Not available for participation yet.
+                  Participate
                 </Button>
               )}
             </div>

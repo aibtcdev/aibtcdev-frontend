@@ -1,11 +1,6 @@
 "use client";
 import React from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { MessageSquare } from "lucide-react";
 import { deserializeCV, cvToString } from "@stacks/transactions";
 
 interface MessageDisplayProps {
@@ -16,7 +11,13 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ message }) => {
   let decodedMessage = "";
   try {
     if (!message)
-      return <p className="p-4 text-lg">Message: No message available</p>;
+      return (
+        <div className="p-3 rounded-md  flex items-center">
+          <MessageSquare className="h-4 w-4 mr-2 text-muted-foreground" />
+          <p className="text-sm sm:text-base">No message available</p>
+        </div>
+      );
+
     const hexValue = message.startsWith("0x") ? message.slice(2) : message;
     const clarityValue = deserializeCV(Buffer.from(hexValue, "hex"));
     decodedMessage = cvToString(clarityValue);
@@ -25,29 +26,17 @@ const MessageDisplay: React.FC<MessageDisplayProps> = ({ message }) => {
       error instanceof Error ? error.message : String(error)
     }`;
   }
+
   return (
-    <>
-      {/* Desktop view */}
-      <div className="hidden md:block p-4 text-lg font-medium bg-zinc-800 rounded-md">
-        <span className="font-bold">Message: </span>
+    <div className="rounded-md bg-zinc-800 overflow-hidden">
+      <div className="flex items-center px-3 py-2">
+        <MessageSquare className="h-4 w-4 mr-2" />
+        <h3 className="text-sm sm:text-base font-medium">Message</h3>
+      </div>
+      <div className="p-3 sm:p-4 text-sm sm:text-base break-words">
         {decodedMessage}
       </div>
-
-      {/* Mobile view */}
-      <div className="block md:hidden">
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="message">
-            <AccordionTrigger className="py-2 text-lg font-bold">
-              View Message
-            </AccordionTrigger>
-            <AccordionContent className="p-4 bg-zinc-200 rounded-md">
-              <span className="font-bold">Message: </span>
-              {decodedMessage}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
-    </>
+    </div>
   );
 };
 

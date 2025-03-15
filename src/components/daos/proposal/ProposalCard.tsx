@@ -22,7 +22,7 @@ import { Proposal } from "@/types/supabase";
 
 const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
   return (
-    <Card className="transition-all duration-200 hover:shadow-md overflow-hidden">
+    <Card className="transition-all duration-200 hover:shadow-md overflow-hidden bg-zinc-900">
       <CardHeader className="space-y-3 pb-3">
         <div className="flex flex-col md:flex-row items-start justify-between gap-4">
           <div className="space-y-2">
@@ -51,6 +51,7 @@ const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
           votesFor={proposal.votes_for}
           votesAgainst={proposal.votes_against}
         />
+        <ProposalMetrics proposal={proposal} />
         <div className="lg:grid lg:grid-cols-2 lg:gap-8">
           <div className="space-y-1 mb-4 lg:mb-0">
             <h4 className="font-medium text-sm mb-2"> Blocks</h4>
@@ -118,7 +119,6 @@ const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
             </div>
           </div>
         </div>
-        <ProposalMetrics proposal={proposal} />
       </CardContent>
     </Card>
   );

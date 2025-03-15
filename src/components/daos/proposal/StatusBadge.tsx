@@ -1,6 +1,5 @@
-// File: src/components/StatusBadge.tsx
 "use client";
-import React from "react";
+import React, { forwardRef } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -15,53 +14,57 @@ interface StatusBadgeProps {
   status: Proposal["status"];
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const config = {
-    DRAFT: {
-      color: "bg-secondary/10 text-secondary",
-      icon: FileEdit,
-      label: "Draft",
-      tooltip: "This proposal is in draft state and not yet active.",
-    },
-    PENDING: {
-      color: "bg-primary/10 text-primary",
-      icon: Timer,
-      label: "Pending",
-      tooltip: "This proposal is awaiting votes.",
-    },
-    DEPLOYED: {
-      color: "bg-primary/10 text-primary",
-      icon: CheckCircle2,
-      label: "Deployed",
-      tooltip: "This proposal has been approved and executed.",
-    },
-    FAILED: {
-      color: "bg-secondary/10 text-secondary",
-      icon: XCircle,
-      label: "Failed",
-      tooltip: "This proposal did not receive enough support.",
-    },
-  };
+const StatusBadge = forwardRef<HTMLDivElement, StatusBadgeProps>(
+  ({ status }, ref) => {
+    const config = {
+      DRAFT: {
+        color: "bg-secondary/10 text-secondary",
+        icon: FileEdit,
+        label: "Draft",
+        tooltip: "This proposal is in draft state and not yet active.",
+      },
+      PENDING: {
+        color: "bg-primary/10 text-primary",
+        icon: Timer,
+        label: "Pending",
+        tooltip: "This proposal is awaiting votes.",
+      },
+      DEPLOYED: {
+        color: "bg-primary/10 text-primary",
+        icon: CheckCircle2,
+        label: "Deployed",
+        tooltip: "This proposal has been approved and executed.",
+      },
+      FAILED: {
+        color: "bg-secondary/10 text-secondary",
+        icon: XCircle,
+        label: "Failed",
+        tooltip: "This proposal did not receive enough support.",
+      },
+    };
 
-  const { color, icon: Icon, label, tooltip } = config[status];
+    const { color, icon: Icon, label, tooltip } = config[status];
 
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="secondary" className={`${color} text-sm`}>
-            <span className="flex items-center gap-1.5">
-              <Icon className="h-4 w-4" />
-              {label}
-            </span>
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="text-sm">{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-};
+    return (
+      <div ref={ref}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className={color}>
+                <Icon className="h-3 w-3 mr-1" />
+                {label}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    );
+  }
+);
+
+StatusBadge.displayName = "StatusBadge";
 
 export default StatusBadge;
