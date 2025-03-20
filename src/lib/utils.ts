@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { getFetchOptions } from "@stacks/network-v6"
+import { getFetchOptions } from "@stacks/common"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
