@@ -55,7 +55,9 @@ export async function GET(request: Request) {
             network,
         });
 
-        console.log("result", JSON.stringify(result))
+        return result;
+
+        /*
 
         const jsonResult = cvToJSON(result);
 
@@ -85,6 +87,7 @@ export async function GET(request: Request) {
             proposalId: proposalId,
             contractAddress: contractAddress,
         });
+        */
     } catch (error) {
         console.error("Error in getProposal:", error);
         return NextResponse.json(
