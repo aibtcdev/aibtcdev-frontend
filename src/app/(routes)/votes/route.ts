@@ -1,16 +1,25 @@
-import { Cl, fetchCallReadOnlyFunction } from "@stacks/transactions";
-import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
+// import { Cl, fetchCallReadOnlyFunction } from "@stacks/transactions";
+// import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
 import { NextResponse } from "next/server";
 
 export const runtime = "edge"
 // export const dynamic = 'force-dynamic'
 // Define network based on environment variable
 // const network = "testnet"
-const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-    ? STACKS_TESTNET
-    : STACKS_MAINNET;
+//const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
+//    ? STACKS_TESTNET
+//    : STACKS_MAINNET;
 
 export async function GET(request: Request) {
+    console.log("request object", request)
+    // return mock data as a test
+    return NextResponse.json({
+        success: true,
+        votesFor: 1000000,
+        votesAgainst: 1000000,
+    })
+
+    /*
     const { searchParams } = new URL(request.url);
     const contractAddress = searchParams.get("contractAddress");
     const proposalId = searchParams.get("proposalId");
@@ -90,7 +99,7 @@ export async function GET(request: Request) {
             proposalId: proposalId,
             contractAddress: contractAddress,
         });
-        */
+        
     } catch (error) {
         console.error("Error in getProposal:", error);
         return NextResponse.json(
@@ -103,4 +112,5 @@ export async function GET(request: Request) {
             { status: 500 }
         );
     }
+        */
 }
