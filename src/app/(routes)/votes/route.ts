@@ -1,14 +1,58 @@
-import { Cl, fetchCallReadOnlyFunction } from "@stacks/transactions";
-import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
+import { Cl, cvToJSON, fetchCallReadOnlyFunction } from "@stacks/transactions";
+//import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
 import { NextResponse } from "next/server";
 
-export const runtime = "edge"
+export const runtime = "edge";
 // export const dynamic = 'force-dynamic'
 // Define network based on environment variable
-// const network = "testnet"
-const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-    ? STACKS_TESTNET
-    : STACKS_MAINNET;
+//const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
+//    ? STACKS_TESTNET
+//    : STACKS_MAINNET;
+
+// set temporary hard-coded values
+const network = "testnet";
+const address = "";
+const contractName = "";
+const proposalId = "17";
+const senderAddress = "ST252TFQ08T74ZZ6XK426TQNV4EXF1D4RMTTNCWFA";
+const votesFor = 100000000000;
+const votesAgainst = 50000000000;
+
+// perform contract fetch with mock data
+export async function GET(request: Request) {
+  console.log("request", request);
+
+  try {
+    const resultCV = await fetchCallReadOnlyFunction({
+      contractAddress: address,
+      contractName: contractName,
+      functionName: "get-proposal",
+      functionArgs: [Cl.uint(Number.parseInt(proposalId))],
+      senderAddress,
+      network,
+    });
+    const result = cvToJSON(resultCV);
+    console.log("result", result);
+    return NextResponse.json({
+      success: true,
+      votesFor: votesFor,
+      votesAgainst: votesAgainst,
+    });
+  } catch (error) {
+    console.error("Error in getProposal:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          error instanceof Error ? error.message : "An unknown error occurred",
+        error: String(error),
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/*
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -53,7 +97,7 @@ export async function GET(request: Request) {
             functionArgs: [Cl.uint(Number.parseInt(proposalId))],
             senderAddress,
             network,
-        });
+        })
 
         console.log(String(result))
 
@@ -94,7 +138,7 @@ export async function GET(request: Request) {
             proposalId: proposalId,
             contractAddress: contractAddress,
         });
-        */
+        
     } catch (error) {
         console.error("Error in getProposal:", error);
         return NextResponse.json(
@@ -108,3 +152,4 @@ export async function GET(request: Request) {
         );
     }
 }
+*/
