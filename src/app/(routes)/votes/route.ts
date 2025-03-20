@@ -1,4 +1,4 @@
-import { Cl, fetchCallReadOnlyFunction } from "@stacks/transactions";
+import { Cl, cvToValue, fetchCallReadOnlyFunction } from "@stacks/transactions";
 import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
 import { NextResponse } from "next/server";
 
@@ -55,7 +55,10 @@ export async function GET(request: Request) {
             network,
         });
 
-        return result;
+        return {
+            success: true,
+            message: String(result),
+        };
 
         /*
 
