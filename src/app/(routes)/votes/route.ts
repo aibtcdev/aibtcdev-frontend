@@ -55,6 +55,8 @@ export async function GET(request: Request) {
             network,
         });
 
+        console.log("result", JSON.stringify(result))
+
         const jsonResult = cvToJSON(result);
 
         // If votesOnly is true, extract just the votes data

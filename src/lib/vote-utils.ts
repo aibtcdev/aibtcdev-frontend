@@ -11,29 +11,16 @@ export async function getProposalVotes(
 }> {
     const apiBase = process.env.NEXT_PUBLIC_BASE_URL || '';
     try {
-        const response = await fetch(
-            `${apiBase}/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
-        )
+        const url = `${apiBase}/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`;
+        console.log("Fetching votes data from", url);
+        const response = await fetch(url)
 
         if (!response.ok) {
-            // Try to parse the response body as text first
+            // parse the response as text
             const errorText = await response.text();
-            
-            // Try to parse it as JSON if possible
-            let errorData;
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (error) {
-                // If it's not valid JSON, use the text directly
-                console.error("Error parsing API error response as JSON:", error);
-                errorData = null;
-            }
-            
-            // Throw an error with useful information
+            // throw an error with useful information
             throw new Error(
-                `API Error (${response.status}): ${
-                    errorData?.message || errorData?.error || errorText || 'Unknown error'
-                }`
+                `Fetch failed (${response.status}): ${errorText || 'Unknown error'}`
             );
         }
 
@@ -75,4 +62,3 @@ export async function getProposalVotes(
         }
     }
 }
-
