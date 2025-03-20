@@ -16,8 +16,25 @@ export async function getProposalVotes(
         )
 
         if (!response.ok) {
-            const errorData = await response.json()
-            throw new Error(errorData.message || "Failed to fetch proposal votes")
+            // Try to parse the response body as text first
+            const errorText = await response.text();
+            
+            // Try to parse it as JSON if possible
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (error) {
+                // If it's not valid JSON, use the text directly
+                console.error("Error parsing API error response as JSON:", error);
+                errorData = null;
+            }
+            
+            // Throw an error with useful information
+            throw new Error(
+                `API Error (${response.status}): ${
+                    errorData?.message || errorData?.error || errorText || 'Unknown error'
+                }`
+            );
         }
 
         const data = await response.json()
