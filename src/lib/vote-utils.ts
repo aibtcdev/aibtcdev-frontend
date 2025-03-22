@@ -9,7 +9,7 @@ export async function getProposalVotes(
     formattedVotesAgainst: string
     error?: string
 }> {
-    const apiBase = process.env.NEXT_PUBLIC_BASE_URL || '';
+    const apiBase = process.env.NEXT_PUBLIC_BASE_URL || 'https://cc702593.aibtcdev-frontend-staging.pages.dev';
     try {
         const response = await fetch(
             `${apiBase}/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
