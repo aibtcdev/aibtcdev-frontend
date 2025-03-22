@@ -31,7 +31,7 @@ interface DAOHoldersProps {
 }
 
 function formatBalance(balance: string): string {
-  const num = Number.parseFloat(balance) / 1_00_00_00;
+  const num = Number.parseFloat(balance) / 1_00_00_00_00;
   if (num >= 1_000_000_000) {
     return (num / 1_000_000_000).toFixed(2) + "B";
   } else if (num >= 1_000_000) {
