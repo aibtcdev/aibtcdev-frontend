@@ -1,26 +1,16 @@
-import { Cl, cvToJSON, callReadOnlyFunction } from "@stacks/transactions";
-import { StacksMainnet, StacksTestnet } from "@stacks/network";
+import { fetchProposalVotes } from "@/lib/stacks";
 import { NextResponse } from "next/server";
 
 export const runtime = "edge"
 // export const dynamic = 'force-dynamic'
 // Define network based on environment variable
 // const network = "testnet"
-const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-    ? new StacksTestnet()
-    : new StacksMainnet();
 
 export async function GET(request: Request) {
-    console.log(`request url: ${request.url}`);
     const { searchParams } = new URL(request.url);
     const contractAddress = searchParams.get("contractAddress");
     const proposalId = searchParams.get("proposalId");
     const votesOnly = searchParams.get("votesOnly") === "true";
-    console.log({
-        contractAddress,
-        proposalId,
-        votesOnly,
-    })
 
     if (!contractAddress || !proposalId) {
         return NextResponse.json(
@@ -48,24 +38,7 @@ export async function GET(request: Request) {
             );
         }
 
-        // DOES IT AFFECT ANYTHING IF I PASS RANDOM ADDRESS ?
-        const senderAddress = "ST000000000000000000002AMW42H";
-
-        // Fetch data
-        const result = await callReadOnlyFunction({
-            contractAddress: address,
-            contractName: contractName,
-            functionName: "get-proposal",
-            functionArgs: [Cl.uint(Number.parseInt(proposalId))],
-            senderAddress,
-            network,
-        });
-
-        console.log(`result: ${JSON.stringify(result)}`);
-
-        const jsonResult = cvToJSON(result);
-
-        console.log(`jsonResult: ${JSON.stringify(jsonResult)}`);
+        const jsonResult = await fetchProposalVotes(address, contractName, Number(proposalId));
 
         // If votesOnly is true, extract just the votes data
         if (votesOnly) {
