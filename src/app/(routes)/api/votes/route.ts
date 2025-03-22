@@ -1,4 +1,4 @@
-// import { Cl, cvToJSON, callReadOnlyFunction } from "@stacks/transactions";
+import { Cl, cvToJSON, callReadOnlyFunction } from "@stacks/transactions";
 import { StacksMainnet, StacksTestnet } from "@stacks/network";
 import { NextResponse } from "next/server";
 
@@ -11,11 +11,16 @@ const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
     : new StacksMainnet();
 
 export async function GET(request: Request) {
-    const { Cl, cvToJSON, callReadOnlyFunction } = await import("@stacks/transactions");
+    console.log(`request url: ${request.url}`);
     const { searchParams } = new URL(request.url);
     const contractAddress = searchParams.get("contractAddress");
     const proposalId = searchParams.get("proposalId");
     const votesOnly = searchParams.get("votesOnly") === "true";
+    console.log({
+        contractAddress,
+        proposalId,
+        votesOnly,
+    })
 
     if (!contractAddress || !proposalId) {
         return NextResponse.json(
@@ -56,7 +61,11 @@ export async function GET(request: Request) {
             network,
         });
 
+        console.log(`result: ${JSON.stringify(result)}`);
+
         const jsonResult = cvToJSON(result);
+
+        console.log(`jsonResult: ${JSON.stringify(jsonResult)}`);
 
         // If votesOnly is true, extract just the votes data
         if (votesOnly) {

@@ -10,9 +10,9 @@ export async function getProposalVotes(
     error?: string
 }> {
     try {
-        const apiBase = process.env.NEXT_PUBLIC_BASE_URL;
+        //const apiBase = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(
-            `${apiBase}/api/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
+            `/api/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
         )
 
         if (!response.ok) {
