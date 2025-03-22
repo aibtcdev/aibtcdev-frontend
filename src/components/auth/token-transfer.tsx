@@ -4,14 +4,12 @@ import {
   uintCV,
   principalCV,
   noneCV,
-  PostCondition,
+  makeStandardFungiblePostCondition,
+  FungibleConditionCode,
+  createAssetInfo,
   PostConditionMode,
 } from "@stacks/transactions";
-import {
-  type StacksNetwork,
-  STACKS_TESTNET,
-  STACKS_MAINNET,
-} from "@stacks/network";
+import { StacksTestnet, StacksMainnet } from "@stacks/network";
 import { Button } from "@/components/ui/button";
 import { userSession } from "@/lib/userSession";
 
@@ -37,21 +35,23 @@ export function TokenTransfer({
   onSuccess,
 }: TokenTransferProps) {
   const transferToken = async () => {
-    const stacksNetwork: StacksNetwork =
+    const stacksNetwork =
       process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-        ? STACKS_MAINNET
-        : STACKS_TESTNET;
+        ? new StacksMainnet()
+        : new StacksTestnet();
 
     const sender = userSession.loadUserData().profile.stxAddress[network];
 
-    // Create FT post condition
-    const ftPostCondition: PostCondition = {
-      type: "ft-postcondition",
-      condition: "eq",
-      amount: amount,
-      address: sender,
-      asset: `${contractAddress}.${contractName}::${token}`,
-    };
+    // Create proper asset info for the token
+    const assetInfo = createAssetInfo(contractAddress, contractName, token);
+
+    // Create FT post condition using the proper function
+    const ftPostCondition = makeStandardFungiblePostCondition(
+      sender,
+      FungibleConditionCode.Equal,
+      BigInt(amount),
+      assetInfo
+    );
 
     const options: ContractCallOptions = {
       contractAddress,

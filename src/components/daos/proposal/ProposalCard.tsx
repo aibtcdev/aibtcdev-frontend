@@ -158,15 +158,15 @@ const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
             {/* Refresh button */}
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
+              // size="sm"
+              // className="h-8 w-8 p-0"
               onClick={refreshVotesData}
               disabled={refreshing}
             >
               <RefreshCw
                 className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
               />
-              <span className="sr-only">Refresh votes</span>
+              Update Votes
             </Button>
           </div>
 
