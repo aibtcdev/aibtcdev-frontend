@@ -1,6 +1,8 @@
 import { Cl, cvToJSON, callReadOnlyFunction } from "@stacks/transactions";
 import { StacksMainnet, StacksTestnet } from "@stacks/network";
 
+export const runtime = "nodejs";
+
 const network =
   process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
     ? new StacksTestnet()
