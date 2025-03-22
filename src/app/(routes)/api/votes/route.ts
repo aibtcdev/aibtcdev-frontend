@@ -7,31 +7,13 @@ export const runtime = "edge"
 // Define network based on environment variable
 const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet" ? new StacksTestnet() : new StacksMainnet()
 
-// Define allowed origins - add your localhost and any other domains
-const allowedOrigins = [
-    "*",
-    "http://localhost:3000",
-    "https://fix-version.aibtcdev-frontend-staging.pages.dev",
-]
-
 export async function GET(request: Request) {
-    // Get the origin from the request
-    const origin = request.headers.get("origin") || ""
-
-    // Check if the origin is allowed or use "*" for development
-    const corsOrigin = allowedOrigins.includes(origin) ? origin : process.env.NODE_ENV === "development" ? "*" : null
-
-    // If origin is not allowed and we're not in development, return 403
-    if (!corsOrigin && process.env.NODE_ENV !== "development") {
-        return new NextResponse(null, { status: 403 })
-    }
-
     // CORS headers
+    const origin = request.headers.get("origin") || "*"
     const headers = {
-        "Access-Control-Allow-Origin": corsOrigin || "*",
+        "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Methods": "GET, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Max-Age": "86400", // 24 hours
     }
 
     // Handle preflight OPTIONS request
@@ -130,22 +112,13 @@ export async function GET(request: Request) {
 
 // Add OPTIONS handler for CORS preflight requests
 export async function OPTIONS(request: Request) {
-    const origin = request.headers.get("origin") || ""
-
-    // Check if the origin is allowed
-    const corsOrigin = allowedOrigins.includes(origin) ? origin : process.env.NODE_ENV === "development" ? "*" : null
-
-    // If origin is not allowed and we're not in development, return 403
-    if (!corsOrigin && process.env.NODE_ENV !== "development") {
-        return new NextResponse(null, { status: 403 })
-    }
+    const origin = request.headers.get("origin") || "*"
 
     return new NextResponse(null, {
         headers: {
-            "Access-Control-Allow-Origin": corsOrigin || "*",
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Methods": "GET, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Max-Age": "86400", // 24 hours
         },
     })
 }

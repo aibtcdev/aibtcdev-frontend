@@ -10,9 +10,9 @@ export async function getProposalVotes(
     error?: string
 }> {
     try {
-        // const apiBase = process.env.NEXT_PUBLIC_BASE_URL;
+        const apiBase = process.env.NEXT_PUBLIC_BASE_URL;
         const response = await fetch(
-            `https://fix-version.aibtcdev-frontend-staging.pages.dev/api/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
+            `${apiBase}/api/votes?contractAddress=${encodeURIComponent(contractAddress)}&proposalId=${proposalId}&votesOnly=true`,
         )
 
         if (!response.ok) {
