@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
+import { StacksTestnet, StacksMainnet } from "@stacks/network";
 import { openSTXTransfer } from "@stacks/connect";
 
 interface StacksComponentsProps {
@@ -34,8 +34,8 @@ export default function StacksComponents({
   const sendSTX = (recipientAddress: string, amountInSTX: string) => {
     const network =
       process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-        ? STACKS_MAINNET
-        : STACKS_TESTNET;
+        ? new StacksMainnet()
+        : new StacksTestnet();
 
     openSTXTransfer({
       recipient: recipientAddress,

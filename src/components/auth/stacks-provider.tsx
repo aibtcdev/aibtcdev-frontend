@@ -2,7 +2,7 @@
 
 import React from "react";
 import { showConnect, openSignatureRequestPopup } from "@stacks/connect";
-import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network";
+import { StacksMainnet, StacksTestnet } from "@stacks/network";
 import { userSession } from "@/lib/userSession";
 
 interface ConnectWalletOptions {
@@ -29,8 +29,8 @@ export function connectWallet({ onCancel }: ConnectWalletOptions) {
 export function requestSignature(): Promise<string> {
   const network =
     process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-      ? STACKS_MAINNET
-      : STACKS_TESTNET;
+      ? new StacksMainnet()
+      : new StacksTestnet();
   return new Promise((resolve, reject) => {
     openSignatureRequestPopup({
       message: "Please sign the message to authenticate.",

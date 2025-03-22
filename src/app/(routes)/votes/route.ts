@@ -1,5 +1,5 @@
-import { Cl, cvToJSON, fetchCallReadOnlyFunction } from "@stacks/transactions";
-import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
+import { Cl, cvToJSON, callReadOnlyFunction } from "@stacks/transactions";
+import { StacksMainnet, StacksTestnet } from "@stacks/network";
 import { NextResponse } from "next/server";
 
 export const runtime = "edge"
@@ -7,8 +7,8 @@ export const runtime = "edge"
 // Define network based on environment variable
 // const network = "testnet"
 const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-    ? STACKS_TESTNET
-    : STACKS_MAINNET;
+    ? new StacksTestnet()
+    : new StacksMainnet();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
         const senderAddress = "ST000000000000000000002AMW42H";
 
         // Fetch data
-        const result = await fetchCallReadOnlyFunction({
+        const result = await callReadOnlyFunction({
             contractAddress: address,
             contractName: contractName,
             functionName: "get-proposal",
