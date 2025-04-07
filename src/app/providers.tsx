@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { queryClient } from "@/lib/react-query";
+import ApplicationLayout from "./application-layout";
 
 /**
  * Providers component
@@ -26,7 +27,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <ApplicationLayout>{children}</ApplicationLayout>
       </ThemeProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

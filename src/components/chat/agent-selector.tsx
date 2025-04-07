@@ -22,6 +22,8 @@ import type { Agent, Wallet } from "@/types/supabase";
 import { getStacksAddress } from "@/lib/address";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query";
 
 // Dynamically import Stacks components
 const StacksComponents = dynamic(() => import("../wallet/stacks-component"), {
@@ -57,20 +59,13 @@ export function AgentWalletSelector({
   // Filter out archived agents
   const activeAgents = agents.filter((agent) => !agent.is_archived);
 
-  useEffect(() => {
-    if (userId) {
-      fetchWallets(userId).catch((err) => {
-        setError("Failed to fetch wallets. Please try again.");
-        console.error(err);
-      });
-    }
-  }, [userId, fetchWallets]);
-
-  useEffect(() => {
-    if (userId) {
-      fetchWallets(userId);
-    }
-  }, [userId, fetchWallets]);
+  // Use React Query to fetch wallets
+  const { isLoading: isLoadingWallets } = useQuery({
+    queryKey: queryKeys.agentWallets(userId || ""),
+    queryFn: () => fetchWallets(userId || ""),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   useEffect(() => {
     if (userAddress) {

@@ -8,7 +8,7 @@ export interface TokenBalance {
     total_received: string
 }
 
-interface NFTBalance {
+export interface NFTBalance {
     count: number
     total_sent: number
     total_received: number
@@ -22,6 +22,7 @@ export interface WalletBalance {
     non_fungible_tokens: {
         [key: string]: NFTBalance
     }
+    _lastFetched?: number
 }
 
 export interface WalletWithAgent extends Wallet {
@@ -90,6 +91,17 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     fetchSingleBalance: async (address: string) => {
         try {
+            // Check if we already have this balance in the cache
+            const existingBalance = get().balances[address]
+            if (existingBalance) {
+                // If we have it and it's less than 2 minutes old, just return it
+                const now = Date.now()
+                const lastFetched = existingBalance._lastFetched || 0
+                if (now - lastFetched < 2 * 60 * 1000) {
+                    return existingBalance
+                }
+            }
+
             set({ isLoading: true, error: null })
 
             const network = process.env.NEXT_PUBLIC_STACKS_NETWORK
@@ -101,16 +113,22 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
             const data = (await response.json()) as WalletBalance
 
+            // Add a timestamp to the data
+            const dataWithTimestamp = {
+                ...data,
+                _lastFetched: Date.now(),
+            }
+
             // Update the balances state with the new balance
             set((state) => ({
                 balances: {
                     ...state.balances,
-                    [address]: data,
+                    [address]: dataWithTimestamp,
                 },
                 isLoading: false,
             }))
 
-            return data
+            return dataWithTimestamp
         } catch (error) {
             set({
                 error: error instanceof Error ? error.message : `Failed to fetch balance for ${address}`,
@@ -122,16 +140,31 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     fetchBalances: async (addresses) => {
         try {
+            // Check which addresses we need to fetch
+            const currentBalances = get().balances
+            const now = Date.now()
+            const addressesToFetch = addresses.filter((address) => {
+                const balance = currentBalances[address]
+                if (!balance) return true
+                const lastFetched = balance._lastFetched || 0
+                return now - lastFetched >= 2 * 60 * 1000 // Fetch if older than 2 minutes
+            })
+
+            if (addressesToFetch.length === 0) {
+                // All balances are fresh enough, no need to fetch
+                return
+            }
+
             set({ isLoading: true, error: null })
 
-            const balancePromises = addresses.map(async (address) => {
+            const balancePromises = addressesToFetch.map(async (address) => {
                 const network = process.env.NEXT_PUBLIC_STACKS_NETWORK
                 const response = await fetch(`https://api.${network}.hiro.so/extended/v1/address/${address}/balances`)
                 if (!response.ok) {
                     throw new Error(`Failed to fetch balance for ${address}`)
                 }
                 const data = await response.json()
-                return [address, data] as [string, WalletBalance]
+                return [address, { ...data, _lastFetched: now }] as [string, WalletBalance]
             })
 
             const results = await Promise.all(balancePromises)
@@ -152,4 +185,3 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         }
     },
 }))
-

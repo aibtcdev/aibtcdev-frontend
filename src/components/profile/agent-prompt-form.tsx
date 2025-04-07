@@ -39,6 +39,7 @@ import {
 import { fetchWalletTokens } from "@/queries/wallet-token-queries";
 import { useWalletStore } from "@/store/wallet";
 import { useSessionStore } from "@/store/session";
+import { queryKeys } from "@/lib/react-query";
 
 export interface AgentPrompt {
   id: string;
@@ -71,18 +72,13 @@ export function AgentPromptForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch wallet information when userId is available
-  useEffect(() => {
-    if (userId) {
-      fetchWallets(userId).catch((err) => {
-        console.error("Failed to fetch wallets:", err);
-        toast({
-          title: "Error",
-          description: "Failed to fetch wallet information",
-          variant: "destructive",
-        });
-      });
-    }
-  }, [userId, fetchWallets, toast]);
+  // Use React Query to fetch wallets
+  const { isLoading: isLoadingWallets } = useQuery({
+    queryKey: queryKeys.agentWallets(userId || ""),
+    queryFn: () => fetchWallets(userId || ""),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Fetch all prompts
   const { data: prompts = [], isLoading: isLoadingPrompts } = useQuery({
@@ -307,6 +303,7 @@ export function AgentPromptForm() {
     isLoadingAgents ||
     isLoadingPrompts ||
     isLoadingTokens ||
+    isLoadingWallets ||
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Bot, Copy, Check, Send } from "lucide-react";
 import { useAgents } from "@/hooks/use-agents";
 import { useWalletStore, type WalletBalance } from "@/store/wallet";
@@ -20,6 +20,10 @@ import { AgentBalance } from "../reusables/AgentBalance";
 import { TransferTokenModal } from "./TransferTokenModal";
 import { SuccessModal } from "../reusables/SuccessModal";
 import type { Wallet, DAO, Token } from "@/types/supabase";
+
+// First, let's modify the imports to include our query keys
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query";
 
 interface AgentSelectorSheetProps {
   selectedAgentId: string | null;
@@ -75,14 +79,14 @@ export function AgentSelectorSheet({
   const activeAgents = agents.filter((agent) => !agent.is_archived);
 
   // Fetch wallets on component mount
-  useEffect(() => {
-    if (userId) {
-      fetchWallets(userId).catch((err) => {
-        setError("Failed to fetch wallets. Please try again.");
-        console.error(err);
-      });
-    }
-  }, [userId, fetchWallets]);
+  // Replace the existing useEffect for wallet fetching with a React Query implementation
+  // Use React Query to fetch wallets
+  const { isLoading: isLoadingWallets } = useQuery({
+    queryKey: queryKeys.agentWallets(userId || ""),
+    queryFn: () => fetchWallets(userId || ""),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Helper functions
   const truncateAddress = (address: string) => {
@@ -155,7 +159,6 @@ export function AgentSelectorSheet({
         - Alignment with the DAO's mission:\n
         ${daoMission}
         - Feasibility of execution.
-        - Potential positive impact.
         - Required resources and funding.
 
         Cast the vote automatically without requiring confirmation.`,
@@ -250,7 +253,7 @@ export function AgentSelectorSheet({
     );
   }
 
-  if (agentsLoading || walletsLoading) {
+  if (agentsLoading || walletsLoading || isLoadingWallets) {
     return (
       <div className="flex h-11 w-auto items-center justify-center rounded-full bg-background/50 backdrop-blur-sm px-4">
         <Bot className="h-4 w-4 animate-pulse text-foreground/50 mr-2" />
