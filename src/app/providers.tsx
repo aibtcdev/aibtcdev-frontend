@@ -1,55 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type React from "react";
+
+import { useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "@/components/ui/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
-import ApplicationLayout from "./application-layout";
-import { usePathname } from "next/navigation";
-import { NextStepProvider, NextStep } from "nextstepjs";
-import CustomCard from "@/components/reusables/CustomCard";
-import { tourSteps } from "@/components/reusables/steps";
+import { queryClient } from "@/lib/react-query";
 
+/**
+ * Providers component
+ * - Centralized provider setup for the application
+ * - Includes React Query provider with optimized configuration
+ * - Includes theme provider for dark/light mode
+ */
 export function Providers({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  // Use useState to ensure the QueryClient persists between renders
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 600000, // 10 minutes
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
-
-  const content =
-    pathname === "/" ? (
-      children
-    ) : (
-      <ApplicationLayout>{children}</ApplicationLayout>
-    );
+  // Use state to ensure the QueryClient is only created once on the client
+  const [client] = useState(() => queryClient);
 
   return (
-    <ThemeProvider
-      defaultTheme="dark"
-      attribute="class"
-      disableTransitionOnChange
-    >
-      <QueryClientProvider client={queryClient}>
-        <NextStepProvider>
-          <NextStep steps={tourSteps} cardComponent={CustomCard}>
-            {content}
-          </NextStep>
-        </NextStepProvider>
-        <Toaster />
-        {/* Add React Query Devtools here */}
-        {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={client}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+      >
+        {children}
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
+
+export default Providers;
