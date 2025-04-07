@@ -53,16 +53,20 @@ export function AgentWalletSelector({
   const { toast } = useToast();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [stxAmounts, setStxAmounts] = useState<{ [key: string]: string }>({});
-  const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   // Filter out archived agents
   const activeAgents = agents.filter((agent) => !agent.is_archived);
 
   // Use React Query to fetch wallets
-  const { isLoading: isLoadingWallets } = useQuery({
+  useQuery({
     queryKey: queryKeys.agentWallets(userId || ""),
-    queryFn: () => fetchWallets(userId || ""),
+    queryFn: async () => {
+      if (userId) {
+        await fetchWallets(userId);
+      }
+      return null;
+    },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -165,24 +169,9 @@ export function AgentWalletSelector({
     e.preventDefault();
   };
 
-  if (error) {
-    return (
-      <div className="flex h-11 w-auto items-center justify-center rounded-full bg-destructive/10 text-destructive px-4">
-        <span className="text-sm">{error}</span>
-      </div>
-    );
-  }
-
-  if (agentsLoading || walletsLoading) {
-    return (
-      <div className="flex h-11 w-auto items-center justify-center rounded-full bg-background/50 backdrop-blur-sm px-4">
-        <Bot className="h-4 w-4 animate-pulse text-foreground/50 mr-2" />
-        <span className="text-sm">Loading...</span>
-      </div>
-    );
-  }
-
-  const selectedAgent = activeAgents.find((a) => a.id === selectedAgentId);
+  const selectedAgent = activeAgents.find(
+    (agent) => agent.id === selectedAgentId
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

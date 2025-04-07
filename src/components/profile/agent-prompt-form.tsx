@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { WalletInfoCard } from "./agent-wallet-info";
 
 import { fetchDAOs } from "@/queries/dao-queries";
-import { fetchAgents } from "@/queries/agentQueries";
+import { fetchAgents } from "@/queries/agent-queries";
 import {
   fetchAgentPrompts,
   createAgentPrompt,

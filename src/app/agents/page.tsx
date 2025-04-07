@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Archive, Copy, Check } from "lucide-react";
 import { Heading } from "@/components/ui/heading";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAgents } from "@/queries/agentQueries";
+import { fetchAgents } from "@/queries/agent-queries";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useWalletStore } from "@/store/wallet";
