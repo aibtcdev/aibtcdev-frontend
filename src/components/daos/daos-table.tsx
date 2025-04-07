@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tooltip";
 import { DAOBuyToken } from "./dao-buy-token";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 interface DAOTableProps {
   daos: DAO[];
@@ -82,6 +83,7 @@ export const DAOTable = ({
     const endPrice = data[data.length - 1].price;
     return endPrice >= startPrice ? "#22c55e" : "#ef4444";
   };
+  const router = useRouter();
 
   const renderChart = (
     tradeData: {
@@ -385,9 +387,7 @@ export const DAOTable = ({
                     key={dao.id}
                     className="border-b hover:bg-muted/30 transition-colors"
                     onClick={() =>
-                      (window.location.href = `/daos/${encodeURIComponent(
-                        dao.name
-                      )}`)
+                      router.push(`/daos/${encodeURIComponent(dao.name)}`)
                     }
                   >
                     <td
