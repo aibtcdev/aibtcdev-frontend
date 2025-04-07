@@ -65,11 +65,11 @@ export default function ProposalsPage() {
 
   const {
     data: proposals,
-    isLoading: isLoadingProposals,
+    // isLoading: isLoadingProposals,
     refetch,
     isRefetching,
     dataUpdatedAt,
-    error: proposalsError,
+    // error: proposalsError,
   } = useQuery(proposalsQueryOptions);
 
   // Memoize the last updated time to prevent unnecessary re-renders

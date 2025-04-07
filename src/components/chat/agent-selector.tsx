@@ -41,12 +41,12 @@ export function AgentWalletSelector({
   onSelect,
 }: AgentWalletSelectorProps) {
   const [userAddress, setUserAddress] = useState<string | null>(null);
-  const { agents, loading: agentsLoading } = useAgents();
+  const { agents } = useAgents();
   const {
     balances,
     userWallet,
     agentWallets,
-    isLoading: walletsLoading,
+    // isLoading: walletsLoading,
     fetchWallets,
   } = useWalletStore();
   const { userId } = useSessionStore();

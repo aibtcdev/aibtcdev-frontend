@@ -60,7 +60,7 @@ export function AgentSelectorSheet({
   const { toast } = useToast();
 
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [participatingAgentId, setParticipatingAgentId] = useState<
@@ -243,15 +243,6 @@ export function AgentSelectorSheet({
       variant: "destructive",
     });
   };
-
-  // Loading and error states
-  if (error) {
-    return (
-      <div className="flex h-11 w-auto items-center justify-center rounded-full bg-destructive/10 text-destructive px-4">
-        <span className="text-sm">{error}</span>
-      </div>
-    );
-  }
 
   if (agentsLoading || walletsLoading || isLoadingWallets) {
     return (
