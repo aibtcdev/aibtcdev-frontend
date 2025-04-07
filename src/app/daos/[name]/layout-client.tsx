@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,21 +40,29 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DAOCreationDate } from "@/components/daos/dao-creation-date";
+import { queryKeys } from "@/lib/react-query";
 
+/**
+ * DAOLayoutClient component
+ * - Optimized to reduce re-renders and network requests
+ * - Uses React Query for data fetching with proper caching
+ * - Implements dependent queries pattern
+ * - Uses memoization for expensive calculations
+ */
 export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const params = useParams();
-  const encodedName = params.name as string; // Changed from id to name
+  const encodedName = params.name as string;
   const pathname = usePathname();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // First, fetch the DAO by name to get its ID
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
-    queryKey: ["dao", encodedName],
+    queryKey: queryKeys.dao(encodedName),
     queryFn: () => fetchDAOByName(encodedName),
-    staleTime: 600000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const id = dao?.id; // Get the ID from the fetched DAO
+  const id = useMemo(() => dao?.id, [dao]); // Memoize ID to prevent unnecessary re-renders
 
   // Determine which tab is active - update paths to use name instead of id
   const isProposals = pathname === `/daos/${encodedName}`;
@@ -63,53 +71,62 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
   // Fetch token data - only if we have the DAO ID
   const { data: token, isLoading: isLoadingToken } = useQuery({
-    queryKey: ["token", id],
+    queryKey: queryKeys.token(id || ""),
     queryFn: () => fetchToken(id!),
     enabled: !!id, // Only run if we have the DAO ID
-    staleTime: 600000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Fetch extensions data - only if we have the DAO ID
   const { data: extensions, isLoading: isLoadingExtensions } = useQuery({
-    queryKey: ["extensions", id],
+    queryKey: queryKeys.extensions(id || ""),
     queryFn: () => fetchDAOExtensions(id!),
     enabled: !!id, // Only run if we have the DAO ID
-    staleTime: 600000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  const dex = extensions?.find((ext) => ext.type === "dex")?.contract_principal;
-  const treasuryAddress = extensions?.find(
-    (ext) => ext.type === "aibtc-treasury"
-  )?.contract_principal;
+  // Memoize extension values to prevent unnecessary re-renders
+  const { dex, treasuryAddress } = useMemo(() => {
+    const dexExt = extensions?.find(
+      (ext) => ext.type === "dex"
+    )?.contract_principal;
+    const treasuryExt = extensions?.find(
+      (ext) => ext.type === "aibtc-treasury"
+    )?.contract_principal;
+    return { dex: dexExt, treasuryAddress: treasuryExt };
+  }, [extensions]);
 
   // Fetch token price
   const { data: tokenPrice, isLoading: isLoadingTokenPrice } = useQuery({
-    queryKey: ["tokenPrice", dex],
+    queryKey: queryKeys.tokenPrice(dex || ""),
     queryFn: () => fetchTokenPrice(dex!),
     enabled: !!dex,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch holders data
   const { data: holdersData, isLoading: isLoadingHolders } = useQuery({
-    queryKey: ["holders", token?.contract_principal, token?.symbol],
+    queryKey: queryKeys.holders(
+      token?.contract_principal || "",
+      token?.symbol || ""
+    ),
     queryFn: () => fetchHolders(token!.contract_principal, token!.symbol),
     enabled: !!token?.contract_principal && !!token?.symbol,
-    staleTime: 600000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // Fetch proposals
   const { data: proposals, isLoading: isLoadingProposals } = useQuery({
-    queryKey: ["proposals", id],
+    queryKey: queryKeys.proposals(id || ""),
     queryFn: () => fetchProposals(id!),
     enabled: !!id, // Only run if we have the DAO ID
-    staleTime: 600000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Fetch market stats
+  // Fetch market stats - only if we have all required data
   const { data: marketStats, isLoading: isLoadingMarketStats } = useQuery({
     queryKey: [
       "marketStats",
-      id,
       dex,
       token?.contract_principal,
       token?.symbol,
@@ -123,6 +140,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
         token!.max_supply || 0
       ),
     enabled: !!dex && !!token && !!token.contract_principal && !!token.symbol,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch treasury tokens
@@ -131,6 +149,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
       queryKey: ["treasuryTokens", treasuryAddress, tokenPrice?.price],
       queryFn: () => fetchTreasuryTokens(treasuryAddress!, tokenPrice!.price),
       enabled: !!treasuryAddress && !!tokenPrice,
+      staleTime: 10 * 60 * 1000, // 10 minutes
     }
   );
 
@@ -146,37 +165,45 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
     isLoadingHolders ||
     isLoadingProposals;
 
-  // Format number helper function
-  const formatNumber = (num: number, isPrice = false) => {
-    if (isPrice) {
-      if (num === 0) return "$0.00";
-      if (num < 0.01) return `$${num.toFixed(8)}`;
+  // Memoize format number function to prevent unnecessary re-renders
+  const formatNumber = useMemo(() => {
+    return (num: number, isPrice = false) => {
+      if (isPrice) {
+        if (num === 0) return "$0.00";
+        if (num < 0.01) return `$${num.toFixed(8)}`;
+        return `$${num.toFixed(2)}`;
+      }
+
+      if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+      if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+      if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
       return `$${num.toFixed(2)}`;
-    }
+    };
+  }, []);
 
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-    return `$${num.toFixed(2)}`;
-  };
-
-  // Create enhanced market stats
-  const enhancedMarketStats = marketStats
-    ? {
+  // Memoize enhanced market stats to prevent unnecessary re-renders
+  const enhancedMarketStats = useMemo(() => {
+    if (marketStats) {
+      return {
         ...marketStats,
         holderCount: holdersData?.holderCount || marketStats.holderCount,
-      }
-    : {
-        price: tokenPrice?.price || 0,
-        marketCap: tokenPrice?.marketCap || 0,
-        treasuryBalance: token?.max_supply
-          ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
-          : 0,
-        holderCount: holdersData?.holderCount || 0,
       };
+    }
+    return {
+      price: tokenPrice?.price || 0,
+      marketCap: tokenPrice?.marketCap || 0,
+      treasuryBalance: token?.max_supply
+        ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
+        : 0,
+      holderCount: holdersData?.holderCount || 0,
+    };
+  }, [marketStats, holdersData, tokenPrice, token]);
 
-  // Calculate total proposals
-  const totalProposals = proposals ? proposals.length : 0;
+  // Memoize total proposals to prevent unnecessary re-renders
+  const totalProposals = useMemo(
+    () => (proposals ? proposals.length : 0),
+    [proposals]
+  );
 
   if (isBasicLoading) {
     return (

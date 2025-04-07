@@ -31,7 +31,14 @@ import type { Proposal } from "@/types/supabase";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query";
 
+/**
+ * ProposalCard component
+ * - Optimized to reduce re-renders
+ * - Uses React Query for data fetching with proper caching
+ * - Uses memoization for expensive calculations
+ */
 const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
   const [expanded, setExpanded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,11 +59,10 @@ const ProposalCard: React.FC<{ proposal: Proposal }> = ({ proposal }) => {
 
     try {
       await queryClient.invalidateQueries({
-        queryKey: [
-          "proposalVotes",
+        queryKey: queryKeys.proposalVotes(
           proposal.contract_principal,
-          proposal.proposal_id,
-        ],
+          proposal.proposal_id
+        ),
         refetchType: "all",
       });
 

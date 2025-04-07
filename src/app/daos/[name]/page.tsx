@@ -2,90 +2,95 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Suspense } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import DAOProposals from "@/components/daos/proposal/DAOProposal";
 import { fetchProposals, fetchDAOByName } from "@/queries/dao-queries";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { queryKeys } from "@/lib/react-query";
 
 export const runtime = "edge";
+
+/**
+ * DAONotFound component to display when a DAO is not found
+ */
+const DAONotFound = ({ name }: { name: string }) => (
+  <div className="flex justify-center items-center min-h-[200px] w-full">
+    <div className="text-center">
+      <h2 className="text-xl font-semibold mb-2">DAO Not Found</h2>
+      <p className="text-muted-foreground">
+        Could not find a DAO with the name &apos;{name}&apos;
+      </p>
+    </div>
+  </div>
+);
+
+/**
+ * LoadingState component for displaying loading state
+ */
+const LoadingState = () => (
+  <div className="flex justify-center items-center min-h-[200px] w-full">
+    <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 export default function ProposalsPage() {
   const params = useParams();
   const encodedName = params.name as string;
-  console.log(encodedName);
-  console.log("DAO name from URL:", encodedName); // Add this for debugging
 
-  // First, fetch the DAO by name to get its ID
+  // Fetch DAO by name - this is the primary data we need
   const {
     data: dao,
     isLoading: isLoadingDAO,
     error: daoError,
   } = useQuery({
-    queryKey: ["dao", encodedName],
+    queryKey: queryKeys.dao(encodedName),
     queryFn: () => fetchDAOByName(encodedName),
   });
 
-  // Add error handling
-  if (daoError) {
-    console.error("Error fetching DAO:", daoError);
-  }
-
+  // Only fetch proposals if we have the DAO ID
   const daoId = dao?.id;
 
-  console.log("Found DAO:", dao); // Add this for debugging
-  console.log("DAO ID:", daoId); // Add this for debugging
+  // Memoize the query options to prevent unnecessary re-renders
+  const proposalsQueryOptions = useMemo(
+    () => ({
+      queryKey: queryKeys.proposals(daoId || ""),
+      queryFn: () => (daoId ? fetchProposals(daoId) : Promise.resolve([])),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: !!daoId, // Only run this query when we have the daoId
+    }),
+    [daoId]
+  );
 
-  // Then use the ID to fetch proposals
   const {
     data: proposals,
-    isLoading,
+    isLoading: isLoadingProposals,
     refetch,
     isRefetching,
     dataUpdatedAt,
     error: proposalsError,
-  } = useQuery({
-    queryKey: ["proposals", daoId],
-    queryFn: () => (daoId ? fetchProposals(daoId) : Promise.resolve([])),
-    staleTime: 1000000,
-    enabled: !!daoId, // Only run this query when we have the daoId
-  });
+  } = useQuery(proposalsQueryOptions);
 
-  // Add error handling
-  if (proposalsError) {
-    console.error("Error fetching proposals:", proposalsError);
-  }
+  // Memoize the last updated time to prevent unnecessary re-renders
+  const lastUpdated = useMemo(
+    () => (dataUpdatedAt ? format(dataUpdatedAt, "HH:mm:ss") : "never"),
+    [dataUpdatedAt]
+  );
 
-  const lastUpdated = dataUpdatedAt
-    ? format(dataUpdatedAt, "HH:mm:ss")
-    : "never";
-
-  const handleRefetch = () => {
+  // Memoize the refetch handler to prevent unnecessary re-renders
+  const handleRefetch = useCallback(() => {
     refetch();
-  };
+  }, [refetch]);
 
-  if (isLoadingDAO || isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[200px] w-full">
-        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  // Handle loading state
+  if (isLoadingDAO) {
+    return <LoadingState />;
   }
 
-  // Add error state
-  if (!dao) {
-    return (
-      <div className="flex justify-center items-center min-h-[200px] w-full">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">DAO Not Found</h2>
-          <p className="text-muted-foreground">
-            Could not find a DAO with the name &apos;
-            {decodeURIComponent(encodedName)}&apos;
-          </p>
-        </div>
-      </div>
-    );
+  // Handle error state
+  if (daoError || !dao) {
+    return <DAONotFound name={decodeURIComponent(encodedName)} />;
   }
 
   return (
@@ -113,13 +118,7 @@ export default function ProposalsPage() {
           )}
         </Button>
       </div>
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center min-h-[200px] w-full">
-            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-muted-foreground" />
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingState />}>
         <DAOProposals proposals={proposals || []} />
       </Suspense>
     </div>

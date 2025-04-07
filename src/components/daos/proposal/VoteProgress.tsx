@@ -4,6 +4,7 @@ import type React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { useMemo, useState, useEffect } from "react";
+import { queryKeys } from "@/lib/react-query";
 
 interface VoteProgressProps {
   votesFor?: string;
@@ -13,17 +14,12 @@ interface VoteProgressProps {
   refreshing?: boolean;
 }
 
-// Utility function to format numbers with K, M suffixes
-const formatNumber = (num: number): string => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + "M";
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + "K";
-  } else {
-    return num.toString();
-  }
-};
-
+/**
+ * VoteProgress component
+ * - Optimized to reduce re-renders
+ * - Uses React Query for data fetching with proper caching
+ * - Uses memoization for expensive calculations
+ */
 const VoteProgress: React.FC<VoteProgressProps> = ({
   votesFor: initialVotesFor,
   votesAgainst: initialVotesAgainst,
@@ -31,7 +27,20 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
   proposalId,
   refreshing = false,
 }) => {
-  // Memoize initial votes parsing
+  // Memoize format number function to prevent unnecessary re-renders
+  const formatNumber = useMemo(() => {
+    return (num: number): string => {
+      if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + "M";
+      } else if (num >= 1000) {
+        return (num / 1000).toFixed(1) + "K";
+      } else {
+        return num.toString();
+      }
+    };
+  }, []);
+
+  // Memoize initial votes parsing to prevent unnecessary re-renders
   const initialParsedVotes = useMemo(() => {
     const parsedFor = initialVotesFor ? initialVotesFor.replace(/n$/, "") : "0";
     const parsedAgainst = initialVotesAgainst
@@ -52,7 +61,7 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
       formattedVotesFor,
       formattedVotesAgainst,
     };
-  }, [initialVotesFor, initialVotesAgainst]);
+  }, [initialVotesFor, initialVotesAgainst, formatNumber]);
 
   // State to store parsed vote values
   const [parsedVotes, setParsedVotes] = useState(initialParsedVotes);
@@ -60,7 +69,10 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
   // Memoize query options to prevent unnecessary refetches
   const queryOptions = useMemo(
     () => ({
-      queryKey: ["proposalVotes", contractAddress, proposalId, refreshing],
+      queryKey: queryKeys.proposalVotes(
+        contractAddress || "",
+        proposalId || ""
+      ),
       queryFn: async () => {
         if (contractAddress && proposalId) {
           return getProposalVotes(
@@ -73,6 +85,7 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
       },
       enabled: !!contractAddress && !!proposalId,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     }),
     [contractAddress, proposalId, refreshing]
   );
@@ -115,7 +128,7 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
         formattedVotesAgainst,
       });
     }
-  }, [data]);
+  }, [data, formatNumber]);
 
   if (isLoading && !refreshing) {
     return (
