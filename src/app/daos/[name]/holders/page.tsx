@@ -4,7 +4,11 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import DAOHolders from "@/components/daos/dao-holders";
-import { fetchToken, fetchHolders, fetchDAOByName } from "@/queries/daoQueries";
+import {
+  fetchToken,
+  fetchHolders,
+  fetchDAOByName,
+} from "@/queries/dao-queries";
 
 export const runtime = "edge";
 

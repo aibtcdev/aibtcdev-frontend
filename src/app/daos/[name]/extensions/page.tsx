@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import DAOExtensions from "@/components/daos/dao-extensions";
-import { fetchDAOExtensions, fetchDAOByName } from "@/queries/daoQueries";
+import { fetchDAOExtensions, fetchDAOByName } from "@/queries/dao-queries";
 import { Loader } from "@/components/reusables/loader";
 
 export const runtime = "edge";

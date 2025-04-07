@@ -16,7 +16,7 @@ import AgentWalletSelector from "@/components/chat/agent-selector";
 import { useChatStore } from "@/store/chat";
 import { useSessionStore } from "@/store/session";
 import { useWalletStore } from "@/store/wallet";
-import { fetchDAOExtensions, fetchToken } from "@/queries/daoQueries";
+import { fetchDAOExtensions, fetchToken } from "@/queries/dao-queries";
 import type { DAO, Token, Extension } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
 import type { WalletBalance, WalletWithAgent } from "@/store/wallet";

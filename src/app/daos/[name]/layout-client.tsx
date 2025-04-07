@@ -26,7 +26,7 @@ import {
   fetchHolders,
   fetchProposals,
   fetchDAOByName,
-} from "@/queries/daoQueries";
+} from "@/queries/dao-queries";
 import { DAOChatButton } from "@/components/daos/dao-chat-button";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import DAOProposals from "@/components/daos/proposal/DAOProposal";
-import { fetchProposals, fetchDAOByName } from "@/queries/daoQueries";
+import { fetchProposals, fetchDAOByName } from "@/queries/dao-queries";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 

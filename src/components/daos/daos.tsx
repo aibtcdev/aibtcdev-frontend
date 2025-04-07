@@ -19,7 +19,7 @@ import {
   fetchTokenPrices,
   fetchTokenTrades,
   fetchHolders,
-} from "@/queries/daoQueries";
+} from "@/queries/dao-queries";
 
 export default function DAOs() {
   const [searchQuery, setSearchQuery] = useState("");
