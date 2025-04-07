@@ -1,13 +1,4 @@
-// NEW FILE: Centralized React Query configuration
 import { QueryClient } from "@tanstack/react-query"
-
-/**
- * Centralized query client configuration with optimized defaults
- * - staleTime: How long data remains fresh (5 minutes)
- * - gcTime: How long inactive data remains in cache (10 minutes)
- * - retry: Number of retry attempts for failed queries
- * - refetchOnWindowFocus: Disabled to prevent unnecessary refetches
- */
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -24,6 +15,7 @@ export const queryClient = new QueryClient({
  * This prevents duplicate queries and ensures proper cache invalidation
  */
 export const queryKeys = {
+    // DAO related query keys
     daos: "daos",
     dao: (name: string) => ["dao", name],
     daoById: (id: string) => ["dao-by-id", id],
@@ -39,5 +31,27 @@ export const queryKeys = {
         contractAddress,
         proposalId,
     ],
+
+    // Agent related query keys
+    agents: "agents",
+    agent: (id: string) => ["agent", id],
+    agentsByProfile: (profileId: string) => ["agents", "profile", profileId],
+    agentWallets: (agentId: string) => ["agent-wallets", agentId],
+    agentBalance: (address: string) => ["agent-balance", address],
+    agentTasks: (agentId: string) => ["agent-tasks", agentId],
+    agentJobs: (agentId: string) => ["agent-jobs", agentId],
+    agentPrompts: "agent-prompts",
+    agentPromptsByDao: (daoId: string) => ["agent-prompts", "dao", daoId],
+    agentPromptsByAgent: (agentId: string) => ["agent-prompts", "agent", agentId],
+    agentTools: "agent-tools",
+
+    // Wallet related query keys
+    walletTokens: "wallet-tokens",
+    walletTokensByDao: (daoId: string) => ["wallet-tokens", "dao", daoId],
+    walletTokensByWallet: (walletId: string) => ["wallet-tokens", "wallet", walletId],
+
+    // Vote related query keys
+    votes: "votes",
+    votesByProposal: (proposalId: string) => ["votes", "proposal", proposalId],
 }
 
