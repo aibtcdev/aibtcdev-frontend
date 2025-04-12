@@ -83,7 +83,7 @@ export const fetchDAOsWithExtension = async (): Promise<DAO[]> => {
             .select("*")
             .order("created_at", { ascending: false })
             .eq("is_broadcasted", true)
-            .in("name", ["MEDIA3", "FACES"]),
+            .in("name", ["MEDIA3", "FACES", "FACES3", "ZEST4"]),
         fetchExtensions(),
     ])
 
@@ -107,7 +107,7 @@ export const fetchDAOs = async (): Promise<DAO[]> => {
             .select("*")
             .order("created_at", { ascending: false })
             .eq("is_broadcasted", true)
-            .in("name", ["MEDIA3", "FACES"]),
+            .in("name", ["MEDIA3", "FACES", "FACES3", "ZEST4"]),
     ])
 
     if (daosError) throw daosError
