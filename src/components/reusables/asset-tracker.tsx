@@ -106,7 +106,7 @@ const AssetTracker = () => {
       <div className="w-full border-b border-border py-3 px-4 shadow-sm">
         {!isLoaded && (
           <p className="text-center text-foreground">
-            Checking your sBTC status...
+            Checking your BTC status...
           </p>
         )}
 
@@ -115,7 +115,7 @@ const AssetTracker = () => {
             className="text-center text-primary font-medium cursor-pointer hover:underline"
             onClick={openDepositModal}
           >
-            You have sBTC in your wallet! Click here to deposit it in your smart
+            You have BTC in your wallet! Click here to deposit it in your smart
             wallet.
           </p>
         )}
@@ -129,13 +129,13 @@ const AssetTracker = () => {
             >
               Bitflow or Velar
             </a>{" "}
-            to deposite sBTC in your wallet.
+            to deposite BTC in your wallet.
           </p>
         )}
 
         {isLoaded && hasSbtc === null && currentAddress && (
           <p className="text-center text-primary">
-            Unable to check your sBTC status. Visit{" "}
+            Unable to check your BTC status. Visit{" "}
             <a href="https://bitflow.app" className="underline font-medium">
               Bitflow
             </a>{" "}
@@ -145,7 +145,7 @@ const AssetTracker = () => {
 
         {isLoaded && !currentAddress && (
           <p className="text-center text-primary">
-            No wallet connected. Connect your wallet to check for sBTC.
+            No wallet connected. Connect your wallet to check for BTC.
           </p>
         )}
       </div>
@@ -159,13 +159,13 @@ const AssetTracker = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Deposit sBTC</DialogTitle>
+            <DialogTitle>Deposit BTC</DialogTitle>
             <DialogDescription>Coming soon</DialogDescription>
           </DialogHeader>
           <div className="p-4 text-center">
             <p className="text-lg font-medium">Feature Coming Soon</p>
             <p className="mt-2">
-              The ability to deposit sBTC into your smart wallet will be
+              The ability to deposit BTC into your smart wallet will be
               available in a future update.
             </p>
             <Button onClick={() => setIsDepositModalOpen(false)}>Close</Button>
