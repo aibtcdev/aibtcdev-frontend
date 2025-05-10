@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
-import { useMemo, useState, useEffect } from "react";
 import { TokenBalance } from "@/components/reusables/balance-display";
 import {
   Tooltip,
@@ -11,16 +11,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, ThumbsUp, ThumbsDown } from "lucide-react";
 
+// Update the VoteProgressProps interface to match the types from Proposal
 interface VoteProgressProps {
   votesFor?: string;
   votesAgainst?: string;
   contractAddress?: string;
-  proposalId?: string | number;
+  proposalId?: string;
   refreshing?: boolean;
   tokenSymbol?: string;
-  liquidTokens: string | number | null; // Required, but can be null
+  liquidTokens: string;
 }
 
 const VoteProgress: React.FC<VoteProgressProps> = ({
@@ -30,7 +31,7 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
   proposalId,
   refreshing = false,
   tokenSymbol = "",
-  liquidTokens = "0", // Default to "0" if null
+  liquidTokens = "0", // Default is now just a string
 }) => {
   // Memoize initial votes parsing
   const initialParsedVotes = useMemo(() => {
@@ -138,132 +139,130 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
   return (
     <div className="space-y-4">
       {voteCalculations.totalVotes === 0 ? (
-        <div className="py-4 text-center bg-zinc-800 rounded-lg">
-          Awaiting first vote from agent
+        <div className="py-6 text-center bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+          <div className="flex flex-col items-center gap-2">
+            <Info className="h-6 w-6 text-blue-500" />
+            <span className="text-muted-foreground">Awaiting first vote</span>
+          </div>
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium">Voting Progress</h4>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>
-                    This bar shows votes relative to total liquid tokens.
-                    <br />
-                    <span className="text-green-500">■</span> For:{" "}
-                    {voteCalculations.percentageFor.toFixed(1)}% of liquid
-                    tokens
-                    <br />
-                    <span className="text-red-500">■</span> Against:{" "}
-                    {voteCalculations.percentageAgainst.toFixed(1)}% of liquid
-                    tokens
-                    <br />
-                    <span className="text-zinc-500">■</span> Remaining:{" "}
-                    {voteCalculations.percentageRemaining.toFixed(1)}% of liquid
-                    tokens
-                    <br />
-                    <br />
-                    Of cast votes:{" "}
-                    {voteCalculations.castPercentageFor.toFixed(1)}% For,{" "}
-                    {voteCalculations.castPercentageAgainst.toFixed(1)}% Against
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-
-          <div className="relative h-6 bg-zinc-700/30 rounded-full overflow-hidden">
+          <div className="relative h-10 bg-zinc-800 rounded-lg overflow-hidden">
             {/* For votes */}
             <div
-              className="absolute h-full bg-green-500/80 left-0"
+              className="absolute h-full bg-green-500/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-3"
               style={{ width: `${voteCalculations.percentageFor}%` }}
-            ></div>
+            >
+              {voteCalculations.percentageFor > 10 && (
+                <div className="flex items-center gap-1.5 text-white text-sm font-medium">
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <span>{voteCalculations.percentageFor.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
 
             {/* Against votes */}
             <div
-              className="absolute h-full bg-red-500/80"
+              className="absolute h-full bg-red-500/80 transition-all duration-500 ease-out flex items-center justify-start pl-3"
               style={{
                 width: `${voteCalculations.percentageAgainst}%`,
                 left: `${voteCalculations.percentageFor}%`,
               }}
-            ></div>
+            >
+              {voteCalculations.percentageAgainst > 10 && (
+                <div className="flex items-center gap-1.5 text-white text-sm font-medium">
+                  <ThumbsDown className="h-3.5 w-3.5" />
+                  <span>{voteCalculations.percentageAgainst.toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
 
             {/* Remaining votes */}
             <div
-              className="absolute h-full bg-zinc-600/50 right-0"
+              className="absolute h-full bg-zinc-700 right-0 transition-all duration-500 ease-out flex items-center justify-end pr-3"
               style={{ width: `${voteCalculations.percentageRemaining}%` }}
-            ></div>
+            >
+              {voteCalculations.percentageRemaining > 15 && (
+                <span className="text-zinc-300 text-sm">
+                  {voteCalculations.percentageRemaining.toFixed(1)}% not voted
+                </span>
+              )}
+            </div>
+          </div>
 
-            {/* Percentage labels - only show if there's enough space */}
-            {voteCalculations.percentageFor > 10 && (
-              <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white text-xs font-medium z-10">
-                {voteCalculations.percentageFor.toFixed(1)}%
-              </span>
-            )}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-sm text-muted-foreground">For</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <TokenBalance
+                  value={parsedVotes.votesFor}
+                  symbol={tokenSymbol}
+                  decimals={8}
+                  variant="abbreviated"
+                />
+                <span className="text-xs text-green-400 font-medium">
+                  {voteCalculations.castPercentageFor.toFixed(1)}%
+                </span>
+              </div>
+            </div>
 
-            {voteCalculations.percentageAgainst > 10 && (
-              <span
-                className="absolute top-1/2 transform -translate-y-1/2 text-white text-xs font-medium z-10"
-                style={{
-                  left: `${
-                    voteCalculations.percentageFor +
-                    voteCalculations.percentageAgainst / 2
-                  }%`,
-                }}
-              >
-                {voteCalculations.percentageAgainst.toFixed(1)}%
-              </span>
-            )}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <span className="text-sm text-muted-foreground">Against</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <TokenBalance
+                  value={parsedVotes.votesAgainst}
+                  symbol={tokenSymbol}
+                  decimals={8}
+                  variant="abbreviated"
+                />
+                <span className="text-xs text-red-400 font-medium">
+                  {voteCalculations.castPercentageAgainst.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
+                <span className="text-sm text-muted-foreground">
+                  Total Available
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <TokenBalance
+                  value={liquidTokens || "0"}
+                  symbol={tokenSymbol}
+                  decimals={8}
+                  variant="abbreviated"
+                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <Info className="h-4 w-4 text-zinc-400" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p className="text-sm">
+                        Total liquid tokens available for voting.
+                        <br />
+                        {voteCalculations.percentageRemaining.toFixed(1)}% have
+                        not voted.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
           </div>
         </>
       )}
-
-      <div className="flex justify-between items-start">
-        <div className="flex gap-6">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm text-gray-500">For</span>
-            </div>
-            <TokenBalance
-              value={parsedVotes.votesFor}
-              symbol={tokenSymbol}
-              decimals={8}
-              variant="abbreviated"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-sm text-gray-500">Against</span>
-            </div>
-            <TokenBalance
-              value={parsedVotes.votesAgainst}
-              symbol={tokenSymbol}
-              decimals={8}
-              variant="abbreviated"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-end">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-            <span className="text-sm text-gray-500">Total Available</span>
-          </div>
-          <TokenBalance
-            value={liquidTokens || "0"}
-            symbol={tokenSymbol}
-            decimals={8}
-            variant="abbreviated"
-          />
-        </div>
-      </div>
     </div>
   );
 };

@@ -1,16 +1,20 @@
 "use client";
+
 import type React from "react";
-import type { Proposal } from "@/types/supabase";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useVotingStatus } from "./TimeStatus";
 import { TokenBalance } from "@/components/reusables/balance-display";
+import { cn } from "@/lib/utils";
+// Update the import for the Proposal type
+import type { Proposal } from "@/types/supabase";
 
+// Replace the "any" type with the proper Proposal type
 interface ProposalMetricsProps {
   proposal: Proposal;
 }
 
 const ProposalMetrics: React.FC<ProposalMetricsProps> = ({ proposal }) => {
-  const { isActive, startBlockTime } = useVotingStatus(
+  const { isActive, isEnded, startBlockTime } = useVotingStatus(
     proposal.status,
     proposal.start_block,
     proposal.end_block
@@ -19,127 +23,153 @@ const ProposalMetrics: React.FC<ProposalMetricsProps> = ({ proposal }) => {
   // Check if voting has not started yet (start block not found)
   const votingNotStarted = startBlockTime === null;
 
+  // Check if the proposal has failed
+  const isFailed = isEnded && !proposal.passed;
+
   return (
-    <div className="p-3 sm:p-4 rounded-lg border border-zinc-800 bg-zinc-900/50">
-      <h4 className="text-sm font-medium mb-3">Proposal Metrics</h4>
-
-      <div className="grid grid-cols-2 gap-x-3 gap-y-4">
-        {/* Liquid Tokens */}
-        <div className="space-y-1">
-          <div className="text-md font-bold text-muted-foreground">
-            Liquid Tokens
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Tokens available for trading and voting.
-          </div>
-          <div className="font-medium text-sm">
-            {proposal.liquid_tokens !== null ? (
-              <TokenBalance
-                value={proposal.liquid_tokens}
-                decimals={8}
-                variant="rounded"
-              />
-            ) : (
-              "No data available"
-            )}
-          </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      {/* Liquid Tokens */}
+      <div className="bg-zinc-800/50 rounded-lg px-4 py-3 border border-zinc-700/50">
+        <div className="text-sm text-muted-foreground mb-1">Liquid Tokens</div>
+        <div className="font-medium">
+          {proposal.liquid_tokens !== null ? (
+            <TokenBalance
+              value={proposal.liquid_tokens.toString()}
+              symbol={proposal.token_symbol || ""}
+              decimals={8}
+              variant="abbreviated"
+            />
+          ) : (
+            "No data available"
+          )}
         </div>
+      </div>
 
-        {/* Quorum */}
-        <div className="space-y-1">
-          <div className="text-md font-bold text-muted-foreground">Quorum</div>
-          <div className="text-xs text-muted-foreground">
-            The minimum number of votes needed for a valid decision.
-          </div>
-          <div className="flex items-center">
-            {votingNotStarted || isActive ? (
-              <span className="font-medium text-sm text-blue-500">Pending</span>
-            ) : proposal.met_quorum ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1.5" />
-                <span className="font-medium text-sm">Met</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-red-500 mr-1.5" />
-                <span className="font-medium text-sm">Not Met</span>
-              </>
-            )}
-          </div>
+      {/* Quorum */}
+      <div
+        className={cn(
+          "rounded-lg px-4 py-3 border",
+          votingNotStarted || isActive
+            ? "bg-blue-500/10 border-blue-500/30"
+            : proposal.met_quorum
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-red-500/10 border-red-500/30"
+        )}
+      >
+        <div className="text-sm text-muted-foreground mb-1">Quorum</div>
+        <div className="flex items-center">
+          {votingNotStarted || isActive ? (
+            <span className="font-medium text-blue-500">Pending</span>
+          ) : proposal.met_quorum ? (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span className="font-medium text-green-500">Met</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-red-500">Not Met</span>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Threshold */}
-        <div className="space-y-1">
-          <div className="text-md font-bold text-muted-foreground">
-            Threshold
-          </div>
-          <div className="text-xs text-muted-foreground">
-            The required percentage of &apos;Yes&apos; votes required to pass
-            the proposal.
-          </div>
-          <div className="flex items-center">
-            {votingNotStarted || isActive ? (
-              <span className="font-medium text-sm text-blue-500">Pending</span>
-            ) : proposal.met_threshold ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1.5" />
-                <span className="font-medium text-sm">Met</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-red-500 mr-1.5" />
-                <span className="font-medium text-sm">Not Met</span>
-              </>
-            )}
-          </div>
+      {/* Threshold */}
+      <div
+        className={cn(
+          "rounded-lg px-4 py-3 border",
+          votingNotStarted || isActive
+            ? "bg-blue-500/10 border-blue-500/30"
+            : proposal.met_threshold
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-red-500/10 border-red-500/30"
+        )}
+      >
+        <div className="text-sm text-muted-foreground mb-1">Threshold</div>
+        <div className="flex items-center">
+          {votingNotStarted || isActive ? (
+            <span className="font-medium text-blue-500">Pending</span>
+          ) : proposal.met_threshold ? (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span className="font-medium text-green-500">Met</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-red-500">Not Met</span>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Outcome */}
-        <div className="space-y-1">
-          <div className="text-md font-bold text-muted-foreground">Outcome</div>
-          <div className="text-xs text-muted-foreground">
-            Shows if the proposal passed or failed.
-          </div>
-          <div className="flex items-center">
-            {votingNotStarted || isActive ? (
-              <span className="font-medium text-sm text-blue-500">Pending</span>
-            ) : proposal.passed ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1.5" />
-                <span className="font-medium text-sm">Passed</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-red-500 mr-1.5" />
-                <span className="font-medium text-sm">Failed</span>
-              </>
-            )}
-          </div>
+      {/* Outcome */}
+      <div
+        className={cn(
+          "rounded-lg px-4 py-3 border",
+          votingNotStarted || isActive
+            ? "bg-blue-500/10 border-blue-500/30"
+            : proposal.passed
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-red-500/10 border-red-500/30"
+        )}
+      >
+        <div className="text-sm text-muted-foreground mb-1">Outcome</div>
+        <div className="flex items-center">
+          {votingNotStarted || isActive ? (
+            <span className="font-medium text-blue-500">Pending</span>
+          ) : proposal.passed ? (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span className="font-medium text-green-500">Passed</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-red-500">Failed</span>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Execution Status */}
-        <div className="space-y-1">
-          <div className="text-md font-bold text-muted-foreground">
-            Execution
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Shows if the proposal has been executed.
-          </div>
-          <div className="flex items-center">
-            {votingNotStarted || isActive ? (
-              <span className="font-medium text-sm text-blue-500">Pending</span>
-            ) : proposal.executed ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500 mr-1.5" />
-                <span className="font-medium text-sm">Executed</span>
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4 text-red-500 mr-1.5" />
-                <span className="font-medium text-sm">Not Executed</span>
-              </>
-            )}
-          </div>
+      {/* Execution Status */}
+      <div
+        className={cn(
+          "rounded-lg px-4 py-3 border",
+          votingNotStarted || isActive
+            ? "bg-blue-500/10 border-blue-500/30"
+            : isFailed
+            ? "bg-red-500/10 border-red-500/30"
+            : proposal.executed === true
+            ? "bg-green-500/10 border-green-500/30"
+            : "bg-amber-500/10 border-amber-500/30"
+        )}
+      >
+        <div className="text-sm text-muted-foreground mb-1">Execution</div>
+        <div className="flex items-center">
+          {votingNotStarted || isActive ? (
+            <span className="font-medium text-blue-500">Pending</span>
+          ) : isFailed ? (
+            <div className="flex items-center gap-1.5">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-red-500">Failed</span>
+            </div>
+          ) : proposal.executed === true ? (
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span className="font-medium text-green-500">Executed</span>
+            </div>
+          ) : proposal.executed === false ? (
+            <div className="flex items-center gap-1.5">
+              <XCircle className="h-4 w-4 text-red-500" />
+              <span className="font-medium text-red-500">Not Executed</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-amber-500" />
+              <span className="font-medium text-amber-500">Pending</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

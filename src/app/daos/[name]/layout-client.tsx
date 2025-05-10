@@ -49,6 +49,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+// import { DAOSendProposal } from "@/components/daos/proposal/dao-send-proposal";
 
 export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -326,6 +327,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
                 {/* NO NEED TO FILTER IT OUT AS THE QUERY HANDLES AND FETCHES OUR REQURED DAO */}
                 <DAOChatButton daoId={id!} />
+                {/* <DAOSendProposal daoId={id!} /> */}
               </div>
             </div>
           </div>
