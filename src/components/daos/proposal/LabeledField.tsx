@@ -1,5 +1,7 @@
 "use client";
+
 import type React from "react";
+
 import { ExternalLink } from "lucide-react";
 import {
   Tooltip,
@@ -16,32 +18,32 @@ interface LabeledFieldProps {
   link?: string;
 }
 
-const LabeledField: React.FC<LabeledFieldProps> = ({
+const LabeledField = ({
   icon: Icon,
   label,
   value,
   link,
-}) => {
+}: LabeledFieldProps) => {
   const displayValue =
     (typeof value === "string" && value.trim() === "") || !value
       ? "No data available"
       : value;
 
   return (
-    <div className="flex items-start sm:items-center gap-2">
-      <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 sm:mt-0" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 flex-grow min-w-0">
+    <div className="flex items-start gap-1.5">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1.5 flex-grow min-w-0">
         <span className="text-xs text-muted-foreground whitespace-nowrap">
           {label}:
         </span>
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="text-sm break-all overflow-hidden text-ellipsis">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-xs break-all overflow-hidden text-ellipsis">
             {link ? (
               <a
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline flex items-center gap-1.5"
+                className="hover:underline flex items-center gap-1"
               >
                 {displayValue}
                 <TooltipProvider>
@@ -49,7 +51,7 @@ const LabeledField: React.FC<LabeledFieldProps> = ({
                     <TooltipTrigger asChild>
                       <ExternalLink className="h-3 w-3 text-muted-foreground hover:text-foreground flex-shrink-0" />
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent className="text-xs">
                       <p>View on explorer</p>
                     </TooltipContent>
                   </Tooltip>

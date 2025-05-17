@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProposalVotes, type Vote } from "@/queries/vote-queries";
 import { formatDistanceToNow } from "date-fns";
@@ -29,7 +29,7 @@ interface VotesTableProps {
   proposalId: string;
 }
 
-const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
+const VotesTable = ({ proposalId }: VotesTableProps) => {
   const queryClient = useQueryClient();
   const {
     data: votes,
@@ -77,18 +77,16 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
   // --- Loading State ---
   if (isLoading) {
     return (
-      // Simple skeleton loader for the table body area
-      <div className="space-y-2 p-4 border border-zinc-700/50 rounded-lg bg-zinc-800/30">
+      <div className="space-y-2 p-3 bg-zinc-800/30 rounded-md">
         <div className="h-4 bg-zinc-700 rounded-full animate-pulse w-full"></div>
         <div className="h-4 bg-zinc-700 rounded-full animate-pulse w-5/6"></div>
-        <div className="h-4 bg-zinc-700 rounded-full animate-pulse w-full"></div>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="text-red-400 p-4 text-center border border-red-700/50 rounded-lg bg-red-900/10">
+      <div className="text-red-400 p-3 text-center bg-red-500/5 rounded-md text-sm">
         Error loading votes: {error?.message || "Unknown error"}
       </div>
     );
@@ -97,7 +95,7 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
   // --- Empty State ---
   if (!votes || votes.length === 0) {
     return (
-      <div className="py-6 text-center text-muted-foreground bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+      <div className="py-4 text-center text-muted-foreground bg-zinc-800/30 rounded-md text-sm">
         No votes have been recorded for this proposal yet.
       </div>
     );
@@ -105,40 +103,36 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
 
   // --- Helper function for confidence bar color ---
   const getConfidenceColor = (confidence: number | null): string => {
-    if (confidence === null) return "bg-gray-500 dark:bg-gray-600"; // More distinct null color
-    if (confidence >= 0.8) return "bg-green-500";
-    if (confidence >= 0.6) return "bg-green-400";
-    if (confidence >= 0.4) return "bg-yellow-400";
-    if (confidence >= 0.2) return "bg-orange-500";
-    return "bg-red-500";
+    if (confidence === null) return "bg-zinc-600";
+    if (confidence >= 0.8) return "bg-primary";
+    if (confidence >= 0.6) return "bg-primary/80";
+    if (confidence >= 0.4) return "bg-primary/60";
+    if (confidence >= 0.2) return "bg-primary/40";
+    return "bg-zinc-500";
   };
 
   // --- Render Votes Table ---
   return (
-    <div className="overflow-x-auto relative border border-zinc-700/50 rounded-lg">
+    <div className="overflow-x-auto relative bg-zinc-800/30 rounded-md">
       <Table>
         <TableHeader>
-          <TableRow className="bg-zinc-800/30 hover:bg-zinc-800/50">
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+          <TableRow className="hover:bg-muted/5 border-b border-zinc-700/30">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               Vote
             </TableHead>
-            {/* Optional: <TableHead>Voter</TableHead> */}
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               Amount
             </TableHead>
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               Date
             </TableHead>
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               Confidence
             </TableHead>
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               Reasoning
             </TableHead>
-            <TableHead className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-              Prompt
-            </TableHead>
-            <TableHead className="whitespace-nowrap px-3 py-2 text-center text-muted-foreground">
+            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
               TX
             </TableHead>
           </TableRow>
@@ -147,30 +141,30 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
           {votes.map((vote) => (
             <TableRow
               key={vote.id}
-              className="hover:bg-zinc-800/40 border-b border-zinc-700/50 last:border-b-0"
+              className="hover:bg-muted/5 border-t border-zinc-700/30"
             >
               {/* Vote Yes/No */}
-              <TableCell className="px-3 py-2">
+              <TableCell className="px-2 py-1.5 text-xs">
                 {vote.amount === null ? (
                   <span className="flex items-center text-zinc-500">
-                    <span className="h-4 w-4 mr-1.5 flex-shrink-0 rounded-full border border-zinc-500"></span>
+                    <span className="h-3 w-3 mr-1 flex-shrink-0 rounded-full border border-zinc-500"></span>
                     No vote
                   </span>
                 ) : vote.answer ? (
-                  <span className="flex items-center text-green-400">
-                    <ThumbsUp className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                  <span className="flex items-center text-primary">
+                    <ThumbsUp className="h-3 w-3 mr-1 flex-shrink-0" />
                     Yes
                   </span>
                 ) : (
-                  <span className="flex items-center text-red-400">
-                    <ThumbsDown className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                  <span className="flex items-center text-zinc-400">
+                    <ThumbsDown className="h-3 w-3 mr-1 flex-shrink-0" />
                     No
                   </span>
                 )}
               </TableCell>
 
               {/* Amount */}
-              <TableCell className="whitespace-nowrap px-3 py-2">
+              <TableCell className="whitespace-nowrap px-2 py-1.5 text-xs">
                 {vote.amount !== null ? (
                   <TokenBalance
                     value={vote.amount}
@@ -178,33 +172,33 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
                     variant="rounded"
                   />
                 ) : (
-                  <span className="text-muted-foreground">
-                    Agent did not vote
-                  </span>
+                  <span className="text-muted-foreground">N/A</span>
                 )}
               </TableCell>
 
               {/* Date */}
-              <TableCell className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+              <TableCell className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(vote.created_at), {
                   addSuffix: true,
                 })}
               </TableCell>
 
               {/* Confidence */}
-              <TableCell className="px-3 py-2">
+              <TableCell className="px-2 py-1.5 text-xs">
                 {vote.confidence !== null ? (
                   <div
                     className="flex items-center"
                     title={`Confidence: ${Math.round(vote.confidence * 100)}%`}
                   >
-                    <div className="w-16 h-2 bg-zinc-700 rounded-full mr-2 overflow-hidden">
+                    <div className="w-12 h-1.5 bg-zinc-700 rounded-full mr-1.5 overflow-hidden">
                       <div
-                        className={`h-2 ${getConfidenceColor(vote.confidence)}`}
+                        className={`h-1.5 ${getConfidenceColor(
+                          vote.confidence
+                        )}`}
                         style={{ width: `${vote.confidence * 100}%` }}
                       ></div>
                     </div>
-                    <span className="text-xs tabular-nums">
+                    <span className="tabular-nums">
                       {Math.round(vote.confidence * 100)}%
                     </span>
                   </div>
@@ -213,27 +207,26 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
                 )}
               </TableCell>
 
-              {/* Reasoning (Corrected for null) */}
-              <TableCell className="px-3 py-2">
+              {/* Reasoning */}
+              <TableCell className="px-2 py-1.5 text-xs">
                 {vote.reasoning ? (
                   <div className="flex items-center gap-1 max-w-xs">
                     <Dialog>
                       <DialogTrigger className="cursor-pointer text-primary hover:underline truncate text-left">
                         {(vote.reasoning || "")
-                          .substring(0, 40)
+                          .substring(0, 30)
                           .replace(/[#*`_~[\]()]/g, "")}
-                        {(vote.reasoning || "").length > 40 ? "..." : ""}
+                        {(vote.reasoning || "").length > 30 ? "..." : ""}
                       </DialogTrigger>
-                      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
                         <DialogHeader>
                           <DialogTitle>Vote Reasoning</DialogTitle>
                         </DialogHeader>
-                        <div className="mt-4 prose prose-sm md:prose-base dark:prose-invert max-w-none px-1 overflow-y-auto flex-1 prose-p:my-2 prose-li:my-1">
+                        <div className="mt-3 prose prose-sm dark:prose-invert max-w-none px-1 overflow-y-auto flex-1 prose-p:my-2 prose-li:my-1">
                           <ReactMarkdown>{vote.reasoning || ""}</ReactMarkdown>
                         </div>
                       </DialogContent>
                     </Dialog>
-                    {/* Pass empty string if reasoning is null */}
                     <CopyButton text={vote.reasoning || ""} />
                   </div>
                 ) : (
@@ -241,36 +234,8 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
                 )}
               </TableCell>
 
-              {/* Prompt (Corrected for null) */}
-              <TableCell className="px-3 py-2">
-                {vote.prompt ? (
-                  <div className="flex items-center gap-1 max-w-xs">
-                    <Dialog>
-                      <DialogTrigger className="cursor-pointer text-primary hover:underline truncate text-left">
-                        {(vote.prompt || "")
-                          .substring(0, 40)
-                          .replace(/[#*`_~[\]()]/g, "")}
-                        {(vote.prompt || "").length > 40 ? "..." : ""}
-                      </DialogTrigger>
-                      <DialogContent className="w-[90vw] sm:w-[80vw] max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-                        <DialogHeader>
-                          <DialogTitle>Vote Prompt</DialogTitle>
-                        </DialogHeader>
-                        <div className="mt-4 prose prose-sm md:prose-base dark:prose-invert max-w-none px-1 overflow-y-auto flex-1 prose-p:my-2 prose-li:my-1">
-                          <ReactMarkdown>{vote.prompt || ""}</ReactMarkdown>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    {/* Pass empty string if prompt is null */}
-                    <CopyButton text={vote.prompt || ""} />
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-
               {/* TX Link */}
-              <TableCell className="px-3 py-2 text-center">
+              <TableCell className="px-2 py-1.5 text-center text-xs">
                 {vote.tx_id ? (
                   <a
                     href={`https://explorer.stacks.co/txid/${
@@ -282,13 +247,13 @@ const VotesTable: React.FC<VotesTableProps> = ({ proposalId }) => {
                     }`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 inline-block"
+                    className="text-primary hover:text-primary/80 inline-block"
                     title={`View transaction ${vote.tx_id}`}
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 ) : (
-                  <span className="text-muted-foreground">N/A</span>
+                  <span className="text-muted-foreground">-</span>
                 )}
               </TableCell>
             </TableRow>

@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useMemo } from "react";
 import { Timer, Calendar, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -215,11 +214,7 @@ export const useVotingStatus = (
   return votingStatusInfo;
 };
 
-const TimeStatus: React.FC<TimeStatusProps> = ({
-  status,
-  start_block,
-  end_block,
-}) => {
+const TimeStatus = ({ status, start_block, end_block }: TimeStatusProps) => {
   const {
     startBlockTime,
     endBlockTime,
@@ -231,10 +226,10 @@ const TimeStatus: React.FC<TimeStatusProps> = ({
 
   if (isLoading) {
     return (
-      <div className="border border-zinc-800 rounded-md p-3 w-full">
-        <div className="flex items-center gap-2">
-          <Timer className="h-4 w-4 text-muted-foreground animate-pulse" />
-          <span className="text-sm">Loading block times...</span>
+      <div className="border border-border rounded-md p-2 w-full">
+        <div className="flex items-center gap-1.5">
+          <Timer className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
+          <span className="text-xs">Loading block times...</span>
         </div>
       </div>
     );
@@ -243,15 +238,14 @@ const TimeStatus: React.FC<TimeStatusProps> = ({
   // 2. Handle SPECIFIC case: Start time is null AFTER loading (API returned null or error occurred)
   if (startBlockTime === null) {
     return (
-      <div className="border border-amber-700/50 rounded-md p-3 w-full bg-amber-900/10">
-        <div className="flex items-center gap-2 text-amber-500">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm font-medium">Start Time Unavailable</span>
+      <div className="border border-amber-500/20 rounded-md p-2 w-full">
+        <div className="flex items-center gap-1.5 text-amber-500">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">Start Time Unavailable</span>
         </div>
-        <p className="text-xs text-amber-600/90 mt-2">
+        <p className="text-xs text-amber-500/80 mt-1">
           The timestamp for the starting block (#{start_block}) could not be
-          retrieved from the API. The voting period cannot be accurately
-          determined yet.
+          retrieved from the API.
         </p>
       </div>
     );
@@ -264,63 +258,61 @@ const TimeStatus: React.FC<TimeStatusProps> = ({
       : null;
 
   return (
-    <div className="border border-zinc-800 rounded-md p-3 w-full">
+    <div className="bg-zinc-800/30 rounded-md p-2 w-full">
       {/* Header (Active/Ended status) */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <Timer className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-1.5">
+          <Timer className="h-3.5 w-3.5 text-muted-foreground" />
           {isActive ? (
-            <span className="text-sm font-medium text-blue-500">
+            <span className="text-xs font-medium text-primary">
               Voting in progress
             </span>
           ) : (
-            <span className="text-sm font-medium">
+            <span className="text-xs font-medium">
               {isEnded ? "Voting Period" : "Voting Starts Soon"}
             </span>
           )}
         </div>
         {isEnded && (
-          <Badge variant="outline" className="text-xs bg-zinc-800/50">
+          <Badge
+            variant="outline"
+            className="text-xs h-5 px-1.5 border-none bg-zinc-700/50"
+          >
             Ended
           </Badge>
         )}
       </div>
 
       {/* Start/End Time Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
         {/* Start Time */}
-        <div className="flex items-start gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-1.5">
+          <Calendar className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-xs text-muted-foreground">Started</div>
-            <div className="text-sm">{formattedStart}</div>
+            <div className="text-muted-foreground">Started</div>
+            <div>{formattedStart}</div>
           </div>
         </div>
 
         {/* End Time */}
-        <div className="flex items-start gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-1.5">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div>
-            <div className="text-xs text-muted-foreground">Ends</div>
-            <div className="text-sm">
+            <div className="text-muted-foreground">Ends</div>
+            <div>
               {formattedEnd ? (
-                <span
-                  className={`flex items-center flex-wrap gap-1 ${
-                    isEndTimeEstimated ? "" : ""
-                  }`}
-                >
+                <span className="flex items-center flex-wrap gap-1">
                   {formattedEnd}
                   {isEndTimeEstimated && (
                     <Badge
                       variant="outline"
-                      className="text-xs font-normal bg-zinc-800/50 ml-1"
+                      className="text-[10px] h-4 px-1 ml-1 border-none bg-zinc-700/50"
                     >
-                      Estimated
+                      Est.
                     </Badge>
                   )}
                 </span>
               ) : (
-                // Provide clearer fallback if end date couldn't be determined/estimated
                 <span className="text-muted-foreground">
                   {end_block ? `After Block #${end_block}` : "Not determinable"}
                 </span>
@@ -329,13 +321,6 @@ const TimeStatus: React.FC<TimeStatusProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Estimation Notice (only if estimated) */}
-      {isEndTimeEstimated && (
-        <div className="mt-3 text-xs text-muted-foreground">
-          End block #{end_block} time is estimated based on average block time.
-        </div>
-      )}
     </div>
   );
 };

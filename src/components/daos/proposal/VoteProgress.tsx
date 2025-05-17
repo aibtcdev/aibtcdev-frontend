@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
@@ -13,7 +12,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Info, ThumbsUp, ThumbsDown } from "lucide-react";
 
-// Update the VoteProgressProps interface to match the types from Proposal
 interface VoteProgressProps {
   votesFor?: string;
   votesAgainst?: string;
@@ -24,15 +22,15 @@ interface VoteProgressProps {
   liquidTokens: string;
 }
 
-const VoteProgress: React.FC<VoteProgressProps> = ({
+const VoteProgress = ({
   votesFor: initialVotesFor,
   votesAgainst: initialVotesAgainst,
   contractAddress,
   proposalId,
   refreshing = false,
   tokenSymbol = "",
-  liquidTokens = "0", // Default is now just a string
-}) => {
+  liquidTokens = "0",
+}: VoteProgressProps) => {
   // Memoize initial votes parsing
   const initialParsedVotes = useMemo(() => {
     const parsedFor = initialVotesFor ? initialVotesFor.replace(/n$/, "") : "0";
@@ -121,10 +119,10 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
   if (isLoading && !refreshing) {
     return (
       <div className="space-y-2">
-        <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+        <div className="h-4 bg-zinc-700 rounded-full animate-pulse"></div>
         <div className="flex justify-between">
-          <div className="h-4 w-16 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse"></div>
-          <div className="h-4 w-16 bg-gray-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+          <div className="h-4 w-16 bg-zinc-700 rounded animate-pulse"></div>
+          <div className="h-4 w-16 bg-zinc-700 rounded animate-pulse"></div>
         </div>
       </div>
     );
@@ -132,30 +130,34 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
 
   if (error) {
     return (
-      <div className="text-red-500">Error: {(error as Error).message}</div>
+      <div className="text-red-500 text-sm">
+        Error: {(error as Error).message}
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {voteCalculations.totalVotes === 0 ? (
-        <div className="py-6 text-center bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-          <div className="flex flex-col items-center gap-2">
-            <Info className="h-6 w-6 text-blue-500" />
-            <span className="text-muted-foreground">Awaiting first vote</span>
+        <div className="py-4 text-center rounded-md">
+          <div className="flex flex-col items-center gap-1">
+            <Info className="h-5 w-5 text-secondary" />
+            <span className="text-sm text-muted-foreground">
+              Awaiting first vote
+            </span>
           </div>
         </div>
       ) : (
         <>
-          <div className="relative h-10 bg-zinc-800 rounded-lg overflow-hidden">
+          <div className="relative h-8 bg-zinc-800 rounded-md overflow-hidden">
             {/* For votes */}
             <div
-              className="absolute h-full bg-green-500/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-3"
+              className="absolute h-full bg-green-500/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-2"
               style={{ width: `${voteCalculations.percentageFor}%` }}
             >
               {voteCalculations.percentageFor > 10 && (
-                <div className="flex items-center gap-1.5 text-white text-sm font-medium">
-                  <ThumbsUp className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1 text-white text-xs font-medium">
+                  <ThumbsUp className="h-3 w-3" />
                   <span>{voteCalculations.percentageFor.toFixed(1)}%</span>
                 </div>
               )}
@@ -163,15 +165,15 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
 
             {/* Against votes */}
             <div
-              className="absolute h-full bg-red-500/80 transition-all duration-500 ease-out flex items-center justify-start pl-3"
+              className="absolute h-full bg-red-500/80 transition-all duration-500 ease-out flex items-center justify-start pl-2"
               style={{
                 width: `${voteCalculations.percentageAgainst}%`,
                 left: `${voteCalculations.percentageFor}%`,
               }}
             >
               {voteCalculations.percentageAgainst > 10 && (
-                <div className="flex items-center gap-1.5 text-white text-sm font-medium">
-                  <ThumbsDown className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1 text-white text-xs font-medium">
+                  <ThumbsDown className="h-3 w-3" />
                   <span>{voteCalculations.percentageAgainst.toFixed(1)}%</span>
                 </div>
               )}
@@ -179,22 +181,22 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
 
             {/* Remaining votes */}
             <div
-              className="absolute h-full bg-zinc-700 right-0 transition-all duration-500 ease-out flex items-center justify-end pr-3"
+              className="absolute h-full bg-zinc-700 right-0 transition-all duration-500 ease-out flex items-center justify-end pr-2"
               style={{ width: `${voteCalculations.percentageRemaining}%` }}
             >
               {voteCalculations.percentageRemaining > 15 && (
-                <span className="text-zinc-300 text-sm">
+                <span className="text-zinc-300 text-xs">
                   {voteCalculations.percentageRemaining.toFixed(1)}% not voted
                 </span>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-sm text-muted-foreground">For</span>
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span className="text-muted-foreground">For</span>
               </div>
               <div className="flex items-center justify-between">
                 <TokenBalance
@@ -203,16 +205,16 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
                   decimals={8}
                   variant="abbreviated"
                 />
-                <span className="text-xs text-green-400 font-medium">
+                <span className="text-green-400 font-medium">
                   {voteCalculations.castPercentageFor.toFixed(1)}%
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="text-sm text-muted-foreground">Against</span>
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                <span className="text-muted-foreground">Against</span>
               </div>
               <div className="flex items-center justify-between">
                 <TokenBalance
@@ -221,18 +223,16 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
                   decimals={8}
                   variant="abbreviated"
                 />
-                <span className="text-xs text-red-400 font-medium">
+                <span className="text-red-400 font-medium">
                   {voteCalculations.castPercentageAgainst.toFixed(1)}%
                 </span>
               </div>
             </div>
 
             <div className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-3 h-3 rounded-full bg-zinc-600"></div>
-                <span className="text-sm text-muted-foreground">
-                  Total Available
-                </span>
+              <div className="flex items-center gap-1 mb-1">
+                <div className="w-2 h-2 rounded-full bg-zinc-600"></div>
+                <span className="text-muted-foreground">Total</span>
               </div>
               <div className="flex items-center justify-between">
                 <TokenBalance
@@ -245,11 +245,11 @@ const VoteProgress: React.FC<VoteProgressProps> = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        <Info className="h-4 w-4 text-zinc-400" />
+                        <Info className="h-3.5 w-3.5 text-zinc-400" />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p className="text-sm">
+                    <TooltipContent side="top" className="text-xs">
+                      <p>
                         Total liquid tokens available for voting.
                         <br />
                         {voteCalculations.percentageRemaining.toFixed(1)}% have

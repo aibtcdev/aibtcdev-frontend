@@ -114,11 +114,11 @@ export function DAOSendProposal({
     <>
       <div className={`flex w-full gap-2 flex-col ${className}`}>
         {!hasAccessToken ? (
-          <p className="text-sm text-amber-500 mb-2">
+          <p className="text-xs text-amber-500 mb-1">
             Connect your wallet to send proposal
           </p>
         ) : !isConnected ? (
-          <p className="text-sm text-amber-500 mb-2">
+          <p className="text-xs text-amber-500 mb-1">
             Connecting to messaging service...
           </p>
         ) : null}
@@ -152,13 +152,13 @@ export function DAOSendProposal({
           </Button>
         </div>
         {inputError && (
-          <p className="text-sm text-red-500 mt-1">{inputError}</p>
+          <p className="text-xs text-red-500 mt-1">{inputError}</p>
         )}
         {!inputError &&
           hasAccessToken &&
           inputValue.trim().length > 0 &&
           inputValue.trim().length < 50 && (
-            <p className="text-sm text-red-500 mt-1">
+            <p className="text-xs text-red-500 mt-1">
               {`Message needs ${
                 50 - inputValue.trim().length
               } more characters (minimum 50)`}
