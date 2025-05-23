@@ -1,16 +1,17 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { TokenBalance } from "@/components/reusables/balance-display";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Info, ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
 
 interface VoteProgressProps {
   votesFor?: string;
@@ -20,6 +21,7 @@ interface VoteProgressProps {
   refreshing?: boolean;
   tokenSymbol?: string;
   liquidTokens: string;
+  isActive?: boolean; // Used only for countdown timer, not for showing/hiding refresh button
 }
 
 const VoteProgress = ({
@@ -30,7 +32,13 @@ const VoteProgress = ({
   refreshing = false,
   tokenSymbol = "",
   liquidTokens = "0",
+  isActive = false,
 }: VoteProgressProps) => {
+  const [localRefreshing, setLocalRefreshing] = useState(false);
+  const [nextRefreshIn, setNextRefreshIn] = useState(60);
+  const [bustCache, setBustCache] = useState(false); // Add state to control cache busting
+  const queryClient = useQueryClient();
+
   // Memoize initial votes parsing
   const initialParsedVotes = useMemo(() => {
     const parsedFor = initialVotesFor ? initialVotesFor.replace(/n$/, "") : "0";
@@ -47,24 +55,78 @@ const VoteProgress = ({
   // State to store parsed vote values
   const [parsedVotes, setParsedVotes] = useState(initialParsedVotes);
 
+  // Refresh votes data
+  const refreshVotesData = useCallback(async () => {
+    if (!contractAddress || !proposalId) return;
+
+    setLocalRefreshing(true);
+    setBustCache(true); // Set bustCache to true when manually refreshing
+
+    try {
+      await queryClient.invalidateQueries({
+        queryKey: ["proposalVotes", contractAddress, proposalId],
+        refetchType: "all",
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    } finally {
+      setLocalRefreshing(false);
+      setNextRefreshIn(60);
+      // We'll keep bustCache true until the query completes
+    }
+  }, [queryClient, contractAddress, proposalId]);
+
+  // Implement countdown timer for active proposals only
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isActive && !localRefreshing && !refreshing) {
+      interval = setInterval(() => {
+        setNextRefreshIn((prev) => {
+          if (prev <= 1) {
+            // When countdown reaches 0, trigger refresh
+            refreshVotesData();
+            return 60;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive, localRefreshing, refreshing, refreshVotesData]);
+
   // Memoize query options to prevent unnecessary refetches
   const queryOptions = useMemo(
     () => ({
-      queryKey: ["proposalVotes", contractAddress, proposalId, refreshing],
+      queryKey: [
+        "proposalVotes",
+        contractAddress,
+        proposalId,
+        refreshing,
+        bustCache,
+      ],
       queryFn: async () => {
         if (contractAddress && proposalId) {
+          // Pass bustCache to getProposalVotes
           return getProposalVotes(
             contractAddress,
             Number(proposalId),
-            refreshing
+            bustCache
           );
         }
         return null;
       },
       enabled: !!contractAddress && !!proposalId,
       refetchOnWindowFocus: false,
+      onSettled: () => {
+        // Reset bustCache after query completes (success or error)
+        setBustCache(false);
+      },
     }),
-    [contractAddress, proposalId, refreshing]
+    [contractAddress, proposalId, refreshing, bustCache]
   );
 
   // Use useQuery with memoized options
@@ -116,7 +178,9 @@ const VoteProgress = ({
     }
   }, [data]);
 
-  if (isLoading && !refreshing) {
+  const isRefreshingAny = localRefreshing || refreshing;
+
+  if (isLoading && !isRefreshingAny) {
     return (
       <div className="space-y-2">
         <div className="h-4 bg-zinc-700 rounded-full animate-pulse"></div>
@@ -138,6 +202,42 @@ const VoteProgress = ({
 
   return (
     <div className="space-y-3">
+      {/* Header with refresh controls - Always show refresh button */}
+      <div className="flex items-center justify-between text-sm">
+        <div className="text-muted-foreground">
+          Total Votes: {voteCalculations.totalVotes.toLocaleString()}{" "}
+          {tokenSymbol}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isRefreshingAny ? (
+            <span className="text-primary flex items-center">
+              <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+              Updating...
+            </span>
+          ) : (
+            // Only show countdown for active proposals
+            isActive && (
+              <span className="text-muted-foreground">
+                Next update: {nextRefreshIn}s
+              </span>
+            )
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={refreshVotesData}
+            disabled={isRefreshingAny}
+            title="Refresh vote data"
+          >
+            <RefreshCw
+              className={`h-3 w-3 ${isRefreshingAny ? "animate-spin" : ""}`}
+            />
+          </Button>
+        </div>
+      </div>
+
       {voteCalculations.totalVotes === 0 ? (
         <div className="py-4 text-center rounded-md">
           <div className="flex flex-col items-center gap-1">

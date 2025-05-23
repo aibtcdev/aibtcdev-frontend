@@ -57,7 +57,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DAOSendProposal } from "@/components/daos/proposal/dao-send-proposal";
+import { DAOSendProposal } from "@/components/daos/proposal/dao-send-proposal-updated";
 // import { DAOChatButton } from "@/components/daos/dao-chat-button";
 
 export function DAOLayoutClient({ children }: { children: React.ReactNode }) {

@@ -26,6 +26,8 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
   // Check if the proposal has failed
   const isFailed = isEnded && !proposal.passed;
 
+  const isNotStartedYet = !isActive && !isEnded;
+
   // Improved metrics display with 3-column grid
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -71,7 +73,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
               <div
                 className={cn(
                   "rounded-md p-3 cursor-pointer",
-                  isActive
+                  isActive || isNotStartedYet
                     ? "bg-primary"
                     : proposal.met_quorum
                     ? "bg-primary"
@@ -85,7 +87,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
                     </span>
                     <Info className="h-3 w-3 " />
                   </div>
-                  {isActive ? (
+                  {isActive || isNotStartedYet ? (
                     <span className="text-sm font-medium">Pending</span>
                   ) : proposal.met_quorum ? (
                     <div className="flex items-center gap-1">
@@ -116,7 +118,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
               <div
                 className={cn(
                   "rounded-md p-3 cursor-pointer",
-                  isActive
+                  isActive || isNotStartedYet
                     ? "bg-primary"
                     : proposal.met_threshold
                     ? "bg-primary"
@@ -130,7 +132,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
                     </span>
                     <Info className="h-3 w-3 " />
                   </div>
-                  {isActive ? (
+                  {isActive || isNotStartedYet ? (
                     <span className="text-sm font-medium">Pending</span>
                   ) : proposal.met_threshold ? (
                     <div className="flex items-center gap-1">
@@ -164,7 +166,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
               <div
                 className={cn(
                   "rounded-md p-3 cursor-pointer",
-                  isActive
+                  isActive || isNotStartedYet
                     ? "bg-primary"
                     : proposal.passed
                     ? "bg-primary"
@@ -178,7 +180,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
                     </span>
                     <Info className="h-3 w-3 " />
                   </div>
-                  {isActive ? (
+                  {isActive || isNotStartedYet ? (
                     <span className="text-sm font-medium">Pending</span>
                   ) : proposal.passed ? (
                     <div className="flex items-center gap-1">
@@ -209,7 +211,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
               <div
                 className={cn(
                   "rounded-md p-3 cursor-pointer",
-                  isActive
+                  isActive || isNotStartedYet
                     ? "bg-primary"
                     : isFailed
                     ? "bg-zinc-800/50"
@@ -225,7 +227,7 @@ const ProposalMetrics = ({ proposal }: ProposalMetricsProps) => {
                     </span>
                     <Info className="h-3 w-3 " />
                   </div>
-                  {isActive ? (
+                  {isActive || isNotStartedYet ? (
                     <span className="text-sm font-medium">Pending</span>
                   ) : isFailed ? (
                     <div className="flex items-center gap-1">
