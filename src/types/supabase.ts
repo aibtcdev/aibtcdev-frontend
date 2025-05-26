@@ -74,6 +74,7 @@ export interface Extension {
   updated_at: string;
   dao_id: string;
   type: string;
+  subtype: string;
   contract_principal: string;
   tx_id: string;
   symbol: string | null;
@@ -188,7 +189,6 @@ export interface AgentManagementProps {
   onAgentAdded: () => void; // Callback for when a new agent is added
 }
 
-
 // Interface for props of the TaskForm component
 export interface TaskFormProps {
   crewId: string; // ID of the current crew
@@ -223,7 +223,6 @@ export interface CloneTask {
   expected_output: string;
 }
 
-
 // INTERFACE FOR PUBLIC CREWS
 
 interface PublicTask {
@@ -250,7 +249,7 @@ export interface PublicCrew {
   description: string;
   created_at: string;
   creator_email: string;
-  clones: number
+  clones: number;
   agents: PublicAgent[];
 }
 
@@ -266,7 +265,6 @@ export interface ProfileWithBalance extends Profile {
   balances?: BalanceResponse; // Optional because it may be undefined until loaded
   tokenPrices?: Record<string, number>; // Map contract ID to token price
 }
-
 
 export interface BalanceResponse {
   stx: {
