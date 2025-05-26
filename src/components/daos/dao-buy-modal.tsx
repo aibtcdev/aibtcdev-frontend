@@ -216,9 +216,11 @@ export function DAOBuyModal({
       );
     }
 
-    const tokenDexExtension = daoExtensions?.find(
-      (ext: Extension) => ext.type === "TOKEN" && ext.subtype === "DEX"
-    );
+    const tokenDexExtension = daoExtensions?.find((ext: Extension) => {
+      console.log("Extension:", ext);
+      return ext.type === "TOKEN" && ext.subtype === "DEX";
+    });
+    console.log("Token DEX Extension:", tokenDexExtension);
     // Using the component-level tokenName variable
 
     return (
