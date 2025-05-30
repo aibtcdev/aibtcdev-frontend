@@ -211,7 +211,7 @@ export const DAOTable = ({
                           href={`/daos/${encodeURIComponent(dao.name)}`}
                           className="font-medium hover:underline hover:text-primary text-sm"
                         >
-                          {truncateName(dao.name)}
+                          {dao.name}
                         </Link>
                       </TooltipTrigger>
                       {dao.name.length > 10 && (
@@ -414,7 +414,7 @@ export const DAOTable = ({
                                     )}`}
                                     className="font-medium hover:underline text-sm"
                                   >
-                                    {truncateName(dao.name)}
+                                    {dao.name}
                                   </Link>
                                 </TooltipTrigger>
                                 {dao.name.length > 10 && (
