@@ -19,7 +19,6 @@ import { useWalletStore } from "@/store/wallet";
 import { fetchDAOExtensions, fetchToken } from "@/queries/dao-queries";
 import type { DAO, Token, Extension } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
-import type { WalletBalance } from "@/store/wallet";
 import AuthButton from "../home/auth-button";
 import {
   formatStxBalance,
@@ -60,7 +59,12 @@ export function DAOBuyModal({
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
 
   const { accessToken } = useSessionStore();
-  const { balances, userWallet } = useWalletStore();
+  const { balances, agentWallets } = useWalletStore();
+
+  // Pick the agent wallet (first one if any)
+  const agentWallet = agentWallets.length > 0 ? agentWallets[0] : null;
+  const agentWalletAddress = agentWallet ? getWalletAddress(agentWallet) : null;
+  const agentBalance = agentWalletAddress ? balances[agentWalletAddress] : null;
 
   const { data: tokenData } = useQuery({
     queryKey: ["token", daoId],
@@ -86,27 +90,16 @@ export function DAOBuyModal({
     (ext: Extension) => ext.type === "TOKEN" && ext.subtype === "DEX"
   );
 
-  /* wallet & helpers */
-  const agentWalletData = (() => {
-    if (!userWallet) return null;
-    const address = getWalletAddress(userWallet);
-    if (!address) return null;
-    return {
-      address,
-      walletBalance: balances[address] as WalletBalance | undefined,
-    };
-  })();
-
   const btcValue = satoshiToBTC(currentAmount);
 
-  /* reset on close */
+  // Reset result when modal closes
   useEffect(() => {
     if (!open) setApiResponse(null);
   }, [open]);
 
   /* ------ Pre-purchase screen ------ */
   const renderPurchaseScreen = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-auto">
       {/* header */}
       <div className="flex-shrink-0 h-16 flex items-center justify-between px-6 shadow-md bg-background">
         <h2 className="text-lg font-medium">Buy {tokenName} Tokens</h2>
@@ -122,43 +115,46 @@ export function DAOBuyModal({
           </p>
         </div>
 
-        {agentWalletData && agentWalletData.walletBalance && (
+        {agentWallet ? (
           <div className="mb-6">
             <h3 className="font-medium text-lg mb-4 flex items-center">
               <Wallet className="w-5 h-5 mr-2" />
-              Available Balance
+              Agent Wallet Balance
             </h3>
 
             <div className="space-y-3">
-              {agentWalletData.walletBalance.stx && (
-                <div className="flex justify-between items-center  pb-3">
-                  <span>STX Balance</span>
+              {/* STX Balance */}
+              {agentBalance?.stx && (
+                <div className="flex justify-between items-center pb-3 border-b">
+                  <span>STX</span>
                   <span className="font-medium">
-                    {formatStxBalance(
-                      agentWalletData.walletBalance.stx.balance
-                    )}{" "}
-                    STX
+                    {formatStxBalance(agentBalance.stx.balance)} STX
                   </span>
                 </div>
               )}
 
-              {agentWalletData.walletBalance.fungible_tokens &&
-                Object.entries(
-                  agentWalletData.walletBalance.fungible_tokens
-                ).map(([tokenId, token], idx, arr) => (
-                  <div
-                    key={tokenId}
-                    className={`flex justify-between items-center ${
-                      idx !== arr.length - 1 ? "border-b pb-3" : ""
-                    }`}
-                  >
-                    <span>{tokenId.split("::")[1]}</span>
-                    <span className="font-medium">
-                      {formatTokenBalance(token.balance)}
-                    </span>
-                  </div>
-                ))}
+              {/* Fungible Token Balances */}
+              {agentBalance?.fungible_tokens &&
+                Object.entries(agentBalance.fungible_tokens).map(
+                  ([tokenId, token], idx, arr) => (
+                    <div
+                      key={tokenId}
+                      className={`flex justify-between items-center ${
+                        idx !== arr.length - 1 ? "border-b pb-3" : ""
+                      }`}
+                    >
+                      <span>{tokenId.split("::")[1]}</span>
+                      <span className="font-medium">
+                        {formatTokenBalance(token.balance)}
+                      </span>
+                    </div>
+                  )
+                )}
             </div>
+          </div>
+        ) : (
+          <div className="mb-6 text-muted-foreground">
+            No agent wallet found. Please add an agent wallet to buy tokens.
           </div>
         )}
       </div>

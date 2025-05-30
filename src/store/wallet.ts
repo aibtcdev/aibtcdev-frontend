@@ -65,6 +65,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
             // Separate user wallet (agent_id is null) from agent wallets
             const userWallet = walletsData?.find((wallet) => wallet.agent_id === null) || null
             const agentWallets = walletsData?.filter((wallet) => wallet.agent_id !== null) || []
+            console.log("All wallets fetched:", walletsData)
+            console.log("User wallet:", userWallet)
+            console.log("Agent wallets:", agentWallets)
 
             // Fetch balances for all addresses
             const allAddresses = walletsData
