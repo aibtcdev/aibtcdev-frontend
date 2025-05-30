@@ -20,11 +20,7 @@ import { fetchDAOExtensions, fetchToken } from "@/queries/dao-queries";
 import type { DAO, Token, Extension } from "@/types/supabase";
 import { Button } from "@/components/ui/button";
 import AuthButton from "../home/auth-button";
-import {
-  formatStxBalance,
-  formatTokenBalance,
-  satoshiToBTC,
-} from "@/helpers/format-utils";
+import { formatTokenBalance, satoshiToBTC } from "@/helpers/format-utils";
 import { getWalletAddress } from "@/helpers/wallet-utils";
 
 interface DAOChatModalProps {
