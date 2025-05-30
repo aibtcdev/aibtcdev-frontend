@@ -123,16 +123,6 @@ export function DAOBuyModal({
             </h3>
 
             <div className="space-y-3">
-              {/* STX Balance */}
-              {agentBalance?.stx && (
-                <div className="flex justify-between items-center pb-3 border-b">
-                  <span>STX</span>
-                  <span className="font-medium">
-                    {formatStxBalance(agentBalance.stx.balance)} STX
-                  </span>
-                </div>
-              )}
-
               {/* Fungible Token Balances */}
               {agentBalance?.fungible_tokens &&
                 Object.entries(agentBalance.fungible_tokens).map(
