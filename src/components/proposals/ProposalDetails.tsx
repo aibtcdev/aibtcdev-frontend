@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import MessageDisplay from "./MessageDisplay";
-import TimeStatus, { useVotingStatus } from "./TimeStatus";
+import TimeStatus from "./TimeStatus";
+import { useVotingStatus } from "@/hooks/use-voting-status";
 import BlockVisual from "./BlockVisual";
 import VotesTable from "./VotesTable";
 import VotingProgressChart from "./VotingProgressChart";
@@ -44,7 +45,7 @@ const ProposalDetails = ({
   const { isActive } = useVotingStatus(
     proposal.status,
     safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end),
+    safeNumberFromBigInt(proposal.vote_end)
   );
 
   const refreshVotesData = useCallback(async () => {
@@ -111,8 +112,12 @@ const ProposalDetails = ({
               <FileText className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-foreground tracking-tight">On-chain Message</h3>
-              <p className="text-muted-foreground">Proposal description and details</p>
+              <h3 className="text-2xl font-bold text-foreground tracking-tight">
+                On-chain Message
+              </h3>
+              <p className="text-muted-foreground">
+                Proposal description and details
+              </p>
             </div>
           </div>
           <MessageDisplay message={proposal.content} />
@@ -126,8 +131,12 @@ const ProposalDetails = ({
             <TrendingUp className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-foreground tracking-tight">Voting Progress</h3>
-            <p className="text-muted-foreground">Real-time proposal voting analytics</p>
+            <h3 className="text-2xl font-bold text-foreground tracking-tight">
+              Voting Progress
+            </h3>
+            <p className="text-muted-foreground">
+              Real-time proposal voting analytics
+            </p>
           </div>
         </div>
         <VotingProgressChart proposal={proposal} tokenSymbol={tokenSymbol} />
@@ -137,7 +146,9 @@ const ProposalDetails = ({
       <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-4 sm:p-8 border border-border/50 hover:border-border/80 transition-all duration-300 overflow-x-auto">
         <div className="flex items-center gap-3 mb-6">
           <Vote className="h-6 w-6 text-primary" />
-          <h4 className="text-xl font-semibold text-foreground">Vote Details</h4>
+          <h4 className="text-xl font-semibold text-foreground">
+            Vote Details
+          </h4>
         </div>
         <VotesTable proposalId={proposal.id} />
       </div>
@@ -146,7 +157,9 @@ const ProposalDetails = ({
       <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:p-8 overflow-x-auto">
         <div className="flex items-center gap-3 mb-6">
           <Blocks className="h-5 w-5 text-[#2A5CFF]" />
-          <h3 className="text-lg font-semibold text-foreground">Blockchain Details</h3>
+          <h3 className="text-lg font-semibold text-foreground">
+            Blockchain Details
+          </h3>
         </div>
 
         {/* Compact Grid Layout */}
@@ -159,16 +172,27 @@ const ProposalDetails = ({
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-muted-foreground text-xs mb-1">Snapshot</div>
-                <BlockVisual value={safeNumberFromBigInt(proposal.created_stx)} type="stacks" />
+                <div className="text-muted-foreground text-xs mb-1">
+                  Snapshot
+                </div>
+                <BlockVisual
+                  value={safeNumberFromBigInt(proposal.created_stx)}
+                  type="stacks"
+                />
               </div>
               <div>
                 <div className="text-muted-foreground text-xs mb-1">Start</div>
-                <BlockVisual value={safeNumberFromBigInt(proposal.vote_start)} type="bitcoin" />
+                <BlockVisual
+                  value={safeNumberFromBigInt(proposal.vote_start)}
+                  type="bitcoin"
+                />
               </div>
               <div>
                 <div className="text-muted-foreground text-xs mb-1">End</div>
-                <BlockVisual value={safeNumberFromBigInt(proposal.vote_end)} type="bitcoin" />
+                <BlockVisual
+                  value={safeNumberFromBigInt(proposal.vote_end)}
+                  type="bitcoin"
+                />
               </div>
             </div>
           </div>
@@ -181,7 +205,9 @@ const ProposalDetails = ({
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-muted-foreground text-xs mb-1">Principal</div>
+                <div className="text-muted-foreground text-xs mb-1">
+                  Principal
+                </div>
                 <div className="font-mono text-sm break-all leading-relaxed">
                   {formatAction(safeString(proposal.contract_principal))}
                 </div>
@@ -203,12 +229,16 @@ const ProposalDetails = ({
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-muted-foreground text-xs mb-1">Proposal ID</div>
+                <div className="text-muted-foreground text-xs mb-1">
+                  Proposal ID
+                </div>
                 <div className="font-mono text-sm">#{proposal.proposal_id}</div>
               </div>
               <div>
-                <div className="text-muted-foreground text-xs mb-1">TX Hash</div>
-                <a 
+                <div className="text-muted-foreground text-xs mb-1">
+                  TX Hash
+                </div>
+                <a
                   href={getExplorerLink("tx", proposal.tx_id)}
                   target="_blank"
                   rel="noopener noreferrer"
