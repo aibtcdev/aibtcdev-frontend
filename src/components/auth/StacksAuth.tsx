@@ -184,7 +184,11 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
           router.push(redirectUrl);
           setIsLoading(false);
         } else {
-          window.location.reload();
+          toast({
+            description: "Authentication successful.",
+            variant: "default",
+          });
+          setIsLoading(false);
         }
       }
     } catch (error) {
