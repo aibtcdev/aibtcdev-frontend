@@ -452,7 +452,7 @@ function TokenHoldingsCard({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tokenEntries.map(([tokenId, token], index) => {
+                  {tokenEntries.map(([tokenId, token]) => {
                     const [, tokenSymbol] = tokenId.split("::");
                     const displaySymbol = tokenSymbol || "Token";
 

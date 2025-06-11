@@ -14,7 +14,6 @@ import {
   Bitcoin,
   ChevronDown,
   LogOut,
-  Wallet,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -189,7 +188,7 @@ export default function ApplicationLayout({
         {/* Center Section - Navigation  */}
         <nav className="flex justify-center relative z-10">
           <div className="inline-flex items-center gap-1 lg:gap-2">
-            {navigation.map((item, index) => {
+            {navigation.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
                 <Link
@@ -338,7 +337,7 @@ export default function ApplicationLayout({
             {/* Navigation */}
             <nav className="flex-1 px-4 pb-4 relative z-10">
               <div className="space-y-2">
-                {navigation.map((item, index) => {
+                {navigation.map((item) => {
                   const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
