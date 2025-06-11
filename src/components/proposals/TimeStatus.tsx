@@ -98,7 +98,7 @@ export const useVotingStatus = (
   vote_start: number,
   vote_end: number
 ): VotingStatusInfo => {
-  const { data, isLoading, error, isError } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     // Destructure isError as well
     queryKey: ["blockTimes", vote_start, vote_end],
     queryFn: () => fetchBlockTimes(vote_start, vote_end),
@@ -129,12 +129,7 @@ export const useVotingStatus = (
     }
 
     if (isError || !data) {
-      console.error(
-        "Error state or no data after loading for blocks:",
-        vote_start,
-        vote_end,
-        error
-      );
+      // Remove console.error to prevent side effects during render
       return {
         startBlockTime: null,
         endBlockTime: null,
@@ -158,10 +153,6 @@ export const useVotingStatus = (
 
     // Handle specific case: Start date is null IN THE DATA after successful fetch
     if (!startDate) {
-      console.warn(
-        "Start block time not found in data for start_block:",
-        vote_start
-      );
       return {
         startBlockTime: null, // Explicitly null
         endBlockTime: null,
@@ -208,7 +199,7 @@ export const useVotingStatus = (
       isEnded,
     };
     // Dependencies for useMemo: Recalculate if query results or inputs change
-  }, [data, isLoading, error, isError, status, vote_start, vote_end]); // Added isError dependency
+  }, [data, isLoading, isError, status, vote_start, vote_end]); // Removed error dependency
 
   // 3. Return the derived state object
   return votingStatusInfo;

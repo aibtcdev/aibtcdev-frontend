@@ -25,6 +25,7 @@ export default function ProposalsPage() {
   } = useQuery({
     queryKey: ["dao", encodedName],
     queryFn: () => fetchDAOByName(encodedName),
+    staleTime: 600000, // 10 minutes
   });
 
   // Add error handling
@@ -39,6 +40,7 @@ export default function ProposalsPage() {
     queryKey: ["token", daoId],
     queryFn: () => (daoId ? fetchToken(daoId) : Promise.resolve(null)),
     enabled: !!daoId,
+    staleTime: 600000, // 10 minutes
   });
 
   // Then use the ID to fetch proposals
@@ -49,7 +51,7 @@ export default function ProposalsPage() {
   } = useQuery({
     queryKey: ["proposals", daoId],
     queryFn: () => (daoId ? fetchProposals(daoId) : Promise.resolve([])),
-    staleTime: 1000000,
+    staleTime: 600000, // 10 minutes - increased cache time
     enabled: !!daoId, // Only run this query when we have the daoId
   });
 
@@ -97,6 +99,7 @@ export default function ProposalsPage() {
         }
       >
         <DAOProposals
+          key={`${dao.id}-${proposals?.length || 0}`}
           proposals={proposals || []}
           tokenSymbol={token?.symbol || ""}
         />

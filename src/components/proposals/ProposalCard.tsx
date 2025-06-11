@@ -10,13 +10,13 @@ import {
   AlertCircle,
   Building2,
 } from "lucide-react";
-import { useVotingStatus } from "./TimeStatus";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import Link from "next/link";
 import VoteStatusChart from "./VoteStatusChart";
+import { useMemo } from "react";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -29,14 +29,28 @@ export default function ProposalCard({
   tokenSymbol = "",
   showDAOInfo = false,
 }: ProposalCardProps) {
-  const { isActive, isEnded } = useVotingStatus(
-    proposal.status,
-    safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end)
-  );
+  // Memoize status configuration to prevent recalculation
+  const statusConfig = useMemo(() => {
+    // For deployed proposals, determine status based on timing windows
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const voteStart = safeNumberFromBigInt(proposal.vote_start);
+    const voteEnd = safeNumberFromBigInt(proposal.vote_end);
+    const execStart = safeNumberFromBigInt(proposal.exec_start || null);
+    const execEnd = safeNumberFromBigInt(proposal.exec_end || null);
 
-  const getStatusConfig = () => {
-    if (isActive) {
+    // Initial delay before voting window
+    if (now < voteStart) {
+      return {
+        icon: Clock,
+        color: "text-blue-500",
+        bg: "bg-blue-500/10",
+        border: "border-blue-500/20",
+        label: "Pending",
+      };
+    }
+
+    // Inside voting window
+    if (now >= voteStart && now < voteEnd) {
       return {
         icon: BarChart3,
         color: "text-primary",
@@ -44,57 +58,96 @@ export default function ProposalCard({
         border: "border-primary/20",
         label: "Active",
       };
-    } else if (isEnded && proposal.passed) {
-      return {
-        icon: CheckCircle,
-        color: "text-green-500",
-        bg: "bg-green-500/10",
-        border: "border-green-500/20",
-        label: "Passed",
-      };
-    } else if (isEnded && !proposal.passed) {
-      return {
-        icon: XCircle,
-        color: "text-red-500",
-        bg: "bg-red-500/10",
-        border: "border-red-500/20",
-        label: "Failed",
-      };
-    } else {
+    }
+
+    // Veto window (between vote_end and exec_start)
+    if (execStart > 0 && now >= voteEnd && now < execStart) {
       return {
         icon: AlertCircle,
-        color: "text-muted-foreground",
-        bg: "bg-muted/10",
-        border: "border-muted/20",
-        label: "Pending",
+        color: "text-yellow-500",
+        bg: "bg-yellow-500/10",
+        border: "border-yellow-500/20",
+        label: "Veto Period",
       };
     }
-  };
 
-  const statusConfig = getStatusConfig();
+    // Execution window (between exec_start and exec_end)
+    if (execStart > 0 && execEnd > 0 && now >= execStart && now < execEnd) {
+      return {
+        icon: Clock,
+        color: "text-purple-500",
+        bg: "bg-purple-500/10",
+        border: "border-purple-500/20",
+        label: "Execution Window",
+      };
+    }
+
+    // Completed (after exec_end or vote_end if no execution window)
+    const endTime = execEnd > 0 ? execEnd : voteEnd;
+    if (now >= endTime) {
+      if (proposal.passed) {
+        return {
+          icon: CheckCircle,
+          color: "text-green-500",
+          bg: "bg-green-500/10",
+          border: "border-green-500/20",
+          label: "Passed",
+        };
+      } else {
+        return {
+          icon: XCircle,
+          color: "text-red-500",
+          bg: "bg-red-500/10",
+          border: "border-red-500/20",
+          label: "Failed",
+        };
+      }
+    }
+
+    // Fallback
+    return {
+      icon: AlertCircle,
+      color: "text-muted-foreground",
+      bg: "bg-muted/10",
+      border: "border-muted/20",
+      label: "Unknown",
+    };
+  }, [
+    proposal.vote_start,
+    proposal.vote_end,
+    proposal.exec_start,
+    proposal.exec_end,
+    proposal.passed,
+  ]);
+
   const StatusIcon = statusConfig.icon;
 
-  const formatNumber = (num: number) => {
-    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-    return num.toString();
-  };
+  // Memoize formatting functions
+  const formatNumber = useMemo(() => {
+    return (num: number) => {
+      if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+      if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+      return num.toString();
+    };
+  }, []);
 
-  const getVoteSummary = () => {
+  // Memoize vote summary
+  const voteSummary = useMemo(() => {
     const votesFor = Number(proposal.votes_for || 0);
     const votesAgainst = Number(proposal.votes_against || 0);
     const totalVotes = votesFor + votesAgainst;
     return { votesFor, votesAgainst, totalVotes };
-  };
+  }, [proposal.votes_for, proposal.votes_against]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
   const liquidTokens = Number(proposal.liquid_tokens || 0);
-  const { votesFor, votesAgainst, totalVotes } = getVoteSummary();
+  const { votesFor, votesAgainst, totalVotes } = voteSummary;
   const forPercentage = liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
   const againstPercentage =
     liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
 
-  const getDAOInfo = () => {
+  // Memoize DAO info
+  const daoInfo = useMemo(() => {
     const proposalWithDAO = proposal as ProposalWithDAO;
     if (proposalWithDAO.daos?.name) {
       const encodedDAOName = encodeURIComponent(proposalWithDAO.daos.name);
@@ -110,7 +163,7 @@ export default function ProposalCard({
     return proposal.contract_principal
       ? formatAction(proposal.contract_principal)
       : "Unknown DAO";
-  };
+  }, [proposal]);
 
   return (
     <Link
@@ -148,7 +201,7 @@ export default function ProposalCard({
           {showDAOInfo && (
             <div className="flex items-center gap-1 min-w-0 max-w-[120px] sm:max-w-none">
               <Building2 className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{getDAOInfo()}</span>
+              <span className="truncate">{daoInfo}</span>
             </div>
           )}
           <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
@@ -180,7 +233,7 @@ export default function ProposalCard({
         </div>
 
         {/* Voting Progress for Active Proposals */}
-        {isActive && totalVotes > 0 && (
+        {statusConfig.label === "Active" && totalVotes > 0 && (
           <div className="space-y-2 sm:space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
@@ -210,7 +263,8 @@ export default function ProposalCard({
         )}
 
         {/* Completed Status */}
-        {isEnded && (
+        {(statusConfig.label === "Passed" ||
+          statusConfig.label === "Failed") && (
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <span className="text-muted-foreground">Final result: </span>
@@ -228,19 +282,24 @@ export default function ProposalCard({
         )}
 
         {/* Enhanced Chart Section for detailed view */}
-        {totalVotes > 0 && (
-          <div className="mt-4 pt-4 border-t border-border/30">
-            <VoteStatusChart
-              votesFor={proposal.votes_for}
-              votesAgainst={proposal.votes_against}
-              contractAddress={proposal.contract_principal}
-              proposalId={proposal.proposal_id?.toString()}
-              tokenSymbol={tokenSymbol}
-              liquidTokens={proposal.liquid_tokens || "0"}
-              isActive={isActive}
-            />
-          </div>
-        )}
+        {(statusConfig.label === "Active" ||
+          statusConfig.label === "Veto Period" ||
+          statusConfig.label === "Execution Window" ||
+          statusConfig.label === "Passed" ||
+          statusConfig.label === "Failed") &&
+          totalVotes > 0 && (
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <VoteStatusChart
+                votesFor={proposal.votes_for}
+                votesAgainst={proposal.votes_against}
+                contractAddress={proposal.contract_principal}
+                proposalId={proposal.proposal_id?.toString()}
+                tokenSymbol={tokenSymbol}
+                liquidTokens={proposal.liquid_tokens || "0"}
+                isActive={statusConfig.label === "Active"}
+              />
+            </div>
+          )}
       </div>
     </Link>
   );

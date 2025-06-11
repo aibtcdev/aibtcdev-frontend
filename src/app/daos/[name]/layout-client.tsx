@@ -45,16 +45,23 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
     staleTime: 600000, // 10 minutes
   });
 
-  const dex = extensions?.find((ext) => ext.type === "dex")?.contract_principal;
-  const treasuryAddress = extensions?.find(
-    (ext) => ext.type === "aibtc-treasury"
-  )?.contract_principal;
+  // Memoize extension contract addresses to prevent re-computation
+  const { dex, treasuryAddress } = useMemo(() => {
+    if (!extensions) return { dex: undefined, treasuryAddress: undefined };
+
+    return {
+      dex: extensions.find((ext) => ext.type === "dex")?.contract_principal,
+      treasuryAddress: extensions.find((ext) => ext.type === "aibtc-treasury")
+        ?.contract_principal,
+    };
+  }, [extensions]);
 
   // Fetch token price
   const { data: tokenPrice } = useQuery({
     queryKey: ["tokenPrice", dex],
     queryFn: () => fetchTokenPrice(dex!),
     enabled: !!dex,
+    staleTime: 300000, // 5 minutes
   });
 
   // Fetch holders data
@@ -77,56 +84,55 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const { data: marketStats } = useQuery({
     queryKey: ["marketStats", id, dex, token?.max_supply],
     queryFn: () => fetchMarketStats(dex!, id!, token!.max_supply || 0),
-    enabled: !!dex && !!id && !!token,
+    enabled: !!dex && !!id && !!token?.max_supply,
+    staleTime: 300000, // 5 minutes
   });
 
   // Fetch treasury tokens
   useQuery({
     queryKey: ["treasuryTokens", treasuryAddress, tokenPrice?.price],
     queryFn: () => fetchTreasuryTokens(treasuryAddress!, tokenPrice!.price),
-    enabled: !!treasuryAddress && !!tokenPrice,
+    enabled: !!treasuryAddress && !!tokenPrice?.price,
+    staleTime: 300000, // 5 minutes
   });
 
   // Check if we're loading basic DAO info
   const isBasicLoading = isLoadingDAOByName || isLoadingToken;
 
-  // Note: Overview loading state was used in the old monolithic layout
-  // but is now handled individually by the extracted components
-
-  // Create enhanced market stats - memoized to prevent infinite re-renders
+  // Create enhanced market stats - memoized with stable dependencies
   const enhancedMarketStats = useMemo(() => {
+    const basePrice = tokenPrice?.price || 0;
+    const baseMarketCap = tokenPrice?.marketCap || 0;
+    const baseHolderCount = holdersData?.holderCount || 0;
+    const maxSupply = token?.max_supply || 0;
+
     if (marketStats) {
       return {
-        ...marketStats,
-        holderCount: holdersData?.holderCount || marketStats.holderCount,
+        price: marketStats.price || basePrice,
+        marketCap: marketStats.marketCap || baseMarketCap,
+        treasuryBalance:
+          marketStats.treasuryBalance || maxSupply * 0.8 * basePrice,
+        holderCount: marketStats.holderCount || baseHolderCount,
       };
     }
 
     return {
-      price: tokenPrice?.price || 0,
-      marketCap: tokenPrice?.marketCap || 0,
-      treasuryBalance: token?.max_supply
-        ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
-        : 0,
-      holderCount: holdersData?.holderCount || 0,
+      price: basePrice,
+      marketCap: baseMarketCap,
+      treasuryBalance: maxSupply * 0.8 * basePrice,
+      holderCount: baseHolderCount,
     };
-  }, [
-    marketStats,
-    holdersData?.holderCount,
-    tokenPrice?.price,
-    tokenPrice?.marketCap,
-    token?.max_supply,
-  ]);
+  }, [marketStats, tokenPrice, holdersData, token]);
 
-  // Calculate total proposals - memoized to prevent infinite re-renders
+  // Calculate total proposals - memoized with stable dependencies
   const totalProposals = useMemo(() => {
-    return proposals ? proposals.length : 0;
+    return Array.isArray(proposals) ? proposals.length : 0;
   }, [proposals]);
 
   return (
     <DAOLayout
       dao={dao || undefined}
-      token={token}
+      token={token || undefined}
       marketStats={enhancedMarketStats}
       proposalCount={totalProposals}
       isLoading={isBasicLoading}

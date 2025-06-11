@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 // Removed unused Card imports
 import { Button } from "@/components/ui/button";
 import ProposalCard from "@/components/proposals/ProposalCard";
@@ -267,25 +267,24 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
   };
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: string | string[]) => {
-    setFilterState((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1); // Reset to first page when filtering
-    // Close mobile filter on filter change (optional UX improvement)
-    if (window.innerWidth < 1024) {
-      setIsMobileFilterOpen(false);
-    }
-  };
+  const handleFilterChange = useCallback(
+    (key: string, value: string | string[]) => {
+      setFilterState((prev) => ({ ...prev, [key]: value }));
+      setCurrentPage(1); // Reset to first page when filtering
+    },
+    []
+  );
 
   // Handle pagination changes
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     proposalsRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -425,7 +424,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
               ) : (
                 paginatedProposals.map((proposal) => (
                   <ProposalCard
-                    key={proposal.id}
+                    key={`${proposal.id}-${proposal.status}`}
                     proposal={proposal}
                     tokenSymbol={tokenLookup[proposal.dao_id || ""] || ""}
                     showDAOInfo={true}
