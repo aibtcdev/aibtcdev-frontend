@@ -25,75 +25,14 @@ import {
   BtcBalance,
   TokenBalance,
 } from "@/components/reusables/BalanceDisplay";
-import { ReactNode, HTMLAttributes } from "react";
-// Table components inline since @/components/ui/table not available
-const Table = ({
-  children,
-  ...props
-}: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) => (
-  <div className="w-full overflow-auto">
-    <table className="w-full caption-bottom text-sm" {...props}>
-      {children}
-    </table>
-  </div>
-);
-
-const TableHeader = ({
-  children,
-  ...props
-}: HTMLAttributes<HTMLTableSectionElement> & { children: ReactNode }) => (
-  <thead className="[&_tr]:border-b" {...props}>
-    {children}
-  </thead>
-);
-
-const TableRow = ({
-  children,
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLTableRowElement> & { children: ReactNode }) => (
-  <tr
-    className={`border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${className}`}
-    {...props}
-  >
-    {children}
-  </tr>
-);
-
-const TableHead = ({
-  children,
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLTableCellElement> & { children: ReactNode }) => (
-  <th
-    className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 ${className}`}
-    {...props}
-  >
-    {children}
-  </th>
-);
-
-const TableBody = ({
-  children,
-  ...props
-}: HTMLAttributes<HTMLTableSectionElement> & { children: ReactNode }) => (
-  <tbody className="[&_tr:last-child]:border-0" {...props}>
-    {children}
-  </tbody>
-);
-
-const TableCell = ({
-  children,
-  className = "",
-  ...props
-}: HTMLAttributes<HTMLTableCellElement> & { children: ReactNode }) => (
-  <td
-    className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}
-    {...props}
-  >
-    {children}
-  </td>
-);
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "../ui/table";
 
 // Icon button component for inline actions
 function IconButton({

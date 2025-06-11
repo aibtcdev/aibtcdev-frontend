@@ -32,7 +32,6 @@ import AuthButton from "@/components/home/AuthButton";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
 import DisplayBtc from "@/components/reusables/DisplayBtc";
-import { toast } from "@/hooks/use-toast";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -91,10 +90,8 @@ export default function ApplicationLayout({
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    toast({
-      description: "Signed out.",
-      variant: "default",
-    });
+    router.push("/");
+    window.location.reload();
   };
 
   // Handle navigation to protected routes
@@ -118,7 +115,7 @@ export default function ApplicationLayout({
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-background/95">
-      {/* Mobile Header */}
+      {/* Mobile Header - Only Menu, Logo, and BTC Balance */}
       <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg">
         <Button
           variant="ghost"
@@ -147,51 +144,25 @@ export default function ApplicationLayout({
           />
         </Link>
 
-        {/* Mobile BTC Balance & User Actions */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-lg text-xs font-medium text-primary">
-            <Bitcoin className="h-3 w-3" />
+        {/* Mobile BTC Balance Only */}
+        <div className="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/20">
+          <div className="relative">
+            <Bitcoin className="h-4 w-4 text-primary animate-pulse" />
+            <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
+          </div>
+          <div className="text-sm font-bold text-primary">
             <DisplayBtc />
           </div>
-
-          {hasUser ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 rounded-lg"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="flex items-center gap-2">
-                  <NetworkIndicator />
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 text-red-600"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <AuthButton />
-          )}
         </div>
       </div>
 
-      {/* Desktop Header - Optimized for MacBook 13" */}
-      <div className="hidden md:flex h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
+      {/* Desktop Header */}
+      <div className="hidden md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
-        {/* Logo Section - Responsive sizing */}
-        <div className="flex items-center gap-2 lg:gap-3 relative z-10 min-w-0 flex-shrink-0">
+        {/* Left Section - Logo */}
+        <div className="flex items-center gap-2 lg:gap-3 relative z-10 justify-start">
           <Link href="/daos" className="flex items-center gap-2 lg:gap-3 group">
             <div className="flex items-center gap-2 lg:gap-3 transition-all duration-300 ease-in-out group-hover:scale-105">
               <div className="relative">
@@ -215,10 +186,10 @@ export default function ApplicationLayout({
           </Link>
         </div>
 
-        {/* Navigation - Centered and responsive */}
-        <nav className="flex-1 flex justify-center px-4 lg:px-6 relative z-10 min-w-0">
-          <div className="inline-flex items-center gap-1 lg:gap-2 overflow-x-auto scrollbar-none">
-            {navigation.map((item) => {
+        {/* Center Section - Navigation  */}
+        <nav className="flex justify-center relative z-10">
+          <div className="inline-flex items-center gap-1 lg:gap-2">
+            {navigation.map((item, index) => {
               const isActive = pathname.startsWith(item.href);
               return (
                 <Link
@@ -277,35 +248,27 @@ export default function ApplicationLayout({
           </div>
         </nav>
 
-        {/* BTC Balance & User Actions - Prominent center attraction */}
-        <div className="flex items-center gap-2 lg:gap-4 relative z-10 flex-shrink-0">
-          {/* Prominent BTC Balance Display */}
-          <div className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center gap-1 lg:gap-2">
-              <div className="relative">
-                <Bitcoin className="h-4 w-4 lg:h-5 lg:w-5 text-primary animate-pulse" />
-                <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-md animate-pulse" />
-              </div>
-              <div className="text-sm lg:text-base font-bold text-primary">
-                <DisplayBtc />
-              </div>
-            </div>
-          </div>
-
-          {/* User Actions Dropdown */}
+        {/* Right Section - BTC Balance Dropdown & Auth Button */}
+        <div className="flex items-center gap-2 lg:gap-4 relative z-10 justify-end">
+          {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
           {hasUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-card/30 hover:scale-105 transition-all duration-300 ease-in-out rounded-xl lg:rounded-2xl backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-primary font-bold"
                 >
-                  <Wallet className="h-4 w-4 lg:h-5 lg:w-5" />
-                  <span className="hidden lg:inline">Account</span>
-                  <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4" />
+                  <div className="relative">
+                    <Bitcoin className="h-4 w-4 lg:h-5 lg:w-5 text-primary animate-pulse" />
+                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-md animate-pulse" />
+                  </div>
+                  <div className="text-sm lg:text-base font-bold text-primary">
+                    <DisplayBtc />
+                  </div>
+                  <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-primary/70" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 lg:w-64">
+              <DropdownMenuContent align="center" className="w-56 lg:w-64">
                 <div className="px-3 py-2 border-b border-border/20">
                   <div className="text-xs lg:text-sm font-medium text-muted-foreground">
                     Network Status
@@ -325,9 +288,23 @@ export default function ApplicationLayout({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="transition-transform duration-300 hover:scale-105">
-              <AuthButton />
-            </div>
+            // Show BTC Balance (non-clickable) and Auth Button when not authenticated
+            <>
+              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-primary/20 shadow-lg">
+                <div className="flex items-center gap-1 lg:gap-2">
+                  <div className="relative">
+                    <Bitcoin className="h-4 w-4 lg:h-5 lg:w-5 text-primary animate-pulse" />
+                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-md animate-pulse" />
+                  </div>
+                  <div className="text-sm lg:text-base font-bold text-primary">
+                    <DisplayBtc />
+                  </div>
+                </div>
+              </div>
+              <div className="transition-transform duration-300 hover:scale-105">
+                <AuthButton />
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -361,7 +338,7 @@ export default function ApplicationLayout({
             {/* Navigation */}
             <nav className="flex-1 px-4 pb-4 relative z-10">
               <div className="space-y-2">
-                {navigation.map((item) => {
+                {navigation.map((item, index) => {
                   const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
@@ -416,20 +393,39 @@ export default function ApplicationLayout({
               </div>
             </nav>
 
-            {/* Mobile Footer */}
+            {/* Mobile Footer with User Actions */}
             <div className="p-4 border-t border-border/20 bg-card/30 backdrop-blur-xl relative z-10">
               <div className="space-y-3">
+                {/* Network Status */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
-                    <Bitcoin className="h-4 w-4 text-primary" />
-                    <div className="text-sm font-medium text-primary">
-                      <DisplayBtc />
-                    </div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Network Status
+                  </div>
+                  <div className="text-xs">
+                    <NetworkIndicator />
                   </div>
                 </div>
-                <div className="text-xs">
-                  <NetworkIndicator />
-                </div>
+
+                {/* User Actions */}
+                {hasUser ? (
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => {
+                        handleSignOut();
+                        setLeftPanelOpen(false);
+                      }}
+                      variant="ghost"
+                      className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl py-3"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-full">
+                    <AuthButton />
+                  </div>
+                )}
               </div>
             </div>
           </div>
