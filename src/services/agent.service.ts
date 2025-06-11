@@ -16,7 +16,6 @@ export const fetchAgents = async (): Promise<Agent[]> => {
     const { data, error } = await supabase
       .from("agents")
       .select("*")
-      .eq("name", "DAO Manager")
       .eq("is_archived", false)
       .order("name", { ascending: true });
 

@@ -9,8 +9,6 @@ import type {
   ProposalWithDAO,
 } from "@/types";
 
-const SUPPORTED_DAOS = ["SLOW•AIBTC•DAO", "FAST•AIBTC•DAO"];
-
 // Define structure for Market Statistics
 interface MarketStats {
   price: number;
@@ -85,8 +83,7 @@ export const fetchDAOsWithExtension = async (): Promise<DAO[]> => {
         .from("daos")
         .select("*")
         .order("created_at", { ascending: false })
-        .eq("is_broadcasted", true)
-        .in("name", SUPPORTED_DAOS),
+        .eq("is_broadcasted", true),
       fetchExtensions(),
     ]);
 
@@ -113,8 +110,7 @@ export const fetchDAOs = async (): Promise<DAO[]> => {
       .from("daos")
       .select("*")
       .order("created_at", { ascending: false })
-      .eq("is_broadcasted", true)
-      .in("name", SUPPORTED_DAOS),
+      .eq("is_broadcasted", true),
   ]);
 
   if (daosError) throw daosError;

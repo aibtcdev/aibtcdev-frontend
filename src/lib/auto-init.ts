@@ -34,7 +34,7 @@ export async function runAutoInit(userId: string) {
   // 2. Fallback to DAO Manager
   if (!agentId) {
     const agents = await fetchAgents();
-    const daoManager = agents.find((a) => a.name === "DAO Manager");
+    const daoManager = agents.find((a) => a.profile_id === userId);
 
     if (daoManager) {
       agentId = daoManager.id;
