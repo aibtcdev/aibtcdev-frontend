@@ -218,15 +218,14 @@ export default function ProposalCard({
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <span className="text-muted-foreground">Final result: </span>
-              <span
-                className={
-                  proposal.passed
-                    ? "text-green-500 font-medium"
-                    : "text-red-500 font-medium"
-                }
-              >
-                {forPercentage.toFixed(1)}% For, {againstPercentage.toFixed(1)}%
-                Against
+              <span className="font-medium">
+                <span className="text-green-500">
+                  {forPercentage.toFixed(1)}% For
+                </span>
+                ,{" "}
+                <span className="text-red-500">
+                  {againstPercentage.toFixed(1)}% Against
+                </span>
               </span>
             </div>
           </div>
