@@ -4,7 +4,7 @@ export function getStacksAddress(): string | null {
   }
 
   const blockstackSession = JSON.parse(
-    localStorage.getItem("blockstack-session") || "{}",
+    localStorage.getItem("blockstack-session") || "{}"
   );
 
   const address =
@@ -16,14 +16,14 @@ export function getStacksAddress(): string | null {
 }
 
 export function getBitcoinAddress(
-  network: "mainnet" | "testnet" = "mainnet",
+  network: "mainnet" | "testnet" = "mainnet"
 ): string | null {
   if (typeof window === "undefined") {
     return null;
   }
 
   const blockstackSession = JSON.parse(
-    localStorage.getItem("blockstack-session") || "{}",
+    localStorage.getItem("blockstack-session") || "{}"
   );
   const btcAddress = blockstackSession.userData?.profile?.btcAddress;
 

@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import { Filter, CheckCircle } from "lucide-react";
 import ProposalCard from "./ProposalCard";
-import type { Proposal, ProposalWithDAO } from "@/types/supabase";
+import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface ProposalsListProps {
   proposals: (Proposal | ProposalWithDAO)[];

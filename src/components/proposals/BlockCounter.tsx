@@ -14,7 +14,7 @@ export const BlockCounter = ({
   blockTime = 12, // default block time of 12 seconds
 }: BlockCounterProps) => {
   const [blocksRemaining, setBlocksRemaining] = useState(
-    targetBlock - currentBlock,
+    targetBlock - currentBlock
   );
   const [timeRemaining, setTimeRemaining] = useState("");
 
@@ -47,8 +47,8 @@ export const BlockCounter = ({
       100,
       ((targetBlock - currentBlock - blocksRemaining) /
         (targetBlock - currentBlock)) *
-        100,
-    ),
+        100
+    )
   );
 
   return (

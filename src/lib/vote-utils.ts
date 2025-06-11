@@ -15,7 +15,7 @@ const url =
 export async function getProposalVotes(
   contractPrincipal: string,
   proposalId: number,
-  bustCache = false,
+  bustCache = false
 ) {
   console.log(url);
   // Parse the contract principal to extract address and name
@@ -49,7 +49,7 @@ export async function getProposalVotes(
             }
           : undefined,
       }),
-    },
+    }
   );
 
   if (!response.ok) {

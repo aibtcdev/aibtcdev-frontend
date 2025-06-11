@@ -114,7 +114,7 @@ const VoteStatusChart = ({
           return getProposalVotes(
             contractAddress,
             Number(proposalId),
-            bustCache,
+            bustCache
           );
         }
         return null;
@@ -126,7 +126,7 @@ const VoteStatusChart = ({
         setBustCache(false);
       },
     }),
-    [contractAddress, proposalId, refreshing, bustCache],
+    [contractAddress, proposalId, refreshing, bustCache]
   );
 
   // Use useQuery with memoized options
@@ -199,8 +199,7 @@ const VoteStatusChart = ({
     <div className="space-y-3">
       {/* Header with refresh controls - Always show refresh button */}
       <div className="flex items-center justify-between text-sm">
-        <div className="text-muted-foreground">
-        </div>
+        <div className="text-muted-foreground"></div>
 
         <div className="flex items-center gap-2">
           {isRefreshingAny ? (
@@ -242,7 +241,9 @@ const VoteStatusChart = ({
               {voteCalculations.barPercentageFor > 15 && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsUp className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">{voteCalculations.barPercentageFor.toFixed(1)}%</span>
+                  <span className="hidden sm:inline">
+                    {voteCalculations.barPercentageFor.toFixed(1)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -258,7 +259,9 @@ const VoteStatusChart = ({
               {voteCalculations.barPercentageAgainst > 15 && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsDown className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">{voteCalculations.barPercentageAgainst.toFixed(1)}%</span>
+                  <span className="hidden sm:inline">
+                    {voteCalculations.barPercentageAgainst.toFixed(1)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -335,8 +338,12 @@ const VoteStatusChart = ({
                   <p>
                     Total liquid tokens available for voting.
                     <br />
-                    {(100 - voteCalculations.liquidPercentageFor - voteCalculations.liquidPercentageAgainst).toFixed(1)}%
-                    have not voted.
+                    {(
+                      100 -
+                      voteCalculations.liquidPercentageFor -
+                      voteCalculations.liquidPercentageAgainst
+                    ).toFixed(1)}
+                    % have not voted.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -417,8 +424,12 @@ const VoteStatusChart = ({
                     <p>
                       Total liquid tokens available for voting.
                       <br />
-                      {(100 - voteCalculations.liquidPercentageFor - voteCalculations.liquidPercentageAgainst).toFixed(1)}%
-                      have not voted.
+                      {(
+                        100 -
+                        voteCalculations.liquidPercentageFor -
+                        voteCalculations.liquidPercentageAgainst
+                      ).toFixed(1)}
+                      % have not voted.
                     </p>
                   </TooltipContent>
                 </Tooltip>

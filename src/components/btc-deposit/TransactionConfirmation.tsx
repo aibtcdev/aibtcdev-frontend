@@ -9,11 +9,11 @@ import {
   type AddressType,
   request as xverseRequest,
 } from "sats-connect";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { ArrowLeft, Copy, Check, AlertTriangle } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { useAuth } from "@/hooks/useAuth";
-import { useClipboard } from "@/helpers/clipboard-utils";
+import { useClipboard } from "@/hooks/useClipboard";
 import type {
   QueryObserverResult,
   RefetchOptions,
@@ -60,7 +60,7 @@ export interface LeatherSignPsbtResponse {
 export interface LeatherProvider {
   request(
     method: "signPsbt",
-    params: LeatherSignPsbtRequestParams,
+    params: LeatherSignPsbtRequestParams
   ): Promise<LeatherSignPsbtResponse>;
 }
 
@@ -81,10 +81,10 @@ interface TransactionConfirmationProps {
   btcAddress: string;
   activeWalletProvider: "leather" | "xverse" | null;
   refetchDepositHistory: (
-    options?: RefetchOptions,
+    options?: RefetchOptions
   ) => Promise<QueryObserverResult<Deposit[], Error>>;
   refetchAllDeposits: (
-    options?: RefetchOptions,
+    options?: RefetchOptions
   ) => Promise<QueryObserverResult<DepositHistoryResponse, Error>>;
   setIsRefetching: (isRefetching: boolean) => void;
 }
@@ -201,7 +201,7 @@ export default function TransactionConfirmation({
   const executeBitcoinTransaction = async (): Promise<void> => {
     console.log(
       "Starting transaction with activeWalletProvider:",
-      activeWalletProvider,
+      activeWalletProvider
     );
 
     // Check if user is authenticated
@@ -227,7 +227,7 @@ export default function TransactionConfirmation({
     const feeRates = await styxSDK.getFeeEstimates();
     const selectedFeeRate = feeRates[feePriority];
     console.log(
-      `Using ${feePriority} priority fee rate: ${selectedFeeRate} sat/vB`,
+      `Using ${feePriority} priority fee rate: ${selectedFeeRate} sat/vB`
     );
 
     if (!confirmationData) {
@@ -272,7 +272,7 @@ export default function TransactionConfirmation({
 
         console.log(
           "Window object has LeatherProvider:",
-          !!window.LeatherProvider,
+          !!window.LeatherProvider
         );
         console.log("Full window object keys:", Object.keys(window));
 
@@ -369,7 +369,7 @@ export default function TransactionConfirmation({
               console.log("Trying to get wallet account...");
               let walletAccount = await xverseRequest(
                 "wallet_getAccount",
-                null,
+                null
               );
 
               // If we get an access denied error, we need to request permissions
@@ -382,18 +382,18 @@ export default function TransactionConfirmation({
                 // Request permissions using wallet_requestPermissions as shown in the docs
                 const permissionResponse = await xverseRequest(
                   "wallet_requestPermissions",
-                  null,
+                  null
                 );
                 console.log("Permission response:", permissionResponse);
 
                 // If the user granted permission, try again to get the account
                 if (permissionResponse.status === "success") {
                   console.log(
-                    "Permission granted. Trying to get wallet account again...",
+                    "Permission granted. Trying to get wallet account again..."
                   );
                   walletAccount = await xverseRequest(
                     "wallet_getAccount",
-                    null,
+                    null
                   );
                 } else {
                   throw new Error("User declined to grant permissions");
@@ -416,13 +416,13 @@ export default function TransactionConfirmation({
                     addressType: AddressType;
                   }) =>
                     addr.address === senderBtcAddress &&
-                    addr.purpose === "payment",
+                    addr.purpose === "payment"
                 );
 
                 if (paymentAddress && paymentAddress.publicKey) {
                   console.log(
                     "Found matching public key for P2SH address:",
-                    paymentAddress.publicKey,
+                    paymentAddress.publicKey
                   );
 
                   // Create P2SH-P2WPKH from public key as shown in documentation
@@ -442,7 +442,7 @@ export default function TransactionConfirmation({
                   });
                 } else {
                   throw new Error(
-                    "Could not find payment address with public key",
+                    "Could not find payment address with public key"
                   );
                 }
               } else {
@@ -451,7 +451,7 @@ export default function TransactionConfirmation({
             } catch (err) {
               console.error("Error getting wallet account info:", err);
               throw new Error(
-                "P2SH address requires access to the public key. Please use a SegWit address (starting with 'bc1') or grant necessary permissions.",
+                "P2SH address requires access to the public key. Please use a SegWit address (starting with 'bc1') or grant necessary permissions."
               );
             }
           }
@@ -465,7 +465,7 @@ export default function TransactionConfirmation({
         const txPsbt = tx.toPSBT();
         const finalTxPsbtHex = hex.encode(txPsbt);
         const finalTxPsbtBase64 = Buffer.from(finalTxPsbtHex, "hex").toString(
-          "base64",
+          "base64"
         );
 
         let txid;
@@ -484,14 +484,14 @@ export default function TransactionConfirmation({
 
           if (!window.LeatherProvider) {
             throw new Error(
-              "Leather wallet provider not found on window object",
+              "Leather wallet provider not found on window object"
             );
           }
 
           // Send the signing request to Leather
           const signResponse = await window.LeatherProvider.request(
             "signPsbt",
-            requestParams,
+            requestParams
           );
 
           if (
@@ -500,7 +500,7 @@ export default function TransactionConfirmation({
             !signResponse.result.hex
           ) {
             throw new Error(
-              "Leather wallet did not return a valid signed PSBT",
+              "Leather wallet did not return a valid signed PSBT"
             );
           }
 
@@ -519,7 +519,7 @@ export default function TransactionConfirmation({
                 "Content-Type": "text/plain",
               },
               body: finalTxHex,
-            },
+            }
           );
 
           if (!broadcastResponse.ok) {
@@ -539,13 +539,13 @@ export default function TransactionConfirmation({
             const inputAddresses: Record<string, number[]> = {};
             inputAddresses[senderBtcAddress] = Array.from(
               { length: preparedTransaction.utxos.length },
-              (_, i) => i,
+              (_, i) => i
             );
 
             console.log("Input addresses for Xverse:", inputAddresses);
             console.log(
               "PSBT Base64 (first 100 chars):",
-              finalTxPsbtBase64.substring(0, 100) + "...",
+              finalTxPsbtBase64.substring(0, 100) + "..."
             );
 
             // Prepare request params
@@ -569,35 +569,35 @@ export default function TransactionConfirmation({
             if (isP2SHAddress(senderBtcAddress)) {
               console.log("Using P2SH-specific params for Xverse");
               console.log(
-                "P2SH address detected, relying on Xverse's internal handling",
+                "P2SH address detected, relying on Xverse's internal handling"
               );
             }
 
             console.log(
               "Calling Xverse request with params:",
-              JSON.stringify(xverseParams, null, 2),
+              JSON.stringify(xverseParams, null, 2)
             );
 
             const response = (await xverseRequest(
               "signPsbt",
-              xverseParams,
+              xverseParams
             )) as XverseSignPsbtResponse;
 
             console.log(
               "Full Xverse response:",
-              JSON.stringify(response, null, 2),
+              JSON.stringify(response, null, 2)
             );
 
             if (response.status !== "success") {
               console.error(
                 "Xverse signing failed with status:",
-                response.status,
+                response.status
               );
               console.error("Xverse error details:", response.error);
               throw new Error(
                 `Xverse signing failed: ${
                   response.error?.message || "Unknown error"
-                }`,
+                }`
               );
             }
 
@@ -630,7 +630,7 @@ export default function TransactionConfirmation({
           "Attempting to update deposit with ID:",
           depositId,
           "Type:",
-          typeof depositId,
+          typeof depositId
         );
 
         try {
@@ -638,7 +638,7 @@ export default function TransactionConfirmation({
             "About to update deposit with ID:",
             depositId,
             "and txid:",
-            txid,
+            txid
           );
           console.log("Update data:", {
             id: depositId,
@@ -655,7 +655,7 @@ export default function TransactionConfirmation({
 
           console.log(
             "Successfully updated deposit:",
-            JSON.stringify(updateResult, null, 2),
+            JSON.stringify(updateResult, null, 2)
           );
         } catch (error) {
           console.error("Error updating deposit with ID:", depositId);
@@ -676,7 +676,7 @@ export default function TransactionConfirmation({
           title: "Deposit Initiated",
           description: `Your Bitcoin transaction has been sent successfully with txid: ${txid.substring(
             0,
-            10,
+            10
           )}...`,
         });
 
@@ -693,7 +693,7 @@ export default function TransactionConfirmation({
               title: "Data Refreshed",
               description: "Your transaction history has been updated",
             });
-          },
+          }
         );
       } catch (err: unknown) {
         console.error("Error in Bitcoin transaction process:", err);
@@ -847,18 +847,14 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "low" ? "bg-primary/20" : "bg-zinc-900",
+                  feePriority === "low" ? "bg-primary/20" : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.Low)}
               >
                 <CardContent className="p-3 text-center">
                   <p className="text-white text-sm font-medium mb-1">Low</p>
                   <p className="text-zinc-300 text-xs">
-                    {loadingFees ? (
-                      <Loader />
-                    ) : (
-                      `${feeEstimates.low.fee} sats`
-                    )}
+                    {loadingFees ? <Loader /> : `${feeEstimates.low.fee} sats`}
                   </p>
                   <p className="text-zinc-400 text-xs">
                     ({feeEstimates.low.rate} sat/vB)
@@ -870,7 +866,7 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "medium" ? "bg-primary/20" : "bg-zinc-900",
+                  feePriority === "medium" ? "bg-primary/20" : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.Medium)}
               >
@@ -893,18 +889,14 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "high" ? "bg-primary/20" : "bg-zinc-900",
+                  feePriority === "high" ? "bg-primary/20" : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.High)}
               >
                 <CardContent className="p-3 text-center">
                   <p className="text-white text-sm font-medium mb-1">High</p>
                   <p className="text-zinc-300 text-xs">
-                    {loadingFees ? (
-                      <Loader />
-                    ) : (
-                      `${feeEstimates.high.fee} sats`
-                    )}
+                    {loadingFees ? <Loader /> : `${feeEstimates.high.fee} sats`}
                   </p>
                   <p className="text-zinc-400 text-xs">
                     ({feeEstimates.high.rate} sat/vB)

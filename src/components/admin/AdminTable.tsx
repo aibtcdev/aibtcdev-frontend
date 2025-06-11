@@ -1,7 +1,7 @@
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Profile, SortOrder, UserRole } from "@/hooks/use-admin-panel";
+import { Profile, SortOrder, UserRole } from "@/hooks/useAdminPanel";
 
 interface AdminTableProps {
   profiles: Profile[];
@@ -17,7 +17,7 @@ interface AdminTableProps {
   onInputChange: (
     userId: string,
     field: "assigned_agent_address" | "account_index" | "role",
-    value: string,
+    value: string
   ) => void;
   onUpdate: (userId: string) => Promise<void>;
 }
@@ -96,7 +96,7 @@ export function AdminTable({
                     onInputChange(
                       profile.id,
                       "role",
-                      e.target.value as UserRole,
+                      e.target.value as UserRole
                     )
                   }
                 >
@@ -116,7 +116,7 @@ export function AdminTable({
                     onInputChange(
                       profile.id,
                       "assigned_agent_address",
-                      e.target.value,
+                      e.target.value
                     )
                   }
                   placeholder="Enter agent address"

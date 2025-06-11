@@ -20,9 +20,7 @@ export default function DAOsLayout({
 }) {
   return (
     <main className="w-full min-h-screen">
-      <div className="flex-1 w-full">
-        {children}
-      </div>
+      <div className="flex-1 w-full">{children}</div>
     </main>
   );
 }

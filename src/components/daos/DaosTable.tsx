@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowUpRight, ArrowDownRight, BarChart } from "lucide-react";
-import type { DAO, Token, Holder } from "@/types/supabase";
+import type { DAO, Token, Holder } from "@/types";
 import { Loader } from "@/components/reusables/Loader";
 import {
   LineChart,
@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/tooltip";
 import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
 import { useRouter } from "next/navigation";
-import { formatNumber } from "@/helpers/format-utils";
-import { FormatMission } from "@/helpers/format-mission";
+import { formatNumber } from "@/utils/format";
+import { FormatMission } from "@/components/daos/format-mission";
 
 interface DAOTableProps {
   daos: DAO[];
@@ -84,7 +84,7 @@ export const DAOTable = ({
       data: Array<{ timestamp: number; price: number }>;
       isLoading: boolean;
     },
-    compact = false,
+    compact = false
   ) => {
     if (tradeData.isLoading) {
       return (
@@ -112,7 +112,7 @@ export const DAOTable = ({
                       <p>
                         Time:{" "}
                         {new Date(
-                          payload[0].payload.timestamp,
+                          payload[0].payload.timestamp
                         ).toLocaleString()}
                       </p>
                     </div>
@@ -239,7 +239,7 @@ export const DAOTable = ({
             </div>
             <div className="flex items-center gap-2">
               {/* WE NO LONGER NEED THE FILTER HERE CAUSE WE'RE ONLY FETCHING 3 DAOs from table */}
-              <DAOBuyToken daoId={dao.id} daoName={dao.name}/>
+              <DAOBuyToken daoId={dao.id} daoName={dao.name} />
             </div>
           </div>
 
@@ -414,7 +414,7 @@ export const DAOTable = ({
                                 <TooltipTrigger asChild>
                                   <Link
                                     href={`/daos/${encodeURIComponent(
-                                      dao.name,
+                                      dao.name
                                     )}`}
                                     className="font-medium hover:underline text-sm"
                                   >
@@ -530,7 +530,7 @@ export const DAOTable = ({
                     >
                       <div className="flex justify-center">
                         {/* WE NO LONGER NEED THE FILTER HERE CAUSE WE'RE ONLY FETCHING 3 DAOs from table */}
-                        <DAOBuyToken daoId={dao.id} daoName={dao.name}/>
+                        <DAOBuyToken daoId={dao.id} daoName={dao.name} />
                       </div>
                     </td>
                   </tr>

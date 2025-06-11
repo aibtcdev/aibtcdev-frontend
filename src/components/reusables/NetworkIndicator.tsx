@@ -12,10 +12,10 @@ export function NetworkIndicator() {
         <div
           className={cn(
             "h-2.5 w-2.5 rounded-full transition-all duration-300",
-            isTestnet 
-              ? "bg-orange-500 shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50" 
+            isTestnet
+              ? "bg-orange-500 shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50"
               : "bg-green-500 shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50",
-            "animate-pulse",
+            "animate-pulse"
           )}
         />
         <div
@@ -26,12 +26,12 @@ export function NetworkIndicator() {
           )}
         />
       </div>
-      
+
       <span
         className={cn(
           "text-xs font-semibold tracking-wider transition-all duration-300",
-          isTestnet 
-            ? "text-orange-500 group-hover:text-orange-400" 
+          isTestnet
+            ? "text-orange-500 group-hover:text-orange-400"
             : "text-green-500 group-hover:text-green-400",
           "hidden sm:block"
         )}

@@ -1,0 +1,38 @@
+---
+description: 
+globs: src/services/**/*.ts,src/app/api/**/*.ts
+alwaysApply: false
+---
+## Context
+The `services` or `api` folder manages interactions with external services or internal API routes.
+
+## Requirements
+- Place API route handlers in `app/api` (e.g., `app/api/users/route.ts`).
+- Create modules for external API calls (e.g., `services/api.ts`).
+- Implement error handling and authentication with TypeScript types.
+- Organize service modules by functionality (e.g., `services/auth.ts`).
+- Use async/await for API calls and handle errors gracefully.
+
+## Examples
+- Correct:
+  ```typescript
+  // services/auth.ts
+  import { User } from '../types';
+  export async function login(credentials: { email: string; password: string }): Promise<User> {
+    try {
+      const response = await fetch('/api/login', { method: 'POST', body: JSON.stringify(credentials) });
+      if (!response.ok) throw new Error('Login failed');
+      return response.json();
+    } catch (error) {
+      throw new Error('Authentication error');
+    }
+  }
+  ```
+
+- Incorrect:
+  ```typescript
+  // services/auth.ts
+  export function login(credentials) { // Missing types, no error handling
+    return fetch('/api/login').then(res => res.json());
+  }
+  ```

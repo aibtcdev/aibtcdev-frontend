@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatNumber } from "@/helpers/format-utils";
+import { formatNumber } from "@/utils/format";
 
 interface BalanceDisplayProps {
   value: string | number;
@@ -35,7 +35,11 @@ export function BalanceDisplay({
   const displayValue = numericValue / divisor;
 
   if (isNaN(displayValue)) {
-    return <span className={className}>0{showSymbol && symbol ? ` ${symbol}` : ""}</span>;
+    return (
+      <span className={className}>
+        0{showSymbol && symbol ? ` ${symbol}` : ""}
+      </span>
+    );
   }
 
   // Format the full value with all decimals (used for raw display and tooltips)

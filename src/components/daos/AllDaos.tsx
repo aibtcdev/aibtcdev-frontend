@@ -5,14 +5,14 @@ import { Search, Users, Activity, Coins, BarChart3 } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 
 import { DAOCard } from "@/components/daos/DaoCard";
-import type { DAO, Holder } from "@/types/supabase";
+import type { DAO, Holder } from "@/types";
 import {
   fetchDAOsWithExtension,
   fetchTokens,
   fetchTokenPrices,
   fetchTokenTrades,
   fetchHolders,
-} from "@/queries/dao-queries";
+} from "@/services/dao.service";
 
 // Define TokenTrade interface locally since it's defined in queries but not exported
 interface TokenTrade {
@@ -61,7 +61,7 @@ function CompactMetrics({
   );
 }
 
-export default function DAOs() {
+export default function AllDaos() {
   // Fetch DAOs with TanStack Query
   const { data: daos, isLoading: isLoadingDAOs } = useQuery({
     queryKey: ["daos"],

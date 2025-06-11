@@ -115,9 +115,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
-        <body
-          className={`h-full flex flex-col ${rocGroteskRegular.variable} ${rocGroteskWide.variable} ${rocGroteskExtraWide.variable} antialiased bg-zinc-950 prevent-horizontal-scroll`}
-        >
+      <body
+        className={`h-full flex flex-col ${rocGroteskRegular.variable} ${rocGroteskWide.variable} ${rocGroteskExtraWide.variable} antialiased bg-zinc-950 prevent-horizontal-scroll`}
+      >
         <Providers>
           <AuthProvider>
             <main className="flex-1 flex flex-col h-full">{children}</main>

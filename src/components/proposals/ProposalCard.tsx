@@ -11,14 +11,10 @@ import {
   Building2,
 } from "lucide-react";
 import { useVotingStatus } from "./TimeStatus";
-import type { Proposal, ProposalWithDAO } from "@/types/supabase";
+import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
-import {
-  truncateString,
-  getExplorerLink,
-  formatAction,
-} from "@/helpers/helper";
-import { safeNumberFromBigInt } from "@/helpers/proposal-utils";
+import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
+import { safeNumberFromBigInt } from "@/utils/proposal";
 import Link from "next/link";
 import VoteStatusChart from "./VoteStatusChart";
 

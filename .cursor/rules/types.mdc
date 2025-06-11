@@ -1,0 +1,30 @@
+---
+description: 
+globs: src/types/**/*.ts
+alwaysApply: false
+---
+## Context
+The `types` folder stores TypeScript type definitions for type safety.
+
+## Requirements
+- Include global types in `types/global.ts`.
+- Define interfaces for props, state, and reusable data structures.
+- Ensure type definitions are consistent, well-documented, and exported.
+- Update types as the application evolves to maintain type safety.
+
+## Examples
+- Correct:
+  ```typescript
+  // types/global.ts
+  export interface User {
+    id: string;
+    email: string;
+    name: string;
+  }
+  ```
+
+- Incorrect:
+  ```typescript
+  // types/global.ts
+  type User = any; // Avoid using any
+  ```

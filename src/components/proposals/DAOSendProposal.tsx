@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Send, Check, ExternalLink, AlertCircle } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
-import type { DAO, Token } from "@/types/supabase";
+import type { DAO, Token } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDAOExtensions } from "@/queries/dao-queries";
+import { fetchDAOExtensions } from "@/services/dao.service";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +17,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { connectWebSocketClient } from '@stacks/blockchain-api-client';
+import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
-  tx_status: 'success' | 'pending' | 'abort_by_response' | 'abort_by_post_condition' | 'dropped_replace_by_fee' | 'dropped_replace_across_fork' | 'dropped_too_expensive' | 'dropped_stale_garbage_collect' | 'dropped_problematic';
+  tx_status:
+    | "success"
+    | "pending"
+    | "abort_by_response"
+    | "abort_by_post_condition"
+    | "dropped_replace_by_fee"
+    | "dropped_replace_across_fork"
+    | "dropped_too_expensive"
+    | "dropped_stale_garbage_collect"
+    | "dropped_problematic";
   tx_result?: {
     hex: string;
     repr: string;
@@ -110,13 +119,18 @@ export function DAOSendProposal({
   const [inputError, setInputError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
-  
+
   // WebSocket state
   const [isWaitingForTx, setIsWaitingForTx] = useState(false);
-  const [websocketMessage, setWebsocketMessage] = useState<WebSocketTransactionMessage | null>(null);
+  const [websocketMessage, setWebsocketMessage] =
+    useState<WebSocketTransactionMessage | null>(null);
   const [websocketError, setWebsocketError] = useState<string | null>(null);
-  const websocketRef = useRef<Awaited<ReturnType<typeof connectWebSocketClient>> | null>(null);
-  const subscriptionRef = useRef<{ unsubscribe: () => Promise<void> } | null>(null);
+  const websocketRef = useRef<Awaited<
+    ReturnType<typeof connectWebSocketClient>
+  > | null>(null);
+  const subscriptionRef = useRef<{ unsubscribe: () => Promise<void> } | null>(
+    null
+  );
 
   const { accessToken, isLoading: isSessionLoading } = useAuth();
 
@@ -143,34 +157,35 @@ export function DAOSendProposal({
       setWebsocketMessage(null);
 
       // Determine WebSocket URL based on environment
-      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === 'mainnet';
-      const websocketUrl = isMainnet 
-        ? 'wss://api.mainnet.hiro.so/' 
-        : 'wss://api.testnet.hiro.so/';
-      
+      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+      const websocketUrl = isMainnet
+        ? "wss://api.mainnet.hiro.so/"
+        : "wss://api.testnet.hiro.so/";
+
       const client = await connectWebSocketClient(websocketUrl);
       websocketRef.current = client;
 
       // Subscribe to transaction updates for the specific txid
       const subscription = await client.subscribeTxUpdates(txid, (event) => {
-        console.log('WebSocket transaction update:', event);
+        console.log("WebSocket transaction update:", event);
         setWebsocketMessage(event);
-        
+
         // Check if transaction has reached a final state
         const { tx_status } = event;
-        const isFinalState = tx_status === 'success' || 
-                            tx_status === 'abort_by_response' || 
-                            tx_status === 'abort_by_post_condition' ||
-                            tx_status === 'dropped_replace_by_fee' ||
-                            tx_status === 'dropped_replace_across_fork' ||
-                            tx_status === 'dropped_too_expensive' ||
-                            tx_status === 'dropped_stale_garbage_collect' ||
-                            tx_status === 'dropped_problematic';
-        
+        const isFinalState =
+          tx_status === "success" ||
+          tx_status === "abort_by_response" ||
+          tx_status === "abort_by_post_condition" ||
+          tx_status === "dropped_replace_by_fee" ||
+          tx_status === "dropped_replace_across_fork" ||
+          tx_status === "dropped_too_expensive" ||
+          tx_status === "dropped_stale_garbage_collect" ||
+          tx_status === "dropped_problematic";
+
         if (isFinalState) {
           // Transaction is complete, stop waiting and close connection
           setIsWaitingForTx(false);
-          
+
           // Clean up subscription after receiving final update
           if (subscriptionRef.current) {
             subscriptionRef.current.unsubscribe?.();
@@ -180,12 +195,15 @@ export function DAOSendProposal({
           console.log(`Transaction still pending with status: ${tx_status}`);
         }
       });
-      
-      subscriptionRef.current = subscription;
 
+      subscriptionRef.current = subscription;
     } catch (error) {
-      console.error('WebSocket connection error:', error);
-      setWebsocketError(error instanceof Error ? error.message : 'Failed to connect to WebSocket');
+      console.error("WebSocket connection error:", error);
+      setWebsocketError(
+        error instanceof Error
+          ? error.message
+          : "Failed to connect to WebSocket"
+      );
       setIsWaitingForTx(false);
     }
   };
@@ -199,7 +217,7 @@ export function DAOSendProposal({
 
     const actionProposalsVotingExt = findExt(
       "EXTENSIONS",
-      "ACTION_PROPOSAL_VOTING",
+      "ACTION_PROPOSAL_VOTING"
     );
     const actionProposalContractExt = findExt("ACTIONS", "SEND_MESSAGE");
     const daoTokenExt = findExt("TOKEN", "DAO");
@@ -225,13 +243,13 @@ export function DAOSendProposal({
     try {
       const res = await fetch(
         `https://core-staging.aibtc.dev/tools/dao/action_proposals/propose_send_message?token=${encodeURIComponent(
-          accessToken,
+          accessToken
         )}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        },
+        }
       );
 
       const json = (await res.json()) as ApiResponse;
@@ -268,7 +286,7 @@ export function DAOSendProposal({
       if (response.success) {
         const parsed = parseOutput(response.output);
         const txid = parsed?.data?.txid;
-        
+
         if (txid) {
           await connectToWebSocket(txid);
         }
@@ -298,7 +316,7 @@ export function DAOSendProposal({
     setIsWaitingForTx(false);
     setWebsocketMessage(null);
     setWebsocketError(null);
-    
+
     // Clean up any existing connections
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe?.();
@@ -353,11 +371,7 @@ export function DAOSendProposal({
                 isLoadingExtensions
               }
             >
-              {isSubmitting ? (
-                <Loader />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
+              {isSubmitting ? <Loader /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
         </div>
@@ -418,13 +432,23 @@ export function DAOSendProposal({
                       {/* WebSocket Status and Message */}
                       {parsed?.data?.txid && (
                         <div className="border rounded-lg p-4 bg-muted">
-                          <h4 className="font-semibold mb-2">Transaction Monitoring</h4>
-                          <p className="text-sm mb-2">Transaction ID: <code className=" px-1 py-0.5 rounded">{parsed.data.txid}</code></p>
-                          
+                          <h4 className="font-semibold mb-2">
+                            Transaction Monitoring
+                          </h4>
+                          <p className="text-sm mb-2">
+                            Transaction ID:{" "}
+                            <code className=" px-1 py-0.5 rounded">
+                              {parsed.data.txid}
+                            </code>
+                          </p>
+
                           {isWaitingForTx && (
                             <div className="flex items-center gap-2 text-sm">
                               <Loader />
-                              <span>Waiting for transaction confirmation via WebSocket...</span>
+                              <span>
+                                Waiting for transaction confirmation via
+                                WebSocket...
+                              </span>
                             </div>
                           )}
 
@@ -436,31 +460,48 @@ export function DAOSendProposal({
 
                           {websocketMessage && (
                             <div className="mt-3">
-                              <h5 className="font-medium mb-3">Transaction Status Update:</h5>
+                              <h5 className="font-medium mb-3">
+                                Transaction Status Update:
+                              </h5>
                               {(() => {
-                                const { tx_status, tx_result, block_height, block_time_iso, tx_id } = websocketMessage;
-                                const isSuccess = tx_status === 'success';
-                                const isPending = tx_status === 'pending';
-                                const isFailed = tx_status === 'abort_by_response' || 
-                                                tx_status === 'abort_by_post_condition' ||
-                                                tx_status === 'dropped_replace_by_fee' ||
-                                                tx_status === 'dropped_replace_across_fork' ||
-                                                tx_status === 'dropped_too_expensive' ||
-                                                tx_status === 'dropped_stale_garbage_collect' ||
-                                                tx_status === 'dropped_problematic';
+                                const {
+                                  tx_status,
+                                  tx_result,
+                                  block_height,
+                                  block_time_iso,
+                                  tx_id,
+                                } = websocketMessage;
+                                const isSuccess = tx_status === "success";
+                                const isPending = tx_status === "pending";
+                                const isFailed =
+                                  tx_status === "abort_by_response" ||
+                                  tx_status === "abort_by_post_condition" ||
+                                  tx_status === "dropped_replace_by_fee" ||
+                                  tx_status === "dropped_replace_across_fork" ||
+                                  tx_status === "dropped_too_expensive" ||
+                                  tx_status ===
+                                    "dropped_stale_garbage_collect" ||
+                                  tx_status === "dropped_problematic";
 
                                 return (
                                   <div className="space-y-3">
                                     {/* Status Badge */}
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium">Status:</span>
-                                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                        isSuccess ? 'bg-green-100 text-green-800' :
-                                        isPending ? 'bg-orange-100 text-orange-800' :
-                                        isFailed ? 'bg-red-100 text-red-800' :
-                                        'bg-gray-100 text-gray-800'
-                                      }`}>
-                                        {tx_status?.toUpperCase() || 'UNKNOWN'}
+                                      <span className="text-sm font-medium">
+                                        Status:
+                                      </span>
+                                      <span
+                                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                          isSuccess
+                                            ? "bg-green-100 text-green-800"
+                                            : isPending
+                                              ? "bg-orange-100 text-orange-800"
+                                              : isFailed
+                                                ? "bg-red-100 text-red-800"
+                                                : "bg-gray-100 text-gray-800"
+                                        }`}
+                                      >
+                                        {tx_status?.toUpperCase() || "UNKNOWN"}
                                       </span>
                                     </div>
 
@@ -468,22 +509,36 @@ export function DAOSendProposal({
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                       {tx_id && (
                                         <div>
-                                          <span className="font-medium">Transaction ID:</span>
-                                          <p className="font-mono text-xs mt-1 break-all">{tx_id}</p>
+                                          <span className="font-medium">
+                                            Transaction ID:
+                                          </span>
+                                          <p className="font-mono text-xs mt-1 break-all">
+                                            {tx_id}
+                                          </p>
                                         </div>
                                       )}
-                                      
+
                                       {block_height && (
                                         <div>
-                                          <span className="font-medium">Block Height:</span>
-                                          <p className="mt-1">{block_height.toLocaleString()}</p>
+                                          <span className="font-medium">
+                                            Block Height:
+                                          </span>
+                                          <p className="mt-1">
+                                            {block_height.toLocaleString()}
+                                          </p>
                                         </div>
                                       )}
-                                      
+
                                       {block_time_iso && (
                                         <div>
-                                          <span className="font-medium">Block Time:</span>
-                                          <p className="mt-1">{new Date(block_time_iso).toLocaleString()}</p>
+                                          <span className="font-medium">
+                                            Block Time:
+                                          </span>
+                                          <p className="mt-1">
+                                            {new Date(
+                                              block_time_iso
+                                            ).toLocaleString()}
+                                          </p>
                                         </div>
                                       )}
                                     </div>
@@ -491,10 +546,16 @@ export function DAOSendProposal({
                                     {/* Success Result */}
                                     {isSuccess && tx_result && (
                                       <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-green-800 mb-2">✅ Transaction Successful</h6>
+                                        <h6 className="font-medium text-green-800 mb-2">
+                                          ✅ Transaction Successful
+                                        </h6>
                                         <div className="text-sm text-green-700">
-                                          <span className="font-medium">Result:</span>
-                                          <p className="font-mono mt-1">{tx_result.repr || tx_result.hex}</p>
+                                          <span className="font-medium">
+                                            Result:
+                                          </span>
+                                          <p className="font-mono mt-1">
+                                            {tx_result.repr || tx_result.hex}
+                                          </p>
                                         </div>
                                       </div>
                                     )}
@@ -502,10 +563,14 @@ export function DAOSendProposal({
                                     {/* Failed Result */}
                                     {isFailed && tx_result && (
                                       <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-red-800 mb-2">❌ Transaction Failed</h6>
+                                        <h6 className="font-medium text-red-800 mb-2">
+                                          ❌ Transaction Failed
+                                        </h6>
                                         <div className="text-sm text-red-700">
                                           {/* <span className="font-medium">Error Details:</span> */}
-                                          <p className="font-mono mt-1">{tx_result.repr || tx_result.hex}</p>
+                                          <p className="font-mono mt-1">
+                                            {tx_result.repr || tx_result.hex}
+                                          </p>
                                         </div>
                                       </div>
                                     )}
@@ -513,8 +578,12 @@ export function DAOSendProposal({
                                     {/* Pending State */}
                                     {isPending && (
                                       <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-orange-800 mb-2">⏳ Transaction Pending</h6>
-                                        <p className="text-sm text-orange-700">Transaction is being processed...</p>
+                                        <h6 className="font-medium text-orange-800 mb-2">
+                                          ⏳ Transaction Pending
+                                        </h6>
+                                        <p className="text-sm text-orange-700">
+                                          Transaction is being processed...
+                                        </p>
                                       </div>
                                     )}
 
@@ -524,7 +593,11 @@ export function DAOSendProposal({
                                         View raw WebSocket data
                                       </summary>
                                       <pre className="whitespace-pre-wrap text-xs  p-3 rounded border mt-2 max-h-48 overflow-auto font-mono">
-                                        {JSON.stringify(websocketMessage, null, 2)}
+                                        {JSON.stringify(
+                                          websocketMessage,
+                                          null,
+                                          2
+                                        )}
                                       </pre>
                                     </details>
                                   </div>

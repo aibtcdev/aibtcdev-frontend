@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useGuide } from "@/hooks/use-guide";
+import { useGuide } from "@/hooks/useGuide";
 
 const CustomCard: React.FC<CardComponentProps> = ({
   step,

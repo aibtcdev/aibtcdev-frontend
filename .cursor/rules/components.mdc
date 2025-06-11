@@ -1,0 +1,45 @@
+---
+description: 
+globs: src/components/**/*.tsx
+alwaysApply: false
+---
+## Context
+The `components` folder stores reusable UI components for use across the application.
+
+## Requirements
+- Group components by feature or module (e.g., `components/ui/Button.tsx`, `components/features/cart/CartItem.tsx`).
+- Place shared components in a `ui` subdirectory for atomic design (e.g., `components/ui/Tag.tsx`).
+- Avoid page-specific components; store them in route-specific directories (e.g., `app/(auth)/components`).
+- Ensure components are modular, reusable, and typed with TypeScript interfaces.
+- Use TailwindCSS utility classes for styling, avoiding inline styles.
+- Implement functional components with hooks for state management.
+
+## Examples
+- Correct:
+  ```typescript
+  // components/ui/Button.tsx
+  import { FC, ReactNode } from 'react';
+  interface ButtonProps { children: ReactNode }
+  const Button: FC<ButtonProps> = ({ children }) => (
+    <button className="bg-blue-500 text-white p-2 rounded">{children}</button>
+  );
+  export default Button;
+  ```
+
+  ```typescript
+  // components/features/cart/CartItem.tsx
+  import { FC } from 'react';
+  interface CartItemProps { item: { name: string; price: number } }
+  const CartItem: FC<CartItemProps> = ({ item }) => (
+    <div className="flex justify-between p-2">{item.name} - ${item.price}</div>
+  );
+  export default CartItem;
+  ```
+
+- Incorrect:
+  ```typescript
+  // components/PageSpecificComponent.tsx
+  export default function PageSpecificComponent() {
+    return <div style={{ margin: '10px' }}>Page Specific</div>; // Should be in app/(route)/components
+  }
+  ```

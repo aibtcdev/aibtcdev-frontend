@@ -8,7 +8,7 @@ import {
   fetchToken,
   fetchHolders,
   fetchDAOByName,
-} from "@/queries/dao-queries";
+} from "@/services/dao.service";
 
 export const runtime = "edge";
 

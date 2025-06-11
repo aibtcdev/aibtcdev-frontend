@@ -1,5 +1,7 @@
 import React from "react";
-import { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+import { ProposalDetailsLayoutClient } from "./layout-client";
+import { fetchProposalById } from "@/services/dao.service";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -8,19 +10,73 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export const metadata: Metadata = {
-  title: "Proposal Details",
-  description: "View detailed information about a DAO proposal",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  try {
+    const proposal = await fetchProposalById(params.id);
+
+    if (!proposal) {
+      return {
+        title: "Proposal Not Found",
+        description: "The requested proposal could not be found.",
+      };
+    }
+
+    const daoName = proposal.daos?.name || "Unknown DAO";
+    const title = `${proposal.title} - ${daoName}`;
+    const description =
+      proposal.summary ||
+      proposal.content ||
+      `View proposal details for ${proposal.title} in ${daoName}`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        url: `/proposals/${params.id}`,
+      },
+      twitter: {
+        card: "summary",
+        title,
+        description,
+        creator: "@aibtcdev",
+      },
+      alternates: {
+        canonical: `/proposals/${params.id}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+      },
+      keywords: [
+        proposal.title,
+        daoName,
+        "Proposal",
+        "DAO",
+        "Governance",
+        "Vote",
+        "Blockchain",
+      ],
+    };
+  } catch (error) {
+    console.error("Error generating metadata for proposal:", error);
+    return {
+      title: "Proposal Details",
+      description: "View detailed information about a DAO proposal",
+    };
+  }
+}
 
 export default function ProposalDetailsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main className="w-full min-h-screen bg-background ">
-      <div className="flex-1 w-full">{children}</div>
-    </main>
-  );
+  return <ProposalDetailsLayoutClient>{children}</ProposalDetailsLayoutClient>;
 }

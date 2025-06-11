@@ -1,0 +1,52 @@
+---
+description: 
+globs: src/app/**/*.ts,src/app/**/*.tsx
+alwaysApply: false
+---
+## Context
+The `app` folder is the core of a Next.js project using the App Router, defining routes, pages, layouts, and API routes.
+
+## Requirements
+- Define routes using `page.tsx` files (e.g., `app/page.tsx` for the homepage).
+- Use route groups (e.g., `(auth)`, `(unauth)`) to organize related routes without affecting URLs.
+- Include `layout.tsx` in route groups for shared layouts (e.g., `app/(auth)/layout.tsx`).
+- Implement `loading.tsx` for route-specific loading states (e.g., `app/(overview)/loading.tsx`).
+- Place API routes in `app/api` (e.g., `app/api/users/route.ts`).
+- Minimize application logic in this folder, focusing on routing and layouts.
+- Use TypeScript for type safety, defining interfaces for props and data.
+- Apply TailwindCSS utility classes for styling, avoiding inline styles.
+
+# This has to exist on any page.tsx that lives under app folder
+```typescript
+"use client";
+export const runtime = "edge";
+```
+
+## Examples
+- Correct:
+  ```typescript
+  // app/(auth)/page.tsx
+  import { FC } from 'react';
+  const AuthPage: FC = () => <div className="p-4">Auth Page</div>;
+  export default AuthPage;
+  ```
+
+  ```typescript
+  // app/(auth)/layout.tsx
+  import { FC, ReactNode } from 'react';
+  interface AuthLayoutProps { children: ReactNode }
+  const AuthLayout: FC<AuthLayoutProps> = ({ children }) => (
+    <div className="container mx-auto">{children}</div>
+  );
+  export default AuthLayout;
+  ```
+
+- Incorrect:
+  ```typescript
+  // app/page.tsx
+  export default function Page() {
+    const data = fetchSomeData(); // Avoid complex logic here
+    return <div style={{ padding: '20px' }}>{data}</div>; // Avoid inline styles
+  }
+  ```
+```

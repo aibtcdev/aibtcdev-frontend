@@ -35,7 +35,7 @@ export default function BitcoinDeposit() {
   const [confirmationData, setConfirmationData] =
     useState<ConfirmationData | null>(null);
   const [feePriority, setFeePriority] = useState<TransactionPriority>(
-    TransactionPriority.Medium,
+    TransactionPriority.Medium
   );
   const [activeWalletProvider, setActiveWalletProvider] = useState<
     "leather" | "xverse" | null
@@ -51,7 +51,7 @@ export default function BitcoinDeposit() {
 
       // Get user data from localStorage
       const blockstackSession = JSON.parse(
-        localStorage.getItem("blockstack-session") || "{}",
+        localStorage.getItem("blockstack-session") || "{}"
       );
       const userData = blockstackSession.userData;
 

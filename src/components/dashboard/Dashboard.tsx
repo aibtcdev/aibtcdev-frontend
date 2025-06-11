@@ -105,7 +105,7 @@ export default function Dashboard() {
               <div className="text-2xl font-bold">
                 {Math.round(
                   stats.jobsPerDay.reduce((acc, day) => acc + day.jobs, 0) /
-                    stats.jobsPerDay.length,
+                    stats.jobsPerDay.length
                 )}
               </div>
             </CardContent>

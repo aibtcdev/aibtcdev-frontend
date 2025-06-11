@@ -1,0 +1,39 @@
+---
+description: 
+globs: src/hooks/**/*.ts
+alwaysApply: false
+---
+## Context
+The `hooks` folder contains custom React hooks for reusable logic.
+
+## Requirements
+- Store custom hooks (e.g., `useAuth.ts`, `useFetch.ts`).
+- Follow React naming conventions (e.g., `useSomething`).
+- Document hooks clearly with TypeScript types.
+- Exclude non-hook logic from this folder.
+- Ensure hooks are reusable and side-effect-free where possible.
+
+## Examples
+- Correct:
+  ```typescript
+  // hooks/useAuth.ts
+  import { useState, useEffect } from 'react';
+  import { User } from '../types';
+  export function useAuth(): { user: User | null; isLoading: boolean } {
+    const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    useEffect(() => {
+      // Fetch user
+      setIsLoading(false);
+    }, []);
+    return { user, isLoading };
+  }
+  ```
+
+- Incorrect:
+  ```typescript
+  // hooks/auth.ts
+  export function auth() { // Not a hook, incorrect naming
+    // Logic
+  }
+  ```

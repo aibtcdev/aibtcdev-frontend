@@ -3,10 +3,14 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Info,
-
   Wallet,
   XCircle,
   CheckCircle,
@@ -17,8 +21,8 @@ import { Loader } from "@/components/reusables/Loader";
 import { TokenBuyInput, type ApiResponse } from "@/components/daos/DaoBuy";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
-import { fetchDAOExtensions, fetchToken } from "@/queries/dao-queries";
-import type { DAO, Token, Extension } from "@/types/supabase";
+import { fetchDAOExtensions, fetchToken } from "@/services/dao.service";
+import type { DAO, Token, Extension } from "@/types";
 import { Button } from "@/components/ui/button";
 import type { WalletBalance } from "@/store/wallet";
 import AuthButton from "../home/AuthButton";
@@ -26,8 +30,8 @@ import {
   formatStxBalance,
   formatTokenBalance,
   satoshiToBTC,
-} from "@/helpers/format-utils";
-import { getWalletAddress } from "@/helpers/wallet-utils";
+} from "@/utils/format";
+import { getWalletAddress } from "@/utils/wallet";
 
 interface TokenPurchaseModalProps {
   daoId: string;
@@ -84,7 +88,7 @@ export function TokenPurchaseModal({
   });
 
   const tokenDexExtension = daoExtensions?.find(
-    (ext: Extension) => ext.type === "TOKEN" && ext.subtype === "DEX",
+    (ext: Extension) => ext.type === "TOKEN" && ext.subtype === "DEX"
   );
 
   /* wallet & helpers */
@@ -136,7 +140,7 @@ export function TokenPurchaseModal({
                   <span>STX Balance</span>
                   <span className="font-medium">
                     {formatStxBalance(
-                      agentWalletData.walletBalance.stx.balance,
+                      agentWalletData.walletBalance.stx.balance
                     )}{" "}
                     STX
                   </span>
@@ -145,7 +149,7 @@ export function TokenPurchaseModal({
 
               {agentWalletData.walletBalance.fungible_tokens &&
                 Object.entries(
-                  agentWalletData.walletBalance.fungible_tokens,
+                  agentWalletData.walletBalance.fungible_tokens
                 ).map(([tokenId, token], idx, arr) => (
                   <div
                     key={tokenId}
@@ -226,7 +230,7 @@ export function TokenPurchaseModal({
                     {(() => {
                       try {
                         const parsed = JSON.parse(
-                          apiResponse.output || "{}",
+                          apiResponse.output || "{}"
                         ) as ParsedOutput;
                         return (
                           parsed.message ||

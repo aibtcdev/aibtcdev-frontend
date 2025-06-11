@@ -59,7 +59,7 @@ export function TokenBuyInput({
 
         const resp = await fetch(
           `https://core-staging.aibtc.dev/tools/faktory/execute_buy?token=${encodeURIComponent(
-            accessToken,
+            accessToken
           )}`,
           {
             method: "POST",
@@ -69,7 +69,7 @@ export function TokenBuyInput({
               dao_token_dex_contract_address: contractPrincipal,
               slippage: "15",
             }),
-          },
+          }
         );
 
         const apiResponse: ApiResponse = await resp.json();
@@ -85,7 +85,7 @@ export function TokenBuyInput({
         setIsLoading(false);
       }
     },
-    [amount, accessToken, contractPrincipal, onResult],
+    [amount, accessToken, contractPrincipal, onResult]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +98,7 @@ export function TokenBuyInput({
     setTimeout(
       () =>
         inputRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }),
-      300,
+      300
     );
 
   if (!accessToken) return null;
@@ -123,7 +123,7 @@ export function TokenBuyInput({
                 disabled={disabled || isLoading}
                 className={cn(
                   "h-11 pr-16 py-2.5 px-4 border border-muted text-base placeholder:text-muted-foreground",
-                  "rounded-xl md:rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all",
+                  "rounded-xl md:rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
                 )}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm font-medium text-muted-foreground text-orange-500">

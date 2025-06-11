@@ -105,7 +105,8 @@ export function Pagination({
       {/* Page info */}
       <div className="text-sm text-muted-foreground order-first sm:order-none">
         <span className="hidden sm:inline">Showing </span>
-        {startItem}-{endItem} <span className="hidden sm:inline">of {totalItems} items</span>
+        {startItem}-{endItem}{" "}
+        <span className="hidden sm:inline">of {totalItems} items</span>
         <span className="sm:hidden">/ {totalItems}</span>
       </div>
 
@@ -138,7 +139,9 @@ export function Pagination({
           {getVisiblePages().map((page, index) => (
             <div key={index} className="flex-shrink-0">
               {page === "..." ? (
-                <span className="px-2 py-1 text-muted-foreground text-sm">...</span>
+                <span className="px-2 py-1 text-muted-foreground text-sm">
+                  ...
+                </span>
               ) : (
                 <Button
                   variant={currentPage === page ? "default" : "ghost"}

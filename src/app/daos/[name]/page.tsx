@@ -5,7 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
 import DAOProposals from "@/components/proposals/DAOProposal";
-import { fetchProposals, fetchDAOByName, fetchToken } from "@/queries/dao-queries";
+import {
+  fetchProposals,
+  fetchDAOByName,
+  fetchToken,
+} from "@/services/dao.service";
 
 export const runtime = "edge";
 
@@ -31,10 +35,7 @@ export default function ProposalsPage() {
   const daoId = dao?.id;
 
   // Fetch token information for the DAO
-  const {
-    data: token,
-    isLoading: isLoadingToken,
-  } = useQuery({
+  const { data: token, isLoading: isLoadingToken } = useQuery({
     queryKey: ["token", daoId],
     queryFn: () => (daoId ? fetchToken(daoId) : Promise.resolve(null)),
     enabled: !!daoId,
@@ -56,7 +57,6 @@ export default function ProposalsPage() {
   if (proposalsError) {
     console.error("Error fetching proposals:", proposalsError);
   }
-
 
   if (isLoadingDAO || isLoading || isLoadingToken) {
     return (
@@ -96,9 +96,9 @@ export default function ProposalsPage() {
           </div>
         }
       >
-        <DAOProposals 
-          proposals={proposals || []} 
-          tokenSymbol={token?.symbol || ""} 
+        <DAOProposals
+          proposals={proposals || []}
+          tokenSymbol={token?.symbol || ""}
         />
       </Suspense>
     </div>

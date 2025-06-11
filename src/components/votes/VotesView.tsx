@@ -28,14 +28,14 @@ import {
 } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
-import { useClipboard } from "@/helpers/clipboard-utils";
+import { useClipboard } from "@/hooks/useClipboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Vote as VoteType } from "@/queries/vote-queries";
+import type { Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchLatestChainState } from "@/queries/chain-state-queries";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 import Link from "next/link";
 
 interface VotesViewProps {

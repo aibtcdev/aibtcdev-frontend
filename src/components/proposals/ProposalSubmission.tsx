@@ -12,10 +12,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
-import type { DAO, Token } from "@/types/supabase";
+import type { DAO, Token } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDAOExtensions } from "@/queries/dao-queries";
+import { fetchDAOExtensions } from "@/services/dao.service";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import { getAllErrorDetails } from "@aibtc/types";
 import {
   useUnicodeValidation,
   UnicodeIssueWarning,
-} from "@/hooks/use-unicode-validation";
+} from "@/hooks/useUnicodeValidation";
 
 interface WebSocketTransactionMessage {
   tx_id: string;

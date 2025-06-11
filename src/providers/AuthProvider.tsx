@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffect, createContext, useContext, ReactNode } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AuthContextType {
   isInitialized: boolean;
@@ -25,8 +25,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Clean up auth subscription on unmount
   useEffect(() => {
     return () => {
-      if (typeof window !== 'undefined' && (window as unknown as { __supabaseAuthSubscription?: { unsubscribe: () => void } }).__supabaseAuthSubscription) {
-        (window as unknown as { __supabaseAuthSubscription: { unsubscribe: () => void } }).__supabaseAuthSubscription.unsubscribe();
+      if (
+        typeof window !== "undefined" &&
+        (
+          window as unknown as {
+            __supabaseAuthSubscription?: { unsubscribe: () => void };
+          }
+        ).__supabaseAuthSubscription
+      ) {
+        (
+          window as unknown as {
+            __supabaseAuthSubscription: { unsubscribe: () => void };
+          }
+        ).__supabaseAuthSubscription.unsubscribe();
       }
     };
   }, []);

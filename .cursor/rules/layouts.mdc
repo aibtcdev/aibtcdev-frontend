@@ -1,0 +1,35 @@
+---
+description: 
+globs: src/layouts/**/*.tsx
+alwaysApply: false
+---
+## Context
+The `layouts` folder contains layout components defining shared structures across pages or route groups.
+
+## Requirements
+- Define layouts with `layout.tsx` files for shared UI (e.g., headers, footers).
+- Apply layouts to route groups (e.g., `(shop)/layout.tsx` for `account` and `cart` routes).
+- For multiple root layouts, include `layout.tsx` in each route group with `<html>` and `<body>` tags.
+- Ensure layouts are reusable and maintain consistent UI.
+- Use TypeScript for type safety, defining interfaces for props.
+- Apply TailwindCSS utility classes for styling.
+
+## Examples
+- Correct:
+  ```typescript
+  // layouts/MainLayout.tsx
+  import { FC, ReactNode } from 'react';
+  interface MainLayoutProps { children: ReactNode }
+  const MainLayout: FC<MainLayoutProps> = ({ children }) => (
+    <div className="min-h-screen bg-gray-100">{children}</div>
+  );
+  export default MainLayout;
+  ```
+
+- Incorrect:
+  ```typescript
+  // layouts/MainLayout.tsx
+  export default function MainLayout({ children }) {
+    return <div style={{ background: 'gray' }}>{children}</div>; // Missing types, inline styles
+  }
+  ```

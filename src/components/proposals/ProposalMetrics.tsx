@@ -4,25 +4,28 @@ import { CheckCircle2, XCircle, Clock, Info } from "lucide-react";
 import { useVotingStatus } from "./TimeStatus";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { cn } from "@/lib/utils";
-import type { Proposal } from "@/types/supabase";
+import type { Proposal } from "@/types";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { safeNumberFromBigInt } from "@/helpers/proposal-utils";
+import { safeNumberFromBigInt } from "@/utils/proposal";
 
 interface ProposalMetricsProps {
   proposal: Proposal;
   tokenSymbol?: string;
 }
 
-const ProposalMetrics = ({ proposal, tokenSymbol = "" }: ProposalMetricsProps) => {
+const ProposalMetrics = ({
+  proposal,
+  tokenSymbol = "",
+}: ProposalMetricsProps) => {
   const { isActive, isEnded } = useVotingStatus(
     proposal.status,
     safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end),
+    safeNumberFromBigInt(proposal.vote_end)
   );
 
   // Check if the proposal has failed
@@ -82,7 +85,7 @@ const ProposalMetrics = ({ proposal, tokenSymbol = "" }: ProposalMetricsProps) =
                     ? "bg-orange-500/10 border-orange-500/30"
                     : proposal.met_quorum
                       ? "bg-green-500/10 border-green-500/30"
-                      : "bg-red-500/10 border-red-500/30",
+                      : "bg-red-500/10 border-red-500/30"
                 )}
               >
                 <div className="flex flex-col gap-2">
@@ -141,7 +144,7 @@ const ProposalMetrics = ({ proposal, tokenSymbol = "" }: ProposalMetricsProps) =
                     ? "bg-orange-500/10 border-orange-500/30"
                     : proposal.met_threshold
                       ? "bg-green-500/10 border-green-500/30"
-                      : "bg-red-500/10 border-red-500/30",
+                      : "bg-red-500/10 border-red-500/30"
                 )}
               >
                 <div className="flex flex-col gap-2">
@@ -176,7 +179,8 @@ const ProposalMetrics = ({ proposal, tokenSymbol = "" }: ProposalMetricsProps) =
                     )}
                   </div>
                   <div className="text-xs text-zinc-400">
-                    {safeNumberFromBigInt(proposal.voting_threshold)}% approval needed
+                    {safeNumberFromBigInt(proposal.voting_threshold)}% approval
+                    needed
                   </div>
                 </div>
               </div>
@@ -204,7 +208,7 @@ const ProposalMetrics = ({ proposal, tokenSymbol = "" }: ProposalMetricsProps) =
                         ? "bg-green-500/10 border-green-500/30"
                         : proposal.executed === false
                           ? "bg-red-500/10 border-red-500/30"
-                          : "bg-amber-500/10 border-amber-500/30",
+                          : "bg-amber-500/10 border-amber-500/30"
                 )}
               >
                 <div className="flex flex-col gap-2">

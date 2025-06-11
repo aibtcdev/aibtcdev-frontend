@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
-import { Agent } from "@/types/supabase";
+import { Agent } from "@/types";
 
 interface AgentProfileCardProps {
   agent: Agent;

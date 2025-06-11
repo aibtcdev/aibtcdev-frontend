@@ -2,7 +2,7 @@
 
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useClipboard } from "@/helpers/clipboard-utils";
+import { useClipboard } from "@/hooks/useClipboard";
 
 interface MessageDisplayProps {
   message?: string;

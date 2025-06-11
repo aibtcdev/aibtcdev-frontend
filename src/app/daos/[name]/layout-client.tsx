@@ -12,8 +12,8 @@ import {
   fetchHolders,
   fetchProposals,
   fetchDAOByName,
-} from "@/queries/dao-queries";
-import { DAOLayout } from "@/components/layouts";
+} from "@/services/dao.service";
+import { DAOLayout } from "@/layouts";
 
 export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -46,7 +46,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
   const dex = extensions?.find((ext) => ext.type === "dex")?.contract_principal;
   const treasuryAddress = extensions?.find(
-    (ext) => ext.type === "aibtc-treasury",
+    (ext) => ext.type === "aibtc-treasury"
   )?.contract_principal;
 
   // Fetch token price
@@ -74,18 +74,8 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
   // Fetch market stats
   const { data: marketStats } = useQuery({
-    queryKey: [
-      "marketStats",
-      id,
-      dex,
-      token?.max_supply,
-    ],
-    queryFn: () =>
-      fetchMarketStats(
-        dex!,
-        id!,
-        token!.max_supply || 0,
-      ),
+    queryKey: ["marketStats", id, dex, token?.max_supply],
+    queryFn: () => fetchMarketStats(dex!, id!, token!.max_supply || 0),
     enabled: !!dex && !!id && !!token,
   });
 

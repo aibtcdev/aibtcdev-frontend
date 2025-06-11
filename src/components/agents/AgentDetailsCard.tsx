@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Agent } from "@/types/supabase";
+import { Agent } from "@/types";
 
 interface Wallet {
   mainnet_address: string;

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserRole } from "@/hooks/use-admin-panel";
+import { UserRole } from "@/hooks/useAdminPanel";
 
 interface AdminHeaderProps {
   searchTerm: string;

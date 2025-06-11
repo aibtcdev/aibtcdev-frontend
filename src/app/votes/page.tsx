@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "@/components/reusables/Loader";
 import { VotesView } from "@/components/votes/VotesView";
-import { fetchVotes } from "@/queries/vote-queries";
+import { fetchVotes } from "@/services/vote.service";
 
 export const runtime = "edge";
 
@@ -40,9 +40,7 @@ export default function VotesPage() {
     return (
       <div className="flex justify-center items-center min-h-[200px] w-full">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">
-            Error Loading Votes
-          </h2>
+          <h2 className="text-xl font-semibold mb-2">Error Loading Votes</h2>
           <p className="text-muted-foreground">
             Failed to load votes. Please try again later.
           </p>
@@ -52,4 +50,4 @@ export default function VotesPage() {
   }
 
   return <VotesView votes={votes || []} />;
-} 
+}

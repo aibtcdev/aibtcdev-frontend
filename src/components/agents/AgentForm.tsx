@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, X } from "lucide-react";
-import { Agent } from "@/types/supabase";
-import { fetchTools, Tool } from "@/queries/tools-queries";
+import { Agent } from "@/types";
+import { fetchTools } from "@/services/tool.service";
+import type { Tool } from "@/types";
 import Link from "next/link";
 
 interface AgentFormProps {
@@ -23,7 +24,7 @@ interface AgentFormProps {
   saving: boolean;
   onSubmit: (e: React.FormEvent) => Promise<void>;
   onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   onToolsChange: (tools: string[]) => void;
 }
@@ -56,21 +57,21 @@ export function AgentForm({
   const filteredTools = availableTools.filter(
     (tool) =>
       tool.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tool.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      tool.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toolsByCategory = useMemo(() => {
     const categories = Array.from(
-      new Set(filteredTools.map((tool) => tool.category)),
+      new Set(filteredTools.map((tool) => tool.category))
     ).sort();
     return categories.reduce(
       (acc, category) => {
         acc[category] = filteredTools.filter(
-          (tool) => tool.category === category,
+          (tool) => tool.category === category
         );
         return acc;
       },
-      {} as Record<string, Tool[]>,
+      {} as Record<string, Tool[]>
     );
   }, [filteredTools]);
 

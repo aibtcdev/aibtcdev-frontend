@@ -17,7 +17,9 @@ const SupabaseRealtimeContext = createContext<SupabaseRealtimeContextValue>({
 export const useSupabaseRealtime = () => {
   const context = useContext(SupabaseRealtimeContext);
   if (!context) {
-    throw new Error("useSupabaseRealtime must be used within SupabaseRealtimeProvider");
+    throw new Error(
+      "useSupabaseRealtime must be used within SupabaseRealtimeProvider"
+    );
   }
   return context;
 };
@@ -26,7 +28,9 @@ interface SupabaseRealtimeProviderProps {
   children: React.ReactNode;
 }
 
-export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderProps) {
+export function SupabaseRealtimeProvider({
+  children,
+}: SupabaseRealtimeProviderProps) {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = React.useState(false);
 
@@ -45,25 +49,49 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
         },
         (payload) => {
           console.log("Proposals table changed:", payload);
-          
+
           // Invalidate all proposal queries
           queryClient.invalidateQueries({ queryKey: ["allProposals"] });
           queryClient.invalidateQueries({ queryKey: ["proposals"] });
-          
+
           // If we have specific proposal data, also invalidate that
-          if (payload.new && typeof payload.new === 'object' && 'id' in payload.new) {
-            queryClient.invalidateQueries({ queryKey: ["proposal", payload.new.id] });
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "id" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposal", payload.new.id],
+            });
           }
-          if (payload.old && typeof payload.old === 'object' && 'id' in payload.old) {
-            queryClient.invalidateQueries({ queryKey: ["proposal", payload.old.id] });
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "id" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposal", payload.old.id],
+            });
           }
-          
+
           // Invalidate DAO-specific proposals if we have dao_id
-          if (payload.new && typeof payload.new === 'object' && 'dao_id' in payload.new) {
-            queryClient.invalidateQueries({ queryKey: ["proposals", payload.new.dao_id] });
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "dao_id" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposals", payload.new.dao_id],
+            });
           }
-          if (payload.old && typeof payload.old === 'object' && 'dao_id' in payload.old) {
-            queryClient.invalidateQueries({ queryKey: ["proposals", payload.old.dao_id] });
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "dao_id" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposals", payload.old.dao_id],
+            });
           }
         }
       )
@@ -82,25 +110,33 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
         },
         (payload) => {
           console.log("Votes table changed:", payload);
-          
+
           // Invalidate all vote queries
           queryClient.invalidateQueries({ queryKey: ["votes"] });
-          
+
           // Invalidate proposal-specific votes if we have proposal_id
-          if (payload.new && typeof payload.new === 'object' && 'proposal_id' in payload.new) {
-            queryClient.invalidateQueries({ 
-              queryKey: ["proposalVotes", payload.new.proposal_id] 
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "proposal_id" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposalVotes", payload.new.proposal_id],
             });
-            queryClient.invalidateQueries({ 
-              queryKey: ["proposalVotesTable", payload.new.proposal_id] 
+            queryClient.invalidateQueries({
+              queryKey: ["proposalVotesTable", payload.new.proposal_id],
             });
           }
-          if (payload.old && typeof payload.old === 'object' && 'proposal_id' in payload.old) {
-            queryClient.invalidateQueries({ 
-              queryKey: ["proposalVotes", payload.old.proposal_id] 
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "proposal_id" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["proposalVotes", payload.old.proposal_id],
             });
-            queryClient.invalidateQueries({ 
-              queryKey: ["proposalVotesTable", payload.old.proposal_id] 
+            queryClient.invalidateQueries({
+              queryKey: ["proposalVotesTable", payload.old.proposal_id],
             });
           }
         }
@@ -120,20 +156,28 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
         },
         (payload) => {
           console.log("Chain states table changed:", payload);
-          
+
           // Invalidate all chain state queries
           queryClient.invalidateQueries({ queryKey: ["chainStates"] });
           queryClient.invalidateQueries({ queryKey: ["latestChainState"] });
-          
+
           // Invalidate network-specific chain state if we have network
-          if (payload.new && typeof payload.new === 'object' && 'network' in payload.new) {
-            queryClient.invalidateQueries({ 
-              queryKey: ["chainState", payload.new.network] 
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "network" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["chainState", payload.new.network],
             });
           }
-          if (payload.old && typeof payload.old === 'object' && 'network' in payload.old) {
-            queryClient.invalidateQueries({ 
-              queryKey: ["chainState", payload.old.network] 
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "network" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["chainState", payload.old.network],
             });
           }
         }
@@ -153,24 +197,48 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
         },
         (payload) => {
           console.log("DAOs table changed:", payload);
-          
+
           // Invalidate all DAO queries
           queryClient.invalidateQueries({ queryKey: ["daos"] });
-          
+
           // Invalidate specific DAO queries
-          if (payload.new && typeof payload.new === 'object' && 'id' in payload.new) {
-            queryClient.invalidateQueries({ queryKey: ["dao", payload.new.id] });
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "id" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["dao", payload.new.id],
+            });
           }
-          if (payload.old && typeof payload.old === 'object' && 'id' in payload.old) {
-            queryClient.invalidateQueries({ queryKey: ["dao", payload.old.id] });
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "id" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["dao", payload.old.id],
+            });
           }
-          
+
           // Invalidate DAO by name queries
-          if (payload.new && typeof payload.new === 'object' && 'name' in payload.new) {
-            queryClient.invalidateQueries({ queryKey: ["dao", payload.new.name] });
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "name" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["dao", payload.new.name],
+            });
           }
-          if (payload.old && typeof payload.old === 'object' && 'name' in payload.old) {
-            queryClient.invalidateQueries({ queryKey: ["dao", payload.old.name] });
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "name" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["dao", payload.old.name],
+            });
           }
         }
       )
@@ -189,16 +257,28 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
         },
         (payload) => {
           console.log("Tokens table changed:", payload);
-          
+
           // Invalidate all token queries
           queryClient.invalidateQueries({ queryKey: ["tokens"] });
-          
+
           // Invalidate specific token queries
-          if (payload.new && typeof payload.new === 'object' && 'dao_id' in payload.new) {
-            queryClient.invalidateQueries({ queryKey: ["token", payload.new.dao_id] });
+          if (
+            payload.new &&
+            typeof payload.new === "object" &&
+            "dao_id" in payload.new
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["token", payload.new.dao_id],
+            });
           }
-          if (payload.old && typeof payload.old === 'object' && 'dao_id' in payload.old) {
-            queryClient.invalidateQueries({ queryKey: ["token", payload.old.dao_id] });
+          if (
+            payload.old &&
+            typeof payload.old === "object" &&
+            "dao_id" in payload.old
+          ) {
+            queryClient.invalidateQueries({
+              queryKey: ["token", payload.old.dao_id],
+            });
           }
         }
       )
@@ -227,4 +307,4 @@ export function SupabaseRealtimeProvider({ children }: SupabaseRealtimeProviderP
       {children}
     </SupabaseRealtimeContext.Provider>
   );
-} 
+}

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useNextStep } from "nextstepjs";
-import { useGuide } from "@/hooks/use-guide";
+import { useGuide } from "@/hooks/useGuide";
 
 export function StartGuide() {
   const { startNextStep } = useNextStep();
