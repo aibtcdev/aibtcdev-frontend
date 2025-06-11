@@ -11,7 +11,7 @@ import {
   type SummaryStats,
 } from "@/components/reusables/FilterSidebar";
 import { Pagination } from "@/components/reusables/Pagination";
-import type { ProposalWithDAO } from "@/types/supabase";
+import type { ProposalWithDAO } from "@/types";
 import {
   FileText,
   Filter,

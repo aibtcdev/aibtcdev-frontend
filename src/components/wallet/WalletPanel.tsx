@@ -7,18 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Copy, Check, X, Wallet as WalletIcon } from "lucide-react";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import dynamic from "next/dynamic";
-import { truncateAddress } from "@/helpers/format-utils";
-import { getWalletAddress } from "@/helpers/wallet-utils";
-import { useClipboard } from "@/helpers/clipboard-utils";
+import { truncateAddress } from "@/utils/format";
+import { getWalletAddress } from "@/utils/wallet";
+import { useClipboard } from "@/hooks/useClipboard";
 
 // Dynamically import Stacks components with ssr: false
 const StacksComponents = dynamic(
   () => import("@/components/wallet/StacksComponent"),
   {
     ssr: false,
-  },
+  }
 );
 
 interface WalletPanelProps {
@@ -45,7 +45,7 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
   };
 
   const activeAgentWallets = agentWallets.filter(
-    (wallet) => !wallet.agent?.is_archived,
+    (wallet) => !wallet.agent?.is_archived
   );
 
   const handleAmountChange = (address: string, value: string) => {
@@ -121,16 +121,14 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
                           </span>
                           <span className="text-white font-medium text-right">
                             {formatBalance(
-                              balances[getWalletAddress(userWallet)].stx
-                                .balance,
+                              balances[getWalletAddress(userWallet)].stx.balance
                             )}{" "}
                             STX
                           </span>
                         </div>
 
                         {Object.entries(
-                          balances[getWalletAddress(userWallet)]
-                            .fungible_tokens,
+                          balances[getWalletAddress(userWallet)].fungible_tokens
                         ).map(([tokenId, token]) => {
                           const [, tokenSymbol] = tokenId.split("::");
                           return (
@@ -150,7 +148,7 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
 
                         {Object.entries(
                           balances[getWalletAddress(userWallet)]
-                            .non_fungible_tokens,
+                            .non_fungible_tokens
                         ).map(([tokenId, token]) => {
                           const [, tokenSymbol] = tokenId.split("::");
                           return (
@@ -265,11 +263,11 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
                                   </span>
                                 </div>
                               );
-                            },
+                            }
                           )}
 
                           {Object.entries(
-                            walletBalance.non_fungible_tokens,
+                            walletBalance.non_fungible_tokens
                           ).map(([tokenId, token]) => {
                             const [, tokenSymbol] = tokenId.split("::");
                             return (

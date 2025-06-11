@@ -43,7 +43,7 @@ interface ScheduleConfig {
 
 export function ScheduleSelector({ value, onChange }: ScheduleSelectorProps) {
   const [config, setConfig] = useState<ScheduleConfig>(() =>
-    parseCronExpression(value),
+    parseCronExpression(value)
   );
   const [customError, setCustomError] = useState<string>("");
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -91,7 +91,7 @@ export function ScheduleSelector({ value, onChange }: ScheduleSelectorProps) {
       setCustomError(
         `Invalid cron expression: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     }
   };

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "@/components/reusables/Loader";
 import AllProposals from "@/components/proposals/AllProposals";
-import { fetchAllProposals } from "@/queries/dao-queries";
+import { fetchAllProposals } from "@/services/dao.service";
 
 export const runtime = "edge";
 
@@ -29,7 +29,7 @@ export default function AllProposalsPage() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px] w-full">
-                      <Loader />
+        <Loader />
       </div>
     );
   }

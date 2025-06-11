@@ -1,0 +1,74 @@
+---
+description: 
+globs: src/lib/**/*.ts,src/utils/**/*.ts
+alwaysApply: false
+---
+## Overview
+The `lib` and `utils` folders store reusable, generic code to support the application. The `lib` folder contains broader modules, custom hooks, and abstractions, while `utils` focuses on simple, lightweight utility functions.
+
+## `lib` Folder
+### Purpose
+The `lib` folder houses reusable modules, custom hooks (if no separate `hooks` folder exists), and abstractions that provide generic functionality across the application.
+
+### Requirements
+- Store generic, reusable logic (e.g., date formatting, API clients).
+- Include custom hooks if no dedicated `hooks` folder exists.
+- Ensure modularity: each file exports a single function, hook, or module.
+- Use TypeScript for type-safe inputs and outputs.
+- Document with JSDoc or clear comments.
+- Avoid side effects unless explicitly designed.
+- Avoid feature-specific logic (e.g., cart or user-related code).
+
+### Example
+```typescript
+// lib/formatDate.ts
+/**
+ * Formats a Date object into a YYYY-MM-DD string.
+ * @param date - The Date object to format.
+ * @returns A string in the format YYYY-MM-DD.
+ */
+export function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+```
+
+## `utils` Folder
+### Purpose
+The `utils` folder contains simple, lightweight utility functions for specific tasks, such as string or number manipulation.
+
+### Requirements
+- Store simple, single-purpose functions with minimal dependencies.
+- Use TypeScript for type safety.
+- Document with JSDoc or clear comments.
+- Avoid side effects unless explicitly documented.
+- Avoid feature-specific logic.
+- Keep functions lightweight; complex logic belongs in `lib`.
+
+### Example
+```typescript
+// utils/capitalize.ts
+/**
+ * Capitalizes the first letter of a string.
+ * @param str - The string to capitalize.
+ * @returns The capitalized string.
+ */
+export function capitalize(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+```
+
+## Best Practices
+- Use `lib` for complex modules (e.g., API clients, hooks) and `utils` for simple helpers (e.g., string utilities).
+- Consider using only `lib` if the distinction is unclear to simplify the structure.
+- Configure TypeScript path aliases (e.g., `@lib/*`, `@utils/*`) for clean imports.
+- Write unit tests for all functions and hooks.
+- Periodically review to remove unused or redundant code.
+
+## Incorrect Usage
+```typescript
+// lib/cartUtils.ts (Incorrect: Feature-specific)
+export function updateCart() {
+  // Logic belongs in /features/cart or /services
+}
+```

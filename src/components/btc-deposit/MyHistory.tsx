@@ -50,7 +50,7 @@ export default function MyHistory({
 
   // Get status badge variant
   const getStatusVariant = (
-    status: string,
+    status: string
   ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "broadcast":

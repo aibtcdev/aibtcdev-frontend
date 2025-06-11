@@ -21,7 +21,7 @@ interface StacksComponentsProps {
   onToast: (
     title: string,
     description?: string,
-    variant?: "default" | "destructive",
+    variant?: "default" | "destructive"
   ) => void;
 }
 
@@ -47,7 +47,7 @@ export default function StacksComponents({
         onToast(
           "Success",
           "Transfer sent to agent, funds will arrive soon.",
-          "default",
+          "default"
         );
         return {
           txId: data.txId,

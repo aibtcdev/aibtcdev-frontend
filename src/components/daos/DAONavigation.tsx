@@ -66,4 +66,4 @@ export function DAONavigation({ daoName, currentPath }: DAONavigationProps) {
       </div>
     </div>
   );
-} 
+}

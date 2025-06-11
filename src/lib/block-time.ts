@@ -16,7 +16,7 @@ const fetchBlockData = cache(
         next: {
           revalidate: 600, // Cache for 10 minutes
         },
-      },
+      }
     );
 
     if (response.ok) {
@@ -24,7 +24,7 @@ const fetchBlockData = cache(
       return data.burn_block_time_iso;
     }
     return null;
-  },
+  }
 );
 
 // Cache the combined operation
@@ -57,5 +57,5 @@ export const fetchBlockTimes = cache(
         endBlockTime: null,
       };
     }
-  },
+  }
 );

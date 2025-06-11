@@ -1,0 +1,120 @@
+---
+description: 
+globs: **/app/**/*.*
+alwaysApply: false
+---
+# Recommended Folder Structure for Next.js 14
+
+Next.js 14 leverages the App Router for routing and encourages a modular folder structure to enhance project organization, scalability, and maintainability. The official documentation ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)) and community resources provide flexible strategies for structuring projects. This document outlines a recommended folder structure and detailed rules for each folder, synthesized from authoritative sources, including the official Next.js documentation, GeeksforGeeks, and scalable boilerplates.
+
+## Folder Structure Overview
+
+The following table summarizes the recommended folders and their purposes in a Next.js 14 project:
+
+| Folder       | Description                                                                 |
+|--------------|-----------------------------------------------------------------------------|
+| `app`        | Contains the routing structure, pages, layouts, and route-specific files using the App Router. Supports route groups for organizing related routes. |
+| `components` | Holds reusable UI components (e.g., buttons, cards). Group by feature or module for maintainability. |
+| `layouts`    | Contains layout components defining shared structures (e.g., headers, footers) across pages or route groups. |
+| `lib` or `utils` | Stores utility functions, helper modules, or reusable logic (e.g., data manipulation, custom hooks). |
+| `services` or `api` | Houses modules for external service interactions or API route handlers (e.g., `app/api`). |
+| `assets` or `public` | Stores static assets (e.g., images, fonts) served directly by Next.js. |
+| `hooks`      | Contains custom React hooks for reusable logic across components. |
+| `styles`     | Holds global CSS files or styling configurations. Component-specific styles may be colocated. |
+| `types`      | Stores TypeScript type definitions for type safety across the application. |
+| `src`        | Optional folder to encapsulate all application code, separating it from root-level configuration files. |
+
+## Detailed Rules for Each Folder
+
+### 1. `app`
+- **Purpose**: Centralizes the routing structure, pages, layouts, and route-specific files using the Next.js App Router.
+- **Rules**:
+  - Define routes with a `page.tsx` file (e.g., `app/page.tsx` for the homepage).
+  - Use route groups (e.g., `(auth)`, `(unauth)`) to organize related routes without affecting the URL path ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)).
+  - Include `layout.tsx` in route groups to define shared layouts (e.g., `app/(auth)/layout.tsx`).
+  - Use `loading.tsx` for route-specific loading states (e.g., `app/(overview)/loading.tsx`).
+  - Place API routes in `app/api` (e.g., `app/api/users/route.ts`).
+  - Maintain minimal application logic here, reserving it for routing and layout purposes.
+
+### 2. `components`
+- **Purpose**: Stores reusable UI components for use across the application.
+- **Rules**:
+  - Group components by feature or module (e.g., `components/ui/Button.tsx`, `components/features/cart/CartItem.tsx`) ([Next.js Best Practices](mdc:https:/nextjsstarter.com/blog/nextjs-14-project-structure-best-practices)).
+  - Differentiate presentational (UI-focused) and container (logic-focused) components.
+  - Place shared components in a `ui` subdirectory for atomic design (e.g., `components/ui/Tag.tsx`).
+  - Avoid page-specific components here; store them in route-specific directories (e.g., `app/(auth)/components`).
+  - Ensure components are modular and reusable to promote code maintainability.
+
+### 3. `layouts`
+- **Purpose**: Contains layout components that define shared structures across pages or route groups.
+- **Rules**:
+  - Define layouts with `layout.tsx` files to wrap pages (e.g., headers, footers, sidebars).
+  - Use route groups to apply layouts to specific routes (e.g., `(shop)/layout.tsx` for `account` and `cart` routes).
+  - For multiple root layouts, remove the top-level `layout.tsx` and include `layout.tsx` in each route group with `<html>` and `<body>` tags ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)).
+  - Ensure layouts are reusable and maintain consistent UI across routes.
+
+### 4. `lib` or `utils`
+- **Purpose**: Stores utility functions, helper modules, and reusable logic.
+- **Rules**:
+  - Include globally used functions (e.g., date formatting, validation) ([GeeksforGeeks Folder Structure](mdc:https:/www.geeksforgeeks.org/reactjs/nextjs-14-folder-structure)).
+  - Store custom hooks here if a separate `hooks` folder is not used.
+  - Keep functions modular, well-documented, and reusable across the application.
+  - Avoid placing feature-specific logic; reserve for generic utilities.
+
+### 5. `services` or `api`
+- **Purpose**: Manages interactions with external services or internal API routes.
+- **Rules**:
+  - Place API route handlers in `app/api` (e.g., `app/api/users/route.ts`) ([Next.js Boilerplate](mdc:https:/github.com/nhanluongoe/nextjs-boilerplate)).
+  - Create modules for external API calls (e.g., `services/api.ts`).
+  - Implement proper error handling and authentication for service interactions.
+  - Organize service modules by functionality (e.g., `services/auth.ts`, `services/database.ts`).
+
+### 6. `assets` or `public`
+- **Purpose**: Stores static assets served directly by Next.js.
+- **Rules**:
+  - Use the `public` folder for assets like images, fonts, or icons (e.g., `public/images/logo.png`).
+  - Assets in `public` are accessible at the root URL (e.g., `/images/logo.png`).
+  - Avoid storing assets elsewhere unless tied to specific features ([Next.js Best Practices](mdc:https:/nextjsstarter.com/blog/nextjs-14-project-structure-best-practices)).
+  - Optimize assets for performance (e.g., compress images).
+
+### 7. `hooks`
+- **Purpose**: Contains custom React hooks for reusable logic.
+- **Rules**:
+  - Store hooks like `useAuth.ts` or `useFetch.ts` ([GeeksforGeeks Folder Structure](mdc:https:/www.geeksforgeeks.org/reactjs/nextjs-14-folder-structure)).
+  - Ensure hooks are reusable and follow React naming conventions (e.g., `useSomething`).
+  - Document hooks clearly to explain their purpose and usage.
+  - Avoid placing non-hook logic here.
+
+### 8. `styles`
+- **Purpose**: Manages global CSS files or styling configurations.
+- **Rules**:
+  - Store global styles in `styles/global.css`.
+  - For CSS modules, colocate styles with components (e.g., `components/Button/Button.module.css`).
+  - If using Tailwind CSS, configure in `tailwind.config.ts` and apply utility classes in components ([Next.js Boilerplate](mdc:https:/github.com/nhanluongoe/nextjs-boilerplate)).
+  - Maintain consistent styling conventions across the project.
+
+### 9. `types`
+- **Purpose**: Stores TypeScript type definitions for type safety.
+- **Rules**:
+  - Include global types in `types/global.ts` ([Next.js Boilerplate](mdc:https:/github.com/nhanluongoe/nextjs-boilerplate)).
+  - Define types for props, state, and reusable data structures.
+  - Ensure type definitions are consistent and well-documented.
+  - Update types as the application evolves to maintain type safety.
+
+### 10. `src`
+- **Purpose**: Encapsulates all application code, separating it from root-level configuration.
+- **Rules**:
+  - Store folders like `app`, `components`, and `utils` within `src` ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)).
+  - Keep configuration files (e.g., `next.config.js`, `package.json`) at the root.
+  - Use for larger projects to maintain a clean root directory.
+  - Ensure consistent use of `src` across the team to avoid confusion.
+
+## Additional Best Practices
+
+- **Route Organization**: Use route groups like `(auth)` and `(unauth)` to separate private and public routes, each with dedicated layouts and components ([Next.js Boilerplate](mdc:https:/github.com/nhanluongoe/nextjs-boilerplate)). For example:
+  - `app/(auth)/profile/page.tsx`
+  - `app/(unauth)/products/page.tsx`
+- **Component Grouping**: Organize components by feature (e.g., `components/features/cart`) to align with business logic ([Next.js Best Practices](mdc:https:/nextjsstarter.com/blog/nextjs-14-project-structure-best-practices)).
+- **Styling Flexibility**: Support multiple styling approaches (e.g., CSS modules, Tailwind CSS) and choose based on project needs. Colocate styles for component-specific CSS or use `styles` for global CSS.
+- **Scalability**: For large projects, adopt the `src` folder to separate application code from configuration, as recommended by the official documentation.
+- **Consistency**: Maintain consistent naming and organization conventions across the team to facilitate collaboration and maintenance.

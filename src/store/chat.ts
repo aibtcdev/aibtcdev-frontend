@@ -191,7 +191,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           JSON.stringify({
             type: "delete_thread",
             thread_id: threadId,
-          }),
+          })
         );
       } catch (error) {
         console.error("Failed to send delete thread message:", error);
@@ -206,7 +206,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       },
       activeThreadId: null,
       fetchedThreads: new Set(
-        Array.from(state.fetchedThreads).filter((id) => id !== threadId),
+        Array.from(state.fetchedThreads).filter((id) => id !== threadId)
       ),
       isTyping: {
         ...state.isTyping,
@@ -236,7 +236,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         get().getThreadHistory();
         set((state) => ({
           fetchedThreads: new Set(
-            Array.from(state.fetchedThreads).concat([threadId]),
+            Array.from(state.fetchedThreads).concat([threadId])
           ),
         }));
       }, 0);
@@ -299,7 +299,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           status: "sent",
           thread_id: get().activeThreadId,
           agent_id: get().selectedAgentId,
-        }),
+        })
       );
     } catch (error) {
       set({ error: "Failed to send message" });
@@ -334,7 +334,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           content,
           thread_id: threadId,
           agent_id: get().selectedAgentId,
-        }),
+        })
       );
     } catch (error) {
       set({ error: "Failed to send message" });

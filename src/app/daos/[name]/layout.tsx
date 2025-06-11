@@ -2,7 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import { DAOLayoutClient } from "./layout-client";
 import { supabase } from "@/utils/supabase/client";
-import { fetchDAOByName } from "@/queries/dao-queries";
+import { fetchDAOByName } from "@/services/dao.service";
 
 // Twitter recommends 2:1 ratio images
 // Minimum dimensions: 300x157

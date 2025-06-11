@@ -10,8 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { useClipboard } from "@/helpers/clipboard-utils";
-import { getAddressExplorerUrl } from "@/helpers/explorer";
+import { useClipboard } from "@/hooks/useClipboard";
+import { getAddressExplorerUrl } from "@/utils/explorer";
 import {
   StxBalance,
   BtcBalance,
@@ -49,9 +49,19 @@ function MobileAssetCard({
       return <BtcBalance value={balance as string} variant="rounded" />;
     }
     if (isNft) {
-      return <span className="font-mono text-muted-foreground text-sm font-semibold">{balance}</span>;
+      return (
+        <span className="font-mono text-muted-foreground text-sm font-semibold">
+          {balance}
+        </span>
+      );
     }
-    return <TokenBalance value={balance as string} symbol={symbol} variant="rounded" />;
+    return (
+      <TokenBalance
+        value={balance as string}
+        symbol={symbol}
+        variant="rounded"
+      />
+    );
   };
 
   return (
@@ -60,9 +70,7 @@ function MobileAssetCard({
         <div className="w-2 h-2 rounded-full bg-primary" />
         <span className="font-semibold text-foreground text-sm">{symbol}</span>
       </div>
-      <div className="text-right">
-        {renderBalance()}
-      </div>
+      <div className="text-right">{renderBalance()}</div>
     </div>
   );
 }
@@ -81,7 +89,7 @@ export function WalletInfoCard({
     isBtc?: boolean;
     isNft?: boolean;
   }> = [];
-  
+
   if (walletBalance?.stx) {
     assets.push({
       symbol: "STX",
@@ -91,30 +99,34 @@ export function WalletInfoCard({
   }
 
   if (walletBalance?.fungible_tokens) {
-    Object.entries(walletBalance.fungible_tokens).forEach(([tokenId, token]) => {
-      const [, tokenSymbol] = tokenId.split("::");
-      const isBtc = tokenId.includes("sbtc-token");
-      const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
-      
-      assets.push({
-        symbol: displaySymbol,
-        balance: token.balance,
-        isBtc,
-      });
-    });
+    Object.entries(walletBalance.fungible_tokens).forEach(
+      ([tokenId, token]) => {
+        const [, tokenSymbol] = tokenId.split("::");
+        const isBtc = tokenId.includes("sbtc-token");
+        const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
+
+        assets.push({
+          symbol: displaySymbol,
+          balance: token.balance,
+          isBtc,
+        });
+      }
+    );
   }
 
   if (walletBalance?.non_fungible_tokens) {
-    Object.entries(walletBalance.non_fungible_tokens).forEach(([tokenId, token]) => {
-      const [, tokenSymbol] = tokenId.split("::");
-      const displaySymbol = tokenSymbol || "NFT";
-      
-      assets.push({
-        symbol: displaySymbol,
-        balance: token.count,
-        isNft: true,
-      });
-    });
+    Object.entries(walletBalance.non_fungible_tokens).forEach(
+      ([tokenId, token]) => {
+        const [, tokenSymbol] = tokenId.split("::");
+        const displaySymbol = tokenSymbol || "NFT";
+
+        assets.push({
+          symbol: displaySymbol,
+          balance: token.count,
+          isNft: true,
+        });
+      }
+    );
   }
 
   return (
@@ -126,7 +138,9 @@ export function WalletInfoCard({
         </div>
         <div>
           <h3 className="text-lg font-bold text-foreground">Agent Wallet</h3>
-          <p className="text-xs text-muted-foreground">Automated governance account</p>
+          <p className="text-xs text-muted-foreground">
+            Automated governance account
+          </p>
         </div>
       </div>
 
@@ -155,7 +169,9 @@ export function WalletInfoCard({
               ) : (
                 <Copy className="h-3 w-3 mr-1" />
               )}
-              <span className="text-xs">{copiedText === walletAddress ? "Copied!" : "Copy"}</span>
+              <span className="text-xs">
+                {copiedText === walletAddress ? "Copied!" : "Copy"}
+              </span>
             </Button>
             <Button
               variant="ghost"
@@ -197,7 +213,7 @@ export function WalletInfoCard({
           <Coins className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-bold text-foreground">Asset Balances</h4>
         </div>
-        
+
         {/* Mobile Layout - Cards */}
         <div className="lg:hidden space-y-2">
           {assets.length > 0 ? (
@@ -217,7 +233,9 @@ export function WalletInfoCard({
                 <Coins className="h-3 w-3 text-muted-foreground" />
               </div>
               <div className="space-y-1">
-                <h5 className="text-xs font-semibold text-foreground">No Assets Found</h5>
+                <h5 className="text-xs font-semibold text-foreground">
+                  No Assets Found
+                </h5>
                 <p className="text-xs text-muted-foreground">
                   Balances will appear when wallet holds tokens
                 </p>
@@ -231,8 +249,12 @@ export function WalletInfoCard({
           <Table>
             <TableHeader>
               <TableRow className="border-border bg-muted/5">
-                <TableHead className="text-foreground font-bold px-4 py-2 text-xs">Asset</TableHead>
-                <TableHead className="text-foreground font-bold px-4 py-2 text-xs">Balance</TableHead>
+                <TableHead className="text-foreground font-bold px-4 py-2 text-xs">
+                  Asset
+                </TableHead>
+                <TableHead className="text-foreground font-bold px-4 py-2 text-xs">
+                  Balance
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -260,10 +282,15 @@ export function WalletInfoCard({
                   ([tokenId, token]) => {
                     const [, tokenSymbol] = tokenId.split("::");
                     const isBtc = tokenId.includes("sbtc-token");
-                    const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
+                    const displaySymbol = isBtc
+                      ? "BTC"
+                      : tokenSymbol || "Token";
 
                     return (
-                      <TableRow key={tokenId} className="border-border hover:bg-muted/5">
+                      <TableRow
+                        key={tokenId}
+                        className="border-border hover:bg-muted/5"
+                      >
                         <TableCell className="font-semibold text-foreground px-4 py-2 text-xs">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-secondary" />
@@ -272,7 +299,10 @@ export function WalletInfoCard({
                         </TableCell>
                         <TableCell className="px-4 py-2">
                           {isBtc ? (
-                            <BtcBalance value={token.balance} variant="rounded" />
+                            <BtcBalance
+                              value={token.balance}
+                              variant="rounded"
+                            />
                           ) : (
                             <TokenBalance
                               value={token.balance}
@@ -283,7 +313,7 @@ export function WalletInfoCard({
                         </TableCell>
                       </TableRow>
                     );
-                  },
+                  }
                 )}
 
               {/* NFTs */}
@@ -293,7 +323,10 @@ export function WalletInfoCard({
                     const [, tokenSymbol] = tokenId.split("::");
                     const displaySymbol = tokenSymbol || "NFT";
                     return (
-                      <TableRow key={tokenId} className="border-border hover:bg-muted/5">
+                      <TableRow
+                        key={tokenId}
+                        className="border-border hover:bg-muted/5"
+                      >
                         <TableCell className="font-semibold text-foreground px-4 py-2 text-xs">
                           <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-accent" />
@@ -305,13 +338,14 @@ export function WalletInfoCard({
                         </TableCell>
                       </TableRow>
                     );
-                  },
+                  }
                 )}
 
               {/* Empty State */}
               {(!walletBalance ||
                 (Object.entries(walletBalance.fungible_tokens).length === 0 &&
-                  Object.entries(walletBalance.non_fungible_tokens).length === 0 &&
+                  Object.entries(walletBalance.non_fungible_tokens).length ===
+                    0 &&
                   !walletBalance.stx)) && (
                 <TableRow>
                   <TableCell colSpan={2} className="text-center py-8">
@@ -320,7 +354,9 @@ export function WalletInfoCard({
                         <Coins className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="space-y-1">
-                        <h5 className="text-sm font-semibold text-foreground">No Assets Found</h5>
+                        <h5 className="text-sm font-semibold text-foreground">
+                          No Assets Found
+                        </h5>
                         <p className="text-xs text-muted-foreground">
                           Balances will appear when wallet holds tokens
                         </p>

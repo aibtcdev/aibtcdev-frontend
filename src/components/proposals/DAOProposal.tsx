@@ -1,7 +1,7 @@
 "use client";
 
 import ProposalCard from "@/components/proposals/ProposalCard";
-import type { Proposal } from "@/types/supabase";
+import type { Proposal } from "@/types";
 
 interface DAOProposalsProps {
   proposals: Proposal[];

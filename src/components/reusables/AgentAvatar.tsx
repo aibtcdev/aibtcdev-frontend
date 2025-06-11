@@ -1,6 +1,6 @@
 import { Bot } from "lucide-react";
 import Image from "next/image";
-import type { Agent } from "@/types/supabase";
+import type { Agent } from "@/types";
 
 interface AgentAvatarProps {
   agent?: Agent;

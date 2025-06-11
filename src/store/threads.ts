@@ -80,7 +80,7 @@ export const useThreadsStore = create<ThreadsState>((set, get) => ({
 
       set((state) => ({
         threads: state.threads.map((thread) =>
-          thread.id === threadId ? { ...thread, ...data } : thread,
+          thread.id === threadId ? { ...thread, ...data } : thread
         ),
       }));
     } catch (error) {

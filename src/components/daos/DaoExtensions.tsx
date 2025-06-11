@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Extension } from "@/types/supabase";
+import type { Extension } from "@/types";
 
 interface DAOExtensionsProps {
   extensions: Extension[];

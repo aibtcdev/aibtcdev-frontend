@@ -5,7 +5,7 @@ export const runtime = "edge";
 async function fetchBlockData(
   blockNumber: number,
   baseURL: string,
-  apiKey: string,
+  apiKey: string
 ) {
   const response = await fetch(
     `${baseURL}/extended/v2/burn-blocks/${blockNumber}`,
@@ -18,7 +18,7 @@ async function fetchBlockData(
       next: {
         revalidate: 1200, // Cache for 20 minutes (1200 seconds)
       },
-    },
+    }
   );
 
   if (response.ok) {
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   if (!startBlock || !endBlock) {
     return NextResponse.json(
       { error: "startBlock and endBlock parameters are required" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     console.error("Error fetching block times:", error);
     return NextResponse.json(
       { error: "Failed to fetch block times" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

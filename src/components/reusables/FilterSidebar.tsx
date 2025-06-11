@@ -92,7 +92,10 @@ export function FilterSidebar({
                   className="text-sm text-foreground hover:bg-muted/50 transition-colors duration-150"
                 >
                   {option.badge ? (
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                    <Badge
+                      variant="secondary"
+                      className="text-xs px-1.5 py-0.5"
+                    >
                       {option.label}
                     </Badge>
                   ) : (
@@ -136,7 +139,9 @@ export function FilterSidebar({
           {/* Compact Summary Stats */}
           {summaryStats && (
             <div className="mt-4 p-2.5 bg-muted/20 rounded-lg border border-border/30">
-              <h4 className="text-xs font-semibold mb-2 text-foreground">Summary</h4>
+              <h4 className="text-xs font-semibold mb-2 text-foreground">
+                Summary
+              </h4>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(summaryStats).map(([key, stat]) => (
                   <div key={key} className="text-center">

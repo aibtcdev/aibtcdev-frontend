@@ -3,6 +3,7 @@
 import type React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   fetchToken,
   fetchDAOExtensions,
@@ -12,8 +13,8 @@ import {
   fetchHolders,
   fetchProposals,
   fetchDAOByName,
-} from "@/queries/dao-queries";
-import { DAOLayout } from "@/components/layouts";
+} from "@/services/dao.service";
+import { DAOLayout } from "@/layouts";
 
 export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -46,7 +47,7 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
   const dex = extensions?.find((ext) => ext.type === "dex")?.contract_principal;
   const treasuryAddress = extensions?.find(
-    (ext) => ext.type === "aibtc-treasury",
+    (ext) => ext.type === "aibtc-treasury"
   )?.contract_principal;
 
   // Fetch token price
@@ -74,18 +75,8 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
 
   // Fetch market stats
   const { data: marketStats } = useQuery({
-    queryKey: [
-      "marketStats",
-      id,
-      dex,
-      token?.max_supply,
-    ],
-    queryFn: () =>
-      fetchMarketStats(
-        dex!,
-        id!,
-        token!.max_supply || 0,
-      ),
+    queryKey: ["marketStats", id, dex, token?.max_supply],
+    queryFn: () => fetchMarketStats(dex!, id!, token!.max_supply || 0),
     enabled: !!dex && !!id && !!token,
   });
 
@@ -102,23 +93,35 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   // Note: Overview loading state was used in the old monolithic layout
   // but is now handled individually by the extracted components
 
-  // Create enhanced market stats
-  const enhancedMarketStats = marketStats
-    ? {
+  // Create enhanced market stats - memoized to prevent infinite re-renders
+  const enhancedMarketStats = useMemo(() => {
+    if (marketStats) {
+      return {
         ...marketStats,
         holderCount: holdersData?.holderCount || marketStats.holderCount,
-      }
-    : {
-        price: tokenPrice?.price || 0,
-        marketCap: tokenPrice?.marketCap || 0,
-        treasuryBalance: token?.max_supply
-          ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
-          : 0,
-        holderCount: holdersData?.holderCount || 0,
       };
+    }
 
-  // Calculate total proposals
-  const totalProposals = proposals ? proposals.length : 0;
+    return {
+      price: tokenPrice?.price || 0,
+      marketCap: tokenPrice?.marketCap || 0,
+      treasuryBalance: token?.max_supply
+        ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
+        : 0,
+      holderCount: holdersData?.holderCount || 0,
+    };
+  }, [
+    marketStats,
+    holdersData?.holderCount,
+    tokenPrice?.price,
+    tokenPrice?.marketCap,
+    token?.max_supply,
+  ]);
+
+  // Calculate total proposals - memoized to prevent infinite re-renders
+  const totalProposals = useMemo(() => {
+    return proposals ? proposals.length : 0;
+  }, [proposals]);
 
   return (
     <DAOLayout

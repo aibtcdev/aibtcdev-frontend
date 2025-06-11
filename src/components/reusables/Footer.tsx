@@ -24,7 +24,7 @@ export function Footer() {
               asChild
               className="h-12 w-12 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-card/40 hover:scale-110 hover:shadow-lg transition-all duration-300 ease-in-out group backdrop-blur-sm border border-border/20 hover:border-border/40"
               style={{
-                animationDelay: `${index * 0.1}s`
+                animationDelay: `${index * 0.1}s`,
               }}
             >
               <a
@@ -35,7 +35,7 @@ export function Footer() {
               >
                 <link.icon className="h-6 w-6 transition-all duration-300 group-hover:scale-110" />
                 <span className="sr-only">{link.name}</span>
-                
+
                 {/* Subtle hover glow effect */}
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </a>
@@ -74,13 +74,13 @@ const socialLinks = [
     icon: GitHubLogoIcon,
   },
   {
-    name: "Discord", 
+    name: "Discord",
     href: "https://discord.gg/Z59Z3FNbEX",
     icon: DiscordLogoIcon,
   },
   {
     name: "Twitter",
-    href: "https://x.com/aibtcdev", 
+    href: "https://x.com/aibtcdev",
     icon: BsTwitterX,
   },
   {
@@ -102,11 +102,13 @@ const ListItem = React.forwardRef<
           className={cn(
             "block select-none space-y-1 rounded-2xl p-4 leading-none no-underline outline-none",
             "transition-all duration-300 ease-in-out hover:bg-card/30 hover:text-foreground hover:scale-105",
-            "focus:bg-card/30 focus:text-foreground backdrop-blur-sm border border-border/20 hover:border-border/40",
+            "focus:bg-card/30 focus:text-foreground backdrop-blur-sm border border-border/20 hover:border-border/40"
           )}
           {...props}
         >
-          <div className="text-sm font-semibold leading-none tracking-wide">{title}</div>
+          <div className="text-sm font-semibold leading-none tracking-wide">
+            {title}
+          </div>
           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground transition-colors duration-300">
             {children}
           </p>

@@ -1,0 +1,119 @@
+---
+description: 
+globs: **/*.tsx
+alwaysApply: false
+---
+## Context
+These rules govern TailwindCSS styling across all TypeScript files in a Next.js 14 project, ensuring consistent, accessible, and responsive design in components, pages, and layouts. Styling aligns with a futuristic, minimalist aesthetic inspired by xAI's Grok interface, emphasizing accessibility, bento grid layouts, dynamic typography, and performant animations.
+
+## Requirements
+- Configure TailwindCSS in `tailwind.config.ts`, defining design tokens (e.g., colors, fonts, spacing) for consistent use across the application.
+- Use TailwindCSS utility classes exclusively for styling in components and pages, avoiding custom CSS unless absolutely necessary.
+- Maintain a consistent order of utility classes: **layout** (e.g., `flex`, `grid`), **spacing** (e.g., `p-4`, `m-2`), **typography** (e.g., `text-lg`, `font-bold`), **colors** (e.g., `bg-primary`, `text-foreground`), **states** (e.g., `hover:bg-accent`, `focus:ring`).
+- Leverage Tailwind's responsive variants (e.g., `sm:`, `md:`, `lg:`) for adaptive designs across mobile, tablet, and desktop.
+- **Accessibility**:
+  - Ensure 4.5:1 contrast ratio for text and 3:1 for large elements using Tailwind color classes (e.g., `text-foreground`, `bg-background`).
+  - Support keyboard navigation with focus states (e.g., `focus:ring-2 ring-primary`).
+  - Apply ARIA attributes via Tailwind's `aria-` utilities or custom props (e.g., `aria-label`).
+  - Support touchless controls (e.g., voice/gesture) by ensuring interactive elements are accessible.
+- **Animations**:
+  - Apply 0.2-0.3s ease-in-out transitions for hover/click states (e.g., `transition duration-300 ease-in-out`).
+  - Implement microinteractions like button scale (e.g., `hover:scale-105`) or 3D lift (e.g., `hover:shadow-lg`).
+  - Respect `prefers-reduced-motion` with conditional classes (e.g., `motion-reduce:transition-none`).
+- **Spacing and Grid**:
+  - Use an 8px base unit for spacing (e.g., `p-2` for 8px, `p-4` for 16px, `p-8` for 32px).
+  - Implement a 12-column grid for desktop (`grid-cols-12`) and 4-column grid for mobile (`sm:grid-cols-4`).
+  - Use bento grid layouts with Tailwind classes (e.g., `grid gap-4`).
+- **Typography**:
+  - Use Inter font for primary text (`font-inter`) and Space Mono for code/tech accents (`font-space-mono`).
+  - Define typography styles: headings (`text-2xl md:text-4xl font-bold capitalize`), body (`text-base md:text-lg leading-relaxed`), subtext (`text-sm md:text-base font-light`).
+  - Support dynamic type scaling (e.g., `text-base sm:text-lg lg:text-xl`) up to 200%.
+  - Apply 0.02em letter spacing for headings (`tracking-tight`).
+- Optionally export TypeScript utilities (e.g., in `lib/utils/tailwind.ts`) for reusable TailwindCSS class combinations (e.g., button or card styles).
+- Document design tokens and utility class usage clearly in TypeScript files or project documentation.
+
+## Examples
+- Correct:
+  ```typescript
+  // components/Button.tsx
+  import { FC } from 'react';
+  interface ButtonProps { children: React.ReactNode; variant?: 'primary' | 'secondary' }
+  const Button: FC<ButtonProps> = ({ children, variant = 'primary' }) => (
+    <button
+      className={
+        variant === 'primary'
+          ? 'flex px-4 py-2 text-base font-inter font-bold bg-primary text-foreground rounded-lg hover:scale-105 hover:shadow-lg focus:ring-2 ring-primary motion-reduce:transition-none sm:px-6 sm:text-lg'
+          : 'flex px-4 py-2 text-base font-inter font-medium bg-transparent border border-secondary text-secondary rounded-lg hover:scale-105 focus:ring-2 ring-secondary motion-reduce:transition-none sm:px-6 sm:text-lg'
+      }
+      aria-label={variant === 'primary' ? 'Primary action' : 'Secondary action'}
+    >
+      {children}
+    </button>
+  );
+  export default Button;
+  ```
+
+  ```typescript
+  // lib/utils/tailwind.ts
+  export const cardStyles = {
+    default: 'grid p-4 text-base font-inter bg-background text-foreground rounded-xl shadow-sm hover:shadow-lg hover:translate-z-5 transition duration-300 ease-in-out motion-reduce:transition-none sm:p-6 sm:text-lg',
+  };
+  ```
+
+  ```typescript
+  // tailwind.config.ts
+  export default {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#FF6A00',
+          secondary: '#0A3DAA',
+          accent: '#FF9E4D',
+          foreground: '#000000',
+          background: '#FFFFFF',
+          success: '#2ECC71',
+          destructive: '#F44336',
+          warning: '#FFC107',
+          muted: '#595A5C',
+        },
+        fontFamily: {
+          inter: ['Inter', 'sans-serif'],
+          'space-mono': ['Space Mono', 'monospace'],
+        },
+        spacing: {
+          '2': '8px',
+          '4': '16px',
+          '8': '32px',
+        },
+        gridTemplateColumns: {
+          '12': 'repeat(12, minmax(0, 1fr))',
+          '4': 'repeat(4, minmax(0, 1fr))',
+        },
+      },
+    },
+  };
+  ```
+
+- Incorrect:
+  ```typescript
+  // components/Card.tsx
+  import { FC } from 'react';
+  const Card: FC = () => (
+    <div
+      className="p-4 bg-blue-500 text-lg flex rounded-lg transition"
+      style={{ background: 'blue' }} // Uses custom CSS
+    >
+      Card Content
+    </div>
+  ); // Incorrect class order, non-standard colors, no accessibility focus
+  ```
+
+  ```typescript
+  // components/Button.tsx
+  import { FC } from 'react';
+  const Button: FC = () => (
+    <button className="bg-primary text-white p-2 rounded hover:bg-accent">
+      Click Me
+    </button>
+  ); // Missing responsive variants, incorrect class order, no ARIA attributes
+  ```

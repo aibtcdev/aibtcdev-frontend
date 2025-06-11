@@ -10,7 +10,7 @@ import { Button } from "./button";
 import { Bell } from "lucide-react";
 import { Badge } from "./badge";
 import { ScrollArea } from "./scroll-area";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 
 export type Notification = {
   id: string;
@@ -25,7 +25,7 @@ export const useNotificationCenter = () => {
   const { toast } = useToast();
 
   const addNotification = (
-    notification: Omit<Notification, "id" | "timestamp">,
+    notification: Omit<Notification, "id" | "timestamp">
   ) => {
     const newNotification = {
       ...notification,

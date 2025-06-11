@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchProposalVotes, type Vote } from "@/queries/vote-queries";
+import { fetchProposalVotes } from "@/services/vote.service";
+import type { Vote } from "@/types";
 import { ThumbsUp, ThumbsDown, ExternalLink } from "lucide-react";
 import {
   Table,

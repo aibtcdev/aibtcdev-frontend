@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader } from "@/components/reusables/Loader";
-import { useAdminMetrics } from "@/hooks/use-admin-metrics";
+import { useAdminMetrics } from "@/hooks/useAdminMetrics";
 import { CrewChart } from "@/components/admin/metrics/CrewChart";
 import { MetricsHeader } from "@/components/admin/metrics/MetricsHeader";
 

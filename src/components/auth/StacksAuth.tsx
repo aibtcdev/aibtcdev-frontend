@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,9 @@ import {
   connectWallet,
   requestSignature,
 } from "@/components/auth/StacksProvider";
-import { createDaoAgent } from "@/helpers/dao-agent";
+import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
-import { runAutoInit } from "@/helpers/run-auto-init";
+import { runAutoInit } from "@/lib/auto-init";
 
 // Dynamically import StacksProvider component
 const StacksProvider = dynamic(

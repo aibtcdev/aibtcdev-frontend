@@ -1,10 +1,10 @@
 import { create } from "zustand";
-import type { Wallet, Agent } from "@/types/supabase";
+import type { Wallet, Agent } from "@/types";
 import {
   fetchWallets as fetchWalletsQuery,
   fetchWalletBalance,
   fetchWalletBalances,
-} from "@/queries/wallet-queries";
+} from "@/services/wallet.service";
 
 export interface TokenBalance {
   balance: string;
@@ -77,7 +77,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         ?.map((wallet) =>
           process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
             ? wallet.mainnet_address
-            : wallet.testnet_address,
+            : wallet.testnet_address
         )
         .filter((address): address is string => address !== null);
 

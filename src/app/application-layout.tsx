@@ -156,7 +156,7 @@ export default function ApplicationLayout({
       </div>
 
       {/* Desktop Header */}
-      <div className="hidden md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
+      <div className="md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 

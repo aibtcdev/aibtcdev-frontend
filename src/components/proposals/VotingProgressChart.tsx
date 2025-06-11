@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchProposalVotes } from "@/queries/vote-queries";
-import { fetchLatestChainState } from "@/queries/chain-state-queries";
+import { fetchProposalVotes } from "@/services/vote.service";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import {
   Tooltip,
@@ -11,10 +11,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle2, XCircle, Clock, Info, Users, Target, Zap, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Info,
+  Users,
+  Target,
+  Zap,
+  AlertTriangle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { safeNumberFromBigInt } from "@/helpers/proposal-utils";
-import type { Proposal, ProposalWithDAO } from "@/types/supabase";
+import { safeNumberFromBigInt } from "@/utils/proposal";
+import type { Proposal, ProposalWithDAO } from "@/types";
 import { useVotingStatus } from "./TimeStatus";
 
 interface VotingProgressChartProps {
@@ -22,21 +31,26 @@ interface VotingProgressChartProps {
   tokenSymbol?: string;
 }
 
-const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChartProps) => {
+const VotingProgressChart = ({
+  proposal,
+  tokenSymbol = "",
+}: VotingProgressChartProps) => {
   const { isActive, isEnded } = useVotingStatus(
     proposal.status,
     safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end),
+    safeNumberFromBigInt(proposal.vote_end)
   );
 
   // State to store parsed vote values from live data
   const [parsedVotes, setParsedVotes] = useState({
     votesFor: proposal.votes_for ? proposal.votes_for.replace(/n$/, "") : "0",
-    votesAgainst: proposal.votes_against ? proposal.votes_against.replace(/n$/, "") : "0",
+    votesAgainst: proposal.votes_against
+      ? proposal.votes_against.replace(/n$/, "")
+      : "0",
   });
 
   // Fetch live vote data with real-time updates
-  const proposalId = proposal.id
+  const proposalId = proposal.id;
 
   const { data: individualVotes } = useQuery({
     queryKey: ["proposalVotes", proposalId],
@@ -54,7 +68,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
 
   // Fetch current chain state to check execution deadline
   const { data: chainState } = useQuery({
-    queryKey: ['latestChainState'],
+    queryKey: ["latestChainState"],
     queryFn: fetchLatestChainState,
     staleTime: 60000,
     refetchInterval: 60000,
@@ -66,7 +80,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
       let votesFor = 0;
       let votesAgainst = 0;
 
-      individualVotes.forEach(vote => {
+      individualVotes.forEach((vote) => {
         const amount = Number(vote.amount || "0");
         if (vote.answer === true) {
           votesFor += amount;
@@ -82,8 +96,12 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
     } else {
       // If no individual votes, fall back to proposal data
       setParsedVotes({
-        votesFor: proposal.votes_for ? proposal.votes_for.replace(/n$/, "") : "0",
-        votesAgainst: proposal.votes_against ? proposal.votes_against.replace(/n$/, "") : "0",
+        votesFor: proposal.votes_for
+          ? proposal.votes_for.replace(/n$/, "")
+          : "0",
+        votesAgainst: proposal.votes_against
+          ? proposal.votes_against.replace(/n$/, "")
+          : "0",
       });
     }
   }, [individualVotes, proposal.votes_for, proposal.votes_against]);
@@ -95,34 +113,39 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
     const liquidTokens = Number(proposal.liquid_tokens || 0);
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum); // Already a percentage (e.g., 20 = 20%)
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold); // Already a percentage (e.g., 60 = 60%)
-    
+
     // Calculate percentages based on liquid tokens
-    const participationRate = liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
+    const participationRate =
+      liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
     const quorumRate = quorumPercentage; // Already a percentage
-    
+
     // Calculate approval rate from cast votes
     const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
     const thresholdRate = thresholdPercentage; // Already a percentage
-    
+
     // Calculate vote breakdown percentages
-    const votesForPercent = liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
-    const votesAgainstPercent = liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
-    
+    const votesForPercent =
+      liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
+    const votesAgainstPercent =
+      liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
+
     // Calculate required token amounts for display
-    const quorumTokensRequired = liquidTokens > 0 ? (liquidTokens * quorumPercentage) / 100 : 0;
-    
+    const quorumTokensRequired =
+      liquidTokens > 0 ? (liquidTokens * quorumPercentage) / 100 : 0;
+
     // Calculate if requirements are actually met based on current data
     const actuallyMetQuorum = participationRate >= quorumPercentage;
-    const actuallyMetThreshold = totalVotes > 0 ? approvalRate >= thresholdPercentage : false;
+    const actuallyMetThreshold =
+      totalVotes > 0 ? approvalRate >= thresholdPercentage : false;
 
     // Check if proposal failed to be concluded within execution window
-    const currentBitcoinHeight = chainState?.bitcoin_block_height 
-      ? parseInt(chainState.bitcoin_block_height) 
+    const currentBitcoinHeight = chainState?.bitcoin_block_height
+      ? parseInt(chainState.bitcoin_block_height)
       : 0;
     const execEnd = safeNumberFromBigInt(proposal.exec_end);
     const concludedBy = proposal.concluded_by;
     const failedToExecute = currentBitcoinHeight > execEnd && !concludedBy;
-    
+
     return {
       votesFor,
       votesAgainst,
@@ -150,7 +173,11 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
 
   const getStatusIcon = (met: boolean, isActive: boolean) => {
     if (isActive) return <Clock className="h-4 w-4" />;
-    return met ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />;
+    return met ? (
+      <CheckCircle2 className="h-4 w-4" />
+    ) : (
+      <XCircle className="h-4 w-4" />
+    );
   };
 
   const getStatusText = (met: boolean, isActive: boolean) => {
@@ -168,7 +195,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
         bgColor: "bg-orange-500/10 border-orange-500/30",
       };
     }
-    
+
     if (calculations.failedToExecute) {
       return {
         status: "Failed to Execute",
@@ -177,7 +204,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
         bgColor: "bg-red-500/10 border-red-500/30",
       };
     }
-    
+
     if (proposal.passed) {
       return {
         status: "Passed",
@@ -186,7 +213,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
         bgColor: "bg-green-500/10 border-green-500/30",
       };
     }
-    
+
     return {
       status: "Failed",
       color: "text-red-400",
@@ -205,7 +232,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium text-foreground">
-              Participation: {calculations.participationRate.toFixed(1)}% 
+              Participation: {calculations.participationRate.toFixed(1)}%
             </span>
             <TooltipProvider>
               <Tooltip>
@@ -221,10 +248,12 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             </TooltipProvider>
           </div>
           <div className="text-sm">
-            <span className={cn(
-              "font-medium",
-              calculations.metQuorum ? "text-green-400" : "text-red-400"
-            )}>
+            <span
+              className={cn(
+                "font-medium",
+                calculations.metQuorum ? "text-green-400" : "text-red-400"
+              )}
+            >
               {calculations.metQuorum ? "✓ Quorum Met" : "✗ Quorum Missed"}
             </span>
           </div>
@@ -236,18 +265,32 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             {/* Votes for (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
-                calculations.votesForPercent > 0 ? 'rounded-l-lg' : ''
+                calculations.votesForPercent > 0 ? "rounded-l-lg" : ""
               } ${
-                calculations.votesAgainstPercent === 0 && calculations.votesForPercent > 0 ? 'rounded-r-lg' : ''
+                calculations.votesAgainstPercent === 0 &&
+                calculations.votesForPercent > 0
+                  ? "rounded-r-lg"
+                  : ""
               }`}
-              style={{ width: `${Math.min(calculations.votesForPercent, 100)}%` }}
+              style={{
+                width: `${Math.min(calculations.votesForPercent, 100)}%`,
+              }}
             />
             {/* Votes against (red) */}
             <div
               className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
-                calculations.votesAgainstPercent > 0 && (calculations.votesForPercent + calculations.votesAgainstPercent >= 100 || calculations.votesForPercent === 0) ? 'rounded-r-lg' : ''
+                calculations.votesAgainstPercent > 0 &&
+                (calculations.votesForPercent +
+                  calculations.votesAgainstPercent >=
+                  100 ||
+                  calculations.votesForPercent === 0)
+                  ? "rounded-r-lg"
+                  : ""
               } ${
-                calculations.votesForPercent === 0 && calculations.votesAgainstPercent > 0 ? 'rounded-l-lg' : ''
+                calculations.votesForPercent === 0 &&
+                calculations.votesAgainstPercent > 0
+                  ? "rounded-l-lg"
+                  : ""
               }`}
               style={{
                 width: `${Math.min(calculations.votesAgainstPercent, 100)}%`,
@@ -259,9 +302,14 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
           {/* Quorum line indicator */}
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-primary z-10"
-            style={{ left: `calc(${Math.min(calculations.quorumRate, 100)}% - 1px)` }}
+            style={{
+              left: `calc(${Math.min(calculations.quorumRate, 100)}% - 1px)`,
+            }}
           >
-            <div className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background" style={{ left: '-5px' }} />
+            <div
+              className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background"
+              style={{ left: "-5px" }}
+            />
           </div>
         </div>
 
@@ -270,16 +318,41 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>For: <TokenBalance value={calculations.votesFor.toString()} decimals={8} variant="abbreviated" symbol={tokenSymbol} /></span>
+              <span>
+                For:{" "}
+                <TokenBalance
+                  value={calculations.votesFor.toString()}
+                  decimals={8}
+                  variant="abbreviated"
+                  symbol={tokenSymbol}
+                />
+              </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full" />
-              <span>Against: <TokenBalance value={calculations.votesAgainst.toString()} decimals={8} variant="abbreviated" symbol={tokenSymbol} /></span>
+              <span>
+                Against:{" "}
+                <TokenBalance
+                  value={calculations.votesAgainst.toString()}
+                  decimals={8}
+                  variant="abbreviated"
+                  symbol={tokenSymbol}
+                />
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>Quorum: <TokenBalance value={calculations.quorumTokensRequired.toString()} decimals={8} variant="abbreviated" symbol={tokenSymbol} /> ({calculations.quorumPercentage}%)</span>
+            <span>
+              Quorum:{" "}
+              <TokenBalance
+                value={calculations.quorumTokensRequired.toString()}
+                decimals={8}
+                variant="abbreviated"
+                symbol={tokenSymbol}
+              />{" "}
+              ({calculations.quorumPercentage}%)
+            </span>
           </div>
         </div>
       </div>
@@ -290,7 +363,7 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium text-foreground">
-              Approval Rate: {calculations.approvalRate.toFixed(1)}% 
+              Approval Rate: {calculations.approvalRate.toFixed(1)}%
             </span>
             <TooltipProvider>
               <Tooltip>
@@ -306,11 +379,15 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             </TooltipProvider>
           </div>
           <div className="text-sm">
-            <span className={cn(
-              "font-medium",
-              calculations.metThreshold ? "text-green-400" : "text-red-400"
-            )}>
-              {calculations.metThreshold ? "✓ Threshold Met" : "✗ Threshold Missed"}
+            <span
+              className={cn(
+                "font-medium",
+                calculations.metThreshold ? "text-green-400" : "text-red-400"
+              )}
+            >
+              {calculations.metThreshold
+                ? "✓ Threshold Met"
+                : "✗ Threshold Missed"}
             </span>
           </div>
         </div>
@@ -321,10 +398,8 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             {/* Approval rate (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
-                calculations.approvalRate > 0 ? 'rounded-l-lg' : ''
-              } ${
-                calculations.approvalRate >= 95 ? 'rounded-r-lg' : ''
-              }`}
+                calculations.approvalRate > 0 ? "rounded-l-lg" : ""
+              } ${calculations.approvalRate >= 95 ? "rounded-r-lg" : ""}`}
               style={{ width: `${Math.min(calculations.approvalRate, 100)}%` }}
             />
           </div>
@@ -332,9 +407,14 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
           {/* Threshold line indicator */}
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-primary z-10"
-            style={{ left: `calc(${Math.min(calculations.thresholdPercentage, 100)}% - 1px)` }}
+            style={{
+              left: `calc(${Math.min(calculations.thresholdPercentage, 100)}% - 1px)`,
+            }}
           >
-            <div className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background" style={{ left: '-5px' }} />
+            <div
+              className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background"
+              style={{ left: "-5px" }}
+            />
           </div>
         </div>
 
@@ -342,7 +422,9 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
-            <span>Approval: {calculations.approvalRate.toFixed(1)}% of votes cast</span>
+            <span>
+              Approval: {calculations.approvalRate.toFixed(1)}% of votes cast
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-primary rounded-full" />
@@ -354,14 +436,16 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
       {/* Status Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Quorum Status */}
-        <div className={cn(
-          "p-4 rounded-lg border transition-colors",
-          isActive || !isEnded
-            ? "bg-orange-500/10 border-orange-500/30"
-            : calculations.metQuorum
-              ? "bg-green-500/10 border-green-500/30"
-              : "bg-red-500/10 border-red-500/30"
-        )}>
+        <div
+          className={cn(
+            "p-4 rounded-lg border transition-colors",
+            isActive || !isEnded
+              ? "bg-orange-500/10 border-orange-500/30"
+              : calculations.metQuorum
+                ? "bg-green-500/10 border-green-500/30"
+                : "bg-red-500/10 border-red-500/30"
+          )}
+        >
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
@@ -371,25 +455,34 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon(calculations.metQuorum, isActive || !isEnded)}
-              <span className={cn("text-sm font-semibold", getStatusColor(calculations.metQuorum, isActive || !isEnded))}>
+              <span
+                className={cn(
+                  "text-sm font-semibold",
+                  getStatusColor(calculations.metQuorum, isActive || !isEnded)
+                )}
+              >
                 {getStatusText(calculations.metQuorum, isActive || !isEnded)}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Participation: {calculations.participationRate.toFixed(1)}% {calculations.metQuorum ? '≥' : '<'} Quorum: {calculations.quorumPercentage}%
+              Participation: {calculations.participationRate.toFixed(1)}%{" "}
+              {calculations.metQuorum ? "≥" : "<"} Quorum:{" "}
+              {calculations.quorumPercentage}%
             </div>
           </div>
         </div>
 
         {/* Threshold Status */}
-        <div className={cn(
-          "p-4 rounded-lg border transition-colors",
-          isActive || !isEnded
-            ? "bg-orange-500/10 border-orange-500/30"
-            : calculations.metThreshold
-              ? "bg-green-500/10 border-green-500/30"
-              : "bg-red-500/10 border-red-500/30"
-        )}>
+        <div
+          className={cn(
+            "p-4 rounded-lg border transition-colors",
+            isActive || !isEnded
+              ? "bg-orange-500/10 border-orange-500/30"
+              : calculations.metThreshold
+                ? "bg-green-500/10 border-green-500/30"
+                : "bg-red-500/10 border-red-500/30"
+          )}
+        >
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
@@ -399,21 +492,33 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon(calculations.metThreshold, isActive || !isEnded)}
-              <span className={cn("text-sm font-semibold", getStatusColor(calculations.metThreshold, isActive || !isEnded))}>
+              <span
+                className={cn(
+                  "text-sm font-semibold",
+                  getStatusColor(
+                    calculations.metThreshold,
+                    isActive || !isEnded
+                  )
+                )}
+              >
                 {getStatusText(calculations.metThreshold, isActive || !isEnded)}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Approval: {calculations.approvalRate.toFixed(1)}% {calculations.metThreshold ? '≥' : '<'} Threshold: {calculations.thresholdPercentage}%
+              Approval: {calculations.approvalRate.toFixed(1)}%{" "}
+              {calculations.metThreshold ? "≥" : "<"} Threshold:{" "}
+              {calculations.thresholdPercentage}%
             </div>
           </div>
         </div>
 
         {/* Overall Result */}
-        <div className={cn(
-          "p-4 rounded-lg border transition-colors",
-          resultStatus.bgColor
-        )}>
+        <div
+          className={cn(
+            "p-4 rounded-lg border transition-colors",
+            resultStatus.bgColor
+          )}
+        >
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
@@ -436,11 +541,16 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
                       ⚠️ Execution deadline passed without conclusion
                     </div>
                   )}
-                  {!isActive && isEnded && !proposal.passed && !calculations.failedToExecute && calculations.metQuorum && calculations.metThreshold && (
-                    <div className="text-orange-400">
-                      ⚠️ Failed despite meeting quorum & threshold
-                    </div>
-                  )}
+                  {!isActive &&
+                    isEnded &&
+                    !proposal.passed &&
+                    !calculations.failedToExecute &&
+                    calculations.metQuorum &&
+                    calculations.metThreshold && (
+                      <div className="text-orange-400">
+                        ⚠️ Failed despite meeting quorum & threshold
+                      </div>
+                    )}
                 </div>
               ) : (
                 "No votes yet"
@@ -453,4 +563,4 @@ const VotingProgressChart = ({ proposal, tokenSymbol = "" }: VotingProgressChart
   );
 };
 
-export default VotingProgressChart; 
+export default VotingProgressChart;

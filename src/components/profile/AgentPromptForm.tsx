@@ -10,7 +10,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import {
   Table,
   TableBody,
@@ -29,14 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
-import { fetchDAOs } from "@/queries/dao-queries";
-import { fetchAgents } from "@/queries/agent-queries";
+import { fetchDAOs } from "@/services/dao.service";
+import { fetchAgents } from "@/services/agent.service";
 import {
   fetchAgentPrompts,
   createAgentPrompt,
   updateAgentPrompt,
   deleteAgentPrompt,
-} from "@/queries/agent-prompt-queries";
+} from "@/services/agent-prompt.service";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
 

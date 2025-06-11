@@ -8,7 +8,7 @@ export const createClient = () => {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
-      "server: missing supabase url or supabase anon key in env vars",
+      "server: missing supabase url or supabase anon key in env vars"
     );
   }
 

@@ -47,16 +47,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('Auth state change:', event, session?.access_token ? 'session exists' : 'no session');
+        console.log(
+          "Auth state change:",
+          event,
+          session?.access_token ? "session exists" : "no session"
+        );
 
         switch (event) {
-          case 'SIGNED_IN':
-          case 'TOKEN_REFRESHED':
-          case 'SIGNED_OUT':
+          case "SIGNED_IN":
+          case "TOKEN_REFRESHED":
+          case "SIGNED_OUT":
             get().setSession(session);
             break;
-          case 'PASSWORD_RECOVERY':
-          case 'USER_UPDATED':
+          case "PASSWORD_RECOVERY":
+          case "USER_UPDATED":
             // Update session if it exists
             if (session) {
               get().setSession(session);
@@ -68,8 +72,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       });
 
       // Store subscription for cleanup (optional)
-      if (typeof window !== 'undefined') {
-        (window as unknown as { __supabaseAuthSubscription?: unknown }).__supabaseAuthSubscription = subscription;
+      if (typeof window !== "undefined") {
+        (
+          window as unknown as { __supabaseAuthSubscription?: unknown }
+        ).__supabaseAuthSubscription = subscription;
       }
 
       set({
@@ -77,7 +83,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         isInitialized: true,
       });
     } catch (error) {
-      console.error('Session initialization error:', error);
+      console.error("Session initialization error:", error);
       set({
         error: error as AuthError | Error,
         isLoading: false,
@@ -106,7 +112,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         error: null,
       });
     } catch (error) {
-      console.error('Error clearing session:', error);
+      console.error("Error clearing session:", error);
       set({
         error: error as AuthError | Error,
       });
@@ -123,7 +129,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         get().setSession(data.session);
       }
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      console.error("Error refreshing session:", error);
       set({
         error: error as AuthError | Error,
       });

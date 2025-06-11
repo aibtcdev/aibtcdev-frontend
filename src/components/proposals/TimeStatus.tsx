@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Timer, Calendar, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import type { Proposal } from "@/types/supabase";
+import type { Proposal } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 
 // Props interface for the component
@@ -30,7 +30,7 @@ export interface VotingStatusInfo {
 const estimateBlockTime = (
   blockHeight: number,
   referenceBlock: number,
-  referenceTime: Date,
+  referenceTime: Date
 ): Date => {
   const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet";
   const avgBlockTimeMs = network === "testnet" ? 4 * 60 * 1000 : 10 * 60 * 1000;
@@ -39,7 +39,7 @@ const estimateBlockTime = (
   // Handle cases where end block might be before start block (shouldn't happen)
   if (blockDiff < 0) {
     console.warn(
-      `End block ${blockHeight} is before start block ${referenceBlock}. Estimation might be inaccurate.`,
+      `End block ${blockHeight} is before start block ${referenceBlock}. Estimation might be inaccurate.`
     );
   }
   return new Date(referenceTime.getTime() + blockDiff * avgBlockTimeMs);
@@ -48,7 +48,7 @@ const estimateBlockTime = (
 // Helper function: fetchBlockTimes
 const fetchBlockTimes = async (
   startBlock: number,
-  endBlock: number,
+  endBlock: number
 ): Promise<{ startBlockTime: string | null; endBlockTime: string | null }> => {
   // Construct the URL safely
   const params = new URLSearchParams({
@@ -62,7 +62,7 @@ const fetchBlockTimes = async (
 
     if (!response.ok) {
       console.error(
-        `Failed to fetch block times (${apiUrl}): ${response.status} ${response.statusText}`,
+        `Failed to fetch block times (${apiUrl}): ${response.status} ${response.statusText}`
       );
       // Throw error to be caught by React Query
       throw new Error(`API Error ${response.status}: ${response.statusText}`);
@@ -77,7 +77,7 @@ const fetchBlockTimes = async (
     ) {
       console.error(
         "Invalid data structure received from /block-times API:",
-        data,
+        data
       );
       throw new Error("Invalid data structure received from API");
     }
@@ -96,7 +96,7 @@ const fetchBlockTimes = async (
 export const useVotingStatus = (
   status: Proposal["status"],
   vote_start: number,
-  vote_end: number,
+  vote_end: number
 ): VotingStatusInfo => {
   const { data, isLoading, error, isError } = useQuery({
     // Destructure isError as well
@@ -133,7 +133,7 @@ export const useVotingStatus = (
         "Error state or no data after loading for blocks:",
         vote_start,
         vote_end,
-        error,
+        error
       );
       return {
         startBlockTime: null,
@@ -160,7 +160,7 @@ export const useVotingStatus = (
     if (!startDate) {
       console.warn(
         "Start block time not found in data for start_block:",
-        vote_start,
+        vote_start
       );
       return {
         startBlockTime: null, // Explicitly null

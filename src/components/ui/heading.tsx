@@ -23,7 +23,7 @@ export function Heading({ className, level = 1, ...props }: HeadingProps) {
       className={clsx(
         className,
         sizeClasses[level],
-        "text-white leading-tight tracking-tight",
+        "text-white leading-tight tracking-tight"
       )}
     />
   );
@@ -37,7 +37,7 @@ export function Subheading({ className, level = 2, ...props }: HeadingProps) {
       {...props}
       className={clsx(
         className,
-        "text-base/7 font-semibold text-zinc-950 sm:text-sm/6 dark:text-white",
+        "text-base/7 font-semibold text-zinc-950 sm:text-sm/6 dark:text-white"
       )}
     />
   );
