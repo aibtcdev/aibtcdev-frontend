@@ -30,7 +30,6 @@ import { NetworkIndicator } from "@/components/reusables/NetworkIndicator";
 import AuthButton from "@/components/home/AuthButton";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
-import { useBitcoinBlockHeight } from "@/hooks/useBitcoinBlockHeight";
 import DisplayBtc from "@/components/reusables/DisplayBtc";
 
 interface ApplicationLayoutProps {
@@ -52,7 +51,6 @@ export default function ApplicationLayout({
   const [leftPanelOpen, setLeftPanelOpen] = React.useState(false);
   const [hasUser, setHasUser] = React.useState(false);
   const [showAuthModal, setShowAuthModal] = React.useState(false);
-  const { blockHeight } = useBitcoinBlockHeight();
 
   React.useEffect(() => {
     const checkUser = async () => {
