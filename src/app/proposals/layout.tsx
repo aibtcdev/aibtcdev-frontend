@@ -18,9 +18,5 @@ export default function ProposalsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main className="w-full min-h-screen">
-      <div className="flex-1 w-full">{children}</div>
-    </main>
-  );
+  return <>{children}</>;
 }

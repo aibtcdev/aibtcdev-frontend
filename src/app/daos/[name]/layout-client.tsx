@@ -3,6 +3,7 @@
 import type React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import {
   fetchToken,
   fetchDAOExtensions,
@@ -92,23 +93,35 @@ export function DAOLayoutClient({ children }: { children: React.ReactNode }) {
   // Note: Overview loading state was used in the old monolithic layout
   // but is now handled individually by the extracted components
 
-  // Create enhanced market stats
-  const enhancedMarketStats = marketStats
-    ? {
+  // Create enhanced market stats - memoized to prevent infinite re-renders
+  const enhancedMarketStats = useMemo(() => {
+    if (marketStats) {
+      return {
         ...marketStats,
         holderCount: holdersData?.holderCount || marketStats.holderCount,
-      }
-    : {
-        price: tokenPrice?.price || 0,
-        marketCap: tokenPrice?.marketCap || 0,
-        treasuryBalance: token?.max_supply
-          ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
-          : 0,
-        holderCount: holdersData?.holderCount || 0,
       };
+    }
 
-  // Calculate total proposals
-  const totalProposals = proposals ? proposals.length : 0;
+    return {
+      price: tokenPrice?.price || 0,
+      marketCap: tokenPrice?.marketCap || 0,
+      treasuryBalance: token?.max_supply
+        ? token.max_supply * 0.8 * (tokenPrice?.price || 0)
+        : 0,
+      holderCount: holdersData?.holderCount || 0,
+    };
+  }, [
+    marketStats,
+    holdersData?.holderCount,
+    tokenPrice?.price,
+    tokenPrice?.marketCap,
+    token?.max_supply,
+  ]);
+
+  // Calculate total proposals - memoized to prevent infinite re-renders
+  const totalProposals = useMemo(() => {
+    return proposals ? proposals.length : 0;
+  }, [proposals]);
 
   return (
     <DAOLayout
