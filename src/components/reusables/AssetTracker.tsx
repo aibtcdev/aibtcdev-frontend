@@ -17,12 +17,12 @@ const AssetTracker = () => {
 
   // Function to find BTC token in fungible tokens
   const findSbtcToken = (
-    fungibleTokens: WalletBalance["fungible_tokens"] | undefined,
+    fungibleTokens: WalletBalance["fungible_tokens"] | undefined
   ) => {
     if (!fungibleTokens) return false;
 
     const sbtcTokenKey = Object.keys(fungibleTokens).find((key) =>
-      key.endsWith("::sbtc-token"),
+      key.endsWith("::sbtc-token")
     );
 
     return !!sbtcTokenKey;
@@ -37,7 +37,7 @@ const AssetTracker = () => {
         console.error("Error fetching balance:", err);
       }
     },
-    [fetchSingleBalance],
+    [fetchSingleBalance]
   );
 
   // Fetch wallets when component mounts
@@ -88,7 +88,7 @@ const AssetTracker = () => {
 
             console.log(`Balance for ${address}:`);
             console.log(
-              `STX Balance: ${balances[address]?.stx?.balance || "0"}`,
+              `STX Balance: ${balances[address]?.stx?.balance || "0"}`
             );
 
             // Log fungible tokens (including BTC if present)
@@ -100,7 +100,7 @@ const AssetTracker = () => {
                   if (tokenId.endsWith("::sbtc-token")) {
                     console.log(`  *** BTC FOUND: ${tokenData.balance} ***`);
                   }
-                },
+                }
               );
             } else {
               console.log("No fungible tokens found");
@@ -121,7 +121,7 @@ const AssetTracker = () => {
         "Agent wallets with BTC:",
         Object.entries(statusMap)
           .filter(([hasSbtc]) => hasSbtc)
-          .map(([address]) => address),
+          .map(([address]) => address)
       );
 
       setAgentSbtcStatus(statusMap);

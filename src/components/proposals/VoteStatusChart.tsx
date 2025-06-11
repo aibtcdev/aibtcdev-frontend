@@ -5,13 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Info, ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
+import { ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
 
 interface VoteStatusChartProps {
   votesFor?: string;
@@ -114,7 +108,7 @@ const VoteStatusChart = ({
           return getProposalVotes(
             contractAddress,
             Number(proposalId),
-            bustCache,
+            bustCache
           );
         }
         return null;
@@ -126,7 +120,7 @@ const VoteStatusChart = ({
         setBustCache(false);
       },
     }),
-    [contractAddress, proposalId, refreshing, bustCache],
+    [contractAddress, proposalId, refreshing, bustCache]
   );
 
   // Use useQuery with memoized options
@@ -145,11 +139,16 @@ const VoteStatusChart = ({
     const liquidPercentageAgainst =
       liquidTokensNum > 0 ? (votesAgainstNum / liquidTokensNum) * 100 : 0;
 
-    // Calculate percentages of cast votes for the progress bar
+    // Calculate percentages of cast votes for the progress bar (now based on liquidTokensNum)
     const barPercentageFor =
-      totalVotes > 0 ? (votesForNum / totalVotes) * 100 : 0;
+      liquidTokensNum > 0 ? (votesForNum / liquidTokensNum) * 100 : 0;
     const barPercentageAgainst =
-      totalVotes > 0 ? (votesAgainstNum / totalVotes) * 100 : 0;
+      liquidTokensNum > 0 ? (votesAgainstNum / liquidTokensNum) * 100 : 0;
+
+    // Calculate unvoted tokens and percentage
+    const unvotedTokensNum = liquidTokensNum - votesForNum - votesAgainstNum;
+    const unvotedPercentage =
+      liquidTokensNum > 0 ? (unvotedTokensNum / liquidTokensNum) * 100 : 0;
 
     return {
       votesForNum,
@@ -160,6 +159,8 @@ const VoteStatusChart = ({
       liquidPercentageAgainst,
       barPercentageFor,
       barPercentageAgainst,
+      unvotedTokensNum,
+      unvotedPercentage,
     };
   }, [parsedVotes, liquidTokens]);
 
@@ -199,8 +200,7 @@ const VoteStatusChart = ({
     <div className="space-y-3">
       {/* Header with refresh controls - Always show refresh button */}
       <div className="flex items-center justify-between text-sm">
-        <div className="text-muted-foreground">
-        </div>
+        <div className="text-muted-foreground"></div>
 
         <div className="flex items-center gap-2">
           {isRefreshingAny ? (
@@ -231,6 +231,18 @@ const VoteStatusChart = ({
         </div>
       </div>
 
+      <div className="flex items-center justify-end text-xs space-x-1">
+        <span className="text-muted-foreground">Total Liquid:</span>
+        <TokenBalance
+          value={liquidTokens}
+          symbol={tokenSymbol}
+          decimals={8}
+          variant="abbreviated"
+          showSymbol={false}
+          className="truncate text-right"
+        />
+      </div>
+
       <div className="relative h-3 sm:h-4 bg-muted rounded-md overflow-hidden">
         {voteCalculations.totalVotes > 0 ? (
           <>
@@ -242,7 +254,9 @@ const VoteStatusChart = ({
               {voteCalculations.barPercentageFor > 15 && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsUp className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">{voteCalculations.barPercentageFor.toFixed(1)}%</span>
+                  <span className="hidden sm:inline">
+                    {voteCalculations.barPercentageFor.toFixed(1)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -258,7 +272,9 @@ const VoteStatusChart = ({
               {voteCalculations.barPercentageAgainst > 15 && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsDown className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">{voteCalculations.barPercentageAgainst.toFixed(1)}%</span>
+                  <span className="hidden sm:inline">
+                    {voteCalculations.barPercentageAgainst.toFixed(1)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -285,7 +301,7 @@ const VoteStatusChart = ({
               className="truncate text-right"
             />
             <span className="text-green-400 font-medium flex-shrink-0 text-xs">
-              ({voteCalculations.liquidPercentageFor.toFixed(1)}%)
+              ({voteCalculations.barPercentageFor.toFixed(1)}%)
             </span>
           </div>
         </div>
@@ -305,7 +321,7 @@ const VoteStatusChart = ({
               className="truncate text-right"
             />
             <span className="text-red-400 font-medium flex-shrink-0 text-xs">
-              ({voteCalculations.liquidPercentageAgainst.toFixed(1)}%)
+              ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
             </span>
           </div>
         </div>
@@ -313,34 +329,20 @@ const VoteStatusChart = ({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <div className="w-2 h-2 rounded-full bg-muted-foreground flex-shrink-0"></div>
-            <span className="text-muted-foreground">Total:</span>
+            <span className="text-muted-foreground">Not Voted:</span>
           </div>
           <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
             <TokenBalance
-              value={liquidTokens || "0"}
+              value={voteCalculations.unvotedTokensNum.toString()}
               symbol={tokenSymbol}
               decimals={8}
               variant="abbreviated"
               showSymbol={false}
               className="truncate text-right"
             />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-pointer flex-shrink-0">
-                    <Info className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs max-w-xs">
-                  <p>
-                    Total liquid tokens available for voting.
-                    <br />
-                    {(100 - voteCalculations.liquidPercentageFor - voteCalculations.liquidPercentageAgainst).toFixed(1)}%
-                    have not voted.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <span className="text-muted-foreground font-medium flex-shrink-0 text-xs">
+              ({voteCalculations.unvotedPercentage.toFixed(1)}%)
+            </span>
           </div>
         </div>
       </div>
@@ -363,7 +365,7 @@ const VoteStatusChart = ({
                 className="truncate"
               />
               <span className="text-green-400 font-medium flex-shrink-0">
-                ({voteCalculations.liquidPercentageFor.toFixed(1)}%)
+                ({voteCalculations.barPercentageFor.toFixed(1)}%)
               </span>
             </div>
           </div>
@@ -385,7 +387,7 @@ const VoteStatusChart = ({
                 className="truncate"
               />
               <span className="text-red-400 font-medium flex-shrink-0">
-                ({voteCalculations.liquidPercentageAgainst.toFixed(1)}%)
+                ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
               </span>
             </div>
           </div>
@@ -395,34 +397,20 @@ const VoteStatusChart = ({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-muted-foreground flex-shrink-0"></div>
-              <span className="text-muted-foreground">Total:</span>
+              <span className="text-muted-foreground">Not Voted:</span>
             </div>
             <div className="flex items-center gap-1 min-w-0">
               <TokenBalance
-                value={liquidTokens || "0"}
+                value={voteCalculations.unvotedTokensNum.toString()}
                 symbol={tokenSymbol}
                 decimals={8}
                 variant="abbreviated"
                 showSymbol={false}
                 className="truncate"
               />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-pointer flex-shrink-0">
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs max-w-xs">
-                    <p>
-                      Total liquid tokens available for voting.
-                      <br />
-                      {(100 - voteCalculations.liquidPercentageFor - voteCalculations.liquidPercentageAgainst).toFixed(1)}%
-                      have not voted.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span className="text-muted-foreground font-medium flex-shrink-0">
+                ({voteCalculations.unvotedPercentage.toFixed(1)}%)
+              </span>
             </div>
           </div>
         </div>

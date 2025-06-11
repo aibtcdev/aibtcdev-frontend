@@ -91,10 +91,12 @@ export default function ProposalCard({
     return { votesFor, votesAgainst, totalVotes };
   };
 
+  // Parse liquid_tokens as a number for use in percentage calculations
+  const liquidTokens = Number(proposal.liquid_tokens || 0);
   const { votesFor, votesAgainst, totalVotes } = getVoteSummary();
-  const forPercentage = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
+  const forPercentage = liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
   const againstPercentage =
-    totalVotes > 0 ? (votesAgainst / totalVotes) * 100 : 0;
+    liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
 
   const getDAOInfo = () => {
     const proposalWithDAO = proposal as ProposalWithDAO;
@@ -216,15 +218,14 @@ export default function ProposalCard({
           <div className="flex items-center justify-between">
             <div className="text-sm">
               <span className="text-muted-foreground">Final result: </span>
-              <span
-                className={
-                  proposal.passed
-                    ? "text-green-500 font-medium"
-                    : "text-red-500 font-medium"
-                }
-              >
-                {forPercentage.toFixed(1)}% for, {againstPercentage.toFixed(1)}%
-                against
+              <span className="font-medium">
+                <span className="text-green-500">
+                  {forPercentage.toFixed(1)}% For
+                </span>
+                ,{" "}
+                <span className="text-red-500">
+                  {againstPercentage.toFixed(1)}% Against
+                </span>
               </span>
             </div>
           </div>
