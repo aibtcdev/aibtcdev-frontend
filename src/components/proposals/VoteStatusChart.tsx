@@ -5,13 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Info, ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
+import { ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
 
 interface VoteStatusChartProps {
   votesFor?: string;

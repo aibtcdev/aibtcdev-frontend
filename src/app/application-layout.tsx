@@ -218,7 +218,7 @@ export default function ApplicationLayout({
         {/* Navigation - Centered and responsive */}
         <nav className="flex-1 flex justify-center px-4 lg:px-6 relative z-10 min-w-0">
           <div className="inline-flex items-center gap-1 lg:gap-2 overflow-x-auto scrollbar-none">
-            {navigation.map((item, index) => {
+            {navigation.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
                 <Link
@@ -361,7 +361,7 @@ export default function ApplicationLayout({
             {/* Navigation */}
             <nav className="flex-1 px-4 pb-4 relative z-10">
               <div className="space-y-2">
-                {navigation.map((item, index) => {
+                {navigation.map((item) => {
                   const isActive = pathname.startsWith(item.href);
                   return (
                     <Link
