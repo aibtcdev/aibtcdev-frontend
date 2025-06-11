@@ -26,7 +26,7 @@ export default function ProposalDetailsPage() {
   const { isActive, isEnded } = useVotingStatus(
     proposal?.status || "",
     safeNumberFromBigInt(proposal?.vote_start || BigInt(0)),
-    safeNumberFromBigInt(proposal?.vote_end || BigInt(0)),
+    safeNumberFromBigInt(proposal?.vote_end || BigInt(0))
   );
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function ProposalDetailsPage() {
 
   const getStatusBadge = () => {
     if (!proposal) return null;
-    
+
     if (isActive) {
       return (
         <Badge className="bg-primary/20 text-primary hover:bg-primary/30 border-primary/50 transition-colors duration-150">
@@ -134,7 +134,8 @@ export default function ProposalDetailsPage() {
                     </>
                   )}
                   <span>
-                    Created {format(new Date(proposal.created_at), "MMM dd, yyyy")}
+                    Created{" "}
+                    {format(new Date(proposal.created_at), "MMM dd, yyyy")}
                   </span>
                   <span className="text-muted">•</span>
                   <a
@@ -143,13 +144,14 @@ export default function ProposalDetailsPage() {
                     rel="noopener noreferrer"
                     className="hover:text-foreground transition-colors duration-150"
                   >
-                    By {safeString(proposal.creator).slice(0, 6)}...{safeString(proposal.creator).slice(-4)}
+                    By {safeString(proposal.creator).slice(0, 6)}...
+                    {safeString(proposal.creator).slice(-4)}
                   </a>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3 flex-wrap">
             {getStatusBadge()}
           </div>
@@ -172,4 +174,4 @@ export default function ProposalDetailsPage() {
       <ProposalDetails proposal={proposal} />
     </div>
   );
-} 
+}
