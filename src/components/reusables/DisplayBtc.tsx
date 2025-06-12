@@ -57,14 +57,16 @@ const DisplayBtc = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Agent BTC:</span>
+      <span className="text-xs sm:text-sm font-inter font-medium text-muted-foreground tracking-wide">
+        Agent BTC:
+      </span>
       <TokenBalance
         value={totalSbtc.toString()}
         symbol="sBTC"
         decimals={8}
         variant="abbreviated"
         showSymbol={false}
-        className="font-medium"
+        className="font-inter font-bold tracking-tight"
       />
     </div>
   );

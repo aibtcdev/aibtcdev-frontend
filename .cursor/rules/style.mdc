@@ -23,7 +23,6 @@ These rules govern TailwindCSS styling across all TypeScript files in a Next.js 
 - **Spacing and Grid**:
   - Use an 8px base unit for spacing (e.g., `p-2` for 8px, `p-4` for 16px, `p-8` for 32px).
   - Implement a 12-column grid for desktop (`grid-cols-12`) and 4-column grid for mobile (`sm:grid-cols-4`).
-  - Use bento grid layouts with Tailwind classes (e.g., `grid gap-4`).
 - **Typography**:
   - Use Inter font for primary text (`font-inter`) and Space Mono for code/tech accents (`font-space-mono`).
   - Define typography styles: headings (`text-2xl md:text-4xl font-bold capitalize`), body (`text-base md:text-lg leading-relaxed`), subtext (`text-sm md:text-base font-light`).

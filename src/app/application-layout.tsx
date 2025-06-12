@@ -114,49 +114,51 @@ export default function ApplicationLayout({
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-background/95">
-      {/* Mobile Header - Only Menu, Logo, and BTC Balance */}
-      <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg">
+      {/* Mobile Header */}
+      <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg relative z-30">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-          className="text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105 rounded-xl h-10 w-10 p-0 transition-all duration-300 ease-in-out"
+          className="text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105 rounded-xl h-10 w-10 p-0 transition-all duration-300 ease-in-out flex-shrink-0"
         >
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Mobile Logo */}
-        <Link href="/daos" className="flex items-center gap-2">
-          <Image
-            src="/logos/aibtcdev-avatar-1000px.png"
-            alt="AIBTCDEV"
-            width={28}
-            height={28}
-            className="rounded-lg"
-          />
-          <Image
-            src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-            alt="AIBTCDEV"
-            width={80}
-            height={160}
-            className="h-4 w-auto"
-          />
-        </Link>
+        {/* Mobile Logo - Centered */}
+        <div className="flex-1 flex justify-center">
+          <Link href="/daos" className="flex items-center gap-2">
+            <Image
+              src="/logos/aibtcdev-avatar-1000px.png"
+              alt="AIBTCDEV"
+              width={28}
+              height={28}
+              className="rounded-lg flex-shrink-0"
+            />
+            <Image
+              src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+              alt="AIBTCDEV"
+              width={80}
+              height={20}
+              className="h-4 w-auto flex-shrink-0"
+            />
+          </Link>
+        </div>
 
-        {/* Mobile BTC Balance Only */}
-        <div className="flex items-center gap-1 px-3 py-2 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/20">
+        {/* Mobile BTC Balance */}
+        <div className="flex items-center gap-1 px-2 py-1.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/20 flex-shrink-0">
           <div className="relative">
-            <Bitcoin className="h-4 w-4 text-primary animate-pulse" />
+            <Bitcoin className="h-3.5 w-3.5 text-primary animate-pulse" />
             <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
           </div>
-          <div className="text-sm font-bold text-primary">
+          <div className="text-xs font-bold text-primary">
             <DisplayBtc />
           </div>
         </div>
       </div>
 
-      {/* Desktop Header */}
-      <div className="md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
+      {/* Desktop Header - Hidden on mobile */}
+      <div className="hidden md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
@@ -255,21 +257,25 @@ export default function ApplicationLayout({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-primary font-bold"
+                  className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  aria-label="Bitcoin balance dropdown menu"
                 >
                   <div className="relative">
-                    <Bitcoin className="h-4 w-4 lg:h-5 lg:w-5 text-primary animate-pulse" />
-                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-md animate-pulse" />
+                    <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse" />
+                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
                   </div>
-                  <div className="text-sm lg:text-base font-bold text-primary">
+                  <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
                     <DisplayBtc />
                   </div>
-                  <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-primary/70" />
+                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-primary/70 transition-transform duration-200 ease-in-out" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56 lg:w-64">
+              <DropdownMenuContent
+                align="center"
+                className="w-56 sm:w-64 p-2 bg-background border border-border/20 rounded-xl shadow-lg"
+              >
                 <div className="px-3 py-2 border-b border-border/20">
-                  <div className="text-xs lg:text-sm font-medium text-muted-foreground">
+                  <div className="text-xs sm:text-sm font-inter font-medium text-muted-foreground">
                     Network Status
                   </div>
                   <div className="mt-1">
@@ -279,7 +285,7 @@ export default function ApplicationLayout({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign out
@@ -289,18 +295,18 @@ export default function ApplicationLayout({
           ) : (
             // Show BTC Balance (non-clickable) and Auth Button when not authenticated
             <>
-              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-3 bg-gradient-to-r from-primary/20 to-secondary/20 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-primary/20 shadow-lg">
-                <div className="flex items-center gap-1 lg:gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
                   <div className="relative">
-                    <Bitcoin className="h-4 w-4 lg:h-5 lg:w-5 text-primary animate-pulse" />
-                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-md animate-pulse" />
+                    <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse" />
+                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
                   </div>
-                  <div className="text-sm lg:text-base font-bold text-primary">
+                  <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
                     <DisplayBtc />
                   </div>
                 </div>
               </div>
-              <div className="transition-transform duration-300 hover:scale-105">
+              <div className="transition-transform duration-300 ease-in-out hover:scale-105 motion-reduce:transition-none">
                 <AuthButton />
               </div>
             </>
@@ -309,12 +315,12 @@ export default function ApplicationLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-5rem)] overflow-hidden">
+      <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] overflow-hidden">
         {/* Mobile Sidebar */}
         <aside
           className={cn(
             "md:hidden fixed inset-y-0 left-0 z-50",
-            "w-72 sm:w-80 bg-card/95 backdrop-blur-2xl border-r border-border/30 shadow-2xl",
+            "w-80 bg-card/95 backdrop-blur-2xl border-r border-border/30 shadow-2xl",
             "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
             leftPanelOpen ? "translate-x-0 shadow-3xl" : "-translate-x-full"
           )}
@@ -322,8 +328,18 @@ export default function ApplicationLayout({
           <div className="flex flex-col h-full relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
-            {/* Close Button */}
-            <div className="flex justify-end p-4 relative z-10">
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border/20 relative z-10">
+              <div className="flex items-center gap-3">
+                <Image
+                  src="/logos/aibtcdev-avatar-1000px.png"
+                  alt="AIBTCDEV"
+                  width={24}
+                  height={24}
+                  className="rounded-lg"
+                />
+                <span className="text-lg font-bold text-foreground">Menu</span>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -335,8 +351,8 @@ export default function ApplicationLayout({
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 pb-4 relative z-10">
-              <div className="space-y-2">
+            <nav className="flex-1 px-4 py-6 relative z-10 overflow-y-auto">
+              <div className="space-y-3">
                 {navigation.map((item) => {
                   const isActive = pathname.startsWith(item.href);
                   return (
@@ -348,15 +364,15 @@ export default function ApplicationLayout({
                         setLeftPanelOpen(false);
                       }}
                       className={cn(
-                        "group flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out relative overflow-hidden hover:scale-105",
+                        "group flex items-center gap-4 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 ease-in-out relative overflow-hidden hover:scale-[1.02]",
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-xl scale-105 hover:shadow-2xl"
+                          ? "bg-primary text-primary-foreground shadow-xl scale-[1.02] hover:shadow-2xl"
                           : "text-muted-foreground hover:bg-background/60 hover:text-foreground hover:shadow-lg"
                       )}
                     >
                       <div
                         className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 relative z-10",
+                          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 relative z-10 flex-shrink-0",
                           isActive
                             ? "bg-primary-foreground/20 shadow-lg"
                             : "bg-muted/30 group-hover:bg-primary/20 group-hover:scale-110"
@@ -364,7 +380,7 @@ export default function ApplicationLayout({
                       >
                         <item.icon
                           className={cn(
-                            "h-5 w-5 transition-all duration-300",
+                            "h-6 w-6 transition-all duration-300",
                             isActive
                               ? "text-primary-foreground"
                               : "text-muted-foreground group-hover:text-primary"
@@ -384,7 +400,7 @@ export default function ApplicationLayout({
                       </span>
 
                       {isActive && (
-                        <div className="absolute right-3 w-2 h-2 bg-primary-foreground rounded-full shadow-lg animate-pulse" />
+                        <div className="absolute right-4 w-3 h-3 bg-primary-foreground rounded-full shadow-lg animate-pulse" />
                       )}
                     </Link>
                   );
@@ -394,9 +410,9 @@ export default function ApplicationLayout({
 
             {/* Mobile Footer with User Actions */}
             <div className="p-4 border-t border-border/20 bg-card/30 backdrop-blur-xl relative z-10">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {/* Network Status */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-3 bg-background/40 rounded-lg">
                   <div className="text-sm font-medium text-muted-foreground">
                     Network Status
                   </div>
@@ -407,19 +423,17 @@ export default function ApplicationLayout({
 
                 {/* User Actions */}
                 {hasUser ? (
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => {
-                        handleSignOut();
-                        setLeftPanelOpen(false);
-                      }}
-                      variant="ghost"
-                      className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl py-3"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign out
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => {
+                      handleSignOut();
+                      setLeftPanelOpen(false);
+                    }}
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-destructive hover:text-destructive-foreground hover:bg-destructive rounded-xl py-3 h-auto text-base font-semibold"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    Sign out
+                  </Button>
                 ) : (
                   <div className="w-full">
                     <AuthButton />

@@ -31,6 +31,17 @@ export default function ProposalCard({
 }: ProposalCardProps) {
   // Memoize status configuration to prevent recalculation
   const statusConfig = useMemo(() => {
+    // Check if proposal is in draft status first
+    if (proposal.status === "DRAFT") {
+      return {
+        icon: AlertCircle,
+        color: "text-gray-500",
+        bg: "bg-gray-500/10",
+        border: "border-gray-500/20",
+        label: "Draft",
+      };
+    }
+
     // For deployed proposals, determine status based on timing windows
     const now = Math.floor(Date.now() / 1000); // Current time in seconds
     const voteStart = safeNumberFromBigInt(proposal.vote_start);
@@ -113,6 +124,7 @@ export default function ProposalCard({
       label: "Unknown",
     };
   }, [
+    proposal.status,
     proposal.vote_start,
     proposal.vote_end,
     proposal.exec_start,

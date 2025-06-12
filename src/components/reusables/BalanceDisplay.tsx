@@ -52,7 +52,9 @@ export function BalanceDisplay({
 
   // For raw variant, just return the full formatted value
   if (variant === "raw") {
-    return <span className={`font-mono ${className}`}>{fullDisplay}</span>;
+    return (
+      <span className={`font-space-mono ${className}`}>{fullDisplay}</span>
+    );
   }
 
   // For rounded variant, show fewer decimal places
@@ -66,13 +68,15 @@ export function BalanceDisplay({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className={`font-mono ${className}`}>
+            <span
+              className={`font-space-mono transition-all duration-200 ease-in-out motion-reduce:transition-none ${className}`}
+            >
               {roundedValue}
               {showSymbol && symbol ? ` ${symbol}` : ""}
             </span>
           </TooltipTrigger>
-          <TooltipContent>
-            <p className="font-mono">{fullDisplay}</p>
+          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-lg shadow-lg">
+            <p className="font-space-mono">{fullDisplay}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -87,13 +91,15 @@ export function BalanceDisplay({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className={`font-mono ${className}`}>
+            <span
+              className={`font-space-mono transition-all duration-200 ease-in-out motion-reduce:transition-none ${className}`}
+            >
               {abbreviatedValue}
               {showSymbol && symbol ? ` ${symbol}` : ""}
             </span>
           </TooltipTrigger>
-          <TooltipContent>
-            <p className="font-mono">{fullDisplay}</p>
+          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-lg shadow-lg">
+            <p className="font-space-mono">{fullDisplay}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -101,7 +107,7 @@ export function BalanceDisplay({
   }
 
   // Fallback
-  return <span className={`font-mono ${className}`}>{fullDisplay}</span>;
+  return <span className={`font-space-mono ${className}`}>{fullDisplay}</span>;
 }
 
 /**
@@ -141,7 +147,9 @@ export function BtcBalance({
       decimals={8}
       variant={variant}
       className={`${
-        variant === "raw" ? "text-primary font-semibold" : ""
+        variant === "raw"
+          ? "text-primary font-inter font-semibold tracking-tight"
+          : "font-space-mono"
       } ${className}`}
       showSymbol={showSymbol}
     />

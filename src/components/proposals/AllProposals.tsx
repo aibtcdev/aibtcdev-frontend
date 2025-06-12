@@ -29,14 +29,7 @@ interface AllProposalsProps {
 }
 
 // Define sort options
-type SortField =
-  | "newest"
-  | "oldest"
-  | "title"
-  | "votes"
-  | "status"
-  | "creator"
-  | "dao";
+type SortField = "newest" | "oldest" | "title" | "votes" | "status" | "dao";
 
 function CompactMetrics({
   totalProposals,
@@ -81,9 +74,8 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
   // Filter and pagination state
   const [filterState, setFilterState] = useState<FilterState>({
     search: "",
-    dao: "all",
-    status: "all",
-    creator: "",
+    dao: [],
+    status: ["DEPLOYED", "PASSED", "FAILED"], // Default to all except DRAFT
     sort: "newest",
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,11 +87,20 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
       new Set(proposals.map((p) => p.daos?.name).filter(Boolean))
     ).sort();
 
-    return [
-      { value: "all", label: "All DAOs" },
-      ...uniqueDAOs.map((dao) => ({ value: dao!, label: dao! })),
-    ];
+    return uniqueDAOs.map((dao) => ({ value: dao!, label: dao! }));
   }, [proposals]);
+
+  // Calculate status counts for all proposals (for filter display)
+  const allActiveProposals = proposals.filter(
+    (p) => p.status === "DEPLOYED"
+  ).length;
+  const allPassedProposals = proposals.filter((p) => p.passed === true).length;
+  const allFailedProposals = proposals.filter(
+    (p) => p.status === "FAILED"
+  ).length;
+  const allDraftProposals = proposals.filter(
+    (p) => p.status === "DRAFT"
+  ).length;
 
   // Filter configuration
   const filterConfig: FilterConfig[] = [
@@ -112,26 +113,19 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     {
       key: "dao",
       label: "DAO",
-      type: "select",
+      type: "multiselect",
       options: daoOptions,
     },
     {
       key: "status",
       label: "Status",
-      type: "select",
+      type: "status",
       options: [
-        { value: "all", label: "All Status" },
-        { value: "DEPLOYED", label: "Active", badge: true },
-        { value: "PASSED", label: "Passed", badge: true },
-        { value: "FAILED", label: "Failed", badge: true },
-        { value: "DRAFT", label: "Draft", badge: true },
+        { value: "DEPLOYED", label: "Active", count: allActiveProposals },
+        { value: "PASSED", label: "Passed", count: allPassedProposals },
+        { value: "FAILED", label: "Failed", count: allFailedProposals },
+        { value: "DRAFT", label: "Draft", count: allDraftProposals },
       ],
-    },
-    {
-      key: "creator",
-      label: "Creator Address",
-      type: "search",
-      placeholder: "Enter creator address...",
     },
     {
       key: "sort",
@@ -163,27 +157,22 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
         if (!matchesTitle && !matchesDAO && !matchesCreator) return false;
       }
 
-      // DAO filter
-      if (filterState.dao && filterState.dao !== "all") {
-        if (proposal.daos?.name !== filterState.dao) return false;
+      // DAO filter (multiselect - if nothing selected, show all)
+      if (Array.isArray(filterState.dao) && filterState.dao.length > 0) {
+        if (
+          !proposal.daos?.name ||
+          !filterState.dao.includes(proposal.daos.name)
+        ) {
+          return false;
+        }
       }
 
-      // Status filter
-      if (filterState.status && filterState.status !== "all") {
-        if (filterState.status === "PASSED" && !proposal.passed) return false;
-        if (filterState.status === "DEPLOYED" && proposal.status !== "DEPLOYED")
+      // Status filter (multiselect - if nothing selected, show all)
+      if (Array.isArray(filterState.status) && filterState.status.length > 0) {
+        const proposalStatus = proposal.passed ? "PASSED" : proposal.status;
+        if (!filterState.status.includes(proposalStatus)) {
           return false;
-        if (filterState.status === "FAILED" && proposal.status !== "FAILED")
-          return false;
-        if (filterState.status === "DRAFT" && proposal.status !== "DRAFT")
-          return false;
-      }
-
-      // Creator filter
-      if (filterState.creator && typeof filterState.creator === "string") {
-        const creatorTerm = filterState.creator.toLowerCase();
-        if (!proposal.creator?.toLowerCase().includes(creatorTerm))
-          return false;
+        }
       }
 
       return true;
@@ -215,8 +204,6 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
           const daoA = a.daos?.name || "";
           const daoB = b.daos?.name || "";
           return daoA.localeCompare(daoB);
-        case "creator":
-          return (a.creator || "").localeCompare(b.creator || "");
         default:
           return 0;
       }
@@ -234,7 +221,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     currentPage * itemsPerPage
   );
 
-  // Calculate statistics
+  // Calculate statistics for filtered proposals
   const totalProposals = filteredAndSortedProposals.length;
   const activeProposals = filteredAndSortedProposals.filter(
     (p) => p.status === "DEPLOYED"
