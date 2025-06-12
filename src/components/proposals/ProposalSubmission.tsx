@@ -29,6 +29,13 @@ import {
   useUnicodeValidation,
   UnicodeIssueWarning,
 } from "@/hooks/useUnicodeValidation";
+import {
+  proposeSendMessage,
+  generateProposalRecommendation,
+  isProposalRecommendationError,
+  type ApiResponse,
+  type ProposalRecommendationRequest,
+} from "@/services/tool.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -77,72 +84,11 @@ interface WebSocketTransactionMessage {
   contract_call?: unknown;
 }
 
-// Proposal Recommendation API Types
-interface ProposalRecommendationRequest {
-  dao_id: string;
-  focus_area?: string;
-  specific_needs?: string;
-  model_name?: string;
-  temperature?: number;
-}
-
-interface TokenUsage {
-  input_tokens: number;
-  output_tokens: number;
-}
-
-interface TokenUsageBreakdown {
-  proposal_recommendation_agent: TokenUsage;
-}
-
-type ProposalPriority = "high" | "medium" | "low";
-
-interface ProposalRecommendationResponse {
-  title: string;
-  content: string;
-  rationale: string;
-  priority: ProposalPriority;
-  estimated_impact: string;
-  suggested_action?: string;
-  dao_id: string;
-  dao_name: string;
-  proposals_analyzed: number;
-  token_usage: TokenUsageBreakdown;
-}
-
-interface ProposalRecommendationError {
-  error: string;
-  title: "";
-  content: "";
-  rationale: string;
-  priority: "low";
-  estimated_impact: "None";
-  dao_id?: string;
-  dao_name?: string;
-}
-
-type ProposalRecommendationResult =
-  | ProposalRecommendationResponse
-  | ProposalRecommendationError;
-
-// Type guard to check if the response is an error
-function isProposalRecommendationError(
-  result: ProposalRecommendationResult
-): result is ProposalRecommendationError {
-  return "error" in result;
-}
-
 interface ProposalSubmissionProps {
   daoId: string;
   dao?: DAO;
   token?: Token;
   onSubmissionSuccess?: () => void;
-}
-
-interface ApiResponse {
-  output: string;
-  error: string | null;
-  success: boolean;
 }
 
 interface ParsedOutput {
@@ -314,26 +260,20 @@ export function ProposalSubmission({
   };
 
   /* ------------------------------ API call helper ------------------------------ */
-  const sendRequest = async (payload: Record<string, string>) => {
+  const sendRequest = async (payload: {
+    action_proposals_voting_extension: string;
+    action_proposal_contract_to_execute: string;
+    dao_token_contract_address: string;
+    message: string;
+  }) => {
     if (!accessToken) throw new Error("Missing access token");
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(
-        `https://core-staging.aibtc.dev/tools/dao/action_proposals/propose_send_message?token=${encodeURIComponent(
-          accessToken
-        )}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await proposeSendMessage(accessToken, payload);
+      console.log("API Response:", response);
 
-      const json = (await res.json()) as ApiResponse;
-      console.log("API Response:", json);
-
-      return json;
+      return response;
     } finally {
       setIsSubmitting(false);
     }
@@ -407,22 +347,7 @@ export function ProposalSubmission({
       };
 
       // Make the API call
-      const response = await fetch(
-        `https://core-staging.aibtc.dev/tools/dao/proposal_recommendations/generate?token=${encodeURIComponent(accessToken)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(request),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ProposalRecommendationResult = await response.json();
+      const result = await generateProposalRecommendation(accessToken, request);
 
       if (isProposalRecommendationError(result)) {
         throw new Error(result.error);

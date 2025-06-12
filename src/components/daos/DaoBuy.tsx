@@ -7,13 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
-/* exact API envelope coming back from FastAPI */
-export interface ApiResponse {
-  output: string;
-  error: string | null;
-  success: boolean;
-}
+import { executeBuy, type ApiResponse } from "@/services/tool.service";
 
 interface TokenBuyInputProps {
   tokenName: string;
@@ -57,22 +51,12 @@ export function TokenBuyInput({
       try {
         const btcAmount = (Number(amount) / 100_000_000).toString();
 
-        const resp = await fetch(
-          `https://core-staging.aibtc.dev/tools/faktory/execute_buy?token=${encodeURIComponent(
-            accessToken
-          )}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              btc_amount: btcAmount,
-              dao_token_dex_contract_address: contractPrincipal,
-              slippage: "15",
-            }),
-          }
+        const apiResponse = await executeBuy(
+          accessToken,
+          btcAmount,
+          contractPrincipal,
+          "15"
         );
-
-        const apiResponse: ApiResponse = await resp.json();
         onResult(apiResponse);
         if (apiResponse.success) setAmount("");
       } catch (err) {

@@ -18,7 +18,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
-import { TokenBuyInput, type ApiResponse } from "@/components/daos/DaoBuy";
+import { TokenBuyInput } from "@/components/daos/DaoBuy";
+import type { ApiResponse } from "@/services/tool.service";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
 import { fetchDAOExtensions, fetchToken } from "@/services/dao.service";

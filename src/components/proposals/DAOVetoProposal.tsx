@@ -9,6 +9,7 @@ import type { DAO } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
+import { vetoProposal, type ApiResponse } from "@/services/tool.service";
 import {
   Dialog,
   DialogContent,
@@ -79,12 +80,6 @@ interface DAOVetoProposalProps {
     | "link";
   className?: string;
   disabled?: boolean;
-}
-
-interface ApiResponse {
-  output: string;
-  error: string | null;
-  success: boolean;
 }
 
 interface ParsedOutput {
@@ -232,26 +227,18 @@ export function DAOVetoProposal({
   };
 
   /* ------------------------------ API call helper ------------------------------ */
-  const sendVetoRequest = async (payload: Record<string, string | number>) => {
+  const sendVetoRequest = async (payload: {
+    dao_action_proposal_voting_contract: string;
+    proposal_id: string;
+  }) => {
     if (!accessToken) throw new Error("Missing access token");
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(
-        `https://core-staging.aibtc.dev/tools/dao/action_proposals/veto_proposal?token=${encodeURIComponent(
-          accessToken
-        )}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await vetoProposal(accessToken, payload);
+      console.log("Veto API Response:", response);
 
-      const json = (await res.json()) as ApiResponse;
-      console.log("Veto API Response:", json);
-
-      return json;
+      return response;
     } finally {
       setIsSubmitting(false);
     }

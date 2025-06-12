@@ -10,6 +10,7 @@ import type { DAO, Token } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
+import { proposeSendMessage, type ApiResponse } from "@/services/tool.service";
 import {
   Dialog,
   DialogContent,
@@ -72,12 +73,6 @@ interface DAOSendProposalProps {
   token?: Token;
   size?: "sm" | "default";
   className?: string;
-}
-
-interface ApiResponse {
-  output: string;
-  error: string | null;
-  success: boolean;
 }
 
 interface ParsedOutput {
@@ -236,26 +231,20 @@ export function DAOSendProposal({
   };
 
   /* ------------------------------ API call helper ------------------------------ */
-  const sendRequest = async (payload: Record<string, string>) => {
+  const sendRequest = async (payload: {
+    action_proposals_voting_extension: string;
+    action_proposal_contract_to_execute: string;
+    dao_token_contract_address: string;
+    message: string;
+  }) => {
     if (!accessToken) throw new Error("Missing access token");
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(
-        `https://core-staging.aibtc.dev/tools/dao/action_proposals/propose_send_message?token=${encodeURIComponent(
-          accessToken
-        )}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await proposeSendMessage(accessToken, payload);
+      console.log("API Response:", response);
 
-      const json = (await res.json()) as ApiResponse;
-      console.log("API Response:", json);
-
-      return json;
+      return response;
     } finally {
       setIsSubmitting(false);
     }
