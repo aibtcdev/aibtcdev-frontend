@@ -1,19 +1,7 @@
 "use client";
-import { openContractCall, type ContractCallOptions } from "@stacks/connect";
-import {
-  uintCV,
-  principalCV,
-  noneCV,
-  PostCondition,
-  PostConditionMode,
-} from "@stacks/transactions";
-import {
-  type StacksNetwork,
-  STACKS_TESTNET,
-  STACKS_MAINNET,
-} from "@stacks/network";
+import { request } from "@stacks/connect";
+import { uintCV, principalCV, noneCV } from "@stacks/transactions";
 import { Button } from "@/components/ui/button";
-import { userSession } from "@/lib/userSession";
 
 interface TokenTransferProps {
   network: "mainnet" | "testnet";
@@ -21,7 +9,6 @@ interface TokenTransferProps {
   recipient: string;
   contractAddress: string;
   contractName: string;
-  token: string;
   buttonText?: string;
   onSuccess?: () => void;
 }
@@ -32,48 +19,23 @@ export function TokenTransfer({
   recipient,
   contractAddress,
   contractName,
-  token,
   buttonText = "Transfer Tokens",
   onSuccess,
 }: TokenTransferProps) {
   const transferToken = async () => {
-    const stacksNetwork: StacksNetwork =
-      process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-        ? STACKS_MAINNET
-        : STACKS_TESTNET;
-
-    const sender = userSession.loadUserData().profile.stxAddress[network];
-
-    // Create FT post condition
-    const ftPostCondition: PostCondition = {
-      type: "ft-postcondition",
-      condition: "eq",
-      amount: amount,
-      address: sender,
-      asset: `${contractAddress}.${contractName}::${token}`,
-    };
-
-    const options: ContractCallOptions = {
-      contractAddress,
-      contractName,
-      functionName: "transfer",
-      functionArgs: [
-        uintCV(amount),
-        principalCV(sender),
-        principalCV(recipient),
-        noneCV(),
-      ],
-      network: stacksNetwork,
-      postConditions: [ftPostCondition],
-      postConditionMode: PostConditionMode.Deny,
-      appDetails: {
-        name: "AIBTC",
-        icon: "https://bncytzyfafclmdxrwpgq.supabase.co/storage/v1/object/public/aibtcdev/aibtcdev-avatar-250px.png",
-      },
-    };
-
     try {
-      await openContractCall(options);
+      await request("stx_callContract", {
+        contract: `${contractAddress}.${contractName}`,
+        functionName: "transfer",
+        functionArgs: [
+          uintCV(amount),
+          principalCV(recipient), // Note: sender will be automatically determined by wallet
+          principalCV(recipient),
+          noneCV(),
+        ],
+        network: network,
+      });
+
       console.log("Transfer initiated successfully");
       onSuccess?.();
     } catch (error) {

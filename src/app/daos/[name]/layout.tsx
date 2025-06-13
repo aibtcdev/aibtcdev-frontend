@@ -18,10 +18,11 @@ const OG_IMAGE_HEIGHT = 628;
 export async function generateMetadata({
   params,
 }: {
-  params: { name: string }; // Changed from id to name
+  params: Promise<{ name: string }>; // Changed from id to name
 }): Promise<Metadata> {
   // First fetch the DAO by name to get its ID
-  const dao = await fetchDAOByName(params.name);
+  const resolvedParams = await params;
+  const dao = await fetchDAOByName(resolvedParams.name);
 
   if (!dao) {
     return {
@@ -73,7 +74,7 @@ export async function generateMetadata({
       creator: "@aibtcdev",
     },
     alternates: {
-      canonical: `/daos/${params.name}`, // Updated to use name instead of ID
+      canonical: `/daos/${resolvedParams.name}`, // Updated to use name instead of ID
     },
     robots: {
       index: true,

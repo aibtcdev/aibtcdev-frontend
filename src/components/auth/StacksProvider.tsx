@@ -1,52 +1,33 @@
 "use client";
 
 import React from "react";
-import { showConnect, openSignatureRequestPopup } from "@stacks/connect";
-import { STACKS_MAINNET, STACKS_TESTNET } from "@stacks/network";
-import { userSession } from "@/lib/userSession";
+import { connect, request } from "@stacks/connect";
 
 interface ConnectWalletOptions {
   onCancel: () => void;
 }
 
-export function connectWallet({ onCancel }: ConnectWalletOptions) {
-  return new Promise((resolve) => {
-    showConnect({
-      appDetails: {
-        name: "AIBTC",
-        icon: "https://bncytzyfafclmdxrwpgq.supabase.co/storage/v1/object/public/aibtcdev/aibtcdev-avatar-250px.png",
-      },
-      onCancel,
-      onFinish: () => {
-        const data = userSession.loadUserData();
-        resolve(data);
-      },
-      userSession,
-    });
-  });
+export async function connectWallet({ onCancel }: ConnectWalletOptions) {
+  try {
+    const response = await connect();
+    return response;
+  } catch (error) {
+    onCancel();
+    throw error;
+  }
 }
 
-export function requestSignature(): Promise<string> {
-  const network =
-    process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-      ? STACKS_MAINNET
-      : STACKS_TESTNET;
-  return new Promise((resolve, reject) => {
-    openSignatureRequestPopup({
+export async function requestSignature(): Promise<string> {
+  try {
+    const response = await request("stx_signMessage", {
       message: "Please sign the message to authenticate.",
-      network: network,
-      appDetails: {
-        name: "AIBTC",
-        icon: "https://bncytzyfafclmdxrwpgq.supabase.co/storage/v1/object/public/aibtcdev/aibtcdev-avatar-250px.png",
-      },
-      onFinish: (data) => {
-        resolve(data.signature.slice(0, 72));
-      },
-      onCancel: () => {
-        reject(new Error("Signature request cancelled"));
-      },
     });
-  });
+
+    // Return the signature, slicing to 72 characters as in the original code
+    return response.signature.slice(0, 72);
+  } catch (error) {
+    throw new Error("Signature request cancelled" + error);
+  }
 }
 
 interface StacksProviderProps {

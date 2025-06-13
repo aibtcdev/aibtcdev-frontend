@@ -1,19 +1,17 @@
 import React from "react";
 import { supabase } from "@/utils/supabase/client";
-import { AppConfig, UserSession } from "@stacks/connect";
+import { disconnect } from "@stacks/connect";
 
 const SignOut = () => {
-  const appConfig = new AppConfig(["store_write", "publish_data"]);
-  const userSession = new UserSession({ appConfig });
-
   function disconnectWallet() {
-    userSession.signUserOut("/");
+    disconnect();
   }
 
   async function handleLogout() {
     await supabase.auth.signOut();
     disconnectWallet();
   }
+
   return (
     <div>
       <a onClick={handleLogout}>Sign Out</a>

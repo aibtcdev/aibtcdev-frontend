@@ -11,8 +11,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
-import { openSTXTransfer } from "@stacks/connect";
+import { request } from "@stacks/connect";
 
 interface StacksComponentsProps {
   address: string;
@@ -31,34 +30,36 @@ export default function StacksComponents({
   onAmountChange,
   onToast,
 }: StacksComponentsProps) {
-  const sendSTX = (recipientAddress: string, amountInSTX: string) => {
-    const network =
-      process.env.NEXT_PUBLIC_STACKS_NETWORK == "mainnet"
-        ? STACKS_MAINNET
-        : STACKS_TESTNET;
+  const sendSTX = async (
+    recipientAddress: string,
+    amountInMicroSTX: string
+  ) => {
+    try {
+      const response = await request("stx_transferStx", {
+        recipient: recipientAddress,
+        amount: amountInMicroSTX,
+        memo: "Agent funding",
+        network:
+          process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
+            ? "mainnet"
+            : "testnet",
+      });
 
-    openSTXTransfer({
-      recipient: recipientAddress,
-      amount: amountInSTX,
-      memo: "Agent funding",
-      network: network,
-      onFinish: (data) => {
-        const explorerUrl = `https://explorer.stacks.co/txid/${data.txId}`;
-        onToast(
-          "Success",
-          "Transfer sent to agent, funds will arrive soon.",
-          "default"
-        );
-        return {
-          txId: data.txId,
-          explorerUrl: explorerUrl,
-          rawTx: data.txRaw,
-        };
-      },
-      onCancel: () => {
-        onToast("Transaction Canceled");
-      },
-    });
+      const explorerUrl = `https://explorer.stacks.co/txid/${response.txid}`;
+      onToast(
+        "Success",
+        "Transfer sent to agent, funds will arrive soon.",
+        "default"
+      );
+
+      return {
+        txId: response.txid,
+        explorerUrl: explorerUrl,
+      };
+    } catch (error) {
+      onToast("Transaction Canceled");
+      console.error("Error sending STX:", error);
+    }
   };
 
   const handleSendSTX = () => {

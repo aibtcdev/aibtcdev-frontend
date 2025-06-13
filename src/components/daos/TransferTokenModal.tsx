@@ -98,7 +98,6 @@ export const TransferTokenModal = memo(
               recipient={agent.walletAddress}
               contractAddress={contractAddress}
               contractName={contractName}
-              token={agent.tokenSymbol}
               buttonText="Transfer"
               onSuccess={handleTransferSuccess}
             />

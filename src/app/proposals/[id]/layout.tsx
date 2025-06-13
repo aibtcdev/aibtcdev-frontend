@@ -13,10 +13,11 @@ export const viewport: Viewport = {
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   try {
-    const proposal = await fetchProposalById(params.id);
+    const resolvedParams = await params;
+    const proposal = await fetchProposalById(resolvedParams.id);
 
     if (!proposal) {
       return {
@@ -39,7 +40,7 @@ export async function generateMetadata({
         title,
         description,
         type: "website",
-        url: `/proposals/${params.id}`,
+        url: `/proposals/${resolvedParams.id}`,
       },
       twitter: {
         card: "summary",
@@ -48,7 +49,7 @@ export async function generateMetadata({
         creator: "@aibtcdev",
       },
       alternates: {
-        canonical: `/proposals/${params.id}`,
+        canonical: `/proposals/${resolvedParams.id}`,
       },
       robots: {
         index: true,

@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
 import { useVotingStatus } from "./TimeStatus";
@@ -30,6 +31,8 @@ export default function ProposalCard({
   tokenSymbol = "",
   showDAOInfo = false,
 }: ProposalCardProps) {
+  const router = useRouter();
+
   // Use the same status logic as ProposalDetails
   const { isActive, isEnded, isLoading } = useVotingStatus(
     proposal.status,
@@ -137,19 +140,20 @@ export default function ProposalCard({
   const daoInfo = useMemo(() => {
     const proposalWithDAO = proposal as ProposalWithDAO;
     if (proposalWithDAO.daos?.name) {
-      const encodedDAOName = encodeURIComponent(proposalWithDAO.daos.name);
-      return (
-        <Link
-          href={`/daos/${encodedDAOName}`}
-          className="hover:text-foreground transition-colors duration-300 font-medium"
-        >
-          {proposalWithDAO.daos.name}
-        </Link>
-      );
+      return proposalWithDAO.daos.name;
     }
     return proposal.contract_principal
       ? formatAction(proposal.contract_principal)
       : "Unknown DAO";
+  }, [proposal]);
+
+  // Memoize DAO link for navigation
+  const daoLink = useMemo(() => {
+    const proposalWithDAO = proposal as ProposalWithDAO;
+    if (proposalWithDAO.daos?.name) {
+      return `/daos/${encodeURIComponent(proposalWithDAO.daos.name)}`;
+    }
+    return null;
   }, [proposal]);
 
   return (
@@ -188,20 +192,38 @@ export default function ProposalCard({
           {showDAOInfo && (
             <div className="flex items-center gap-1 min-w-0 max-w-[120px] sm:max-w-none">
               <Building2 className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{daoInfo}</span>
+              {daoLink ? (
+                <span
+                  className="truncate hover:text-foreground transition-colors duration-300 font-medium cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push(daoLink);
+                  }}
+                >
+                  {daoInfo}
+                </span>
+              ) : (
+                <span className="truncate">{daoInfo}</span>
+              )}
             </div>
           )}
           <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
             <User className="h-3 w-3 flex-shrink-0" />
-            <a
-              href={getExplorerLink("address", proposal.creator)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="hover:text-foreground transition-colors duration-300 truncate"
+            <span
+              className="hover:text-foreground transition-colors duration-300 truncate cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(
+                  getExplorerLink("address", proposal.creator),
+                  "_blank",
+                  "noopener,noreferrer"
+                );
+              }}
             >
               {truncateString(proposal.creator, 4, 4)}
-            </a>
+            </span>
           </div>
           <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
             <Clock className="h-3 w-3 flex-shrink-0" />
