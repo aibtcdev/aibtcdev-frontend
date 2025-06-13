@@ -25,12 +25,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { supabase } from "@/utils/supabase/client";
 import { NetworkIndicator } from "@/components/reusables/NetworkIndicator";
 import AuthButton from "@/components/home/AuthButton";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
 import DisplayBtc from "@/components/reusables/DisplayBtc";
+import { useAuth } from "@/hooks/useAuth";
+import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -49,46 +50,13 @@ export default function ApplicationLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [leftPanelOpen, setLeftPanelOpen] = React.useState(false);
-  const [hasUser, setHasUser] = React.useState(false);
-  const [showAuthModal, setShowAuthModal] = React.useState(false);
 
-  React.useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setHasUser(!!user);
-
-      // If we're on a protected page and not authenticated, show the modal
-      if ((pathname === "/profile" || pathname === "/votes") && !user) {
-        setShowAuthModal(true);
-      } else if ((pathname === "/profile" || pathname === "/votes") && user) {
-        // If we're on a protected page and authenticated, make sure modal is closed
-        setShowAuthModal(false);
-      }
-    };
-
-    checkUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      const isAuthenticated = !!session?.user;
-      setHasUser(isAuthenticated);
-
-      // Close the auth modal when user becomes authenticated
-      if (isAuthenticated) {
-        setShowAuthModal(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [pathname]);
+  // Use existing auth infrastructure
+  const { isAuthenticated, signOut } = useAuth();
+  const { showAuthModal, closeAuthModal, openAuthModal } = useProtectedRoute();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/");
     window.location.reload();
   };
@@ -99,12 +67,9 @@ export default function ApplicationLayout({
     if (href === "/profile" || href === "/votes") {
       e.preventDefault();
 
-      // Check if user is authenticated
-      const { data } = await supabase.auth.getUser();
-
-      if (!data.user) {
+      if (!isAuthenticated) {
         // Show auth modal if not authenticated
-        setShowAuthModal(true);
+        openAuthModal();
       } else {
         // Navigate to the page if authenticated
         router.push(href);
@@ -252,7 +217,7 @@ export default function ApplicationLayout({
         {/* Right Section - BTC Balance Dropdown & Auth Button */}
         <div className="flex items-center gap-2 lg:gap-4 relative z-10 justify-end">
           {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
-          {hasUser ? (
+          {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -422,7 +387,7 @@ export default function ApplicationLayout({
                 </div>
 
                 {/* User Actions */}
-                {hasUser ? (
+                {isAuthenticated ? (
                   <Button
                     onClick={() => {
                       handleSignOut();
@@ -465,7 +430,7 @@ export default function ApplicationLayout({
       {/* Authentication Modal */}
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
+        onClose={closeAuthModal}
         redirectUrl={pathname === "/votes" ? "/votes" : "/profile"}
       />
     </div>

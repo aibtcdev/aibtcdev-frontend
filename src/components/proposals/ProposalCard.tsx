@@ -17,6 +17,7 @@ import { safeNumberFromBigInt } from "@/utils/proposal";
 import Link from "next/link";
 import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
+import { useVotingStatus } from "./TimeStatus";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -29,6 +30,13 @@ export default function ProposalCard({
   tokenSymbol = "",
   showDAOInfo = false,
 }: ProposalCardProps) {
+  // Use the same status logic as ProposalDetails
+  const { isActive, isEnded, isLoading } = useVotingStatus(
+    proposal.status,
+    safeNumberFromBigInt(proposal.vote_start),
+    safeNumberFromBigInt(proposal.vote_end)
+  );
+
   // Memoize status configuration to prevent recalculation
   const statusConfig = useMemo(() => {
     // Check if proposal is in draft status first
@@ -42,26 +50,19 @@ export default function ProposalCard({
       };
     }
 
-    // For deployed proposals, determine status based on timing windows
-    const now = Math.floor(Date.now() / 1000); // Current time in seconds
-    const voteStart = safeNumberFromBigInt(proposal.vote_start);
-    const voteEnd = safeNumberFromBigInt(proposal.vote_end);
-    const execStart = safeNumberFromBigInt(proposal.exec_start || null);
-    const execEnd = safeNumberFromBigInt(proposal.exec_end || null);
-
-    // Initial delay before voting window
-    if (now < voteStart) {
+    // Handle loading state
+    if (isLoading) {
       return {
         icon: Clock,
-        color: "text-blue-500",
-        bg: "bg-blue-500/10",
-        border: "border-blue-500/20",
-        label: "Pending",
+        color: "text-muted-foreground",
+        bg: "bg-muted/10",
+        border: "border-muted/20",
+        label: "Loading",
       };
     }
 
-    // Inside voting window
-    if (now >= voteStart && now < voteEnd) {
+    // For deployed proposals, determine status based on voting status
+    if (isActive) {
       return {
         icon: BarChart3,
         color: "text-primary",
@@ -71,31 +72,7 @@ export default function ProposalCard({
       };
     }
 
-    // Veto window (between vote_end and exec_start)
-    if (execStart > 0 && now >= voteEnd && now < execStart) {
-      return {
-        icon: AlertCircle,
-        color: "text-yellow-500",
-        bg: "bg-yellow-500/10",
-        border: "border-yellow-500/20",
-        label: "Veto Period",
-      };
-    }
-
-    // Execution window (between exec_start and exec_end)
-    if (execStart > 0 && execEnd > 0 && now >= execStart && now < execEnd) {
-      return {
-        icon: Clock,
-        color: "text-purple-500",
-        bg: "bg-purple-500/10",
-        border: "border-purple-500/20",
-        label: "Execution Window",
-      };
-    }
-
-    // Completed (after exec_end or vote_end if no execution window)
-    const endTime = execEnd > 0 ? execEnd : voteEnd;
-    if (now >= endTime) {
+    if (isEnded) {
       if (proposal.passed) {
         return {
           icon: CheckCircle,
@@ -115,22 +92,15 @@ export default function ProposalCard({
       }
     }
 
-    // Fallback
+    // Not started yet (pending)
     return {
-      icon: AlertCircle,
-      color: "text-muted-foreground",
-      bg: "bg-muted/10",
-      border: "border-muted/20",
-      label: "Unknown",
+      icon: Clock,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20",
+      label: "Pending",
     };
-  }, [
-    proposal.status,
-    proposal.vote_start,
-    proposal.vote_end,
-    proposal.exec_start,
-    proposal.exec_end,
-    proposal.passed,
-  ]);
+  }, [proposal.status, proposal.passed, isActive, isEnded, isLoading]);
 
   const StatusIcon = statusConfig.icon;
 
@@ -154,9 +124,14 @@ export default function ProposalCard({
   // Parse liquid_tokens as a number for use in percentage calculations
   const liquidTokens = Number(proposal.liquid_tokens || 0);
   const { votesFor, votesAgainst, totalVotes } = voteSummary;
+
+  // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
   const forPercentage = liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
   const againstPercentage =
     liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
+
+  // Calculate approval rate from cast votes (for display purposes)
+  const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -250,12 +225,16 @@ export default function ProposalCard({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                 <span className="text-green-500 font-medium">
-                  For: {formatNumber(votesFor)} ({forPercentage.toFixed(1)}%)
+                  For: {formatNumber(votesFor)} ({forPercentage.toFixed(1)}% of
+                  liquid)
                 </span>
                 <span className="text-red-500 font-medium">
                   Against: {formatNumber(votesAgainst)} (
-                  {againstPercentage.toFixed(1)}%)
+                  {againstPercentage.toFixed(1)}% of liquid)
                 </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Approval: {approvalRate.toFixed(1)}% of votes cast
               </div>
             </div>
 
@@ -277,19 +256,17 @@ export default function ProposalCard({
         {/* Completed Status */}
         {(statusConfig.label === "Passed" ||
           statusConfig.label === "Failed") && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <span className="text-muted-foreground">Final result: </span>
-              <span className="font-medium">
-                <span className="text-green-500">
-                  {forPercentage.toFixed(1)}% For
-                </span>
-                ,{" "}
-                <span className="text-red-500">
-                  {againstPercentage.toFixed(1)}% Against
-                </span>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Final result: </span>
+            <span className="font-medium">
+              <span className="text-green-500">
+                {formatNumber(votesFor)} For
               </span>
-            </div>
+              ,{" "}
+              <span className="text-red-500">
+                {formatNumber(votesAgainst)} Against
+              </span>
+            </span>
           </div>
         )}
 

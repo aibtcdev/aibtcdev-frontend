@@ -23,6 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useTokens } from "@/hooks/useTokens";
+import { getProposalStatus } from "@/utils/proposal";
 
 interface AllProposalsProps {
   proposals: ProposalWithDAO[];
@@ -75,7 +76,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
   const [filterState, setFilterState] = useState<FilterState>({
     search: "",
     dao: [],
-    status: ["DEPLOYED", "PASSED", "FAILED"], // Default to all except DRAFT
+    status: ["ACTIVE", "PASSED", "FAILED"], // Default to all except DRAFT
     sort: "newest",
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,16 +91,18 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     return uniqueDAOs.map((dao) => ({ value: dao!, label: dao! }));
   }, [proposals]);
 
-  // Calculate status counts for all proposals (for filter display)
+  // Calculate status counts for all proposals (for filter display) using consistent logic
   const allActiveProposals = proposals.filter(
-    (p) => p.status === "DEPLOYED"
+    (p) => getProposalStatus(p) === "ACTIVE"
   ).length;
-  const allPassedProposals = proposals.filter((p) => p.passed === true).length;
+  const allPassedProposals = proposals.filter(
+    (p) => getProposalStatus(p) === "PASSED"
+  ).length;
   const allFailedProposals = proposals.filter(
-    (p) => p.status === "FAILED"
+    (p) => getProposalStatus(p) === "FAILED"
   ).length;
   const allDraftProposals = proposals.filter(
-    (p) => p.status === "DRAFT"
+    (p) => getProposalStatus(p) === "DRAFT"
   ).length;
 
   // Filter configuration
@@ -121,7 +124,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
       label: "Status",
       type: "status",
       options: [
-        { value: "DEPLOYED", label: "Active", count: allActiveProposals },
+        { value: "ACTIVE", label: "Active", count: allActiveProposals },
         { value: "PASSED", label: "Passed", count: allPassedProposals },
         { value: "FAILED", label: "Failed", count: allFailedProposals },
         { value: "DRAFT", label: "Draft", count: allDraftProposals },
@@ -169,7 +172,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
       // Status filter (multiselect - if nothing selected, show all)
       if (Array.isArray(filterState.status) && filterState.status.length > 0) {
-        const proposalStatus = proposal.passed ? "PASSED" : proposal.status;
+        const proposalStatus = getProposalStatus(proposal);
         if (!filterState.status.includes(proposalStatus)) {
           return false;
         }
@@ -221,16 +224,16 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     currentPage * itemsPerPage
   );
 
-  // Calculate statistics for filtered proposals
+  // Calculate statistics for filtered proposals using consistent status logic
   const totalProposals = filteredAndSortedProposals.length;
   const activeProposals = filteredAndSortedProposals.filter(
-    (p) => p.status === "DEPLOYED"
+    (p) => getProposalStatus(p) === "ACTIVE"
   ).length;
   const passedProposals = filteredAndSortedProposals.filter(
-    (p) => p.passed === true
+    (p) => getProposalStatus(p) === "PASSED"
   ).length;
   const failedProposals = filteredAndSortedProposals.filter(
-    (p) => p.status === "FAILED"
+    (p) => getProposalStatus(p) === "FAILED"
   ).length;
 
   // Summary stats for sidebar

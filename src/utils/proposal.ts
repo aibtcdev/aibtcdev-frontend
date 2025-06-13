@@ -65,3 +65,82 @@ export const getTimeStatusProps = (proposal: Proposal) => {
 export const getBlockVisualProps = (value: bigint | null): number => {
   return safeNumberFromBigInt(value);
 };
+
+/**
+ * Determine the current status of a proposal based on timing windows
+ * This matches the logic used in ProposalCard component
+ * @param proposal - The proposal object
+ * @returns Status label that matches ProposalCard display
+ */
+export const getProposalStatus = (proposal: Proposal): string => {
+  // Check if proposal is in draft status first
+  if (proposal.status === "DRAFT") {
+    return "DRAFT";
+  }
+
+  // For deployed proposals, determine status based on timing windows
+  const now = Math.floor(Date.now() / 1000); // Current time in seconds
+  const voteStart = safeNumberFromBigInt(proposal.vote_start);
+  const voteEnd = safeNumberFromBigInt(proposal.vote_end);
+  const execStart = safeNumberFromBigInt(proposal.exec_start || null);
+  const execEnd = safeNumberFromBigInt(proposal.exec_end || null);
+
+  // Initial delay before voting window
+  if (now < voteStart) {
+    return "PENDING";
+  }
+
+  // Inside voting window
+  if (now >= voteStart && now < voteEnd) {
+    return "ACTIVE";
+  }
+
+  // Veto window (between vote_end and exec_start)
+  if (execStart > 0 && now >= voteEnd && now < execStart) {
+    return "VETO_PERIOD";
+  }
+
+  // Execution window (between exec_start and exec_end)
+  if (execStart > 0 && execEnd > 0 && now >= execStart && now < execEnd) {
+    return "EXECUTION_WINDOW";
+  }
+
+  // Completed (after exec_end or vote_end if no execution window)
+  const endTime = execEnd > 0 ? execEnd : voteEnd;
+  if (now >= endTime) {
+    if (proposal.passed) {
+      return "PASSED";
+    } else {
+      return "FAILED";
+    }
+  }
+
+  // Fallback
+  return "UNKNOWN";
+};
+
+/**
+ * Get user-friendly status label for display
+ * @param status - The status returned by getProposalStatus
+ * @returns Display label
+ */
+export const getStatusLabel = (status: string): string => {
+  switch (status) {
+    case "DRAFT":
+      return "Draft";
+    case "PENDING":
+      return "Pending";
+    case "ACTIVE":
+      return "Active";
+    case "VETO_PERIOD":
+      return "Veto Period";
+    case "EXECUTION_WINDOW":
+      return "Execution Window";
+    case "PASSED":
+      return "Passed";
+    case "FAILED":
+      return "Failed";
+    default:
+      return "Unknown";
+  }
+};
