@@ -4,6 +4,7 @@ interface AddressObject {
   symbol?: string;
   address: string;
   type?: string;
+  addressType?: string;
 }
 
 export function getStacksAddress(): string | null {
@@ -15,7 +16,8 @@ export function getStacksAddress(): string | null {
     const data = getLocalStorage();
     if (data?.addresses && Array.isArray(data.addresses)) {
       const stxAddressObj = data.addresses.find(
-        (addr: AddressObject) => addr.symbol === "STX"
+        // (addr: AddressObject) => addr.symbol === "STX"
+        (addr: AddressObject) => addr.addressType === "stacks"
       );
       return stxAddressObj?.address || null;
     }
