@@ -28,6 +28,7 @@ interface WalletAddress {
   symbol?: string;
   address: string;
   type?: string;
+  addressType?: string;
 }
 
 interface WalletUserData {
@@ -169,7 +170,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
       console.log("userData", userData);
       // Extract STX address from the new data structure
       const stxAddressObj = userData.addresses?.find(
-        (addr: WalletAddress) => addr.symbol === "STX"
+        (addr: WalletAddress) => addr.addressType === "stacks"
       );
       const stxAddress = stxAddressObj?.address;
 
@@ -339,11 +340,12 @@ export function getStacksAddress(): string | null {
 
   try {
     const data = getLocalStorage();
+    console.log(data);
     // Check if data has the new structure or old structure
     if (data?.addresses && Array.isArray(data.addresses)) {
       // New structure: array of address objects
       const stxAddressObj = data.addresses.find(
-        (addr: WalletAddress) => addr.symbol === "STX"
+        (addr: WalletAddress) => addr.addressType === "stacks"
       );
       return stxAddressObj?.address || null;
     } else if (data?.addresses?.stx) {
