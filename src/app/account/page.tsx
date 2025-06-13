@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
-import { AgentPromptForm } from "@/components/profile/AgentPromptForm";
+import { AgentPromptForm } from "@/components/account/AgentPromptForm";
 import { fundTestnetSBTC, fundTestnetSTX } from "@/services/tool.service";
 import {
   StxBalance,
@@ -485,7 +485,7 @@ function BalanceSummaryCard({
   );
 }
 
-export default function ProfilePage() {
+export default function AccountPage() {
   const { agentWallets, balances, fetchWallets } = useWalletStore();
   const { userId, accessToken } = useAuth();
   const { toast } = useToast();
@@ -635,7 +635,7 @@ export default function ProfilePage() {
           <User className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+          <h1 className="text-2xl font-bold text-foreground">Account</h1>
           <p className="text-sm text-muted-foreground">
             Your account and connected wallet information
           </p>

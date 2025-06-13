@@ -9,11 +9,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Profile",
-  description: "View your profile.",
+  title: "Account",
+  description: "View your account.",
 };
 
-export default function ProfileLayout({
+export default function AccountLayout({
   children,
 }: {
   children: React.ReactNode;

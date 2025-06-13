@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  Users,
   Boxes,
   Menu,
   X,
@@ -14,6 +13,7 @@ import {
   Bitcoin,
   ChevronDown,
   LogOut,
+  User,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ const navigation = [
   { id: "daos", name: "DAOs", href: "/daos", icon: Boxes },
   { id: "proposals", name: "Proposals", href: "/proposals", icon: FileText },
   { id: "votes", name: "Voting", href: "/votes", icon: Vote },
-  { id: "profile", name: "Agent", href: "/profile", icon: Users },
+  { id: "account", name: "Account", href: "/account", icon: User },
 ];
 
 export default function ApplicationLayout({
@@ -63,8 +63,8 @@ export default function ApplicationLayout({
 
   // Handle navigation to protected routes
   const handleNavigation = async (href: string, e: React.MouseEvent) => {
-    // Only intercept navigation to protected pages (profile and votes)
-    if (href === "/profile" || href === "/votes") {
+    // Only intercept navigation to protected pages (account and votes)
+    if (href === "/account" || href === "/votes") {
       e.preventDefault();
 
       if (!isAuthenticated) {
@@ -431,7 +431,7 @@ export default function ApplicationLayout({
       <AuthModal
         isOpen={showAuthModal}
         onClose={closeAuthModal}
-        redirectUrl={pathname === "/votes" ? "/votes" : "/profile"}
+        redirectUrl={pathname === "/votes" ? "/votes" : "/account"}
       />
     </div>
   );
