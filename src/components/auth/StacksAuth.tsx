@@ -21,6 +21,24 @@ import {
 import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
 import { runAutoInit } from "@/lib/auto-init";
+import { getLocalStorage } from "@stacks/connect";
+
+// Define proper interface for wallet user data
+interface WalletAddress {
+  symbol?: string;
+  address: string;
+  type?: string;
+}
+
+interface WalletUserData {
+  addresses: WalletAddress[];
+  profile?: {
+    stxAddress?: {
+      mainnet?: string;
+      testnet?: string;
+    };
+  };
+}
 
 // Dynamically import StacksProvider component
 const StacksProvider = dynamic(
@@ -35,8 +53,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<WalletUserData | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -149,7 +166,16 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
     setShowTerms(false);
 
     try {
-      const stxAddress = userData.profile.stxAddress.mainnet;
+      console.log("userData", userData);
+      // Extract STX address from the new data structure
+      const stxAddressObj = userData.addresses?.find(
+        (addr: WalletAddress) => addr.symbol === "STX"
+      );
+      const stxAddress = stxAddressObj?.address;
+
+      if (!stxAddress) {
+        throw new Error("No STX address found in wallet data");
+      }
 
       // Request signature
       toast({
@@ -171,9 +197,13 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         } = await supabase.auth.getUser();
         const userId = user?.id;
 
-        // 2️⃣ grab both addresses from the wallet session
-        const mainnetAddr = userData.profile.stxAddress.mainnet;
-        const testnetAddr = userData.profile.stxAddress.testnet;
+        // 2️⃣ grab addresses from the new wallet session structure
+        // For now, we'll use the same address for both mainnet and testnet
+        // since the new API only returns current network's address
+        const currentAddress = stxAddress;
+        const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+        const mainnetAddr = isMainnet ? currentAddress : "";
+        const testnetAddr = !isMainnet ? currentAddress : "";
 
         // 3️⃣ patch the profile table (creates row if missing)
         if (userId) {
@@ -307,16 +337,25 @@ export function getStacksAddress(): string | null {
     return null;
   }
 
-  const blockstackSession = JSON.parse(
-    localStorage.getItem("blockstack-session") || "{}"
-  );
-
-  const address =
-    process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
-      ? blockstackSession.userData?.profile?.stxAddress?.mainnet
-      : blockstackSession.userData?.profile?.stxAddress?.testnet;
-
-  return address || null;
+  try {
+    const data = getLocalStorage();
+    // Check if data has the new structure or old structure
+    if (data?.addresses && Array.isArray(data.addresses)) {
+      // New structure: array of address objects
+      const stxAddressObj = data.addresses.find(
+        (addr: WalletAddress) => addr.symbol === "STX"
+      );
+      return stxAddressObj?.address || null;
+    } else if (data?.addresses?.stx) {
+      // Old structure: addresses.stx array
+      const stxAddresses = data.addresses.stx;
+      return stxAddresses.length > 0 ? stxAddresses[0].address : null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting Stacks address from local storage:", error);
+    return null;
+  }
 }
 
 async function ensureProfileHasStacksAddresses(

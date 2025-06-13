@@ -1,59 +1,56 @@
+import { getLocalStorage } from "@stacks/connect";
+
+interface AddressObject {
+  symbol?: string;
+  address: string;
+  type?: string;
+}
+
 export function getStacksAddress(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const blockstackSession = JSON.parse(
-    localStorage.getItem("blockstack-session") || "{}"
-  );
-
-  const address =
-    process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
-      ? blockstackSession.userData?.profile?.stxAddress?.mainnet
-      : blockstackSession.userData?.profile?.stxAddress?.testnet;
-
-  return address || null;
+  try {
+    const data = getLocalStorage();
+    if (data?.addresses && Array.isArray(data.addresses)) {
+      const stxAddressObj = data.addresses.find(
+        (addr: AddressObject) => addr.symbol === "STX"
+      );
+      return stxAddressObj?.address || null;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error getting Stacks address from local storage:", error);
+    return null;
+  }
 }
 
-export function getBitcoinAddress(
-  network: "mainnet" | "testnet" = "mainnet"
-): string | null {
+export function getBitcoinAddress(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const blockstackSession = JSON.parse(
-    localStorage.getItem("blockstack-session") || "{}"
-  );
-  const btcAddress = blockstackSession.userData?.profile?.btcAddress;
-
-  if (!btcAddress) {
-    // Check if there's a stored address in localStorage as fallback
-    const storedBtcAddress = localStorage.getItem("btcAddress");
-    return storedBtcAddress || null;
-  }
-
-  // Handle Leather wallet's structured address format
-  if (typeof btcAddress === "object") {
-    // Leather wallet stores addresses in a structured object
-    if (network === "mainnet") {
-      // Try p2wpkh (segwit) first, then p2tr (taproot), then p2pkh (legacy)
-      return (
-        btcAddress.p2wpkh?.mainnet ||
-        btcAddress.p2tr?.mainnet ||
-        btcAddress.p2pkh?.mainnet ||
-        null
+  try {
+    const data = getLocalStorage();
+    if (data?.addresses && Array.isArray(data.addresses)) {
+      const btcAddresses = data.addresses.filter(
+        (addr: AddressObject) => addr.symbol === "BTC"
       );
-    } else {
-      // For testnet, try the same address types but for testnet
-      return (
-        btcAddress.p2wpkh?.testnet ||
-        btcAddress.p2tr?.testnet ||
-        btcAddress.p2pkh?.testnet ||
-        null
-      );
+
+      if (btcAddresses.length === 0) return null;
+
+      // Prefer p2wpkh (segwit) first, then p2tr (taproot), then any BTC address
+      const preferredAddress =
+        btcAddresses.find((addr: AddressObject) => addr.type === "p2wpkh") ||
+        btcAddresses.find((addr: AddressObject) => addr.type === "p2tr") ||
+        btcAddresses[0];
+
+      return preferredAddress?.address || null;
     }
+    return null;
+  } catch (error) {
+    console.error("Error getting Bitcoin address:", error);
+    return null;
   }
-
-  return typeof btcAddress === "string" ? btcAddress : null;
 }
