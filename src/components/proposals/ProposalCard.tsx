@@ -13,12 +13,11 @@ import {
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
-import { safeNumberFromBigInt } from "@/utils/proposal";
+import { getProposalStatus } from "@/utils/proposal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
-import { useVotingStatus } from "./TimeStatus";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -33,50 +32,53 @@ export default function ProposalCard({
 }: ProposalCardProps) {
   const router = useRouter();
 
-  // Use the same status logic as ProposalDetails
-  const { isActive, isEnded, isLoading } = useVotingStatus(
-    proposal.status,
-    safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end)
-  );
+  // Use the same status logic as AllProposals - consistent status calculation
+  const proposalStatus = getProposalStatus(proposal);
 
   // Memoize status configuration to prevent recalculation
   const statusConfig = useMemo(() => {
-    // Check if proposal is in draft status first
-    if (proposal.status === "DRAFT") {
-      return {
-        icon: AlertCircle,
-        color: "text-gray-500",
-        bg: "bg-gray-500/10",
-        border: "border-gray-500/20",
-        label: "Draft",
-      };
-    }
-
-    // Handle loading state
-    if (isLoading) {
-      return {
-        icon: Clock,
-        color: "text-muted-foreground",
-        bg: "bg-muted/10",
-        border: "border-muted/20",
-        label: "Loading",
-      };
-    }
-
-    // For deployed proposals, determine status based on voting status
-    if (isActive) {
-      return {
-        icon: BarChart3,
-        color: "text-primary",
-        bg: "bg-primary/10",
-        border: "border-primary/20",
-        label: "Active",
-      };
-    }
-
-    if (isEnded) {
-      if (proposal.passed) {
+    switch (proposalStatus) {
+      case "DRAFT":
+        return {
+          icon: AlertCircle,
+          color: "text-gray-500",
+          bg: "bg-gray-500/10",
+          border: "border-gray-500/20",
+          label: "Draft",
+        };
+      case "PENDING":
+        return {
+          icon: Clock,
+          color: "text-blue-500",
+          bg: "bg-blue-500/10",
+          border: "border-blue-500/20",
+          label: "Pending",
+        };
+      case "ACTIVE":
+        return {
+          icon: BarChart3,
+          color: "text-primary",
+          bg: "bg-primary/10",
+          border: "border-primary/20",
+          label: "Active",
+        };
+      case "VETO_PERIOD":
+        return {
+          icon: Clock,
+          color: "text-orange-500",
+          bg: "bg-orange-500/10",
+          border: "border-orange-500/20",
+          label: "Veto Period",
+        };
+      case "EXECUTION_WINDOW":
+        return {
+          icon: Clock,
+          color: "text-purple-500",
+          bg: "bg-purple-500/10",
+          border: "border-purple-500/20",
+          label: "Execution Window",
+        };
+      case "PASSED":
         return {
           icon: CheckCircle,
           color: "text-green-500",
@@ -84,7 +86,7 @@ export default function ProposalCard({
           border: "border-green-500/20",
           label: "Passed",
         };
-      } else {
+      case "FAILED":
         return {
           icon: XCircle,
           color: "text-red-500",
@@ -92,18 +94,16 @@ export default function ProposalCard({
           border: "border-red-500/20",
           label: "Failed",
         };
-      }
+      default:
+        return {
+          icon: AlertCircle,
+          color: "text-muted-foreground",
+          bg: "bg-muted/10",
+          border: "border-muted/20",
+          label: "Unknown",
+        };
     }
-
-    // Not started yet (pending)
-    return {
-      icon: Clock,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/20",
-      label: "Pending",
-    };
-  }, [proposal.status, proposal.passed, isActive, isEnded, isLoading]);
+  }, [proposalStatus]);
 
   const StatusIcon = statusConfig.icon;
 
