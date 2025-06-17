@@ -9,7 +9,7 @@ interface DefaultPrompts {
 interface PromptEditorProps {
   defaultPrompts?: DefaultPrompts;
   promptsLoading: boolean;
-  promptsError: any;
+  promptsError: Error | null;
   onSubmit: (systemPrompt: string, userPrompt: string) => void;
   isSubmitting: boolean;
   submitError: string | null;

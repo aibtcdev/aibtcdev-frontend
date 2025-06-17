@@ -55,7 +55,6 @@ interface EvaluationResultsProps {
 export default function EvaluationResults({
   result,
   isSubmitting,
-  proposal,
 }: EvaluationResultsProps) {
   if (isSubmitting) {
     return (

@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllProposals } from "@/services/dao.service";
 import { fetchDefaultPrompts, evaluateProposal } from "@/services/tool.service";
-import type { DefaultPrompts, EvaluationResult } from "@/services/tool.service";
+import type { EvaluationResult } from "@/services/tool.service";
 import { supabase } from "@/services/supabase";
 import { Loader } from "@/components/reusables/Loader";
 import { AlertCircle } from "lucide-react";
@@ -54,7 +54,12 @@ export default function ProposalEvaluationPage() {
     error: promptsError,
   } = useQuery({
     queryKey: ["defaultPrompts"],
-    queryFn: () => fetchDefaultPrompts(authSession?.access_token!),
+    queryFn: () => {
+      if (!authSession?.access_token) {
+        throw new Error("Access token is required");
+      }
+      return fetchDefaultPrompts(authSession.access_token);
+    },
     enabled: !!authSession?.access_token,
     staleTime: 300000, // Cache for 5 minutes
   });
