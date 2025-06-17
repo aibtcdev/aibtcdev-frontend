@@ -337,3 +337,117 @@ export function isProposalRecommendationError(
 ): result is ProposalRecommendationError {
   return "error" in result;
 }
+
+/**
+ * Fetch default prompts for proposal evaluation
+ *
+ * @param accessToken - User's access token
+ * @returns Promise resolving to DefaultPrompts
+ */
+export async function fetchDefaultPrompts(
+  accessToken: string
+): Promise<DefaultPrompts> {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/tools/evaluation/default_prompts`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch default prompts: ${response.status}`);
+    }
+
+    return (await response.json()) as DefaultPrompts;
+  } catch (error) {
+    console.error("Failed to fetch default prompts:", error);
+    throw new Error("Failed to fetch default prompts");
+  }
+}
+
+/**
+ * Evaluate a proposal using comprehensive AI analysis
+ *
+ * @param accessToken - User's access token
+ * @param request - Evaluation request parameters
+ * @returns Promise resolving to EvaluationResult
+ */
+export async function evaluateProposal(
+  accessToken: string,
+  request: {
+    proposal_id: string;
+    dao_id: string;
+    custom_system_prompt: string;
+    custom_user_prompt: string;
+    config: {
+      model_name: string;
+      temperature: number;
+      approval_threshold: number;
+    };
+  }
+): Promise<EvaluationResult> {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/tools/evaluation/comprehensive`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Server error: ${response.status}`);
+    }
+
+    return (await response.json()) as EvaluationResult;
+  } catch (error) {
+    console.error("Evaluation error:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to evaluate proposal"
+    );
+  }
+}
+
+// Type definitions for evaluation services
+export interface DefaultPrompts {
+  system_prompt: string;
+  user_prompt_template: string;
+}
+
+export interface EvaluationResult {
+  proposal_id: string;
+  approve: boolean;
+  overall_score: number;
+  reasoning: string;
+  scores: {
+    core: number;
+    historical: number;
+    financial: number;
+    social: number;
+    final: number;
+  };
+  flags: string[];
+  summaries: {
+    core_score: string;
+    financial_score: string;
+    historical_score: string;
+    social_score: string;
+  };
+  token_usage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+  };
+  model_name: string;
+  workflow_step: string;
+  images_processed: number;
+  evaluation_type: string;
+}

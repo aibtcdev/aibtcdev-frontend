@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # Recommended Folder Structure for Next.js 14
 
-Next.js 14 leverages the App Router for routing and encourages a modular folder structure to enhance project organization, scalability, and maintainability. The official documentation ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)) and community resources provide flexible strategies for structuring projects. This document outlines a recommended folder structure and detailed rules for each folder, synthesized from authoritative sources, including the official Next.js documentation, GeeksforGeeks, and scalable boilerplates.
+Next.js 15 leverages the App Router for routing and encourages a modular folder structure to enhance project organization, scalability, and maintainability. The official documentation ([Next.js Project Structure](mdc:https:/nextjs.org/docs/app/getting-started/project-structure)) and community resources provide flexible strategies for structuring projects. This document outlines a recommended folder structure and detailed rules for each folder, synthesized from authoritative sources, including the official Next.js documentation, GeeksforGeeks, and scalable boilerplates.
 
 ## Folder Structure Overview
 
