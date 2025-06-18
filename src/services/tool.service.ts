@@ -422,32 +422,26 @@ export interface DefaultPrompts {
   user_prompt_template: string;
 }
 
+export interface EvaluationCategory {
+  category: string;
+  score: number;
+  weight: number;
+  reasoning: string[];
+}
+
 export interface EvaluationResult {
   proposal_id: string;
-  approve: boolean;
-  overall_score: number;
-  reasoning: string;
-  scores: {
-    core: number;
-    historical: number;
-    financial: number;
-    social: number;
-    final: number;
-  };
+  categories: EvaluationCategory[];
+  final_score: number;
+  decision: boolean;
+  explanation: string;
   flags: string[];
-  summaries: {
-    core_score: string;
-    financial_score: string;
-    historical_score: string;
-    social_score: string;
-  };
+  summary: string;
   token_usage: {
     input_tokens: number;
     output_tokens: number;
     total_tokens: number;
+    model_name: string;
   };
-  model_name: string;
-  workflow_step: string;
   images_processed: number;
-  evaluation_type: string;
 }

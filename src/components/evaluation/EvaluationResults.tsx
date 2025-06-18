@@ -16,34 +16,28 @@ import {
 } from "lucide-react";
 import type { ProposalWithDAO } from "@/types";
 
+interface EvaluationCategory {
+  category: string;
+  score: number;
+  weight: number;
+  reasoning: string[];
+}
+
 interface EvaluationResult {
   proposal_id: string;
-  approve: boolean;
-  overall_score: number;
-  reasoning: string;
-  scores: {
-    core: number;
-    historical: number;
-    financial: number;
-    social: number;
-    final: number;
-  };
+  categories: EvaluationCategory[];
+  final_score: number;
+  decision: boolean;
+  explanation: string;
   flags: string[];
-  summaries: {
-    core_score: string;
-    financial_score: string;
-    historical_score: string;
-    social_score: string;
-  };
+  summary: string;
   token_usage: {
     input_tokens: number;
     output_tokens: number;
     total_tokens: number;
+    model_name: string;
   };
-  model_name: string;
-  workflow_step: string;
   images_processed: number;
-  evaluation_type: string;
 }
 
 interface EvaluationResultsProps {
@@ -101,32 +95,24 @@ export default function EvaluationResults({
     return XCircle;
   };
 
-  const scoreItems = [
-    {
-      key: "core",
-      label: "Core Analysis",
-      icon: Brain,
-      summary: result.summaries.core_score,
-    },
-    {
-      key: "financial",
-      label: "Financial Impact",
-      icon: DollarSign,
-      summary: result.summaries.financial_score,
-    },
-    {
-      key: "historical",
-      label: "Historical Context",
-      icon: History,
-      summary: result.summaries.historical_score,
-    },
-    {
-      key: "social",
-      label: "Social Dynamics",
-      icon: Users,
-      summary: result.summaries.social_score,
-    },
-  ];
+  const getCategoryIcon = (category: string) => {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes("core") || lowerCategory.includes("context"))
+      return Brain;
+    if (
+      lowerCategory.includes("financial") ||
+      lowerCategory.includes("finance")
+    )
+      return DollarSign;
+    if (
+      lowerCategory.includes("historical") ||
+      lowerCategory.includes("history")
+    )
+      return History;
+    if (lowerCategory.includes("social") || lowerCategory.includes("community"))
+      return Users;
+    return FileText; // Default icon
+  };
 
   return (
     <div className="space-y-6">
@@ -134,95 +120,123 @@ export default function EvaluationResults({
       <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            {result.approve ? (
+            {result.decision ? (
               <CheckCircle2 className="h-8 w-8 text-green-500" />
             ) : (
               <XCircle className="h-8 w-8 text-red-500" />
             )}
             <div>
               <h2 className="text-2xl font-bold text-foreground">
-                {result.approve ? "Approved" : "Rejected"}
+                {result.decision ? "Approved" : "Rejected"}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Overall Score: {result.overall_score}/100
+                Final Score: {result.final_score}/100
               </p>
             </div>
           </div>
           <div className="text-right">
             <div
-              className={`text-3xl font-bold ${getScoreColor(result.overall_score)}`}
+              className={`text-3xl font-bold ${getScoreColor(result.final_score)}`}
             >
-              {result.overall_score}
+              {result.final_score}
             </div>
             <div className="text-xs text-muted-foreground">
-              {result.model_name}
+              {result.token_usage.model_name}
             </div>
           </div>
         </div>
 
-        {/* Overall Reasoning */}
+        {/* Overall Assessment */}
         <div className="bg-background/50 rounded-lg p-4">
           <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Overall Assessment
           </h3>
           <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-            {result.reasoning}
+            {result.explanation}
           </p>
         </div>
       </div>
 
-      {/* Detailed Scores */}
+      {/* Summary */}
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Info className="h-5 w-5" />
+          Executive Summary
+        </h3>
+        <div className="bg-background/50 rounded-lg p-4">
+          <p className="text-sm text-foreground leading-relaxed">
+            {result.summary}
+          </p>
+        </div>
+      </div>
+
+      {/* Detailed Category Scores */}
       <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
-          Detailed Analysis
+          Detailed Analysis by Category
         </h3>
 
         <div className="space-y-4">
-          {scoreItems.map((item) => {
-            const score = result.scores[item.key as keyof typeof result.scores];
-            const ScoreIcon = getScoreIcon(score);
-            const ItemIcon = item.icon;
+          {result.categories.map((category, index) => {
+            const ScoreIcon = getScoreIcon(category.score);
+            const CategoryIcon = getCategoryIcon(category.category);
 
             return (
               <div
-                key={item.key}
+                key={index}
                 className="border border-border/20 rounded-lg p-4"
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <ItemIcon className="h-4 w-4 text-muted-foreground" />
+                    <CategoryIcon className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-foreground">
-                      {item.label}
+                      {category.category}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      (Weight: {(category.weight * 100).toFixed(0)}%)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <ScoreIcon className={`h-4 w-4 ${getScoreColor(score)}`} />
-                    <span className={`font-bold ${getScoreColor(score)}`}>
-                      {score}/100
+                    <ScoreIcon
+                      className={`h-4 w-4 ${getScoreColor(category.score)}`}
+                    />
+                    <span
+                      className={`font-bold ${getScoreColor(category.score)}`}
+                    >
+                      {category.score}/100
                     </span>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-muted/30 rounded-full h-2 mb-2">
+                <div className="w-full bg-muted/30 rounded-full h-2 mb-3">
                   <div
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      score >= 80
+                      category.score >= 80
                         ? "bg-green-500"
-                        : score >= 60
+                        : category.score >= 60
                           ? "bg-yellow-500"
                           : "bg-red-500"
                     }`}
-                    style={{ width: `${score}%` }}
+                    style={{ width: `${category.score}%` }}
                   />
                 </div>
 
-                {/* Summary */}
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {item.summary}
-                </p>
+                {/* Category Reasoning */}
+                <div className="space-y-2">
+                  {category.reasoning.map((reason, reasonIndex) => (
+                    <div
+                      key={reasonIndex}
+                      className="bg-background/30 rounded p-3"
+                    >
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {reason}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })}
@@ -258,31 +272,31 @@ export default function EvaluationResults({
         </h3>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Type:</span>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Images Processed:</span>
             <span className="text-foreground font-medium">
-              {result.evaluation_type.replace(/_/g, " ").toUpperCase()}
+              {result.images_processed}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Tokens:</span>
+            <span className="text-muted-foreground">Total Tokens:</span>
             <span className="text-foreground font-medium">
               {result.token_usage.total_tokens.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Step:</span>
+            <Brain className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Input Tokens:</span>
             <span className="text-foreground font-medium">
-              {result.workflow_step.replace(/_/g, " ")}
+              {result.token_usage.input_tokens.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Brain className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Model:</span>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Output Tokens:</span>
             <span className="text-foreground font-medium">
-              {result.model_name}
+              {result.token_usage.output_tokens.toLocaleString()}
             </span>
           </div>
         </div>
