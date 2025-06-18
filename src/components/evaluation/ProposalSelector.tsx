@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FileText } from "lucide-react";
 import type { ProposalWithDAO } from "@/types";
 
 interface ProposalSelectorProps {
@@ -20,22 +20,23 @@ export default function ProposalSelector({
   };
 
   return (
-    <div className="space-y-3">
-      <label
-        htmlFor="proposal-select"
-        className="block text-lg font-semibold text-foreground"
+    <div className="flex items-center gap-2">
+      <div
+        className="flex items-center gap-1 text-muted-foreground"
+        title="Select Proposal"
       >
-        Select Proposal
-      </label>
-      <div className="relative">
+        <FileText className="h-4 w-4" />
+      </div>
+      <div className="relative flex-1">
         <select
           id="proposal-select"
           value={selectedProposalId}
           onChange={(e) => handleProposalSelect(e.target.value)}
-          className="w-full p-3 pr-10 text-base bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 appearance-none cursor-pointer hover:border-border/60 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-3 py-2 text-sm bg-background/50 border border-border/50 rounded-md focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 appearance-none cursor-pointer hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={disabled}
+          title="Choose a proposal to evaluate"
         >
-          <option value="">Choose a proposal to evaluate...</option>
+          <option value="">Choose proposal...</option>
           {proposals.map((proposal) => (
             <option key={proposal.id} value={proposal.id}>
               {proposal.proposal_id ? `#${proposal.proposal_id}: ` : ""}
@@ -43,7 +44,7 @@ export default function ProposalSelector({
             </option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       </div>
       {proposals.length === 0 && (
         <p className="text-sm text-muted-foreground">
