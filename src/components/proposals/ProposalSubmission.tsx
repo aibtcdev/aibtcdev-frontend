@@ -408,6 +408,12 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
 
   const hasAccessToken = !!accessToken && !isSessionLoading;
 
+  // Parse the backend output for inner success and message
+  const parsedApiResponse = apiResponse
+    ? parseOutput(apiResponse.output)
+    : null;
+  const isInnerSuccess = apiResponse?.success && parsedApiResponse?.success;
+
   return (
     <>
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-l-4 border-primary rounded-2xl p-6">
@@ -551,7 +557,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
         }}
       >
         <DialogContent className="sm:max-w-2xl">
-          {apiResponse?.success ? (
+          {isInnerSuccess ? (
             <>
               {(() => {
                 const parsed = parseOutput(apiResponse.output);
@@ -779,13 +785,24 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               </DialogHeader>
 
               <div className="mt-8 space-y-4">
-                {apiResponse?.error && (
+                {parsedApiResponse?.message ? (
                   <div className="bg-background/50 border border-border/50 rounded-xl p-4">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Error: </span>
-                      <span className="font-medium">{apiResponse.error}</span>
+                      <span className="font-medium">
+                        {parsedApiResponse.message}
+                      </span>
                     </div>
                   </div>
+                ) : (
+                  apiResponse?.error && (
+                    <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Error: </span>
+                        <span className="font-medium">{apiResponse.error}</span>
+                      </div>
+                    </div>
+                  )
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
