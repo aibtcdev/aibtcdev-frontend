@@ -19,14 +19,14 @@ export default function ProposalDisplay({
     const isCompleted = isPassed || isFailed;
 
     return (
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">
           Proposal Details
         </h2>
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-6 space-y-4">
+        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4 space-y-3">
           {/* Title */}
           <div>
-            <h3 className="text-xl font-bold text-foreground mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-1">
               {proposal.proposal_id
                 ? `#${proposal.proposal_id}: ${proposal.title}`
                 : proposal.title}
@@ -34,15 +34,15 @@ export default function ProposalDisplay({
 
             {/* Status Badge */}
             {isCompleted && (
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 {isPassed ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-green-500/10 border border-green-500/20 text-green-500">
-                    <CheckCircle className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-500">
+                    <CheckCircle className="h-3 w-3" />
                     Passed
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-red-500/10 border border-red-500/20 text-red-500">
-                    <XCircle className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-500">
+                    <XCircle className="h-3 w-3" />
                     Failed
                   </div>
                 )}
@@ -53,10 +53,10 @@ export default function ProposalDisplay({
           {/* Summary */}
           {proposal.summary && (
             <div>
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Summary
               </h4>
-              <p className="text-foreground text-base leading-relaxed">
+              <p className="text-foreground text-sm leading-relaxed">
                 {proposal.summary}
               </p>
             </div>
@@ -65,11 +65,11 @@ export default function ProposalDisplay({
           {/* Content */}
           {proposal.content && (
             <div>
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Content
               </h4>
-              <div className="bg-muted/20 border border-muted/30 rounded-lg p-4">
-                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono leading-relaxed">
+              <div className="bg-muted/20 border border-muted/30 rounded-lg p-3">
+                <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
                   {proposal.content}
                 </pre>
               </div>
@@ -78,8 +78,8 @@ export default function ProposalDisplay({
 
           {/* DAO Info */}
           {proposal.daos?.name && (
-            <div className="pt-4 border-t border-border/30">
-              <p className="text-sm text-muted-foreground">
+            <div className="pt-2 border-t border-border/30">
+              <p className="text-xs text-muted-foreground">
                 <span className="font-medium">DAO:</span> {proposal.daos.name}
               </p>
             </div>
@@ -91,8 +91,8 @@ export default function ProposalDisplay({
 
   if (selectedProposalId === "") {
     return (
-      <div className="bg-muted/20 border border-muted/30 rounded-xl p-8 text-center">
-        <p className="text-muted-foreground text-base">
+      <div className="bg-muted/20 border border-muted/30 rounded-xl p-6 text-center">
+        <p className="text-muted-foreground text-sm">
           Please select a proposal to view its details
         </p>
       </div>
