@@ -1,38 +1,18 @@
-import { getLocalStorage } from "@stacks/connect";
+import { getLocalStorage, StorageData } from "@stacks/connect";
 
-interface AddressObject {
+interface AddressEntry {
   symbol?: string;
   address: string;
+  publicKey: string;
+}
+
+interface AddressObject extends Omit<AddressEntry, "publicKey"> {
   type?: string;
-  addressType?: string;
-  purpose?: string;
-  walletType?: string;
-  publicKey?: string;
   tweakedPublicKey?: string;
   derivationPath?: string;
-}
-
-interface LeatherStorage {
-  STX_PROVIDER: "LeatherProvider";
-  addresses: AddressObject[];
-}
-
-interface XverseStorage {
-  STX_PROVIDER: "XverseProviders.BitcoinProvider";
-  addresses: {
-    stx: AddressObject[];
-    btc: AddressObject[];
-  };
-}
-
-type LocalStoragePayload = LeatherStorage | XverseStorage;
-
-function isLeatherStorage(data: LocalStoragePayload): data is LeatherStorage {
-  return data.STX_PROVIDER === "LeatherProvider";
-}
-
-function isXverseStorage(data: LocalStoragePayload): data is XverseStorage {
-  return data.STX_PROVIDER === "XverseProviders.BitcoinProvider";
+  purpose?: string;
+  addressType?: string;
+  walletType?: string;
 }
 
 export function getStacksAddress(): string | null {
@@ -41,23 +21,12 @@ export function getStacksAddress(): string | null {
   }
 
   try {
-    const data = getLocalStorage() as LocalStoragePayload | null;
+    const data = getLocalStorage() as StorageData | null;
     if (!data) {
       return null;
     }
-
-    let stxAddressObj: AddressObject | undefined;
-
-    // LeatherProvider returns a flat addresses array
-    if (isLeatherStorage(data)) {
-      stxAddressObj = data.addresses.find((addr) => addr.symbol === "STX");
-    } else if (isXverseStorage(data)) {
-      stxAddressObj = data.addresses.stx.find(
-        (addr) => addr.addressType === "stacks" || addr.symbol === "STX"
-      );
-    }
-
-    return stxAddressObj?.address || null;
+    const stxList = data.addresses.stx as AddressObject[];
+    return stxList[0]?.address || null;
   } catch (error) {
     console.error("Error getting Stacks address from local storage:", error);
     return null;
@@ -70,29 +39,18 @@ export function getBitcoinAddress(): string | null {
   }
 
   try {
-    const data = getLocalStorage() as LocalStoragePayload | null;
+    const data = getLocalStorage() as StorageData | null;
     if (!data) {
       return null;
     }
-
-    let btcList: AddressObject[] = [];
-
-    // LeatherProvider returns a flat addresses array
-    if (isLeatherStorage(data)) {
-      btcList = data.addresses.filter((addr) => addr.symbol === "BTC");
-    } else if (isXverseStorage(data)) {
-      btcList = data.addresses.btc;
-    }
-
+    const btcList = data.addresses.btc as AddressObject[];
     if (btcList.length === 0) return null;
-
-    // Prefer p2wpkh (segwit) first, then p2tr (taproot), then any BTC address
+    // Prefer segwit then taproot
     const preferred =
       btcList.find((addr) => addr.type === "p2wpkh") ||
       btcList.find((addr) => addr.type === "p2tr") ||
       btcList[0];
-
-    return preferred?.address || null;
+    return preferred.address;
   } catch (error) {
     console.error("Error getting Bitcoin address:", error);
     return null;
