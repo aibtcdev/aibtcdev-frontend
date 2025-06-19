@@ -567,19 +567,6 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <User className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Account</h1>
-          <p className="text-sm text-muted-foreground">
-            Your account and connected wallet information
-          </p>
-        </div>
-      </div>
-
       {/* Connected Accounts Section */}
       <Card className="bg-card border border-border">
         <CardHeader className="pb-3">

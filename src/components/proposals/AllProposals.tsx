@@ -11,7 +11,7 @@ import {
 } from "@/components/reusables/FilterSidebar";
 import { Pagination } from "@/components/reusables/Pagination";
 import type { ProposalWithDAO } from "@/types";
-import { FileText, Filter, X, Vote } from "lucide-react";
+import { FileText, Filter, X } from "lucide-react";
 import { useTokens } from "@/hooks/useTokens";
 import { getProposalStatus } from "@/utils/proposal";
 
@@ -205,22 +205,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[2400px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Compact Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Vote className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Governance Proposals
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Explore and participate in DAO governance decisions
-            </p>
-          </div>
-        </div>
-
+      <div className="max-w-[2400px] mx-auto px-2 sm:px-4 sm:py-6">
         {/* Filter Toggle for Mobile */}
         <div className="lg:hidden flex justify-between items-center">
           <div className="space-y-1 min-w-0 flex-1">
@@ -294,8 +279,6 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
-            {/* Content Section Header */}
-
             {/* Proposals List */}
             <div ref={proposalsRef} className="space-y-4">
               {paginatedProposals.length === 0 ? (

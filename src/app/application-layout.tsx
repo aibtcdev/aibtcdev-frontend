@@ -13,6 +13,7 @@ import {
   ChevronDown,
   LogOut,
   User,
+  Wallet,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,6 @@ const navigation = [
   { id: "daos", name: "DAOs", href: "/daos", icon: Boxes },
   { id: "proposals", name: "Proposals", href: "/proposals", icon: FileText },
   { id: "votes", name: "Voting", href: "/votes", icon: Vote },
-  { id: "account", name: "Account", href: "/account", icon: User },
 ];
 
 export default function ApplicationLayout({
@@ -73,6 +73,8 @@ export default function ApplicationLayout({
         // Navigate to the page if authenticated
         router.push(href);
       }
+    } else {
+      router.push(href);
     }
   };
 
@@ -251,34 +253,56 @@ export default function ApplicationLayout({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                   aria-label="Bitcoin balance dropdown menu"
                 >
-                  <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
-                    <DisplayBtc />
-                  </div>
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-primary/70 transition-transform duration-200 ease-in-out" />
+                  <DisplayBtc />
+                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-primary/70 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="center"
-                className="w-56 sm:w-64 p-2 bg-background border border-border/20 rounded-xl shadow-lg"
+                className="w-64 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
               >
                 <div className="px-3 py-2 border-b border-border/20">
-                  <div className="text-xs sm:text-sm font-inter font-medium text-muted-foreground">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    Total Agent Balance
+                  </div>
+                  <div className="text-lg font-bold text-foreground">
+                    <DisplayBtc />
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem
+                  onClick={(e) => handleNavigation("/account", e)}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => handleNavigation("/deposit", e)}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <Wallet className="h-4 w-4" />
+                  <span>Deposit</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <div className="px-3 py-2 border-y border-border/20">
+                  <div className="text-xs font-medium text-muted-foreground">
                     Network Status
                   </div>
                   <div className="mt-1">
                     <NetworkIndicator />
                   </div>
                 </div>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={handleSignOut}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out"
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign out
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

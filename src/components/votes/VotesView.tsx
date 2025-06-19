@@ -600,7 +600,7 @@ export function VotesView({ votes }: VotesViewProps) {
 
     return (
       <aside className="hidden md:block">
-        <h2 className="text-lg font-semibold mb-4 pl-2">Navigation</h2>
+        <h2 className="text-lg font-semibold mb-4 pl-2">Filters</h2>
         <TooltipProvider>
           <nav className="flex flex-col space-y-1">
             {tabs.map((tab) => {
@@ -661,27 +661,7 @@ export function VotesView({ votes }: VotesViewProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[2400px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        {/* Compact Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Vote className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Voting Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Track your governance participation
-              {chainState?.bitcoin_block_height && (
-                <span className="ml-2 text-primary">
-                  • Block {chainState.bitcoin_block_height}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
+      <div className="max-w-[2400px] mx-auto px-2 sm:px-4">
         <div className="md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 mt-6">
           {renderSidebar()}
           <main>

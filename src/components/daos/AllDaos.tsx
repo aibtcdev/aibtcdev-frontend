@@ -1,24 +1,11 @@
 "use client";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import {
-  Search,
-  BarChart3,
-  Grid3X3,
-  List,
-  Filter,
-  Keyboard,
-} from "lucide-react";
+import { Search, Grid3X3, List, Filter } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/reusables/Pagination";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -437,75 +424,6 @@ export default function AllDaos() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-[2400px]">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                AI DAOs
-              </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Discover and participate in autonomous organizations powered by
-                artificial intelligence
-              </p>
-            </div>
-          </div>
-
-          {/* Keyboard shortcuts tooltip */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Keyboard className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="max-w-xs">
-                <div className="space-y-2 text-xs">
-                  <div className="font-medium">Keyboard Shortcuts</div>
-                  <div>
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      /
-                    </kbd>{" "}
-                    Focus search
-                  </div>
-                  <div>
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      Shift
-                    </kbd>{" "}
-                    +{" "}
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      G
-                    </kbd>{" "}
-                    Toggle view
-                  </div>
-                  <div>
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      Cmd
-                    </kbd>{" "}
-                    +{" "}
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      ←
-                    </kbd>
-                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
-                      →
-                    </kbd>{" "}
-                    Navigate pages
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-
-        {/* Metrics */}
-
         {/* Search and Filters */}
         <SearchAndFilters
           searchQuery={searchQuery}

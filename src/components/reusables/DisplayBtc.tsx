@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bitcoin } from "lucide-react";
+import { WalletMinimalIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
-import { TokenBalance } from "./BalanceDisplay";
 
 const DisplayBtc = () => {
   const { userId, isLoading: isSessionLoading } = useAuth();
@@ -56,20 +55,18 @@ const DisplayBtc = () => {
     return null;
   }
 
+  // Format the balance to show like "21.70"
+  const formatBalance = (balance: number) => {
+    const btcValue = balance / 100000000; // Convert from satoshis to BTC
+    return btcValue.toFixed(2);
+  };
+
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-xs sm:text-sm font-inter font-bold text-muted-foreground tracking-wide">
-        Agent BTC:
+    <div className="flex items-center gap-2 animate-pulse-slow">
+      <span className="font-inter font-bold tracking-tight text-lg text-primary">
+        {formatBalance(totalSbtc)}
       </span>
-      <Bitcoin className="h-5 w-5 text-primary self-center" strokeWidth={1.5} />
-      <TokenBalance
-        value={totalSbtc.toString()}
-        symbol="sBTC"
-        decimals={8}
-        variant="abbreviated"
-        showSymbol={false}
-        className="font-inter font-bold tracking-tight"
-      />
+      <WalletMinimalIcon className="h-8 w-8 text-primary" />
     </div>
   );
 };
