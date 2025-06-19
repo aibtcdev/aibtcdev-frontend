@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bitcoin } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
 import { TokenBalance } from "./BalanceDisplay";
@@ -56,10 +57,11 @@ const DisplayBtc = () => {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs sm:text-sm font-inter font-medium text-muted-foreground tracking-wide">
+    <div className="flex items-center gap-1">
+      <span className="text-xs sm:text-sm font-inter font-bold text-muted-foreground tracking-wide">
         Agent BTC:
       </span>
+      <Bitcoin className="h-5 w-5 text-primary self-center" strokeWidth={1.5} />
       <TokenBalance
         value={totalSbtc.toString()}
         symbol="sBTC"

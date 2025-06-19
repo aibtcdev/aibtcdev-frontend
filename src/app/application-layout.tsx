@@ -10,7 +10,6 @@ import {
   X,
   FileText,
   Vote,
-  Bitcoin,
   ChevronDown,
   LogOut,
   User,
@@ -110,15 +109,45 @@ export default function ApplicationLayout({
           </Link>
         </div>
 
-        {/* Mobile BTC Balance */}
-        <div className="flex items-center gap-1 px-2 py-1.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-lg border border-primary/20 flex-shrink-0">
-          <div className="relative">
-            <Bitcoin className="h-3.5 w-3.5 text-primary animate-pulse" />
-            <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
-          </div>
-          <div className="text-xs font-bold text-primary">
-            <DisplayBtc />
-          </div>
+        {/* Mobile User Actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-primary/10 rounded-lg"
+                >
+                  <DisplayBtc />
+                  <ChevronDown className="h-3 w-3 text-primary/70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="center"
+                className="w-40 p-2 bg-background border border-border/20 rounded-xl shadow-lg"
+              >
+                <div className="px-3 py-2 border-b border-border/20">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Network Status
+                  </div>
+                  <div className="mt-1">
+                    <NetworkIndicator />
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-destructive rounded-lg"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <AuthButton />
+          )}
         </div>
       </div>
 
@@ -222,13 +251,9 @@ export default function ApplicationLayout({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                   aria-label="Bitcoin balance dropdown menu"
                 >
-                  <div className="relative">
-                    <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse" />
-                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
-                  </div>
                   <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
                     <DisplayBtc />
                   </div>
@@ -261,11 +286,7 @@ export default function ApplicationLayout({
             // Show BTC Balance (non-clickable) and Auth Button when not authenticated
             <>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
-                  <div className="relative">
-                    <Bitcoin className="h-4 w-4 sm:h-5 sm:w-5 text-primary animate-pulse" />
-                    <div className="absolute inset-0 bg-primary/30 rounded-full scale-150 blur-sm animate-pulse" />
-                  </div>
+                <div className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
                   <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
                     <DisplayBtc />
                   </div>
@@ -372,40 +393,6 @@ export default function ApplicationLayout({
                 })}
               </div>
             </nav>
-
-            {/* Mobile Footer with User Actions */}
-            <div className="p-4 border-t border-border/20 bg-card/30 backdrop-blur-xl relative z-10">
-              <div className="space-y-4">
-                {/* Network Status */}
-                <div className="flex items-center justify-between p-3 bg-background/40 rounded-lg">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Network Status
-                  </div>
-                  <div className="text-xs">
-                    <NetworkIndicator />
-                  </div>
-                </div>
-
-                {/* User Actions */}
-                {isAuthenticated ? (
-                  <Button
-                    onClick={() => {
-                      handleSignOut();
-                      setLeftPanelOpen(false);
-                    }}
-                    variant="ghost"
-                    className="w-full justify-start gap-3 text-destructive hover:text-destructive-foreground hover:bg-destructive rounded-xl py-3 h-auto text-base font-semibold"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    Sign out
-                  </Button>
-                ) : (
-                  <div className="w-full">
-                    <AuthButton />
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         </aside>
 
