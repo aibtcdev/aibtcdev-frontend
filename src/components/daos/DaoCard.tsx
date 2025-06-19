@@ -67,7 +67,9 @@ export const DAOCard = ({
     if (data.length < 2) return "#8884d8";
     const startPrice = data[0].price;
     const endPrice = data[data.length - 1].price;
-    return endPrice >= startPrice ? "#22c55e" : "#ef4444";
+    return endPrice >= startPrice
+      ? "hsl(var(--success))"
+      : "hsl(var(--destructive))";
   };
 
   const renderChart = (tradeData: {
@@ -143,8 +145,8 @@ export const DAOCard = ({
       <div
         className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
           isPositive
-            ? "text-emerald-500 bg-emerald-500/10"
-            : "text-rose-500 bg-rose-500/10"
+            ? "text-success bg-success/10"
+            : "text-destructive bg-destructive/10"
         }`}
       >
         <Icon className="h-3.5 w-3.5" />
@@ -305,10 +307,10 @@ export const DAOListItem = ({
     const Icon = isPositive ? ArrowUpRight : ArrowDownRight;
     return (
       <div
-        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs ${
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
           isPositive
-            ? "text-emerald-500 bg-emerald-500/10"
-            : "text-rose-500 bg-rose-500/10"
+            ? "text-success bg-success/10"
+            : "text-destructive bg-destructive/10"
         }`}
       >
         <Icon className="h-3 w-3" />
@@ -418,8 +420,8 @@ export const CompactDAOCard = ({
       <div
         className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
           isPositive
-            ? "text-emerald-500 bg-emerald-500/10"
-            : "text-rose-500 bg-rose-500/10"
+            ? "text-success bg-success/10"
+            : "text-destructive bg-destructive/10"
         }`}
       >
         <Icon className="h-3 w-3" />

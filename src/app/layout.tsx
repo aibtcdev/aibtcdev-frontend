@@ -106,17 +106,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className="h-full text-zinc-950 antialiased bg-zinc-950 dark:text-white"
-      suppressHydrationWarning
-    >
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
       <body
-        className={`h-full flex flex-col ${rocGroteskRegular.variable} ${rocGroteskWide.variable} ${rocGroteskExtraWide.variable} antialiased bg-zinc-950 prevent-horizontal-scroll`}
+        className={`h-full flex flex-col ${rocGroteskRegular.variable} ${rocGroteskWide.variable} ${rocGroteskExtraWide.variable} antialiased prevent-horizontal-scroll`}
       >
         <Providers>
           <AuthProvider>

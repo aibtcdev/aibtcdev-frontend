@@ -229,14 +229,14 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
   // Handle case: Start time is null AFTER loading - this means voting has not started yet
   if (startBlockTime === null) {
     return (
-      <div className="border border-blue-500/20 bg-blue-500/5 rounded-md p-2 w-full">
-        <div className="flex items-center gap-1.5 text-blue-400">
+      <div className="border border-secondary/20 bg-secondary/10 rounded-md p-2 w-full">
+        <div className="flex items-center gap-1.5 text-secondary">
           <Timer className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">
             Voting has not started yet
           </span>
         </div>
-        <p className="text-xs text-blue-400/80 mt-1">
+        <p className="text-xs text-secondary/80 mt-1">
           Voting starts in block #{vote_start}.
         </p>
       </div>
@@ -250,7 +250,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
       : null;
 
   return (
-    <div className="bg-zinc-800/30 rounded-md p-2 w-full text-xs sm:text-sm break-words">
+    <div className="bg-muted/20 rounded-md p-2 w-full text-xs sm:text-sm break-words">
       {/* Header (Active/Ended status) */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5">
@@ -268,7 +268,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
         {isEnded && (
           <Badge
             variant="outline"
-            className="text-xs h-5 px-1.5 border-none bg-zinc-700/50"
+            className="text-xs h-5 px-1.5 border-none bg-muted text-muted-foreground"
           >
             Ended
           </Badge>
@@ -298,7 +298,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
                   {isEndTimeEstimated && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] h-4 px-1 ml-1 border-none bg-zinc-700/50"
+                      className="text-[10px] h-4 px-1 ml-1 border-none bg-muted text-muted-foreground"
                     >
                       Est.
                     </Badge>

@@ -23,8 +23,8 @@ const BlockVisual = ({ value, type }: BlockVisualProps) => {
 
   const getTypeColor = () => {
     return type === "bitcoin"
-      ? "bg-orange-500/10 text-orange-500 border-orange-500/20"
-      : "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      ? "bg-primary/10 text-primary border-primary/20"
+      : "bg-secondary/10 text-secondary border-secondary/20";
   };
 
   return (
@@ -36,7 +36,7 @@ const BlockVisual = ({ value, type }: BlockVisualProps) => {
         >
           {type === "bitcoin" ? "BTC" : "STX"}
         </Badge>
-        <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs break-all">
+        <code className="bg-muted/40 text-foreground px-1.5 py-0.5 rounded text-xs break-all">
           {value}
         </code>
         <Tooltip>

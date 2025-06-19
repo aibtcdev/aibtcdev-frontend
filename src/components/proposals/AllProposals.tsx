@@ -280,7 +280,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Proposals List */}
-            <div ref={proposalsRef} className="space-y-4">
+            <div ref={proposalsRef}>
               {paginatedProposals.length === 0 ? (
                 <div className="border-dashed border rounded-lg py-12">
                   <div className="text-center space-y-4 px-4">
@@ -300,14 +300,16 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
                   </div>
                 </div>
               ) : (
-                paginatedProposals.map((proposal) => (
-                  <ProposalCard
-                    key={`${proposal.id}-${proposal.status}`}
-                    proposal={proposal}
-                    tokenSymbol={tokenLookup[proposal.dao_id || ""] || ""}
-                    showDAOInfo={true}
-                  />
-                ))
+                <div className="divide-y divide-border/50">
+                  {paginatedProposals.map((proposal) => (
+                    <ProposalCard
+                      key={`${proposal.id}-${proposal.status}`}
+                      proposal={proposal}
+                      tokenSymbol={tokenLookup[proposal.dao_id || ""] || ""}
+                      showDAOInfo={true}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 

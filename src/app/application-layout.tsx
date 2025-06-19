@@ -32,6 +32,7 @@ import { Footer } from "@/components/reusables/Footer";
 import DisplayBtc from "@/components/reusables/DisplayBtc";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
+import { ThemeToggle } from "@/components/reusables/ThemeToggle";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -99,14 +100,21 @@ export default function ApplicationLayout({
               alt="AIBTCDEV"
               width={28}
               height={28}
-              className="rounded-lg flex-shrink-0"
+              className="rounded-lg flex-shrink-0 shadow-lg shadow-primary/20"
+            />
+            <Image
+              src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+              alt="AIBTCDEV"
+              width={80}
+              height={20}
+              className="h-4 w-auto flex-shrink-0 block dark:hidden"
             />
             <Image
               src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
               alt="AIBTCDEV"
               width={80}
               height={20}
-              className="h-4 w-auto flex-shrink-0"
+              className="h-4 w-auto flex-shrink-0 hidden dark:block"
             />
           </Link>
         </div>
@@ -150,6 +158,7 @@ export default function ApplicationLayout({
           ) : (
             <AuthButton />
           )}
+          <ThemeToggle />
         </div>
       </div>
 
@@ -168,16 +177,23 @@ export default function ApplicationLayout({
                   alt="AIBTCDEV"
                   width={32}
                   height={32}
-                  className="lg:w-9 lg:h-9 rounded-xl shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/20"
+                  className="lg:w-9 lg:h-9 rounded-xl shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
                 />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
+              <Image
+                src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                alt="AIBTCDEV"
+                width={100}
+                height={200}
+                className="h-5 lg:h-6 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
+              />
               <Image
                 src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
                 alt="AIBTCDEV"
                 width={100}
                 height={200}
-                className="h-5 lg:h-6 w-auto transition-all duration-300 group-hover:brightness-110"
+                className="h-5 lg:h-6 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
               />
             </div>
           </Link>
@@ -198,7 +214,7 @@ export default function ApplicationLayout({
                     "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
                     isActive
                       ? "text-primary-foreground bg-primary shadow-lg hover:shadow-xl hover:shadow-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/30 hover:shadow-md"
+                      : "text-primary hover:bg-primary/10 hover:shadow-md"
                   )}
                 >
                   <div
@@ -321,6 +337,7 @@ export default function ApplicationLayout({
               </div>
             </>
           )}
+          <ThemeToggle />
         </div>
       </div>
 
@@ -346,7 +363,7 @@ export default function ApplicationLayout({
                   alt="AIBTCDEV"
                   width={24}
                   height={24}
-                  className="rounded-lg"
+                  className="rounded-lg shadow-lg shadow-primary/20"
                 />
                 <span className="text-lg font-bold text-foreground">Menu</span>
               </div>
@@ -377,7 +394,7 @@ export default function ApplicationLayout({
                         "group flex items-center gap-4 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 ease-in-out relative overflow-hidden hover:scale-[1.02]",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-xl scale-[1.02] hover:shadow-2xl"
-                          : "text-muted-foreground hover:bg-background/60 hover:text-foreground hover:shadow-lg"
+                          : "text-primary hover:bg-primary/10 hover:shadow-lg"
                       )}
                     >
                       <div

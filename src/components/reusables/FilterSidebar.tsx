@@ -117,7 +117,7 @@ export function FilterSidebar({
                     ${
                       isSelected
                         ? "bg-primary/10 font-semibold text-primary"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        : "text-foreground hover:bg-muted/50 hover:text-foreground"
                     }
                   `}
                 >
@@ -209,7 +209,7 @@ export function FilterSidebar({
                       ${
                         isSelected
                           ? "bg-primary/10 font-semibold text-primary"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          : "text-foreground hover:bg-muted/50 hover:text-foreground"
                       }
                     `}
                     aria-pressed={isSelected}
@@ -254,7 +254,7 @@ export function FilterSidebar({
       <div className="space-y-6">
         {filters.map((filter) => (
           <div key={filter.key} className="space-y-3">
-            <label className="text-sm font-inter font-medium text-muted-foreground px-1 block">
+            <label className="text-sm font-inter font-medium text-foreground px-1 block">
               {filter.label}
             </label>
             {renderFilterInput(filter)}

@@ -151,7 +151,7 @@ const ProposalDetails = ({
       {/* Blockchain Information - Compact Layout */}
       <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:p-8 overflow-x-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Blocks className="h-5 w-5 text-[#2A5CFF]" />
+          <Blocks className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">
             Blockchain Details
           </h3>
@@ -161,7 +161,7 @@ const ProposalDetails = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Block Information */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#2A5CFF] font-medium">
+            <div className="flex items-center gap-2 text-primary font-medium">
               <Layers className="h-4 w-4" />
               <span>Blocks</span>
             </div>
@@ -194,7 +194,7 @@ const ProposalDetails = ({
 
           {/* Contract Details */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#2A5CFF] font-medium">
+            <div className="flex items-center gap-2 text-primary font-medium">
               <FileText className="h-4 w-4" />
               <span>Contract</span>
             </div>
@@ -218,7 +218,7 @@ const ProposalDetails = ({
 
           {/* Transaction Info */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#2A5CFF] font-medium">
+            <div className="flex items-center gap-2 text-primary font-medium">
               <Hash className="h-4 w-4" />
               <span>Transaction</span>
             </div>
@@ -237,7 +237,7 @@ const ProposalDetails = ({
                   href={getExplorerLink("tx", proposal.tx_id)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono text-sm text-[#2A5CFF] hover:text-[#FF3A9F] transition-colors"
+                  className="font-mono text-sm text-primary hover:text-primary/80 transition-colors"
                 >
                   {truncateString(proposal.tx_id, 6, 6)}
                 </a>
@@ -247,7 +247,7 @@ const ProposalDetails = ({
 
           {/* Timeline */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-[#2A5CFF] font-medium">
+            <div className="flex items-center gap-2 text-primary font-medium">
               <Clock className="h-4 w-4" />
               <span>Timeline</span>
             </div>

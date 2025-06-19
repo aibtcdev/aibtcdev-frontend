@@ -41,17 +41,17 @@ export default function ProposalCard({
       case "DRAFT":
         return {
           icon: AlertCircle,
-          color: "text-gray-500",
-          bg: "bg-gray-500/10",
-          border: "border-gray-500/20",
+          color: "text-muted-foreground",
+          bg: "bg-muted/10",
+          border: "border-muted/20",
           label: "Draft",
         };
       case "PENDING":
         return {
           icon: Clock,
-          color: "text-blue-500",
-          bg: "bg-blue-500/10",
-          border: "border-blue-500/20",
+          color: "text-secondary",
+          bg: "bg-secondary/10",
+          border: "border-secondary/20",
           label: "Pending",
         };
       case "ACTIVE":
@@ -65,33 +65,33 @@ export default function ProposalCard({
       case "VETO_PERIOD":
         return {
           icon: Clock,
-          color: "text-orange-500",
-          bg: "bg-orange-500/10",
-          border: "border-orange-500/20",
+          color: "text-accent",
+          bg: "bg-accent/10",
+          border: "border-accent/20",
           label: "Veto Period",
         };
       case "EXECUTION_WINDOW":
         return {
           icon: Clock,
-          color: "text-purple-500",
-          bg: "bg-purple-500/10",
-          border: "border-purple-500/20",
+          color: "text-accent",
+          bg: "bg-accent/10",
+          border: "border-accent/20",
           label: "Execution Window",
         };
       case "PASSED":
         return {
           icon: CheckCircle,
-          color: "text-green-500",
-          bg: "bg-green-500/10",
-          border: "border-green-500/20",
+          color: "text-success",
+          bg: "bg-success/10",
+          border: "border-success/20",
           label: "Passed",
         };
       case "FAILED":
         return {
           icon: XCircle,
-          color: "text-red-500",
-          bg: "bg-red-500/10",
-          border: "border-red-500/20",
+          color: "text-destructive",
+          bg: "bg-destructive/10",
+          border: "border-destructive/20",
           label: "Failed",
         };
       default:
@@ -161,7 +161,7 @@ export default function ProposalCard({
       href={`/proposals/${proposal.id}`}
       className="block group cursor-pointer"
     >
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:border-border/60 transition-all duration-300 group overflow-hidden">
+      <div className="p-4 sm:p-6 group-hover:bg-muted/20 transition-colors duration-300">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -180,7 +180,7 @@ export default function ProposalCard({
             </div>
 
             {proposal.summary && (
-              <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
+              <p className="text-sm text-foreground/75 line-clamp-2 mb-3">
                 {proposal.summary}
               </p>
             )}
@@ -188,7 +188,7 @@ export default function ProposalCard({
         </div>
 
         {/* Metadata */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs text-muted-foreground mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs text-foreground/75 mb-4">
           {showDAOInfo && (
             <div className="flex items-center gap-1 min-w-0 max-w-[120px] sm:max-w-none">
               <Building2 className="h-3 w-3 flex-shrink-0" />
@@ -246,16 +246,16 @@ export default function ProposalCard({
           <div className="space-y-2 sm:space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                <span className="text-green-500 font-medium">
+                <span className="text-success font-medium">
                   For: {formatNumber(votesFor)} ({forPercentage.toFixed(1)}% of
                   liquid)
                 </span>
-                <span className="text-red-500 font-medium">
+                <span className="text-destructive font-medium">
                   Against: {formatNumber(votesAgainst)} (
                   {againstPercentage.toFixed(1)}% of liquid)
                 </span>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-foreground/75">
                 Approval: {approvalRate.toFixed(1)}% of votes cast
               </div>
             </div>
@@ -263,11 +263,11 @@ export default function ProposalCard({
             <div className="w-full bg-muted/30 rounded-full h-1.5 sm:h-2 overflow-hidden">
               <div className="h-full flex">
                 <div
-                  className="bg-green-500 transition-all duration-500"
+                  className="bg-success transition-all duration-500"
                   style={{ width: `${forPercentage}%` }}
                 />
                 <div
-                  className="bg-red-500 transition-all duration-500"
+                  className="bg-destructive transition-all duration-500"
                   style={{ width: `${againstPercentage}%` }}
                 />
               </div>
@@ -279,13 +279,11 @@ export default function ProposalCard({
         {(statusConfig.label === "Passed" ||
           statusConfig.label === "Failed") && (
           <div className="text-sm">
-            <span className="text-muted-foreground">Final result: </span>
+            <span className="text-foreground/75">Final result: </span>
             <span className="font-medium">
-              <span className="text-green-500">
-                {formatNumber(votesFor)} For
-              </span>
+              <span className="text-success">{formatNumber(votesFor)} For</span>
               ,{" "}
-              <span className="text-red-500">
+              <span className="text-destructive">
                 {formatNumber(votesAgainst)} Against
               </span>
             </span>
@@ -299,7 +297,7 @@ export default function ProposalCard({
           statusConfig.label === "Passed" ||
           statusConfig.label === "Failed") &&
           totalVotes > 0 && (
-            <div className="mt-4 pt-4 border-t border-border/30">
+            <div className="mt-4 pt-4">
               <VoteStatusChart
                 votesFor={proposal.votes_for}
                 votesAgainst={proposal.votes_against}

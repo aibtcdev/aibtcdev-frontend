@@ -91,7 +91,7 @@ body {
 
     /* Muted: mapped to aibtc.gray.500 */
     --muted: 220 2% 35%;
-    --muted-foreground: 0 0% 100%;
+    --muted-foreground: 220 2% 45%;
 
     /* Accent: mapped to aibtc.orange.300 */
     --accent: 21 100% 70%;
@@ -99,6 +99,9 @@ body {
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
+
+    --success: 145 63% 49%;
+    --success-foreground: 0 0% 100%;
 
     --border: 220 2% 35%;
     --input: 220 2% 35%;
@@ -147,6 +150,9 @@ body {
 
     --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 0 0% 100%;
+
+    --success: 145 63% 42%;
+    --success-foreground: 0 0% 100%;
 
     --border: 220 2% 25%;
     --input: 220 2% 25%;

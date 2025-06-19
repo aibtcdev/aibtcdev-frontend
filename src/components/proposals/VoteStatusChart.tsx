@@ -255,7 +255,7 @@ const VoteStatusChart = ({
           <>
             {/* For votes */}
             <div
-              className="absolute h-full bg-green-500/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
+              className="absolute h-full bg-success/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
               style={{ width: `${voteCalculations.barPercentageFor}%` }}
             >
               {voteCalculations.barPercentageFor > 15 && (
@@ -273,7 +273,7 @@ const VoteStatusChart = ({
 
             {/* Against votes */}
             <div
-              className="absolute h-full bg-red-500/80 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
+              className="absolute h-full bg-destructive/80 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
               style={{
                 width: `${voteCalculations.barPercentageAgainst}%`,
                 left: `${voteCalculations.barPercentageFor}%`,
@@ -301,8 +301,8 @@ const VoteStatusChart = ({
       <div className="space-y-2 sm:hidden text-xs">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">For:</span>
+            <div className="w-2 h-2 rounded-full bg-success flex-shrink-0"></div>
+            <span className="text-foreground/75">For:</span>
           </div>
           <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
             <TokenBalance
@@ -313,7 +313,7 @@ const VoteStatusChart = ({
               showSymbol={false}
               className="truncate text-right"
             />
-            <span className="text-green-400 font-medium flex-shrink-0 text-xs">
+            <span className="text-success font-medium flex-shrink-0 text-xs">
               ({voteCalculations.barPercentageFor.toFixed(1)}%)
             </span>
           </div>
@@ -321,8 +321,8 @@ const VoteStatusChart = ({
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-            <span className="text-muted-foreground">Against:</span>
+            <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0"></div>
+            <span className="text-foreground/75">Against:</span>
           </div>
           <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
             <TokenBalance
@@ -333,7 +333,7 @@ const VoteStatusChart = ({
               showSymbol={false}
               className="truncate text-right"
             />
-            <span className="text-red-400 font-medium flex-shrink-0 text-xs">
+            <span className="text-destructive font-medium flex-shrink-0 text-xs">
               ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
             </span>
           </div>
@@ -341,8 +341,8 @@ const VoteStatusChart = ({
 
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-muted-foreground flex-shrink-0"></div>
-            <span className="text-muted-foreground">Not Voted:</span>
+            <div className="w-2 h-2 rounded-full bg-muted flex-shrink-0"></div>
+            <span className="text-foreground/75">Not Voted:</span>
           </div>
           <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
             <TokenBalance
@@ -357,7 +357,7 @@ const VoteStatusChart = ({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="cursor-pointer flex-shrink-0">
-                    <Info className="h-3 w-3 text-muted-foreground" />
+                    <Info className="h-3 w-3 text-foreground/75" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs max-w-xs">
@@ -383,8 +383,8 @@ const VoteStatusChart = ({
         <div className="min-w-0">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
-              <span className="text-muted-foreground">For:</span>
+              <div className="w-2 h-2 rounded-full bg-success flex-shrink-0"></div>
+              <span className="text-foreground/75">For:</span>
             </div>
             <div className="flex items-center gap-1 min-w-0">
               <TokenBalance
@@ -395,7 +395,7 @@ const VoteStatusChart = ({
                 showSymbol={false}
                 className="truncate"
               />
-              <span className="text-green-400 font-medium flex-shrink-0">
+              <span className="text-success font-medium flex-shrink-0">
                 ({voteCalculations.barPercentageFor.toFixed(1)}%)
               </span>
             </div>
@@ -405,8 +405,8 @@ const VoteStatusChart = ({
         <div className="min-w-0">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
-              <span className="text-muted-foreground">Against:</span>
+              <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0"></div>
+              <span className="text-foreground/75">Against:</span>
             </div>
             <div className="flex items-center gap-1 min-w-0">
               <TokenBalance
@@ -417,7 +417,7 @@ const VoteStatusChart = ({
                 showSymbol={false}
                 className="truncate"
               />
-              <span className="text-red-400 font-medium flex-shrink-0">
+              <span className="text-destructive font-medium flex-shrink-0">
                 ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
               </span>
             </div>
@@ -427,8 +427,8 @@ const VoteStatusChart = ({
         <div className="min-w-0">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-muted-foreground flex-shrink-0"></div>
-              <span className="text-muted-foreground">Not Voted:</span>
+              <div className="w-2 h-2 rounded-full bg-muted flex-shrink-0"></div>
+              <span className="text-foreground/75">Not Voted:</span>
             </div>
             <div className="flex items-center gap-1 min-w-0">
               <TokenBalance
@@ -443,7 +443,7 @@ const VoteStatusChart = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="cursor-pointer flex-shrink-0">
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Info className="h-3.5 w-3.5 text-foreground/75" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs max-w-xs">
