@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,14 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Filter,
-  Search,
-  CheckCircle,
-  XCircle,
-  Activity,
-  FileText,
-} from "lucide-react";
+import { Search, CheckCircle, XCircle, Activity, FileText } from "lucide-react";
 
 // Generic filter configuration
 export interface FilterConfig {
@@ -40,21 +32,11 @@ export interface FilterState {
   [key: string]: string | string[];
 }
 
-// Summary stats interface
-export interface SummaryStats {
-  [key: string]: {
-    label: string;
-    value: number | string;
-    format?: (value: number | string) => string;
-  };
-}
-
 interface FilterSidebarProps {
   title: string;
   filters: FilterConfig[];
   filterState: FilterState;
   onFilterChange: (key: string, value: string | string[]) => void;
-  summaryStats?: SummaryStats;
   className?: string;
 }
 
@@ -63,7 +45,6 @@ export function FilterSidebar({
   filters,
   filterState,
   onFilterChange,
-  summaryStats,
   className = "",
 }: FilterSidebarProps) {
   const renderFilterInput = (filter: FilterConfig) => {
@@ -126,47 +107,35 @@ export function FilterSidebar({
         const selectedValues = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin scrollbar-track-muted/20 scrollbar-thumb-muted hover:scrollbar-thumb-muted/80">
-            {filter.options?.map((option) => (
-              <div
-                key={option.value}
-                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/30 transition-colors duration-300 motion-reduce:transition-none group cursor-pointer"
-                onClick={() => {
-                  const newSelectedValues = selectedValues.includes(
-                    option.value
-                  )
-                    ? selectedValues.filter((v) => v !== option.value)
-                    : [...selectedValues, option.value];
-                  onFilterChange(filter.key, newSelectedValues);
-                }}
-              >
-                <Checkbox
-                  id={`${filter.key}-${option.value}`}
-                  checked={selectedValues.includes(option.value)}
-                  onCheckedChange={(checked) => {
-                    const newSelectedValues = checked
-                      ? [...selectedValues, option.value]
-                      : selectedValues.filter((v) => v !== option.value);
-                    onFilterChange(filter.key, newSelectedValues);
-                  }}
-                  className="h-4 w-4 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-300 motion-reduce:transition-none"
-                />
+            {filter.options?.map((option) => {
+              const isSelected = selectedValues.includes(option.value);
+              return (
                 <label
-                  htmlFor={`${filter.key}-${option.value}`}
-                  className="text-sm font-inter text-foreground cursor-pointer flex-1 group-hover:text-foreground transition-colors duration-300 motion-reduce:transition-none"
+                  key={option.value}
+                  className={`
+                    flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all
+                    ${
+                      isSelected
+                        ? "bg-primary/10 font-semibold text-primary"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    }
+                  `}
                 >
-                  {option.badge ? (
-                    <Badge
-                      variant="secondary"
-                      className="text-xs font-inter px-2 py-0.5 bg-muted text-muted-foreground"
-                    >
-                      {option.label}
-                    </Badge>
-                  ) : (
-                    option.label
-                  )}
+                  <span className="font-inter font-medium">{option.label}</span>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => {
+                      const newSelectedValues = isSelected
+                        ? selectedValues.filter((v) => v !== option.value)
+                        : [...selectedValues, option.value];
+                      onFilterChange(filter.key, newSelectedValues);
+                    }}
+                    className="h-4 w-4 shrink-0 border-border data-[state=checked]:border-primary data-[state=checked]:bg-primary text-primary-foreground focus-visible:ring-primary/20"
+                    aria-label={`Toggle filter for ${option.label}`}
+                  />
                 </label>
-              </div>
-            ))}
+              );
+            })}
           </div>
         );
 
@@ -185,34 +154,6 @@ export function FilterSidebar({
               return FileText;
             default:
               return Activity;
-          }
-        };
-
-        const getStatusStyles = (statusValue: string, isSelected: boolean) => {
-          const baseStyles =
-            "transition-all duration-300 motion-reduce:transition-none";
-
-          switch (statusValue) {
-            case "DEPLOYED":
-              return isSelected
-                ? `${baseStyles} text-blue-700 bg-blue-50 border-blue-200 shadow-sm hover:shadow-md`
-                : `${baseStyles} text-blue-500 hover:text-blue-600`;
-            case "PASSED":
-              return isSelected
-                ? `${baseStyles} text-green-700 bg-green-50 border-green-200 shadow-sm hover:shadow-md`
-                : `${baseStyles} text-green-500 hover:text-green-600`;
-            case "FAILED":
-              return isSelected
-                ? `${baseStyles} text-red-700 bg-red-50 border-red-200 shadow-sm hover:shadow-md`
-                : `${baseStyles} text-red-500 hover:text-red-600`;
-            case "DRAFT":
-              return isSelected
-                ? `${baseStyles} text-gray-700 bg-gray-50 border-gray-200 shadow-sm hover:shadow-md`
-                : `${baseStyles} text-gray-500 hover:text-gray-600`;
-            default:
-              return isSelected
-                ? `${baseStyles} text-gray-700 bg-gray-50 border-gray-200 shadow-sm hover:shadow-md`
-                : `${baseStyles} text-gray-500 hover:text-gray-600`;
           }
         };
 
@@ -253,10 +194,9 @@ export function FilterSidebar({
               {filter.options?.map((option) => {
                 const isSelected = statusValues.includes(option.value);
                 const Icon = getStatusIcon(option.value);
-                const statusStyles = getStatusStyles(option.value, isSelected);
 
                 return (
-                  <div
+                  <button
                     key={option.value}
                     onClick={() => {
                       const newSelectedValues = isSelected
@@ -265,51 +205,33 @@ export function FilterSidebar({
                       onFilterChange(filter.key, newSelectedValues);
                     }}
                     className={`
-                      flex items-center justify-between p-3 rounded-lg border cursor-pointer group
-                      hover:scale-[1.02] active:scale-[0.98]
+                      flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-all
                       ${
                         isSelected
-                          ? `${statusStyles} ring-1 ring-current/10`
-                          : "bg-background border-border hover:bg-muted/30 hover:border-border/80"
+                          ? "bg-primary/10 font-semibold text-primary"
+                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                       }
                     `}
-                    role="button"
-                    tabIndex={0}
                     aria-pressed={isSelected}
                     aria-label={`${isSelected ? "Remove" : "Add"} ${option.label} filter`}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        const newSelectedValues = isSelected
-                          ? statusValues.filter((v) => v !== option.value)
-                          : [...statusValues, option.value];
-                        onFilterChange(filter.key, newSelectedValues);
-                      }
-                    }}
                   >
                     <div className="flex items-center gap-3">
                       <Icon
-                        className={`h-4 w-4 ${isSelected ? statusStyles.split(" ")[0] : "text-muted-foreground group-hover:text-foreground"}`}
+                        className={`h-4 w-4 ${!isSelected && "text-muted-foreground"}`}
                       />
-                      <span
-                        className={`text-sm font-inter font-medium ${isSelected ? statusStyles.split(" ")[0] : "text-foreground"}`}
-                      >
+                      <span className="font-inter font-medium">
                         {option.label}
                       </span>
                     </div>
                     {option.count !== undefined && (
                       <Badge
                         variant={isSelected ? "default" : "secondary"}
-                        className={`text-xs font-inter px-2 py-1 transition-colors duration-300 motion-reduce:transition-none ${
-                          isSelected
-                            ? "bg-white/90 text-current border-current/20"
-                            : "bg-muted/50 text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
-                        }`}
+                        className="h-5"
                       >
                         {option.count}
                       </Badge>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -322,56 +244,23 @@ export function FilterSidebar({
   };
 
   return (
-    <div className={className || "w-full lg:w-80 flex-shrink-0"}>
-      <Card className="sticky top-6 bg-card/95 backdrop-blur-xl border-border/50 shadow-lg hover:shadow-xl transition-shadow duration-300 motion-reduce:transition-none">
-        <CardContent className="p-4 space-y-4">
-          {title && (
-            <div className="flex items-center gap-3 pb-2 border-b border-border/30">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Filter className="w-4 h-4 text-primary" />
-              </div>
-              <h3 className="text-base font-inter font-semibold text-foreground">
-                {title}
-              </h3>
-            </div>
-          )}
+    <div className={className}>
+      {title && (
+        <div className="flex items-center ">
+          <h3 className="text-lg font-semibold mb-4 pl-2">{title}</h3>
+        </div>
+      )}
 
-          <div className="space-y-4">
-            {filters.map((filter) => (
-              <div key={filter.key} className="space-y-2">
-                <label className="text-sm font-inter font-medium text-foreground block">
-                  {filter.label}
-                </label>
-                {renderFilterInput(filter)}
-              </div>
-            ))}
+      <div className="space-y-6">
+        {filters.map((filter) => (
+          <div key={filter.key} className="space-y-3">
+            <label className="text-sm font-inter font-medium text-muted-foreground px-1 block">
+              {filter.label}
+            </label>
+            {renderFilterInput(filter)}
           </div>
-
-          {/* Enhanced Summary Stats */}
-          {summaryStats && (
-            <div className="mt-6 p-4 bg-muted/20 rounded-xl border border-border/30 backdrop-blur-sm">
-              <h4 className="text-sm font-inter font-semibold mb-3 text-foreground">
-                Summary
-              </h4>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(summaryStats).map(([key, stat]) => (
-                  <div
-                    key={key}
-                    className="text-center p-2 rounded-lg bg-background/50 hover:bg-background/70 transition-colors duration-300 motion-reduce:transition-none"
-                  >
-                    <div className="text-lg font-inter font-bold text-foreground mb-1">
-                      {stat.format ? stat.format(stat.value) : stat.value}
-                    </div>
-                    <div className="text-xs font-inter text-muted-foreground leading-tight">
-                      {stat.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        ))}
+      </div>
     </div>
   );
 }

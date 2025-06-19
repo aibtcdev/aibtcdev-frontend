@@ -8,7 +8,6 @@ import {
   FilterSidebar,
   type FilterConfig,
   type FilterState,
-  type SummaryStats,
 } from "@/components/reusables/FilterSidebar";
 import { Pagination } from "@/components/reusables/Pagination";
 import type { ProposalWithDAO } from "@/types";
@@ -183,35 +182,6 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
   // Calculate statistics for filtered proposals using consistent status logic
   const totalProposals = filteredAndSortedProposals.length;
-  const activeProposals = filteredAndSortedProposals.filter(
-    (p) => getProposalStatus(p) === "ACTIVE"
-  ).length;
-  const passedProposals = filteredAndSortedProposals.filter(
-    (p) => getProposalStatus(p) === "PASSED"
-  ).length;
-  const failedProposals = filteredAndSortedProposals.filter(
-    (p) => getProposalStatus(p) === "FAILED"
-  ).length;
-
-  // Summary stats for sidebar
-  const summaryStats: SummaryStats = {
-    total: {
-      label: "Total Proposals",
-      value: totalProposals,
-    },
-    active: {
-      label: "Active",
-      value: activeProposals,
-    },
-    passed: {
-      label: "Passed",
-      value: passedProposals,
-    },
-    failed: {
-      label: "Failed",
-      value: failedProposals,
-    },
-  };
 
   // Handle filter changes
   const handleFilterChange = useCallback(
@@ -303,7 +273,6 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
                   filters={filterConfig}
                   filterState={filterState}
                   onFilterChange={handleFilterChange}
-                  summaryStats={summaryStats}
                   className="w-full"
                 />
               </div>
@@ -320,25 +289,12 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
               filters={filterConfig}
               filterState={filterState}
               onFilterChange={handleFilterChange}
-              summaryStats={summaryStats}
             />
           </div>
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Content Section Header */}
-            <div className="space-y-2 mb-6">
-              <div className="text-center lg:text-left">
-                <h2 className="text-lg font-semibold text-foreground">
-                  All Proposals ({filteredAndSortedProposals.length})
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {filteredAndSortedProposals.length > 0
-                    ? `${filteredAndSortedProposals.length === 1 ? "1 proposal" : `${filteredAndSortedProposals.length} proposals`} available`
-                    : "No proposals match your current filters"}
-                </p>
-              </div>
-            </div>
 
             {/* Proposals List */}
             <div ref={proposalsRef} className="space-y-4">
