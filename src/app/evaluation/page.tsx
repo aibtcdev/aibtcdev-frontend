@@ -207,7 +207,7 @@ export default function ProposalEvaluationPage() {
     <div className="min-h-screen bg-background">
       {/* Navbar-style Controls */}
       <div className="sticky top-0 z-10 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-6">
             {/* Proposal Selector */}
             <div className="flex-1 min-w-0 max-w-sm">
@@ -280,7 +280,7 @@ export default function ProposalEvaluationPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="w-full p-4 sm:p-6 lg:p-8">
         {/* Error Display */}
         {submitError && (
           <div className="mb-6 bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
