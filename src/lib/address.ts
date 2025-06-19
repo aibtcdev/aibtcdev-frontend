@@ -5,9 +5,34 @@ interface AddressObject {
   address: string;
   type?: string;
   addressType?: string;
+  purpose?: string;
+  walletType?: string;
   publicKey?: string;
   tweakedPublicKey?: string;
   derivationPath?: string;
+}
+
+interface LeatherStorage {
+  STX_PROVIDER: "LeatherProvider";
+  addresses: AddressObject[];
+}
+
+interface XverseStorage {
+  STX_PROVIDER: "XverseProviders.BitcoinProvider";
+  addresses: {
+    stx: AddressObject[];
+    btc: AddressObject[];
+  };
+}
+
+type LocalStoragePayload = LeatherStorage | XverseStorage;
+
+function isLeatherStorage(data: LocalStoragePayload): data is LeatherStorage {
+  return data.STX_PROVIDER === "LeatherProvider";
+}
+
+function isXverseStorage(data: LocalStoragePayload): data is XverseStorage {
+  return data.STX_PROVIDER === "XverseProviders.BitcoinProvider";
 }
 
 export function getStacksAddress(): string | null {
@@ -16,28 +41,19 @@ export function getStacksAddress(): string | null {
   }
 
   try {
-    const data = getLocalStorage();
+    const data = getLocalStorage() as LocalStoragePayload | null;
     if (!data) {
       return null;
     }
-    const provider = (data as any).STX_PROVIDER;
 
     let stxAddressObj: AddressObject | undefined;
 
     // LeatherProvider returns a flat addresses array
-    if (
-      provider === "LeatherProvider" &&
-      Array.isArray((data as any).addresses)
-    ) {
-      stxAddressObj = (data as any).addresses.find(
-        (addr: AddressObject) => addr.symbol === "STX"
-      );
-    }
-    // XverseProvider stores addresses under data.addresses.stx
-    else if (data.addresses && Array.isArray(data.addresses.stx)) {
+    if (isLeatherStorage(data)) {
+      stxAddressObj = data.addresses.find((addr) => addr.symbol === "STX");
+    } else if (isXverseStorage(data)) {
       stxAddressObj = data.addresses.stx.find(
-        (addr: AddressObject) =>
-          addr.addressType === "stacks" || addr.symbol === "STX"
+        (addr) => addr.addressType === "stacks" || addr.symbol === "STX"
       );
     }
 
@@ -54,25 +70,17 @@ export function getBitcoinAddress(): string | null {
   }
 
   try {
-    const data = getLocalStorage();
+    const data = getLocalStorage() as LocalStoragePayload | null;
     if (!data) {
       return null;
     }
-    const provider = (data as any).STX_PROVIDER;
 
     let btcList: AddressObject[] = [];
 
     // LeatherProvider returns a flat addresses array
-    if (
-      provider === "LeatherProvider" &&
-      Array.isArray((data as any).addresses)
-    ) {
-      btcList = (data as any).addresses.filter(
-        (addr: AddressObject) => addr.symbol === "BTC"
-      );
-    }
-    // XverseProvider stores addresses under data.addresses.btc
-    else if (data.addresses && Array.isArray(data.addresses.btc)) {
+    if (isLeatherStorage(data)) {
+      btcList = data.addresses.filter((addr) => addr.symbol === "BTC");
+    } else if (isXverseStorage(data)) {
       btcList = data.addresses.btc;
     }
 
