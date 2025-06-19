@@ -2,11 +2,8 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  ExternalLink,
   ThumbsUp,
   ThumbsDown,
-  Copy,
-  Check,
   Vote,
   ChevronDown,
   ChevronUp,
@@ -14,8 +11,6 @@ import {
   CheckCircle,
   Clock,
   Ban,
-  Activity,
-  TrendingUp,
   FileText,
   XCircle,
 } from "lucide-react";
@@ -26,9 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
-import { useClipboard } from "@/hooks/useClipboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Vote as VoteType } from "@/types";
@@ -37,6 +30,20 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 
 interface VotesViewProps {
   votes: VoteType[];
@@ -44,12 +51,29 @@ interface VotesViewProps {
 
 interface VoteCardProps {
   vote: VoteType;
-  copiedText: string | null;
-  copyToClipboard: (text: string) => void;
   currentBitcoinHeight: number;
 }
 
 type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
+
+// Helper function to format time in a compact way
+const formatRelativeTime = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  let interval = seconds / 31536000;
+  if (interval > 1) return `${Math.floor(interval)}y ago`;
+  interval = seconds / 2592000;
+  if (interval > 1) return `${Math.floor(interval)}mo ago`;
+  interval = seconds / 86400;
+  if (interval > 1) return `${Math.floor(interval)}d ago`;
+  interval = seconds / 3600;
+  if (interval > 1) return `${Math.floor(interval)}h ago`;
+  interval = seconds / 60;
+  if (interval > 1) return `${Math.floor(interval)}m ago`;
+  return `${Math.floor(seconds)}s ago`;
+};
 
 // Helper function to safely convert bigint to number for comparison
 const safeNumberFromBigInt = (value: bigint | null): number => {
@@ -90,20 +114,14 @@ const getVoteOutcome = (
   return vote.answer ? "passed" : "failed";
 };
 
-// Helper function to get explorer URL for transaction
-const getExplorerUrl = (txId: string) => {
-  const baseUrl = "https://explorer.hiro.so/txid";
-  const isTestnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet";
-  return `${baseUrl}/${txId}${isTestnet ? "?chain=testnet" : ""}`;
-};
-
-function VoteCard({
-  vote,
-  copiedText,
-  copyToClipboard,
-  currentBitcoinHeight,
-}: VoteCardProps) {
+function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence > 0.75) return "bg-green-500";
+    if (confidence > 0.5) return "bg-yellow-500";
+    return "bg-red-500";
+  };
 
   const getStatusBadge = () => {
     if (vote.voted === false) {
@@ -121,7 +139,7 @@ function VoteCard({
     if (isInVetoWindow(vote, currentBitcoinHeight)) {
       return (
         <Badge
-          variant="outline"
+          variant="destructive"
           className="bg-secondary/10 text-secondary border-secondary/20"
         >
           <Ban className="h-3 w-3 mr-1" />
@@ -165,130 +183,95 @@ function VoteCard({
   };
 
   const getVoteResult = () => {
-    if (vote.voted === false) return null;
+    if (vote.voted === false) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Search className="h-4 w-4" />
+          <span>AI Agent is evaluating...</span>
+        </div>
+      );
+    }
 
     return (
-      <div
-        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-          vote.answer
-            ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-            : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-        }`}
-      >
-        {vote.answer ? (
-          <>
-            <ThumbsUp className="h-3 w-3" />
-            Voted Yes
-          </>
-        ) : (
-          <>
-            <ThumbsDown className="h-3 w-3" />
-            Voted No
-          </>
-        )}
-      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger className="flex items-center gap-2 text-sm">
+            {vote.answer ? (
+              <div className="flex items-center gap-1.5 text-green-600">
+                <ThumbsUp className="h-4 w-4" />
+                <span className="font-medium">Voted Yes</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 text-red-600">
+                <ThumbsDown className="h-4 w-4" />
+                <span className="font-medium">Voted No</span>
+              </div>
+            )}
+          </TooltipTrigger>
+          <TooltipContent>
+            Your AI agent votes on your behalf based on predefined preferences.
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
   return (
-    <Card className="hover:shadow-md transition-all duration-200 border-border/50">
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Header Row - Compact and Functional */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Vote className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-medium text-sm text-foreground truncate">
-                    {vote.dao_name}
-                  </p>
-                  {getStatusBadge()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(vote.created_at), {
-                    addSuffix: true,
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {getVoteResult()}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1 h-6 w-6"
-              >
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Proposal Title - Prominent but Concise */}
-          <div className="py-2">
+    <Card className="hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden">
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex-1 min-w-0">
             <h3
-              className="text-base font-medium text-foreground leading-snug line-clamp-2"
+              className="text-base font-semibold text-foreground leading-snug mb-2"
               title={vote.proposal_title}
             >
               {vote.proposal_title}
             </h3>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <p className="font-medium text-xs text-foreground truncate">
+                {vote.dao_name}
+              </p>
+              {getStatusBadge()}
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatRelativeTime(vote.created_at)}
+              </span>
+            </div>
           </div>
+          <div className="flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-1 h-7 w-7"
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
 
-          {/* Quick Actions Row */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/30">
+        <div className="pt-2 mt-2 border-t border-border/30">
+          <div className="flex items-center justify-between">
+            {getVoteResult()}
             <div className="flex items-center gap-2">
               <Link
                 href={`/proposals/${vote.proposal_id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex"
               >
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="text-muted-foreground hover:text-primary h-7 px-2 text-xs"
+                  className="h-7 px-2 text-xs"
                 >
                   <FileText className="h-3 w-3 mr-1" />
-                  View Proposal
-                  <ExternalLink className="h-2 w-2 ml-1" />
+                  View
                 </Button>
               </Link>
-
-              {vote.tx_id && (
-                <Link
-                  href={getExplorerUrl(vote.tx_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex"
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-primary h-7 px-2 text-xs"
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Explorer
-                  </Button>
-                </Link>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {vote.confidence !== null && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <TrendingUp className="h-3 w-3" />
-                  {Math.round(vote.confidence * 100)}% confidence
-                </span>
-              )}
-
               {vote.dao_id &&
                 vote.proposal_id &&
                 isInVetoWindow(vote, currentBitcoinHeight) && (
@@ -301,152 +284,100 @@ function VoteCard({
                 )}
             </div>
           </div>
+        </div>
 
-          {/* Expanded Details - Clean and Organized */}
-          {isExpanded && (
-            <div className="pt-3 space-y-3 border-t border-border/30">
-              {/* Key Information Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {vote.amount !== null && vote.amount !== "0" && (
-                  <div className="bg-muted/50 rounded-lg p-2">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Vote Amount
-                    </div>
-                    <div className="text-sm font-medium">{vote.amount}</div>
-                  </div>
-                )}
-
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Proposal ID
-                  </div>
-                  <div className="text-sm font-medium">{vote.proposal_id}</div>
+        {isExpanded && (
+          <div className="pt-3 mt-3 space-y-3 border-t border-border/30">
+            {/* Key Information Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="bg-muted/50 rounded-lg p-2">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Proposal ID
                 </div>
-
-                {vote.vote_start && (
-                  <div className="bg-muted/50 rounded-lg p-2">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Vote Start
-                    </div>
-                    <div className="text-sm font-medium">
-                      {safeNumberFromBigInt(vote.vote_start)}
-                    </div>
-                  </div>
-                )}
-
-                {vote.vote_end && (
-                  <div className="bg-muted/50 rounded-lg p-2">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Vote End
-                    </div>
-                    <div className="text-sm font-medium">
-                      {safeNumberFromBigInt(vote.vote_end)}
-                    </div>
-                  </div>
-                )}
+                <div className="text-sm font-medium">{vote.proposal_id}</div>
               </div>
 
-              {/* Proposal Context */}
-              {vote.prompt && (
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium">Proposal Context</h4>
-                    <div className="flex items-center gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                          >
-                            Read Full
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Proposal Context</DialogTitle>
-                          </DialogHeader>
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown>{vote.prompt}</ReactMarkdown>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(vote.prompt || "")}
-                        className="h-6 w-6 p-0"
-                      >
-                        {copiedText === vote.prompt ? (
-                          <Check className="h-3 w-3 text-primary" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
+              {vote.vote_start && (
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Vote Start Block
                   </div>
-                  <div className="text-xs text-muted-foreground leading-relaxed">
-                    {(vote.prompt || "").substring(0, 200)}
-                    {(vote.prompt || "").length > 200 && "..."}
+                  <div className="text-sm font-medium">
+                    {safeNumberFromBigInt(vote.vote_start)}
                   </div>
                 </div>
               )}
 
-              {/* Reasoning - Compact Preview */}
-              {vote.reasoning && (
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium">Reasoning</h4>
-                    <div className="flex items-center gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                          >
-                            Read Full
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Vote Reasoning</DialogTitle>
-                          </DialogHeader>
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown>{vote.reasoning}</ReactMarkdown>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(vote.reasoning || "")}
-                        className="h-6 w-6 p-0"
-                      >
-                        {copiedText === vote.reasoning ? (
-                          <Check className="h-3 w-3 text-primary" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
+              {vote.vote_end && (
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Vote End Block
                   </div>
-                  <div className="text-xs text-muted-foreground leading-relaxed">
-                    {(vote.reasoning || "").substring(0, 200)}
-                    {(vote.reasoning || "").length > 200 && "..."}
+                  <div className="text-sm font-medium">
+                    {safeNumberFromBigInt(vote.vote_end)}
                   </div>
                 </div>
               )}
             </div>
-          )}
-        </div>
+
+            {/* Reasoning - Compact Preview */}
+            {vote.reasoning && (
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium">AI Agent Reasoning</h4>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs"
+                      >
+                        Read Full
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Vote Reasoning</DialogTitle>
+                      </DialogHeader>
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{vote.reasoning}</ReactMarkdown>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <div className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                  {vote.reasoning}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
+
+      {vote.confidence !== null && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="w-full">
+              <Progress
+                value={vote.confidence * 100}
+                className="h-1 rounded-none bg-muted/50"
+                indicatorClassName={getConfidenceColor(vote.confidence)}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {Math.round(vote.confidence * 100)}% confidence in this vote.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </Card>
   );
 }
 
 export function VotesView({ votes }: VotesViewProps) {
-  const { copyToClipboard, copiedText } = useClipboard();
+  const [visibleCount, setVisibleCount] = useState(10);
 
   // Fetch current Bitcoin block height
   const { data: chainState } = useQuery({
@@ -523,6 +454,11 @@ export function VotesView({ votes }: VotesViewProps) {
     setActiveTab(getDefaultTab());
   }, [getDefaultTab]);
 
+  // Reset pagination when tab changes
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [activeTab]);
+
   // Filter votes based on tab with block height logic
   const filteredVotes = useMemo(() => {
     switch (activeTab) {
@@ -573,6 +509,8 @@ export function VotesView({ votes }: VotesViewProps) {
     }
   }, [votes, activeTab, currentBitcoinHeight]);
 
+  const paginatedVotes = filteredVotes.slice(0, visibleCount);
+
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
       case "evaluation":
@@ -588,6 +526,25 @@ export function VotesView({ votes }: VotesViewProps) {
       case "all":
       default:
         return "All Votes";
+    }
+  };
+
+  const getTabTooltipContent = (tab: TabType): string => {
+    switch (tab) {
+      case "evaluation":
+        return "Proposals being assessed by AI agents for feasibility and alignment.";
+      case "voting":
+        return "Proposals currently open for voting by DAO members.";
+      case "veto":
+        return "A time window to challenge and potentially overturn a passed vote.";
+      case "passed":
+        return "Proposals that have been approved by voters.";
+      case "failed":
+        return "Proposals that have been rejected by voters.";
+      case "all":
+        return "View all proposals regardless of their status.";
+      default:
+        return "";
     }
   };
 
@@ -618,6 +575,94 @@ export function VotesView({ votes }: VotesViewProps) {
     "all",
   ];
 
+  const renderSidebar = (isMobile = false) => {
+    if (isMobile) {
+      return (
+        <div className="md:hidden mb-4">
+          <Select
+            onValueChange={(value: TabType) => setActiveTab(value)}
+            defaultValue={activeTab}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a view" />
+            </SelectTrigger>
+            <SelectContent>
+              {tabs.map((tab) => {
+                const tabCount = getTabCount(tab);
+                if (tab === "all" && votes.length === 0) return null;
+                return (
+                  <SelectItem key={tab} value={tab}>
+                    {getTabTitle(tab)} ({tabCount})
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+
+    return (
+      <aside className="hidden md:block">
+        <h2 className="text-lg font-semibold mb-4 pl-2">Navigation</h2>
+        <TooltipProvider>
+          <nav className="flex flex-col space-y-1">
+            {tabs.map((tab) => {
+              const Icon = getTabIcon(tab);
+              const isActive = activeTab === tab;
+              const tabCount = getTabCount(tab);
+              const hasActionableItems =
+                (tab === "veto" || tab === "voting") && tabCount > 0;
+
+              if (tab === "all" && votes.length === 0) return null;
+
+              return (
+                <Tooltip key={tab} delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setActiveTab(tab)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                        isActive
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : `hover:bg-muted/50 ${
+                              hasActionableItems
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                            }`
+                      }`}
+                    >
+                      <Icon
+                        className={`h-4 w-4 ${
+                          tab === "veto" && tabCount > 0 && !isActive
+                            ? "animate-pulse text-secondary"
+                            : ""
+                        }`}
+                      />
+                      <span className="flex-1 text-left">
+                        {getTabTitle(tab)}
+                      </span>
+                      {tabCount > 0 && (
+                        <Badge
+                          variant={isActive ? "default" : "secondary"}
+                          className="h-5"
+                        >
+                          {tabCount}
+                        </Badge>
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{getTabTooltipContent(tab)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </nav>
+        </TooltipProvider>
+      </aside>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[2400px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
@@ -641,117 +686,73 @@ export function VotesView({ votes }: VotesViewProps) {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center justify-center">
-          <div className="flex items-center p-1 bg-muted/50 rounded-lg">
-            {tabs.map((tab) => {
-              const Icon = getTabIcon(tab);
-              const isActive = activeTab === tab;
-              const tabCount = getTabCount(tab);
+        <div className="md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 mt-6">
+          {renderSidebar()}
+          <main>
+            {renderSidebar(true)}
 
-              if (tab === "all" && votes.length === 0) return null;
+            {/* Content */}
+            <div className="space-y-4">
+              {filteredVotes.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="text-center py-12">
+                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                      {(() => {
+                        const Icon = getTabIcon(activeTab);
+                        return (
+                          <Icon className="h-6 w-6 text-muted-foreground" />
+                        );
+                      })()}
+                    </div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      No {getTabTitle(activeTab).toLowerCase()} found
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {activeTab === "evaluation" &&
+                        "All proposals have moved beyond evaluation."}
+                      {activeTab === "voting" &&
+                        "No proposals are currently open for voting."}
+                      {activeTab === "veto" &&
+                        "No proposals are in the veto window."}
+                      {activeTab === "passed" &&
+                        "No proposals have passed yet."}
+                      {activeTab === "failed" &&
+                        "No proposals have failed yet."}
+                    </p>
+                    <Link href="/proposals">
+                      <Button variant="outline" className="gap-2">
+                        <FileText className="h-4 w-4" />
+                        Browse Proposals
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {paginatedVotes.map((vote) => (
+                      <VoteCard
+                        key={vote.id}
+                        vote={vote}
+                        currentBitcoinHeight={currentBitcoinHeight}
+                      />
+                    ))}
+                  </div>
 
-              const getTabStyle = () => {
-                if (isActive) {
-                  return "bg-background text-foreground shadow-sm";
-                }
-
-                let baseStyle = "text-muted-foreground hover:text-foreground";
-                if (tabCount > 0) {
-                  if (tab === "veto") {
-                    return `${baseStyle} bg-secondary/10 text-secondary hover:bg-secondary/20 font-medium`;
-                  }
-                  if (tab === "voting") {
-                    return `${baseStyle} bg-primary/10 text-primary hover:bg-primary/20`;
-                  }
-                }
-                return baseStyle;
-              };
-
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all text-sm ${getTabStyle()}`}
-                >
-                  <Icon
-                    className={`h-4 w-4 ${
-                      tab === "veto" && tabCount > 0 && !isActive
-                        ? "animate-pulse"
-                        : ""
-                    }`}
-                  />
-                  <span>{getTabTitle(tab)}</span>
-                  {tabCount > 0 && (
-                    <span className="text-xs opacity-70">({tabCount})</span>
+                  {filteredVotes.length > visibleCount && (
+                    <div className="text-center pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setVisibleCount((prev) => prev + 10)}
+                      >
+                        Show More
+                      </Button>
+                    </div>
                   )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-4">
-          {filteredVotes.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="text-center py-12">
-                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                  {(() => {
-                    const Icon = getTabIcon(activeTab);
-                    return <Icon className="h-6 w-6 text-muted-foreground" />;
-                  })()}
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No {getTabTitle(activeTab).toLowerCase()} found
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {activeTab === "evaluation" &&
-                    "All proposals have moved beyond evaluation."}
-                  {activeTab === "voting" &&
-                    "No proposals are currently open for voting."}
-                  {activeTab === "veto" &&
-                    "No proposals are in the veto window."}
-                  {activeTab === "passed" && "No proposals have passed yet."}
-                  {activeTab === "failed" && "No proposals have failed yet."}
-                </p>
-                <Link href="/proposals">
-                  <Button variant="outline" className="gap-2">
-                    <FileText className="h-4 w-4" />
-                    Browse Proposals
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-medium text-foreground">
-                    {getTabTitle(activeTab)} ({filteredVotes.length})
-                  </h2>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {filteredVotes.length === 1
-                    ? "1 proposal"
-                    : `${filteredVotes.length} proposals`}{" "}
-                  in this stage
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {filteredVotes.map((vote) => (
-                  <VoteCard
-                    key={vote.id}
-                    vote={vote}
-                    copiedText={copiedText}
-                    copyToClipboard={copyToClipboard}
-                    currentBitcoinHeight={currentBitcoinHeight}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+                </>
+              )}
+            </div>
+          </main>
         </div>
       </div>
     </div>

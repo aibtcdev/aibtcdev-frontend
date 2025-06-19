@@ -3,16 +3,7 @@
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  ArrowUpRight,
-  ArrowDownRight,
-  BarChart,
-  Users,
-  DollarSign,
-  TrendingUp,
-  Building2,
-  FileText,
-} from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, BarChart } from "lucide-react";
 import type { DAO, Token, Holder } from "@/types";
 import { Loader } from "@/components/reusables/Loader";
 import {
@@ -30,7 +21,6 @@ import {
 } from "@/components/ui/tooltip";
 
 import { formatNumber } from "@/utils/format";
-import { DAOBuyToken } from "./DaoBuyToken";
 
 interface DAOCardProps {
   dao: DAO;

@@ -3,9 +3,6 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import {
   Search,
-  Users,
-  Activity,
-  Coins,
   BarChart3,
   Grid3X3,
   List,
@@ -307,47 +304,54 @@ export default function AllDaos() {
   const filteredAndSortedDAOs = useMemo(() => {
     if (!daos) return [];
 
-    // Filter by search query (search name, description, mission, and other relevant fields)
-    let filtered = daos.filter((dao) => {
-      const searchTerm = searchQuery.toLowerCase();
-      return (
-        dao.name.toLowerCase().includes(searchTerm) ||
-        dao.description?.toLowerCase().includes(searchTerm) ||
-        dao.mission?.toLowerCase().includes(searchTerm)
-      );
+    const filtered = daos.filter((dao) => {
+      const query = searchQuery.toLowerCase();
+      try {
+        return (
+          dao.name.toLowerCase().includes(query) ||
+          dao.description?.toLowerCase().includes(query) ||
+          dao.mission?.toLowerCase().includes(query)
+        );
+      } catch (e) {
+        console.error("Error filtering DAOs:", e);
+        return false;
+      }
     });
 
-    // Sort DAOs
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "created":
-          return (
+    switch (sortBy) {
+      case "name":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "created":
+        filtered.sort(
+          (a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-        case "market_cap":
+        );
+        break;
+      case "market_cap":
+        filtered.sort((a, b) => {
           const marketCapA = tokenPrices?.[a.id]?.marketCap || 0;
           const marketCapB = tokenPrices?.[b.id]?.marketCap || 0;
           return marketCapB - marketCapA;
-        case "holders":
-          const holdersA =
-            holdersMap[a.id]?.data?.holderCount ||
-            tokenPrices?.[a.id]?.holders ||
-            0;
-          const holdersB =
-            holdersMap[b.id]?.data?.holderCount ||
-            tokenPrices?.[b.id]?.holders ||
-            0;
+        });
+        break;
+      case "holders":
+        filtered.sort((a, b) => {
+          const holdersA = holdersMap[a.id]?.data?.holderCount || 0;
+          const holdersB = holdersMap[b.id]?.data?.holderCount || 0;
           return holdersB - holdersA;
-        case "price_change":
+        });
+        break;
+      case "price_change":
+        filtered.sort((a, b) => {
           const changeA = tokenPrices?.[a.id]?.price24hChanges || 0;
           const changeB = tokenPrices?.[b.id]?.price24hChanges || 0;
           return changeB - changeA;
-        default:
-          return 0;
-      }
-    });
+        });
+        break;
+      default:
+        break;
+    }
 
     return filtered;
   }, [daos, searchQuery, sortBy, tokenPrices, holdersMap]);
@@ -358,21 +362,6 @@ export default function AllDaos() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  // Calculate summary stats
-  const totalDAOs = daos?.length || 0;
-  const totalHolders =
-    daos?.reduce((sum, dao) => {
-      const holders =
-        holdersMap[dao.id]?.data?.holderCount ||
-        tokenPrices?.[dao.id]?.holders ||
-        0;
-      return sum + holders;
-    }, 0) || 0;
-  const totalMarketCap =
-    daos?.reduce((sum, dao) => {
-      return sum + (tokenPrices?.[dao.id]?.marketCap || 0);
-    }, 0) || 0;
 
   // Handle pagination changes
   const handlePageChange = useCallback((page: number) => {

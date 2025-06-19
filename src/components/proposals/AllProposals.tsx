@@ -12,16 +12,7 @@ import {
 } from "@/components/reusables/FilterSidebar";
 import { Pagination } from "@/components/reusables/Pagination";
 import type { ProposalWithDAO } from "@/types";
-import {
-  FileText,
-  Filter,
-  X,
-  Vote,
-  TrendingUp,
-  Activity,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { FileText, Filter, X, Vote } from "lucide-react";
 import { useTokens } from "@/hooks/useTokens";
 import { getProposalStatus } from "@/utils/proposal";
 
