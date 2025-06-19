@@ -177,145 +177,145 @@ export const DAOCard = ({
 
   const router = useRouter();
   return (
-    <div
-      onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
-      className=""
-    >
-      <Card className="group h-full hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 cursor-pointer hover:bg-card/70">
-        <CardHeader className="pb-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-0">
-            <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
-              {/* Enhanced Logo */}
-              <div className="relative">
-                <div className="h-16 w-16 overflow-hidden rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
-                  <Image
-                    src={
-                      token?.image_url || dao.image_url || "/placeholder.svg"
-                    }
-                    alt={dao.name}
-                    width={64}
-                    height={64}
-                    className="object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
-                </div>
-              </div>
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
+          >
+            <Card className="group h-full hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 cursor-pointer hover:bg-card/70">
+              <CardHeader className="pb-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-0">
+                  <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
+                    {/* Enhanced Logo */}
+                    <div className="relative">
+                      <div className="h-16 w-16 overflow-hidden rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+                        <Image
+                          src={
+                            token?.image_url ||
+                            dao.image_url ||
+                            "/placeholder.svg"
+                          }
+                          alt={dao.name}
+                          width={64}
+                          height={64}
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
+                      </div>
+                    </div>
 
-              {/* DAO Info */}
-              <div className="flex-1 min-w-0 space-y-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                    {/* DAO Info */}
+                    <div className="flex-1 min-w-0 space-y-2">
                       <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300 truncate">
                         {truncateName(dao.name)}
                       </h3>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{dao.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
 
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-sm">
-                    Created {new Date(dao.created_at).toLocaleDateString()}
-                  </span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Building2 className="h-4 w-4" />
+                        <span className="text-sm">
+                          Created{" "}
+                          {new Date(dao.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="min-w-0 mt-2 sm:mt-0 sm:ml-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <DAOBuyToken daoId={dao.id} daoName={dao.name} />
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div
-              className="min-w-0 mt-2 sm:mt-0 sm:ml-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <DAOBuyToken daoId={dao.id} daoName={dao.name} />
-            </div>
+              </CardHeader>
+
+              <CardContent className="pt-0 space-y-8">
+                {/* Price Chart Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-foreground">
+                      Price Trend
+                    </h4>
+                    {renderPriceChange(tokenPrice?.price24hChanges)}
+                  </div>
+                  <div className="bg-muted/20 rounded-2xl p-4 border border-border/30">
+                    {renderChart(trades)}
+                  </div>
+                </div>
+
+                {/* Key Metrics Grid */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-foreground">
+                    Key Metrics
+                  </h4>
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
+                    {/* Price */}
+                    <div className="text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto">
+                        <DollarSign className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground font-medium">
+                          Price
+                        </div>
+                        <div className="text-sm font-bold text-foreground">
+                          {isFetchingPrice ? (
+                            <Loader />
+                          ) : tokenPrice?.price ? (
+                            `$${formatNumber(tokenPrice.price)}`
+                          ) : (
+                            "—"
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Holders */}
+                    <div className="text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center mx-auto">
+                        <Users className="h-6 w-6 text-blue-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground font-medium">
+                          Holders
+                        </div>
+                        <div className="text-sm font-bold text-foreground">
+                          {getHolderCount()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Market Cap */}
+                    <div className="text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center mx-auto">
+                        <TrendingUp className="h-6 w-6 text-emerald-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-xs text-muted-foreground font-medium">
+                          Market Cap
+                        </div>
+                        <div className="text-sm font-bold text-foreground">
+                          {isFetchingPrice ? (
+                            <Loader />
+                          ) : tokenPrice?.marketCap ? (
+                            `$${formatNumber(tokenPrice.marketCap)}`
+                          ) : (
+                            "—"
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-
-        <CardContent className="pt-0 space-y-8">
-          {/* Price Chart Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-foreground">
-                Price Trend
-              </h4>
-              {renderPriceChange(tokenPrice?.price24hChanges)}
-            </div>
-            <div className="bg-muted/20 rounded-2xl p-4 border border-border/30">
-              {renderChart(trades)}
-            </div>
-          </div>
-
-          {/* Key Metrics Grid */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-foreground">
-              Key Metrics
-            </h4>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
-              {/* Price */}
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Price
-                  </div>
-                  <div className="text-sm font-bold text-foreground">
-                    {isFetchingPrice ? (
-                      <Loader />
-                    ) : tokenPrice?.price ? (
-                      `$${formatNumber(tokenPrice.price)}`
-                    ) : (
-                      "—"
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Holders */}
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center mx-auto">
-                  <Users className="h-6 w-6 text-blue-500" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Holders
-                  </div>
-                  <div className="text-sm font-bold text-foreground">
-                    {getHolderCount()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Market Cap */}
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center mx-auto">
-                  <TrendingUp className="h-6 w-6 text-emerald-500" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs text-muted-foreground font-medium">
-                    Market Cap
-                  </div>
-                  <div className="text-sm font-bold text-foreground">
-                    {isFetchingPrice ? (
-                      <Loader />
-                    ) : tokenPrice?.marketCap ? (
-                      `$${formatNumber(tokenPrice.marketCap)}`
-                    ) : (
-                      "—"
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </TooltipTrigger>
+        <TooltipContent side="top">Click to participate in DAO</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
