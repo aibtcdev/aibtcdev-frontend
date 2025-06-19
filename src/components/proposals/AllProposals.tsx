@@ -32,40 +32,6 @@ interface AllProposalsProps {
 // Define sort options
 type SortField = "newest" | "oldest" | "title" | "votes" | "status" | "dao";
 
-function CompactMetrics({
-  totalProposals,
-  activeProposals,
-  passedProposals,
-  failedProposals,
-}: {
-  totalProposals: number;
-  activeProposals: number;
-  passedProposals: number;
-  failedProposals: number;
-}) {
-  const metrics = [
-    { label: "Total", value: totalProposals, icon: Activity },
-    { label: "Active", value: activeProposals, icon: TrendingUp },
-    { label: "Passed", value: passedProposals, icon: CheckCircle },
-    { label: "Failed", value: failedProposals, icon: XCircle },
-  ];
-
-  return (
-    <div className="flex items-center justify-center gap-4 p-3 bg-muted/30 rounded-lg">
-      {metrics.map((metric, index) => (
-        <div key={metric.label} className="flex items-center gap-2 text-sm">
-          <metric.icon className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{metric.value}</span>
-          <span className="text-muted-foreground">{metric.label}</span>
-          {index < metrics.length - 1 && (
-            <div className="w-px h-4 bg-border/50 ml-2" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 const AllProposals = ({ proposals }: AllProposalsProps) => {
   // Fetch tokens and create lookup map
   const { tokenLookup } = useTokens();
@@ -278,7 +244,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[2400px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Compact Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -293,14 +259,6 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
             </p>
           </div>
         </div>
-
-        {/* Compact Metrics */}
-        <CompactMetrics
-          totalProposals={totalProposals}
-          activeProposals={activeProposals}
-          passedProposals={passedProposals}
-          failedProposals={failedProposals}
-        />
 
         {/* Filter Toggle for Mobile */}
         <div className="lg:hidden flex justify-between items-center">

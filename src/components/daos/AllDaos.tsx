@@ -1,10 +1,36 @@
 "use client";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Search, Users, Activity, Coins, BarChart3 } from "lucide-react";
+import {
+  Search,
+  Users,
+  Activity,
+  Coins,
+  BarChart3,
+  Grid3X3,
+  List,
+  Filter,
+  Keyboard,
+} from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/reusables/Pagination";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { DAOCard } from "@/components/daos/DaoCard";
+import { DAOCard, DAOListItem } from "@/components/daos/DaoCard";
 import type { DAO, Holder } from "@/types";
 import {
   fetchDAOsWithExtension,
@@ -12,6 +38,7 @@ import {
   fetchTokenPrices,
   fetchTokenTrades,
   fetchHolders,
+  fetchProposalCounts,
 } from "@/services/dao.service";
 
 // Define TokenTrade interface locally since it's defined in queries but not exported
@@ -26,42 +53,151 @@ interface TokenTrade {
   timestamp: number;
 }
 
-function CompactMetrics({
-  totalDAOs,
-  totalHolders,
-  totalMarketCap,
-}: {
-  totalDAOs: number;
-  totalHolders: number;
-  totalMarketCap: number;
-}) {
-  const metrics = [
-    { label: "AI DAOs", value: totalDAOs, icon: Activity },
-    { label: "Holders", value: totalHolders.toLocaleString(), icon: Users },
-    {
-      label: "Market Cap",
-      value: `$${totalMarketCap.toLocaleString()}`,
-      icon: Coins,
-    },
-  ];
+type SortOption =
+  | "name"
+  | "created"
+  | "market_cap"
+  | "holders"
+  | "price_change";
+type ViewMode = "grid" | "list";
 
+function SearchAndFilters({
+  searchQuery,
+  onSearchChange,
+  sortBy,
+  onSortChange,
+  viewMode,
+  onViewModeChange,
+  totalResults,
+}: {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  sortBy: SortOption;
+  onSortChange: (sort: SortOption) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  totalResults: number;
+}) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 p-3 bg-muted/30 rounded-lg">
-      {metrics.map((metric, index) => (
-        <div key={metric.label} className="flex items-center gap-2 text-sm">
-          <metric.icon className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{metric.value}</span>
-          <span className="text-muted-foreground">{metric.label}</span>
-          {index < metrics.length - 1 && (
-            <div className="w-px h-4 bg-border/50 ml-2" />
-          )}
+    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      {/* Search */}
+      <div className="relative flex-1 max-w-md group">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
+        <Input
+          placeholder="Search DAOs by name, description, or mission..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9 h-10 text-sm bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-border/80 transition-all duration-300"
+          aria-label="Search DAOs"
+        />
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-3">
+        {/* Results count */}
+        <span className="text-sm text-muted-foreground hidden sm:inline">
+          {totalResults} result{totalResults !== 1 ? "s" : ""}
+        </span>
+
+        {/* Sort */}
+        <Select
+          value={sortBy}
+          onValueChange={(value: SortOption) => onSortChange(value)}
+        >
+          <SelectTrigger className="w-[140px] h-10 bg-background border-border">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-border">
+            <SelectItem value="name" className="text-foreground hover:bg-muted">
+              Name
+            </SelectItem>
+            <SelectItem
+              value="created"
+              className="text-foreground hover:bg-muted"
+            >
+              Newest
+            </SelectItem>
+            <SelectItem
+              value="market_cap"
+              className="text-foreground hover:bg-muted"
+            >
+              Market Cap
+            </SelectItem>
+            <SelectItem
+              value="holders"
+              className="text-foreground hover:bg-muted"
+            >
+              Holders
+            </SelectItem>
+            <SelectItem
+              value="price_change"
+              className="text-foreground hover:bg-muted"
+            >
+              Price Change
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center bg-muted/30 rounded-lg p-1">
+          <Button
+            variant={viewMode === "grid" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onViewModeChange("grid")}
+            className="h-8 w-8 p-0"
+            aria-label="Grid view"
+          >
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onViewModeChange("list")}
+            className="h-8 w-8 p-0"
+            aria-label="List view"
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
-      ))}
+      </div>
+    </div>
+  );
+}
+
+function ListHeader() {
+  return (
+    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
+      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,3fr)_repeat(2,minmax(0,1fr))] lg:grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,3fr)_repeat(4,minmax(0,1fr))] items-center gap-x-4 h-10">
+        <div className="px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          DAO
+        </div>
+        <div className="px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Price
+        </div>
+        <div className="hidden md:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Market Cap
+        </div>
+        <div className="hidden lg:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Holders
+        </div>
+        <div className="hidden xl:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Proposals
+        </div>
+      </div>
+      <div className="border-b border-border/50 -mt-px" />
     </div>
   );
 }
 
 export default function AllDaos() {
+  // State for search, filtering, and pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("market_cap");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+
   // Fetch DAOs with TanStack Query
   const { data: daos, isLoading: isLoadingDAOs } = useQuery({
     queryKey: ["daos"],
@@ -72,6 +208,11 @@ export default function AllDaos() {
   const { data: tokens } = useQuery({
     queryKey: ["tokens"],
     queryFn: fetchTokens,
+  });
+
+  const { data: proposalCounts } = useQuery({
+    queryKey: ["proposalCounts"],
+    queryFn: fetchProposalCounts,
   });
 
   // Fetch token prices with TanStack Query
@@ -162,9 +303,64 @@ export default function AllDaos() {
     return map;
   }, [daos, holderQueries]);
 
+  // Filter and sort DAOs
+  const filteredAndSortedDAOs = useMemo(() => {
+    if (!daos) return [];
+
+    // Filter by search query (search name, description, mission, and other relevant fields)
+    let filtered = daos.filter((dao) => {
+      const searchTerm = searchQuery.toLowerCase();
+      return (
+        dao.name.toLowerCase().includes(searchTerm) ||
+        dao.description?.toLowerCase().includes(searchTerm) ||
+        dao.mission?.toLowerCase().includes(searchTerm)
+      );
+    });
+
+    // Sort DAOs
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "created":
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+        case "market_cap":
+          const marketCapA = tokenPrices?.[a.id]?.marketCap || 0;
+          const marketCapB = tokenPrices?.[b.id]?.marketCap || 0;
+          return marketCapB - marketCapA;
+        case "holders":
+          const holdersA =
+            holdersMap[a.id]?.data?.holderCount ||
+            tokenPrices?.[a.id]?.holders ||
+            0;
+          const holdersB =
+            holdersMap[b.id]?.data?.holderCount ||
+            tokenPrices?.[b.id]?.holders ||
+            0;
+          return holdersB - holdersA;
+        case "price_change":
+          const changeA = tokenPrices?.[a.id]?.price24hChanges || 0;
+          const changeB = tokenPrices?.[b.id]?.price24hChanges || 0;
+          return changeB - changeA;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [daos, searchQuery, sortBy, tokenPrices, holdersMap]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
+  const paginatedDAOs = filteredAndSortedDAOs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Calculate summary stats
   const totalDAOs = daos?.length || 0;
-
   const totalHolders =
     daos?.reduce((sum, dao) => {
       const holders =
@@ -178,32 +374,162 @@ export default function AllDaos() {
       return sum + (tokenPrices?.[dao.id]?.marketCap || 0);
     }, 0) || 0;
 
+  // Handle pagination changes
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  }, []);
+
+  // Reset pagination when search or sort changes
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((sort: SortOption) => {
+    setSortBy(sort);
+    setCurrentPage(1);
+  }, []);
+
+  // Keyboard shortcuts for better navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle shortcuts when not typing in input fields
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case "/":
+          e.preventDefault();
+          // Focus search input
+          const searchInput = document.querySelector(
+            'input[aria-label="Search DAOs"]'
+          ) as HTMLInputElement;
+          searchInput?.focus();
+          break;
+        case "g":
+          if (e.shiftKey) {
+            e.preventDefault();
+            setViewMode(viewMode === "grid" ? "list" : "grid");
+          }
+          break;
+        case "ArrowLeft":
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            if (currentPage > 1) {
+              handlePageChange(currentPage - 1);
+            }
+          }
+          break;
+        case "ArrowRight":
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+              handlePageChange(currentPage + 1);
+            }
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [currentPage, totalPages, handlePageChange, viewMode]);
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Compact Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <BarChart3 className="h-5 w-5 text-primary" />
+      <div className="mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-[2400px]">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                AI DAOs
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Discover and participate in autonomous organizations powered by
+                artificial intelligence
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">AI DAOs</h1>
-            <p className="text-sm text-muted-foreground">
-              Discover autonomous organizations powered by artificial
-              intelligence
-            </p>
-          </div>
+
+          {/* Keyboard shortcuts tooltip */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Keyboard className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <div className="space-y-2 text-xs">
+                  <div className="font-medium">Keyboard Shortcuts</div>
+                  <div>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      /
+                    </kbd>{" "}
+                    Focus search
+                  </div>
+                  <div>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Shift
+                    </kbd>{" "}
+                    +{" "}
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      G
+                    </kbd>{" "}
+                    Toggle view
+                  </div>
+                  <div>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      Cmd
+                    </kbd>{" "}
+                    +{" "}
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      ←
+                    </kbd>
+                    <kbd className="px-1 py-0.5 bg-muted rounded text-xs">
+                      →
+                    </kbd>{" "}
+                    Navigate pages
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
-        {/* Compact Metrics */}
-        <CompactMetrics
-          totalDAOs={totalDAOs}
-          totalHolders={totalHolders}
-          totalMarketCap={totalMarketCap}
+        {/* Metrics */}
+
+        {/* Search and Filters */}
+        <SearchAndFilters
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          totalResults={filteredAndSortedDAOs.length}
         />
 
         {/* Content */}
-        <div className="space-y-4">
+        <div className="space-y-4 sm:space-y-6">
           {isLoadingDAOs ? (
             <div className="flex min-h-[40vh] items-center justify-center">
               <div className="text-center space-y-4">
@@ -220,7 +546,7 @@ export default function AllDaos() {
                 </div>
               </div>
             </div>
-          ) : !daos || daos.length === 0 ? (
+          ) : filteredAndSortedDAOs.length === 0 ? (
             <div className="border-dashed border rounded-lg py-12">
               <div className="text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
@@ -228,30 +554,82 @@ export default function AllDaos() {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg font-medium text-foreground">
-                    No DAOs Found
+                    {searchQuery ? "No DAOs Found" : "No DAOs Available"}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    No AI DAOs are available at the moment. Check back later for
-                    new autonomous organizations.
+                    {searchQuery
+                      ? `No AI DAOs match "${searchQuery}". Try a different search term.`
+                      : "No AI DAOs are available at the moment. Check back later for new autonomous organizations."}
                   </p>
+                  {searchQuery && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setSearchQuery("")}
+                      className="mt-4"
+                    >
+                      Clear Search
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {daos.map((dao) => (
-                  <DAOCard
-                    key={dao.id}
-                    dao={dao}
-                    token={tokens?.find((t) => t.dao_id === dao.id)}
-                    tokenPrice={tokenPrices?.[dao.id]}
-                    isFetchingPrice={isFetchingTokenPrices}
-                    trades={tradesMap[dao.id]}
-                    holders={holdersMap[dao.id]}
-                  />
-                ))}
-              </div>
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
+                  {paginatedDAOs.map((dao) => (
+                    <DAOCard
+                      key={dao.id}
+                      dao={dao}
+                      token={tokens?.find((t) => t.dao_id === dao.id)}
+                      tokenPrice={tokenPrices?.[dao.id]}
+                      isFetchingPrice={isFetchingTokenPrices}
+                      trades={tradesMap[dao.id]}
+                      holders={holdersMap[dao.id]}
+                      proposalCount={proposalCounts?.[dao.id]}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-border/50 rounded-lg overflow-hidden">
+                  <ListHeader />
+                  <div className="divide-y divide-border/50">
+                    {paginatedDAOs.map((dao) => (
+                      <div
+                        key={dao.id}
+                        className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,3fr)_repeat(2,minmax(0,1fr))] lg:grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,3fr)_repeat(4,minmax(0,1fr))_min-content] items-center gap-x-4 h-16 hover:bg-muted/50 transition-colors"
+                      >
+                        <DAOListItem
+                          dao={dao}
+                          token={tokens?.find((t) => t.dao_id === dao.id)}
+                          tokenPrice={tokenPrices?.[dao.id]}
+                          isFetchingPrice={isFetchingTokenPrices}
+                          holders={holdersMap[dao.id]}
+                          proposalCount={proposalCounts?.[dao.id]}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {filteredAndSortedDAOs.length > itemsPerPage && (
+                <div className="mt-6 sm:mt-8">
+                  <div className="bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 p-2 sm:p-4 overflow-x-auto">
+                    <div className="min-w-[320px]">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        totalItems={filteredAndSortedDAOs.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

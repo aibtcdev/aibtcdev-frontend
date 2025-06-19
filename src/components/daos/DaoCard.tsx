@@ -11,6 +11,7 @@ import {
   DollarSign,
   TrendingUp,
   Building2,
+  FileText,
 } from "lucide-react";
 import type { DAO, Token, Holder } from "@/types";
 import { Loader } from "@/components/reusables/Loader";
@@ -53,10 +54,14 @@ interface DAOCardProps {
     } | null;
     isLoading: boolean;
   };
+  proposalCount?: number;
 }
 
 const truncateName = (name: string, maxLength = 20) => {
-  return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
+  if (name.length > maxLength) {
+    return `${name.slice(0, maxLength)}...`;
+  }
+  return name;
 };
 
 export const DAOCard = ({
@@ -66,6 +71,7 @@ export const DAOCard = ({
   isFetchingPrice,
   trades,
   holders,
+  proposalCount,
 }: DAOCardProps) => {
   const getChartColor = (data: Array<{ timestamp: number; price: number }>) => {
     if (data.length < 2) return "#8884d8";
@@ -80,14 +86,14 @@ export const DAOCard = ({
   }) => {
     if (tradeData.isLoading) {
       return (
-        <div className="flex h-20 items-center justify-center">
+        <div className="flex h-[50px] items-center justify-center">
           <Loader />
         </div>
       );
     }
     if (tradeData.data.length > 0) {
       return (
-        <ResponsiveContainer width="100%" height={80}>
+        <ResponsiveContainer width="100%" height={50}>
           <LineChart data={tradeData.data}>
             <XAxis dataKey="timestamp" hide />
             <RechartsTooltip
@@ -119,16 +125,16 @@ export const DAOCard = ({
               dataKey="price"
               stroke={getChartColor(tradeData.data)}
               dot={false}
-              strokeWidth={3}
+              strokeWidth={2.5}
             />
           </LineChart>
         </ResponsiveContainer>
       );
     }
     return (
-      <div className="flex h-20 items-center justify-center">
-        <div className="text-center space-y-2">
-          <BarChart className="h-6 w-6 text-muted-foreground/50 mx-auto" />
+      <div className="flex h-[50px] items-center justify-center">
+        <div className="text-center space-y-1">
+          <BarChart className="h-5 w-5 text-muted-foreground/50 mx-auto" />
           <span className="text-xs text-muted-foreground">No trading data</span>
         </div>
       </div>
@@ -136,12 +142,8 @@ export const DAOCard = ({
   };
 
   const renderPriceChange = (change: number | null | undefined) => {
-    if (change === null || change === undefined) {
-      return (
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <span className="text-sm font-medium">0%</span>
-        </div>
-      );
+    if (change === null || change === undefined || change === 0) {
+      return null;
     }
 
     const isPositive = change > 0;
@@ -149,14 +151,14 @@ export const DAOCard = ({
 
     return (
       <div
-        className={`flex items-center gap-1 px-2 py-1 rounded-lg ${
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
           isPositive
             ? "text-emerald-500 bg-emerald-500/10"
             : "text-rose-500 bg-rose-500/10"
         }`}
       >
-        <Icon className="h-4 w-4" />
-        <span className="text-sm font-semibold">
+        <Icon className="h-3.5 w-3.5" />
+        <span className="text-xs font-semibold">
           {Math.abs(change).toFixed(2)}%
         </span>
       </div>
@@ -182,14 +184,15 @@ export const DAOCard = ({
         <TooltipTrigger asChild>
           <div
             onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
+            className="block h-full"
           >
-            <Card className="group h-full hover:shadow-lg transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 cursor-pointer hover:bg-card/70">
-              <CardHeader className="pb-6">
-                <div className="flex flex-col sm:flex-row items-start justify-between gap-2 sm:gap-0">
-                  <div className="flex items-center gap-4 flex-1 min-w-0 w-full">
-                    {/* Enhanced Logo */}
-                    <div className="relative">
-                      <div className="h-16 w-16 overflow-hidden rounded-2xl flex-shrink-0 bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+            <Card className="group h-full flex flex-col hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 cursor-pointer hover:bg-card/70 hover:scale-[1.02] active:scale-[0.98] hover:-translate-y-1">
+              <CardHeader className="p-3">
+                <div className="flex items-start justify-between gap-3">
+                  {/* Logo & Name */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <div className="h-10 w-10 overflow-hidden rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-110 transition-transform duration-300">
                         <Image
                           src={
                             token?.image_url ||
@@ -197,8 +200,8 @@ export const DAOCard = ({
                             "/placeholder.svg"
                           }
                           alt={dao.name}
-                          width={64}
-                          height={64}
+                          width={40}
+                          height={40}
                           className="object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
@@ -207,115 +210,316 @@ export const DAOCard = ({
                         />
                       </div>
                     </div>
-
-                    {/* DAO Info */}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300 truncate">
-                        {truncateName(dao.name)}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors duration-300 truncate">
+                        {dao.name}
                       </h3>
-
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Building2 className="h-4 w-4" />
-                        <span className="text-sm">
-                          Created{" "}
-                          {new Date(dao.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        Created {new Date(dao.created_at).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
-                  <div
-                    className="min-w-0 mt-2 sm:mt-0 sm:ml-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <DAOBuyToken daoId={dao.id} daoName={dao.name} />
+                  {/* Price Change */}
+                  <div className="flex-shrink-0">
+                    {renderPriceChange(tokenPrice?.price24hChanges)}
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-0 space-y-8">
-                {/* Price Chart Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-foreground">
-                      Price Trend
-                    </h4>
-                    {renderPriceChange(tokenPrice?.price24hChanges)}
-                  </div>
-                  <div className="bg-muted/20 rounded-2xl p-4 border border-border/30">
+              <CardContent className="p-3 pt-0 flex-1 flex flex-col justify-end space-y-3">
+                {/* Price Chart Section - Only show if there's trade data */}
+                {trades.data.length > 0 && (
+                  <div className="bg-muted/20 rounded-lg p-1 border border-border/30">
                     {renderChart(trades)}
                   </div>
-                </div>
+                )}
 
                 {/* Key Metrics Grid */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-semibold text-foreground">
-                    Key Metrics
-                  </h4>
-                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-3">
-                    {/* Price */}
-                    <div className="text-center space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto">
-                        <DollarSign className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground font-medium">
-                          Price
-                        </div>
-                        <div className="text-sm font-bold text-foreground">
-                          {isFetchingPrice ? (
-                            <Loader />
-                          ) : tokenPrice?.price ? (
-                            `$${formatNumber(tokenPrice.price)}`
-                          ) : (
-                            "—"
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-left">
+                  {/* Price */}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Price</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {isFetchingPrice ? (
+                        <Loader />
+                      ) : tokenPrice?.price ? (
+                        `$${formatNumber(tokenPrice.price)}`
+                      ) : (
+                        "—"
+                      )}
+                    </p>
+                  </div>
 
-                    {/* Holders */}
-                    <div className="text-center space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center mx-auto">
-                        <Users className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground font-medium">
-                          Holders
-                        </div>
-                        <div className="text-sm font-bold text-foreground">
-                          {getHolderCount()}
-                        </div>
-                      </div>
-                    </div>
+                  {/* Market Cap */}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Market Cap</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {isFetchingPrice ? (
+                        <Loader />
+                      ) : tokenPrice?.marketCap ? (
+                        `$${formatNumber(tokenPrice.marketCap)}`
+                      ) : (
+                        "—"
+                      )}
+                    </p>
+                  </div>
 
-                    {/* Market Cap */}
-                    <div className="text-center space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center mx-auto">
-                        <TrendingUp className="h-6 w-6 text-emerald-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-xs text-muted-foreground font-medium">
-                          Market Cap
-                        </div>
-                        <div className="text-sm font-bold text-foreground">
-                          {isFetchingPrice ? (
-                            <Loader />
-                          ) : tokenPrice?.marketCap ? (
-                            `$${formatNumber(tokenPrice.marketCap)}`
-                          ) : (
-                            "—"
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                  {/* Holders */}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Holders</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {getHolderCount()}
+                    </p>
+                  </div>
+
+                  {/* Proposal Count */}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Proposals</p>
+                    <p className="text-sm font-bold text-foreground">
+                      {proposalCount ?? "—"}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top">Click to participate in DAO</TooltipContent>
+        <TooltipContent side="top">
+          Click to view DAO details and participate
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+};
+
+export const DAOListItem = ({
+  dao,
+  token,
+  tokenPrice,
+  isFetchingPrice,
+  holders,
+  proposalCount,
+}: Omit<DAOCardProps, "trades">) => {
+  const router = useRouter();
+
+  const getHolderCount = () => {
+    if (holders?.isLoading) return <Loader />;
+    if (holders?.data?.holderCount)
+      return holders.data.holderCount.toLocaleString();
+    return tokenPrice?.holders?.toLocaleString() || "—";
+  };
+
+  const renderPriceChange = (change: number | null | undefined) => {
+    if (change === null || change === undefined || change === 0) return null;
+    const isPositive = change > 0;
+    const Icon = isPositive ? ArrowUpRight : ArrowDownRight;
+    return (
+      <div
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs ${
+          isPositive
+            ? "text-emerald-500 bg-emerald-500/10"
+            : "text-rose-500 bg-rose-500/10"
+        }`}
+      >
+        <Icon className="h-3 w-3" />
+        <span className="font-medium">{Math.abs(change).toFixed(1)}%</span>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
+      className="group contents"
+    >
+      <div className="flex items-center gap-3 min-w-0 px-4">
+        <div className="relative flex-shrink-0">
+          <div className="h-10 w-10 overflow-hidden rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+            <Image
+              src={token?.image_url || dao.image_url || "/placeholder.svg"}
+              alt={dao.name}
+              width={40}
+              height={40}
+              className="object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder.svg";
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors duration-300 truncate">
+              {dao.name}
+            </h3>
+            {renderPriceChange(tokenPrice?.price24hChanges)}
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            {dao.description || "No description provided"}
+          </p>
+        </div>
+      </div>
+
+      <div className="text-right text-sm font-medium px-4">
+        {isFetchingPrice ? (
+          <Loader />
+        ) : tokenPrice?.price ? (
+          `$${formatNumber(tokenPrice.price)}`
+        ) : (
+          "—"
+        )}
+      </div>
+
+      <div className="hidden md:block text-right text-sm font-medium px-4">
+        {isFetchingPrice ? (
+          <Loader />
+        ) : tokenPrice?.marketCap ? (
+          `$${formatNumber(tokenPrice.marketCap)}`
+        ) : (
+          "—"
+        )}
+      </div>
+
+      <div className="hidden lg:block text-right text-sm font-medium px-4">
+        {getHolderCount()}
+      </div>
+
+      <div className="hidden xl:block text-right text-sm font-medium px-4">
+        {proposalCount ?? "—"}
+      </div>
+
+      <div className="pr-4 justify-self-end">
+        <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
+      </div>
+    </div>
+  );
+};
+
+// Compact version for list view or when showing many DAOs
+export const CompactDAOCard = ({
+  dao,
+  token,
+  tokenPrice,
+  isFetchingPrice,
+  holders,
+  proposalCount,
+}: Omit<DAOCardProps, "trades">) => {
+  const router = useRouter();
+  const getHolderCount = () => {
+    if (holders?.isLoading) {
+      return <Loader />;
+    }
+    if (holders?.data?.holderCount) {
+      return holders.data.holderCount.toLocaleString();
+    }
+    return tokenPrice?.holders?.toLocaleString() || "—";
+  };
+
+  const renderPriceChange = (change: number | null | undefined) => {
+    if (change === null || change === undefined || change === 0) {
+      return null;
+    }
+
+    const isPositive = change > 0;
+    const Icon = isPositive ? ArrowUpRight : ArrowDownRight;
+
+    return (
+      <div
+        className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+          isPositive
+            ? "text-emerald-500 bg-emerald-500/10"
+            : "text-rose-500 bg-rose-500/10"
+        }`}
+      >
+        <Icon className="h-3 w-3" />
+        <span className="font-medium">{Math.abs(change).toFixed(1)}%</span>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
+      className="group block"
+    >
+      <Card className="hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 bg-card/30 backdrop-blur-sm border-border/30 hover:border-primary/40 cursor-pointer hover:bg-card/50 hover:scale-[1.01] active:scale-[0.99]">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-4">
+            {/* Logo */}
+            <div className="relative flex-shrink-0">
+              <div className="h-10 w-10 overflow-hidden rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+                <Image
+                  src={token?.image_url || dao.image_url || "/placeholder.svg"}
+                  alt={dao.name}
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* DAO Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors duration-300 truncate">
+                  {truncateName(dao.name, 25)}
+                </h3>
+                {renderPriceChange(tokenPrice?.price24hChanges)}
+              </div>
+            </div>
+
+            {/* Metrics */}
+            <div className="flex items-center gap-4 text-sm flex-shrink-0">
+              <div className="text-right">
+                <div className="font-bold text-foreground text-sm">
+                  {isFetchingPrice ? (
+                    <Loader />
+                  ) : tokenPrice?.price ? (
+                    `$${formatNumber(tokenPrice.price)}`
+                  ) : (
+                    "—"
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">Price</div>
+              </div>
+              <div className="text-right min-w-[80px]">
+                <div className="font-bold text-foreground text-sm">
+                  {isFetchingPrice ? (
+                    <Loader />
+                  ) : tokenPrice?.marketCap ? (
+                    `$${formatNumber(tokenPrice.marketCap)}`
+                  ) : (
+                    "—"
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">Market Cap</div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-foreground text-sm">
+                  {getHolderCount()}
+                </div>
+                <div className="text-xs text-muted-foreground">Holders</div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-foreground text-sm">
+                  {proposalCount ?? "—"}
+                </div>
+                <div className="text-xs text-muted-foreground">Proposals</div>
+              </div>
+            </div>
+
+            {/* Arrow indicator */}
+            <div className="flex-shrink-0 pl-2">
+              <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

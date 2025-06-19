@@ -49,7 +49,7 @@ interface VoteCardProps {
   currentBitcoinHeight: number;
 }
 
-type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed";
+type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
 
 // Helper function to safely convert bigint to number for comparison
 const safeNumberFromBigInt = (value: bigint | null): number => {
@@ -283,7 +283,8 @@ function VoteCard({
 
             <div className="flex items-center gap-2">
               {vote.confidence !== null && (
-                <span className="text-xs text-muted-foreground">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <TrendingUp className="h-3 w-3" />
                   {Math.round(vote.confidence * 100)}% confidence
                 </span>
               )}
@@ -295,7 +296,7 @@ function VoteCard({
                     daoId={vote.dao_id}
                     proposalId={vote.proposal_id}
                     size="sm"
-                    variant="outline"
+                    variant="destructive"
                   />
                 )}
             </div>
@@ -444,37 +445,6 @@ function VoteCard({
   );
 }
 
-function CompactMetrics({ votes }: { votes: VoteType[] }) {
-  const totalVotes = votes.length;
-  const yesVotes = votes.filter((vote) => vote.answer === true).length;
-  const noVotes = votes.filter((vote) => vote.answer === false).length;
-  const uniqueDAOs = new Set(votes.map((vote) => vote.dao_name)).size;
-  const uniqueProposals = new Set(votes.map((vote) => vote.proposal_id)).size;
-
-  const metrics = [
-    { label: "Total", value: totalVotes, icon: Activity },
-    { label: "Yes", value: yesVotes, icon: ThumbsUp },
-    { label: "No", value: noVotes, icon: ThumbsDown },
-    { label: "DAOs", value: uniqueDAOs, icon: Vote },
-    { label: "Proposals", value: uniqueProposals, icon: TrendingUp },
-  ];
-
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 p-3 bg-muted/30 rounded-lg">
-      {metrics.map((metric, index) => (
-        <div key={metric.label} className="flex items-center gap-2 text-sm">
-          <metric.icon className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">{metric.value}</span>
-          <span className="text-muted-foreground">{metric.label}</span>
-          {index < metrics.length - 1 && (
-            <div className="w-px h-4 bg-border/50 ml-2" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function VotesView({ votes }: VotesViewProps) {
   const { copyToClipboard, copiedText } = useClipboard();
 
@@ -490,24 +460,61 @@ export function VotesView({ votes }: VotesViewProps) {
     ? Number.parseInt(chainState.bitcoin_block_height)
     : 0;
 
+  const getTabCount = useCallback(
+    (tab: TabType): number => {
+      switch (tab) {
+        case "evaluation":
+          return votes.filter((vote) => vote.voted === false).length;
+        case "voting":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_start || !vote.vote_end) return false;
+            const voteStart = safeNumberFromBigInt(vote.vote_start);
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            return (
+              currentBitcoinHeight >= voteStart &&
+              currentBitcoinHeight <= voteEnd
+            );
+          }).length;
+        case "veto":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_end || !vote.exec_start) return false;
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            const execStart = safeNumberFromBigInt(vote.exec_start);
+            return (
+              currentBitcoinHeight > voteEnd &&
+              currentBitcoinHeight <= execStart
+            );
+          }).length;
+        case "passed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
+          ).length;
+        case "failed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
+          ).length;
+        case "all":
+        default:
+          return votes.length;
+      }
+    },
+    [votes, currentBitcoinHeight]
+  );
+
   // Determine default tab based on available votes using useCallback
   const getDefaultTab = useCallback((): TabType => {
-    const evaluationCount = votes.filter((vote) => vote.voted === false).length;
-    if (evaluationCount > 0) return "evaluation";
+    if (getTabCount("veto") > 0) return "veto";
+    if (getTabCount("voting") > 0) return "voting";
+    if (getTabCount("evaluation") > 0) return "evaluation";
 
-    const votingCount = votes.filter((vote) => {
-      if (vote.voted !== true) return false;
-      if (!vote.vote_start || !vote.vote_end) return false;
-      const voteStart = safeNumberFromBigInt(vote.vote_start);
-      const voteEnd = safeNumberFromBigInt(vote.vote_end);
-      return (
-        currentBitcoinHeight >= voteStart && currentBitcoinHeight <= voteEnd
-      );
-    }).length;
-    if (votingCount > 0) return "voting";
+    // If there are any passed votes, show them, otherwise show all.
+    if (getTabCount("passed") > 0) return "passed";
+    if (votes.length > 0) return "all";
 
-    return "passed";
-  }, [votes, currentBitcoinHeight]);
+    return "evaluation"; // Default if no votes at all
+  }, [getTabCount, votes.length]);
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
 
@@ -560,47 +567,11 @@ export function VotesView({ votes }: VotesViewProps) {
           return outcome === "failed";
         });
 
+      case "all":
       default:
         return votes;
     }
   }, [votes, activeTab, currentBitcoinHeight]);
-
-  const getTabCount = (tab: TabType): number => {
-    switch (tab) {
-      case "evaluation":
-        return votes.filter((vote) => vote.voted === false).length;
-      case "voting":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_start || !vote.vote_end) return false;
-          const voteStart = safeNumberFromBigInt(vote.vote_start);
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-          return (
-            currentBitcoinHeight >= voteStart && currentBitcoinHeight <= voteEnd
-          );
-        }).length;
-      case "veto":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_end || !vote.exec_start) return false;
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-          const execStart = safeNumberFromBigInt(vote.exec_start);
-          return (
-            currentBitcoinHeight > voteEnd && currentBitcoinHeight <= execStart
-          );
-        }).length;
-      case "passed":
-        return votes.filter(
-          (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
-        ).length;
-      case "failed":
-        return votes.filter(
-          (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
-        ).length;
-      default:
-        return votes.length;
-    }
-  };
 
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
@@ -614,6 +585,7 @@ export function VotesView({ votes }: VotesViewProps) {
         return "Passed";
       case "failed":
         return "Failed";
+      case "all":
       default:
         return "All Votes";
     }
@@ -631,14 +603,24 @@ export function VotesView({ votes }: VotesViewProps) {
         return CheckCircle;
       case "failed":
         return XCircle;
+      case "all":
       default:
         return Vote;
     }
   };
 
+  const tabs: TabType[] = [
+    "evaluation",
+    "voting",
+    "veto",
+    "passed",
+    "failed",
+    "all",
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[2400px] mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Compact Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -659,32 +641,50 @@ export function VotesView({ votes }: VotesViewProps) {
           </div>
         </div>
 
-        {/* Compact Metrics */}
-        <CompactMetrics votes={filteredVotes} />
-
         {/* Tab Navigation */}
         <div className="flex items-center justify-center">
           <div className="flex items-center p-1 bg-muted/50 rounded-lg">
-            {(
-              ["evaluation", "voting", "veto", "passed", "failed"] as TabType[]
-            ).map((tab) => {
+            {tabs.map((tab) => {
               const Icon = getTabIcon(tab);
               const isActive = activeTab === tab;
               const tabCount = getTabCount(tab);
+
+              if (tab === "all" && votes.length === 0) return null;
+
+              const getTabStyle = () => {
+                if (isActive) {
+                  return "bg-background text-foreground shadow-sm";
+                }
+
+                let baseStyle = "text-muted-foreground hover:text-foreground";
+                if (tabCount > 0) {
+                  if (tab === "veto") {
+                    return `${baseStyle} bg-secondary/10 text-secondary hover:bg-secondary/20 font-medium`;
+                  }
+                  if (tab === "voting") {
+                    return `${baseStyle} bg-primary/10 text-primary hover:bg-primary/20`;
+                  }
+                }
+                return baseStyle;
+              };
 
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all text-sm ${
-                    isActive
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all text-sm ${getTabStyle()}`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon
+                    className={`h-4 w-4 ${
+                      tab === "veto" && tabCount > 0 && !isActive
+                        ? "animate-pulse"
+                        : ""
+                    }`}
+                  />
                   <span>{getTabTitle(tab)}</span>
-                  <span className="text-xs opacity-70">({tabCount})</span>
+                  {tabCount > 0 && (
+                    <span className="text-xs opacity-70">({tabCount})</span>
+                  )}
                 </button>
               );
             })}
