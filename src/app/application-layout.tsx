@@ -127,7 +127,7 @@ export default function ApplicationLayout({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-primary/10 rounded-lg"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-transparent rounded-lg"
                 >
                   <DisplayBtc />
                   <ChevronDown className="h-3 w-3 text-primary/70" />
@@ -269,7 +269,7 @@ export default function ApplicationLayout({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                   aria-label="Bitcoin balance dropdown menu"
                 >
                   <DisplayBtc />
@@ -326,7 +326,7 @@ export default function ApplicationLayout({
             // Show BTC Balance (non-clickable) and Auth Button when not authenticated
             <>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
+                <div className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
                   <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
                     <DisplayBtc />
                   </div>
