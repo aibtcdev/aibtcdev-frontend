@@ -229,7 +229,7 @@ export const DAOCard = ({
                   {/* Price */}
                   <div>
                     <p className="text-xs text-muted-foreground">Price</p>
-                    <p className="text-sm font-bold text-foreground">
+                    <div className="text-sm font-bold text-foreground">
                       {isFetchingPrice ? (
                         <Loader />
                       ) : tokenPrice?.price ? (
@@ -237,13 +237,13 @@ export const DAOCard = ({
                       ) : (
                         "—"
                       )}
-                    </p>
+                    </div>
                   </div>
 
                   {/* Market Cap */}
                   <div>
                     <p className="text-xs text-muted-foreground">Market Cap</p>
-                    <p className="text-sm font-bold text-foreground">
+                    <div className="text-sm font-bold text-foreground">
                       {isFetchingPrice ? (
                         <Loader />
                       ) : tokenPrice?.marketCap ? (
@@ -251,15 +251,15 @@ export const DAOCard = ({
                       ) : (
                         "—"
                       )}
-                    </p>
+                    </div>
                   </div>
 
                   {/* Holders */}
                   <div>
                     <p className="text-xs text-muted-foreground">Holders</p>
-                    <p className="text-sm font-bold text-foreground">
+                    <div className="text-sm font-bold text-foreground">
                       {getHolderCount()}
-                    </p>
+                    </div>
                   </div>
 
                   {/* Proposal Count */}

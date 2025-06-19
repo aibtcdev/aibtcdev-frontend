@@ -258,11 +258,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
           <div className="flex items-center justify-between">
             {getVoteResult()}
             <div className="flex items-center gap-2">
-              <Link
-                href={`/proposals/${vote.proposal_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href={`/proposals/${vote.proposal_id}`}>
                 <Button
                   variant="outline"
                   size="sm"
