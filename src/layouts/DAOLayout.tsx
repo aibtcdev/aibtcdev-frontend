@@ -2,11 +2,23 @@
 
 import type React from "react";
 import { usePathname } from "next/navigation";
-import { Building2 } from "lucide-react";
+import Link from "next/link";
+import {
+  Building2,
+  FileText,
+  Users,
+  DollarSign,
+  TrendingUp,
+  PlusCircle,
+  BarChart3,
+} from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
-import { DAOHeader } from "@/components/daos/DAOHeader";
-import { MissionContent } from "@/components/daos/MissionContent";
-import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
 
 interface DAOInfo {
   id: string;
@@ -46,11 +58,6 @@ export function DAOLayout({
 }: DAOLayoutProps) {
   const pathname = usePathname();
 
-  // Determine current page
-  const isProposals = pathname === `/daos/${daoName}`;
-  const isMission = pathname === `/daos/${daoName}/mission`;
-
-  // Show loading state for basic DAO info
   if (isLoading || !dao) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
@@ -66,7 +73,6 @@ export function DAOLayout({
     );
   }
 
-  // Show DAO not found state
   if (!dao) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
@@ -90,40 +96,152 @@ export function DAOLayout({
     );
   }
 
+  const daoStats = [
+    {
+      label: "Price",
+      value: `$${marketStats.price.toFixed(2)}`,
+      icon: DollarSign,
+      change: null,
+    },
+    {
+      label: "Market Cap",
+      value: `$${marketStats.marketCap.toFixed(2)}`,
+      icon: TrendingUp,
+      change: null,
+    },
+    {
+      label: "Holders",
+      value: marketStats.holderCount,
+      icon: Users,
+      change: "+2",
+    },
+    {
+      label: "Proposals",
+      value: proposalCount,
+      icon: FileText,
+      change: "+3",
+    },
+  ];
+
+  const isHolders = pathname === `/daos/${daoName}/holders`;
+  const isAbout = pathname.startsWith(`/daos/${daoName}/about`);
+  const isMission = pathname.startsWith(`/daos/${daoName}/mission`);
+
+  let activeTab = "proposals";
+  if (isHolders) activeTab = "holders";
+  if (isAbout || isMission) activeTab = "about";
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="space-y-8">
-          {/* Integrated DAO Header with Navigation */}
-          <DAOHeader
-            dao={dao}
-            token={token}
-            marketStats={marketStats}
-            proposalCount={proposalCount}
-            daoName={daoName}
-            currentPath={pathname}
-          />
+    <div className="min-h-screen">
+      <div className="bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={token?.image_url} alt={dao.name} />
+                <AvatarFallback className="bg-muted text-muted-foreground font-bold">
+                  {dao.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {dao.name}
+                  </h1>
+                  <Badge
+                    variant="secondary"
+                    className="bg-success/10 text-success border-success/20"
+                  >
+                    <div className="w-1.5 h-1.5 bg-success rounded-full mr-1"></div>
+                    Active
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <DAOBuyToken daoId={dao.id} daoName={dao.name} />
+          </div>
 
-          {/* Main Content */}
-          {isProposals ? (
-            <div className="space-y-8">
-              {/* Proposal Submission Section */}
-              <ProposalSubmission daoId={dao.id} />
+          {/* {dao.description && (
+            <div className="mt-4 text-muted-foreground whitespace-pre-wrap">
+              {dao.description}
+            </div>
+          )} */}
 
-              {/* Proposals Display */}
-              <div className="space-y-4">{children}</div>
-            </div>
-          ) : isMission ? (
-            <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-border/30 p-4 sm:p-8">
-              <MissionContent description={dao.description} />
-            </div>
-          ) : (
-            <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-border/30 p-4 sm:p-8">
-              {children}
-            </div>
-          )}
+          <div className="grid grid-cols-4 md:grid-cols-4 gap-6 mt-6">
+            {daoStats.map((stat, index) => (
+              <Card
+                key={index}
+                className="bg-background border-muted/50 border-1"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {stat.label}
+                      </p>
+                      <div className="flex items-baseline space-x-2">
+                        <p className="text-xl font-semibold text-foreground">
+                          {stat.value}
+                        </p>
+                        {stat.change && (
+                          <p className="text-xs text-success">{stat.change}</p>
+                        )}
+                      </div>
+                    </div>
+                    <stat.icon className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-    </main>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue={activeTab} className="space-y-6">
+          <TabsList className="bg-transparent p-0">
+            <TabsTrigger
+              value="proposals"
+              asChild
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background"
+            >
+              <Link
+                href={`/daos/${daoName}`}
+                className="flex items-center space-x-2 pb-2"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Proposals</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger
+              value="holders"
+              asChild
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background"
+            >
+              <Link
+                href={`/daos/${daoName}/holders`}
+                className="flex items-center space-x-2 pb-2"
+              >
+                <Users className="w-4 h-4" />
+                <span>Holders</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger
+              value="about"
+              asChild
+              className="data-[state=active]:bg-foreground data-[state=active]:text-background"
+            >
+              <Link
+                href={`/daos/${daoName}/about`}
+                className="flex items-center space-x-2 pb-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>About</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value={activeTab}>{children}</TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }

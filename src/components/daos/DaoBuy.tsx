@@ -117,9 +117,9 @@ export function TokenBuyInput({
 
             <Button
               type="submit"
-              variant="primary"
+              variant="ghost"
               disabled={disabled || isLoading || !amount.trim()}
-              className="h-11 px-4"
+              className="h-11 px-4 flex items-center gap-2 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
             >
               {isLoading ? (
                 <span className="animate-pulse">Processing…</span>

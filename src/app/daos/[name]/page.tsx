@@ -10,6 +10,7 @@ import {
   fetchDAOByName,
   fetchToken,
 } from "@/services/dao.service";
+import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
 
 export const runtime = "edge";
 
@@ -87,7 +88,8 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="w-full px-4 sm:px-0">
+    <div className="w-full space-y-6">
+      <ProposalSubmission daoId={dao.id} />
       <Suspense
         fallback={
           <div className="flex justify-center items-center min-h-[400px] w-full">
