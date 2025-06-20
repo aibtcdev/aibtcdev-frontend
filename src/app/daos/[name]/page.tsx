@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
-import DAOProposals from "@/components/proposals/DAOProposal";
+import DAOProposals from "@/components/proposals/DAOProposals";
 import {
   fetchProposals,
   fetchDAOByName,

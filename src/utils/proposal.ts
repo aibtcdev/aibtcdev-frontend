@@ -72,42 +72,64 @@ export const getBlockVisualProps = (value: bigint | null): number => {
  * @param proposal - The proposal object
  * @returns Status label that matches ProposalCard display
  */
-export const getProposalStatus = (proposal: Proposal): string => {
+export const getProposalStatus = (
+  proposal: Proposal,
+  currentBlockHeight?: number | null
+): string => {
   // Check if proposal is in draft status first
   if (proposal.status === "DRAFT") {
     return "DRAFT";
   }
 
+  // If we don't have block height, we can't determine the status accurately
+  if (!currentBlockHeight) {
+    // We can either return a default "loading" state or try a fallback
+    // For now, let's reflect that the status is being determined
+    return "PENDING";
+  }
+
   // For deployed proposals, determine status based on timing windows
-  const now = Math.floor(Date.now() / 1000); // Current time in seconds
   const voteStart = safeNumberFromBigInt(proposal.vote_start);
   const voteEnd = safeNumberFromBigInt(proposal.vote_end);
   const execStart = safeNumberFromBigInt(proposal.exec_start || null);
   const execEnd = safeNumberFromBigInt(proposal.exec_end || null);
 
+  // If vote_start is 0, it indicates that the proposal is not yet finalized
+  if (voteStart === 0) {
+    return "PENDING";
+  }
+
   // Initial delay before voting window
-  if (now < voteStart) {
+  if (currentBlockHeight < voteStart) {
     return "PENDING";
   }
 
   // Inside voting window
-  if (now >= voteStart && now < voteEnd) {
+  if (currentBlockHeight >= voteStart && currentBlockHeight < voteEnd) {
     return "ACTIVE";
   }
 
   // Veto window (between vote_end and exec_start)
-  if (execStart > 0 && now >= voteEnd && now < execStart) {
+  if (
+    execStart > 0 &&
+    currentBlockHeight >= voteEnd &&
+    currentBlockHeight < execStart
+  ) {
     return "VETO_PERIOD";
   }
 
   // Execution window (between exec_start and exec_end)
-  if (execStart > 0 && execEnd > 0 && now >= execStart && now < execEnd) {
+  if (
+    execStart > 0 &&
+    execEnd > 0 &&
+    currentBlockHeight >= execStart &&
+    currentBlockHeight < execEnd
+  ) {
     return "EXECUTION_WINDOW";
   }
 
   // Completed (after exec_end or vote_end if no execution window)
-  const endTime = execEnd > 0 ? execEnd : voteEnd;
-  if (now >= endTime) {
+  if (currentBlockHeight >= execEnd) {
     if (proposal.passed) {
       return "PASSED";
     } else {

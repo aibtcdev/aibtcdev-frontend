@@ -18,6 +18,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -32,8 +34,18 @@ export default function ProposalCard({
 }: ProposalCardProps) {
   const router = useRouter();
 
+  const { data: latestChainState } = useQuery({
+    queryKey: ["latestChainState"],
+    queryFn: fetchLatestChainState,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const currentBlockHeight = latestChainState?.bitcoin_block_height
+    ? Number(latestChainState.bitcoin_block_height)
+    : null;
+
   // Use the same status logic as AllProposals - consistent status calculation
-  const proposalStatus = getProposalStatus(proposal);
+  const proposalStatus = getProposalStatus(proposal, currentBlockHeight);
 
   // Memoize status configuration to prevent recalculation
   const statusConfig = useMemo(() => {
@@ -276,8 +288,7 @@ export default function ProposalCard({
         )}
 
         {/* Completed Status */}
-        {(statusConfig.label === "Passed" ||
-          statusConfig.label === "Failed") && (
+        {statusConfig.label === "Passed" && (
           <div className="text-sm">
             <span className="text-foreground/75">Final result: </span>
             <span className="font-medium">

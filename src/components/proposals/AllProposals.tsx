@@ -14,6 +14,8 @@ import type { ProposalWithDAO } from "@/types";
 import { FileText, Filter, X } from "lucide-react";
 import { useTokens } from "@/hooks/useTokens";
 import { getProposalStatus } from "@/utils/proposal";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 
 interface AllProposalsProps {
   proposals: ProposalWithDAO[];
@@ -27,6 +29,16 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
   const { tokenLookup } = useTokens();
   const proposalsRef = useRef<HTMLDivElement>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const { data: latestChainState } = useQuery({
+    queryKey: ["latestChainState"],
+    queryFn: fetchLatestChainState,
+    refetchInterval: 30000,
+  });
+
+  const currentBlockHeight = latestChainState?.bitcoin_block_height
+    ? Number(latestChainState.bitcoin_block_height)
+    : null;
 
   // Filter and pagination state
   const [filterState, setFilterState] = useState<FilterState>({
@@ -49,16 +61,16 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
   // Calculate status counts for all proposals (for filter display) using consistent logic
   const allActiveProposals = proposals.filter(
-    (p) => getProposalStatus(p) === "ACTIVE"
+    (p) => getProposalStatus(p, currentBlockHeight) === "ACTIVE"
   ).length;
   const allPassedProposals = proposals.filter(
-    (p) => getProposalStatus(p) === "PASSED"
+    (p) => getProposalStatus(p, currentBlockHeight) === "PASSED"
   ).length;
   const allFailedProposals = proposals.filter(
-    (p) => getProposalStatus(p) === "FAILED"
+    (p) => getProposalStatus(p, currentBlockHeight) === "FAILED"
   ).length;
   const allDraftProposals = proposals.filter(
-    (p) => getProposalStatus(p) === "DRAFT"
+    (p) => getProposalStatus(p, currentBlockHeight) === "DRAFT"
   ).length;
 
   // Filter configuration
@@ -128,7 +140,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
       // Status filter (multiselect - if nothing selected, show all)
       if (Array.isArray(filterState.status) && filterState.status.length > 0) {
-        const proposalStatus = getProposalStatus(proposal);
+        const proposalStatus = getProposalStatus(proposal, currentBlockHeight);
         if (!filterState.status.includes(proposalStatus)) {
           return false;
         }
@@ -169,7 +181,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     });
 
     return filtered;
-  }, [proposals, filterState]);
+  }, [proposals, filterState, currentBlockHeight]);
 
   // Pagination logic
   const totalPages = Math.ceil(

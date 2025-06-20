@@ -1,7 +1,11 @@
+"use client";
+
 import React from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { getProposalStatus } from "@/utils/proposal";
 import type { ProposalWithDAO } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 
 interface ProposalDisplayProps {
   proposal: ProposalWithDAO | null;
@@ -12,8 +16,18 @@ export default function ProposalDisplay({
   proposal,
   selectedProposalId,
 }: ProposalDisplayProps) {
+  const { data: latestChainState } = useQuery({
+    queryKey: ["latestChainState"],
+    queryFn: fetchLatestChainState,
+    refetchInterval: 30000,
+  });
+
+  const currentBlockHeight = latestChainState?.bitcoin_block_height
+    ? Number(latestChainState.bitcoin_block_height)
+    : null;
+
   if (proposal) {
-    const status = getProposalStatus(proposal);
+    const status = getProposalStatus(proposal, currentBlockHeight);
     const isPassed = status === "PASSED";
     const isFailed = status === "FAILED";
     const isCompleted = isPassed || isFailed;
