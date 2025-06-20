@@ -155,8 +155,8 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                           </DialogHeader>
                           <div className="mt-3 px-1 overflow-y-auto flex-1 space-y-4">
                             {parsedScore.categories?.map(
-                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 cat: any,
                                 idx: number // TODO: define types for catagory
                               ) => (
