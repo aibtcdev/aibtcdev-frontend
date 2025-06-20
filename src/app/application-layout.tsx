@@ -323,19 +323,9 @@ export default function ApplicationLayout({
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            // Show BTC Balance (non-clickable) and Auth Button when not authenticated
-            <>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0 px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl shadow-md backdrop-blur-sm">
-                  <div className="text-sm sm:text-base font-inter font-bold text-primary tracking-tight">
-                    <DisplayBtc />
-                  </div>
-                </div>
-              </div>
-              <div className="transition-transform duration-300 ease-in-out hover:scale-105 motion-reduce:transition-none">
-                <AuthButton />
-              </div>
-            </>
+            <div className="transition-transform duration-300 ease-in-out hover:scale-105 motion-reduce:transition-none">
+              <AuthButton />
+            </div>
           )}
           <ThemeToggle />
         </div>
