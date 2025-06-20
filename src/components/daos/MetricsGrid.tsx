@@ -21,6 +21,11 @@ interface MetricsGridProps {
   isLoading: boolean;
 }
 
+interface CompactMetricsProps {
+  data: MetricsData;
+  isLoading: boolean;
+}
+
 export function MetricsGrid({ data, isLoading }: MetricsGridProps) {
   // Format number helper function
   const formatNumber = (num: number, isPrice = false) => {
@@ -103,6 +108,89 @@ export function MetricsGrid({ data, isLoading }: MetricsGridProps) {
           {data.proposalCount}
         </span>
       </div>
+    </div>
+  );
+}
+
+// Compact version for sidebar use
+export function CompactMetrics({ data, isLoading }: CompactMetricsProps) {
+  // Format number helper function
+  const formatNumber = (num: number, isPrice = false) => {
+    if (isPrice) {
+      if (num === 0) return "$0.00";
+      if (num < 0.01) return `$${num.toFixed(8)}`;
+      return `$${num.toFixed(2)}`;
+    }
+
+    if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+    return `${num.toFixed(0)}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <Skeleton className="h-4 w-16 rounded" />
+            <Skeleton className="h-4 w-12 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const metrics = [
+    {
+      label: "Price",
+      value: formatNumber(data.price, true),
+      icon: CoinIcon,
+      color: "text-primary",
+    },
+    {
+      label: "Market Cap",
+      value: `$${formatNumber(data.marketCap)}`,
+      icon: TrendingUp,
+      color: "text-emerald-500",
+    },
+    {
+      label: "Holders",
+      value: data.holderCount.toLocaleString(),
+      icon: Users2,
+      color: "text-blue-500",
+    },
+    {
+      label: "Proposals",
+      value: data.proposalCount.toString(),
+      icon: FileText,
+      color: "text-purple-500",
+    },
+  ];
+
+  return (
+    <div className="space-y-2">
+      {metrics.map((metric) => {
+        const Icon = metric.icon;
+        return (
+          <div
+            key={metric.label}
+            className="flex items-center justify-between group hover:bg-muted/20 rounded-md p-1.5 transition-colors duration-200"
+          >
+            <div className="flex items-center gap-1.5">
+              <Icon
+                className={`h-3 w-3 ${metric.color} group-hover:scale-110 transition-transform duration-200`}
+              />
+              <span className="text-xs text-muted-foreground font-medium">
+                {metric.label}
+              </span>
+            </div>
+            <span className="text-xs font-bold text-foreground">
+              {metric.value}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

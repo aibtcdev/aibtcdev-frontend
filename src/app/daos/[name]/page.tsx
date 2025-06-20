@@ -1,67 +1,46 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
 import DAOProposals from "@/components/proposals/DAOProposals";
+import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
+import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
-  fetchProposals,
   fetchDAOByName,
   fetchToken,
+  fetchProposals,
 } from "@/services/dao.service";
-import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
 
 export const runtime = "edge";
 
-export default function ProposalsPage() {
+function PageContent() {
   const params = useParams();
   const encodedName = params.name as string;
 
-  // First, fetch the DAO by name to get its ID
-  const {
-    data: dao,
-    isLoading: isLoadingDAO,
-    error: daoError,
-  } = useQuery({
+  const { data: dao, isLoading: isLoadingDAO } = useQuery({
     queryKey: ["dao", encodedName],
     queryFn: () => fetchDAOByName(encodedName),
-    staleTime: 600000, // 10 minutes
+    staleTime: 600000,
   });
-
-  // Add error handling
-  if (daoError) {
-    console.error("Error fetching DAO:", daoError);
-  }
 
   const daoId = dao?.id;
 
-  // Fetch token information for the DAO
   const { data: token, isLoading: isLoadingToken } = useQuery({
     queryKey: ["token", daoId],
     queryFn: () => (daoId ? fetchToken(daoId) : Promise.resolve(null)),
     enabled: !!daoId,
-    staleTime: 600000, // 10 minutes
+    staleTime: 600000,
   });
 
-  // Then use the ID to fetch proposals
-  const {
-    data: proposals,
-    isLoading,
-    error: proposalsError,
-  } = useQuery({
+  const { data: proposals, isLoading: isLoadingProposals } = useQuery({
     queryKey: ["proposals", daoId],
     queryFn: () => (daoId ? fetchProposals(daoId) : Promise.resolve([])),
-    staleTime: 600000, // 10 minutes - increased cache time
-    enabled: !!daoId, // Only run this query when we have the daoId
+    enabled: !!daoId,
+    staleTime: 600000,
   });
 
-  // Add error handling
-  if (proposalsError) {
-    console.error("Error fetching proposals:", proposalsError);
-  }
-
-  if (isLoadingDAO || isLoading || isLoadingToken) {
+  if (isLoadingDAO || isLoadingToken || isLoadingProposals) {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
@@ -72,7 +51,6 @@ export default function ProposalsPage() {
     );
   }
 
-  // Add error state
   if (!dao) {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
@@ -90,22 +68,28 @@ export default function ProposalsPage() {
   return (
     <div className="w-full space-y-6">
       <ProposalSubmission daoId={dao.id} />
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center min-h-[400px] w-full">
-            <div className="text-center space-y-4">
-              <Loader />
-              <p className="text-zinc-400">Loading proposals...</p>
-            </div>
-          </div>
-        }
-      >
-        <DAOProposals
-          key={`${dao.id}-${proposals?.length || 0}`}
-          proposals={proposals || []}
-          tokenSymbol={token?.symbol || ""}
-        />
-      </Suspense>
+      <DAOProposals
+        key={`${dao.id}-${proposals?.length || 0}`}
+        proposals={proposals || []}
+        tokenSymbol={token?.symbol || ""}
+      />
     </div>
+  );
+}
+
+export default function ProposalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-[400px] w-full">
+          <div className="text-center space-y-4">
+            <Loader />
+            <p className="text-zinc-400">Loading content...</p>
+          </div>
+        </div>
+      }
+    >
+      <PageContent />
+    </Suspense>
   );
 }

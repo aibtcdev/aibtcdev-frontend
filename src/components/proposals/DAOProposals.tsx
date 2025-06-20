@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import ProposalCard from "@/components/proposals/ProposalCard";
 import type { Proposal } from "@/types";
 import { FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface DAOProposalsProps {
   proposals: Proposal[];
@@ -39,15 +38,7 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-foreground">
-          Recent Proposals
-        </h2>
-        <Badge variant="outline" className="text-muted-foreground">
-          {deployedProposals.length} Active
-        </Badge>
-      </div>
-      <div className="divide-y divide-border/50 rounded-lg border border-border overflow-hidden">
+      <div className="divide-y divide-border/50 overflow-hidden">
         {deployedProposals.map((proposal) => (
           <ProposalCard
             key={proposal.id}

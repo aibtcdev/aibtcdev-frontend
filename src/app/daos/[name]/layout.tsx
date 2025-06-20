@@ -1,8 +1,7 @@
-import type React from "react";
 import type { Metadata } from "next";
-import { DAOLayoutClient } from "./layout-client";
 import { supabase } from "@/utils/supabase/client";
 import { fetchDAOByName } from "@/services/dao.service";
+import { DAOLayoutClient } from "./layout-client";
 
 // Twitter recommends 2:1 ratio images
 // Minimum dimensions: 300x157
@@ -18,9 +17,8 @@ const OG_IMAGE_HEIGHT = 628;
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ name: string }>; // Changed from id to name
+  params: Promise<{ name: string }>;
 }): Promise<Metadata> {
-  // First fetch the DAO by name to get its ID
   const resolvedParams = await params;
   const dao = await fetchDAOByName(resolvedParams.name);
 
@@ -74,7 +72,7 @@ export async function generateMetadata({
       creator: "@aibtcdev",
     },
     alternates: {
-      canonical: `/daos/${resolvedParams.name}`, // Updated to use name instead of ID
+      canonical: `/daos/${resolvedParams.name}`,
     },
     robots: {
       index: true,
