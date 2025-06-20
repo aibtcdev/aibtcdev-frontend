@@ -89,7 +89,7 @@ export default function ApplicationLayout({
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-background/95">
       {/* Mobile Header */}
-      <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg relative z-30">
+      <div className="md:hidden h-14 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg relative z-30">
         <Button
           variant="ghost"
           size="sm"
@@ -170,7 +170,7 @@ export default function ApplicationLayout({
       </div>
 
       {/* Desktop Header - Hidden on mobile */}
-      <div className="hidden md:grid grid-cols-3 h-16 lg:h-20 items-center px-4 lg:px-6 xl:px-8 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
+      <div className="hidden md:grid grid-cols-3 h-16 items-center px-4 lg:px-6 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
@@ -182,25 +182,25 @@ export default function ApplicationLayout({
                 <Image
                   src="/logos/aibtcdev-avatar-1000px.png"
                   alt="AIBTCDEV"
-                  width={32}
-                  height={32}
-                  className="lg:w-9 lg:h-9 rounded-xl shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
+                  width={28}
+                  height={28}
+                  className="lg:w-8 lg:h-8 rounded-xl shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
                 />
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <Image
                 src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
                 alt="AIBTCDEV"
-                width={100}
-                height={200}
-                className="h-5 lg:h-6 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
+                width={90}
+                height={20}
+                className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
               />
               <Image
                 src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
                 alt="AIBTCDEV"
-                width={100}
-                height={200}
-                className="h-5 lg:h-6 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
+                width={90}
+                height={20}
+                className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
               />
             </div>
           </Link>
@@ -208,7 +208,7 @@ export default function ApplicationLayout({
 
         {/* Center Section - Navigation  */}
         <nav className="flex justify-center relative z-10">
-          <div className="inline-flex items-center gap-1 lg:gap-2">
+          <div className="inline-flex items-center gap-1">
             {navigation.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
@@ -217,7 +217,7 @@ export default function ApplicationLayout({
                   href={item.href}
                   onClick={(e) => handleNavigation(item.href, e)}
                   className={cn(
-                    "flex items-center gap-2 lg:gap-3 px-3 lg:px-4 xl:px-5 py-2 lg:py-3 text-xs lg:text-sm font-semibold rounded-xl lg:rounded-2xl transition-all duration-300 ease-in-out relative group whitespace-nowrap",
+                    "flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-300 ease-in-out relative group whitespace-nowrap",
                     "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
                     isActive
                       ? "text-primary-foreground bg-primary shadow-lg hover:shadow-xl hover:shadow-primary/20"
@@ -230,7 +230,7 @@ export default function ApplicationLayout({
                       isActive ? "drop-shadow-sm" : "group-hover:scale-110"
                     )}
                   >
-                    <item.icon className="h-4 w-4 lg:h-5 lg:w-5 relative z-10" />
+                    <item.icon className="h-4 w-4 relative z-10" />
                     {isActive && (
                       <div className="absolute inset-0 bg-primary-foreground/20 rounded-full scale-150 blur-sm" />
                     )}
@@ -258,7 +258,7 @@ export default function ApplicationLayout({
                   {/* Hover glow effect */}
                   <div
                     className={cn(
-                      "absolute inset-0 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                      "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300",
                       "bg-gradient-to-r from-primary/5 to-secondary/5"
                     )}
                   />
@@ -269,18 +269,18 @@ export default function ApplicationLayout({
         </nav>
 
         {/* Right Section - BTC Balance Dropdown & Auth Button */}
-        <div className="flex items-center gap-2 lg:gap-4 relative z-10 justify-end">
+        <div className="flex items-center gap-2 relative z-10 justify-end">
           {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                   aria-label="Bitcoin balance dropdown menu"
                 >
                   <DisplayBtc />
-                  <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 text-primary/70 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                  <ChevronDown className="h-3 w-3 text-primary/70 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -339,7 +339,7 @@ export default function ApplicationLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] overflow-hidden">
+      <div className="flex-1 flex min-w-0 max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
         {/* Mobile Sidebar */}
         <aside
           className={cn(
