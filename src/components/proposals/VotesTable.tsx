@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProposalVotes } from "@/services/vote.service";
 import type { Vote } from "@/types";
-import { ThumbsUp, ThumbsDown, ExternalLink, Link } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ExternalLink } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -155,7 +155,11 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                           </DialogHeader>
                           <div className="mt-3 px-1 overflow-y-auto flex-1 space-y-4">
                             {parsedScore.categories?.map(
-                              (cat: any, idx: number) => (
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                              (
+                                cat: any,
+                                idx: number // TODO: define types for catagory
+                              ) => (
                                 <div key={idx} className="space-y-1">
                                   <div className="flex justify-between items-baseline">
                                     <span className="font-bold">
