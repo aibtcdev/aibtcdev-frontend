@@ -110,92 +110,139 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {votes.map((vote) => (
-            <TableRow
-              key={vote.id}
-              className="border-border/50 hover:bg-muted/30 transition-colors"
-            >
-              {/* Vote Yes/No */}
-              <TableCell className="px-2 py-1.5 text-xs">
-                {vote.tx_id ? (
-                  vote.answer ? (
-                    <span className="flex items-center text-primary font-medium">
-                      <ThumbsUp className="h-3 w-3 mr-1 flex-shrink-0" />
-                      Yes
-                    </span>
+          {votes.map((vote) => {
+            const parsedScore =
+              typeof vote.evaluation_score === "string"
+                ? JSON.parse(vote.evaluation_score)
+                : vote.evaluation_score;
+            return (
+              <TableRow
+                key={vote.id}
+                className="border-border/50 hover:bg-muted/30 transition-colors"
+              >
+                {/* Vote Yes/No */}
+                <TableCell className="px-2 py-1.5 text-xs">
+                  {vote.tx_id ? (
+                    vote.answer ? (
+                      <span className="flex items-center text-primary font-medium">
+                        <ThumbsUp className="h-3 w-3 mr-1 flex-shrink-0" />
+                        Yes
+                      </span>
+                    ) : (
+                      <span className="flex items-center text-secondary font-medium">
+                        <ThumbsDown className="h-3 w-3 mr-1 flex-shrink-0" />
+                        No
+                      </span>
+                    )
                   ) : (
-                    <span className="flex items-center text-secondary font-medium">
-                      <ThumbsDown className="h-3 w-3 mr-1 flex-shrink-0" />
-                      No
-                    </span>
-                  )
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
 
-              {/* Final Score */}
-              <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs text-center">
-                {vote.evaluation_score?.final !== undefined ? (
-                  <span className="tabular-nums text-primary font-medium">
-                    {vote.evaluation_score.final}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
+                {/* Final Score */}
+                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs text-center">
+                  {parsedScore?.final_score !== undefined ? (
+                    <div className="text-primary cursor-pointer">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <span className="tabular-nums font-medium">
+                            {parsedScore.final_score}
+                          </span>
+                        </DialogTrigger>
+                        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Evaluation Breakdown</DialogTitle>
+                          </DialogHeader>
+                          <div className="mt-3 px-1 overflow-y-auto flex-1 space-y-4">
+                            {parsedScore.categories?.map(
+                              (cat: any, idx: number) => (
+                                <div key={idx} className="space-y-1">
+                                  <div className="flex justify-between items-baseline">
+                                    <span className="font-bold">
+                                      {cat.category}
+                                    </span>
+                                    <span className="tabular-nums font-semibold">
+                                      score: {cat.score}
+                                    </span>
+                                  </div>
+                                  <ul className="list-disc list-inside text-sm">
+                                    {cat.reasoning.map(
+                                      (line: string, i: number) => (
+                                        <li key={i}>{line}</li>
+                                      )
+                                    )}
+                                  </ul>
+                                  <hr />
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
 
-              {/* Reasoning */}
-              <TableCell className="px-2 py-1.5 text-xs break-words">
-                {vote.reasoning ? (
-                  <Dialog>
-                    <DialogTrigger className="cursor-pointer text-muted-foreground hover:text-primary transition-colors">
-                      <Link className="h-4 w-4" />
-                    </DialogTrigger>
-                    <DialogContent className="w-[90vw] sm:w-[80vw] max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                      <DialogHeader>
-                        <DialogTitle>Vote Reasoning</DialogTitle>
-                      </DialogHeader>
-                      <div className="mt-3 px-1 overflow-y-auto flex-1">
-                        {/* Flag Badges */}
-                        {renderFlagBadges(vote.flags)}
+                {/* Reasoning */}
+                <TableCell className="px-2 py-1.5 text-xs break-words">
+                  {vote.reasoning ? (
+                    <div className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <div className="line-clamp-2 text-ellipsis overflow-hidden">
+                            {vote.reasoning}
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Vote Reasoning</DialogTitle>
+                          </DialogHeader>
+                          <div className="mt-3 px-1 overflow-y-auto flex-1">
+                            {/* Flag Badges */}
+                            {renderFlagBadges(vote.flags)}
 
-                        {/* Reasoning Content */}
-                        <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-li:my-1">
-                          <ReactMarkdown>{vote.reasoning || ""}</ReactMarkdown>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
+                            {/* Reasoning Content */}
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-li:my-1">
+                              <ReactMarkdown>
+                                {vote.reasoning || ""}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
 
-              {/* TX Link */}
-              <TableCell className="px-2 py-1.5 text-center text-xs">
-                {vote.tx_id ? (
-                  <a
-                    href={`https://explorer.stacks.co/txid/${
-                      vote.tx_id
-                    }?chain=${
-                      process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-                        ? "testnet"
-                        : "mainnet"
-                    }`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 inline-block"
-                    title={`View transaction ${vote.tx_id}`}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+                {/* TX Link */}
+                <TableCell className="px-2 py-1.5 text-center text-xs">
+                  {vote.tx_id ? (
+                    <a
+                      href={`https://explorer.stacks.co/txid/${
+                        vote.tx_id
+                      }?chain=${
+                        process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
+                          ? "testnet"
+                          : "mainnet"
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 inline-block"
+                      title={`View transaction ${vote.tx_id}`}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
