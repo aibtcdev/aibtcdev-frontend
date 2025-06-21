@@ -599,7 +599,7 @@ export function VotesView({ votes }: VotesViewProps) {
     }
 
     return (
-      <aside className="hidden md:block">
+      <aside className="hidden md:block sticky top-6 self-start">
         <h2 className="text-lg font-semibold mb-4 pl-2">Filters</h2>
         <TooltipProvider>
           <nav className="flex flex-col space-y-1">
