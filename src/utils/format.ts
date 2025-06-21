@@ -174,3 +174,22 @@ export function getExplorerLink(
 
   return `${baseUrl}${path}?chain=${chainParam}`;
 }
+
+export function extractMission(markdown: string): string {
+  if (!markdown) return "";
+
+  // First, convert literal \n to actual newlines if needed
+  const normalizedMarkdown = markdown.includes("\\n")
+    ? markdown.replace(/\\n/g, "\n")
+    : markdown;
+
+  // Now try the regex with actual newlines
+  const missionRegex = /##\s*Mission\s*\n\s*([\s\S]*?)(?=\n##|$)/i;
+  const match = normalizedMarkdown.match(missionRegex);
+
+  if (match && match[1]) {
+    return match[1].trim().replace(/\n\s*\n\s*\n/g, "\n\n"); // Normalize multiple newlines
+  }
+
+  return "";
+}

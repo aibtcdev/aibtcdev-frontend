@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { formatNumber } from "@/utils/format";
+import { extractMission, formatNumber } from "@/utils/format";
 
 interface DAOCardProps {
   dao: DAO;
@@ -293,7 +293,7 @@ export const DAOListItem = ({
   proposalCount,
 }: Omit<DAOCardProps, "trades">) => {
   const router = useRouter();
-
+  console.log(dao.description);
   const getHolderCount = () => {
     if (holders?.isLoading) return <Loader />;
     if (holders?.data?.holderCount)
@@ -347,8 +347,8 @@ export const DAOListItem = ({
             </h3>
             {renderPriceChange(tokenPrice?.price24hChanges)}
           </div>
-          <p className="text-xs text-muted-foreground truncate">
-            {dao.description || "No description provided"}
+          <p className="text-xs text-muted-foreground ">
+            {extractMission(dao.description) || "No description provided"}
           </p>
         </div>
       </div>

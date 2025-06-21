@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useMemo, useState, useEffect } from "react";
+import { useViewMode } from "@/hooks/useView";
+
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Search, Grid3X3, List, Filter } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
@@ -178,15 +180,7 @@ export default function AllDaos() {
   // State for search, filtering, and pagination
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("market_cap");
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("viewMode") as ViewMode) || "grid";
-    }
-    return "grid";
-  });
-  useEffect(() => {
-    localStorage.setItem("viewMode", viewMode);
-  }, [viewMode]);
+  const [viewMode, setViewMode] = useViewMode();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
 
