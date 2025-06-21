@@ -280,7 +280,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
         {/* Main Content Layout */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Desktop Filter Sidebar */}
-          <div className="hidden lg:block lg:w-80 flex-shrink-0">
+          <div className="hidden lg:block lg:w-80 flex-shrink-0 sticky top-6 self-start">
             <FilterSidebar
               title="Filters"
               filters={filterConfig}
