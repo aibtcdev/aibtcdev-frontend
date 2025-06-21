@@ -421,7 +421,7 @@ export default function AllDaos() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentPage, totalPages, handlePageChange, viewMode]);
+  }, [currentPage, totalPages, handlePageChange, viewMode, setViewMode]);
 
   return (
     <div className="min-h-screen bg-background">

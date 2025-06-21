@@ -347,7 +347,7 @@ export const DAOListItem = ({
             </h3>
             {renderPriceChange(tokenPrice?.price24hChanges)}
           </div>
-          <p className="text-xs text-muted-foreground ">
+          <p className="text-xs text-muted-foreground truncate md:whitespace-normal md:truncate-none">
             {extractMission(dao.description) || "No description provided"}
           </p>
         </div>
