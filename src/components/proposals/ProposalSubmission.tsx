@@ -36,6 +36,11 @@ import {
   type ApiResponse,
   type ProposalRecommendationRequest,
 } from "@/services/tool.service";
+import {
+  fetchTwitterEmbed,
+  isTwitterOEmbedError,
+  type TwitterOEmbedResponse,
+} from "@/services/twitter.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -125,6 +130,10 @@ export function ProposalSubmission({
   onSubmissionSuccess,
 }: ProposalSubmissionProps) {
   const [proposal, setProposal] = useState("");
+  const [twitterUrl, setTwitterUrl] = useState("");
+  const [twitterEmbed, setTwitterEmbed] =
+    useState<TwitterOEmbedResponse | null>(null);
+  const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
   const { issues, hasAnyIssues, cleanText } = useUnicodeValidation(proposal);
   const handleClean = () => {
     setProposal(cleanText);
@@ -167,6 +176,15 @@ export function ProposalSubmission({
     staleTime: 10 * 60 * 1000, // 10 min
   });
 
+  // Twitter URL validation
+  const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
+  const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
+
+  // Calculate combined length including the Twitter URL
+  const referenceText = twitterUrl ? `\n\nReference: ${twitterUrl}` : "";
+  const combinedLength = proposal.length + referenceText.length;
+  const isWithinLimit = combinedLength <= 2043;
+
   // Cleanup WebSocket on unmount
   useEffect(() => {
     return () => {
@@ -175,6 +193,39 @@ export function ProposalSubmission({
       }
     };
   }, []);
+
+  // Fetch Twitter embed when URL is valid
+  useEffect(() => {
+    const fetchEmbed = async () => {
+      if (isValidTwitterUrl && twitterUrl) {
+        setIsLoadingEmbed(true);
+        setTwitterEmbed(null);
+
+        try {
+          const embedData = await fetchTwitterEmbed(twitterUrl);
+
+          if (!isTwitterOEmbedError(embedData)) {
+            setTwitterEmbed(embedData);
+          } else {
+            console.error("Failed to fetch Twitter embed:", embedData.error);
+            setTwitterEmbed(null);
+          }
+        } catch (error) {
+          console.error("Error fetching Twitter embed:", error);
+          setTwitterEmbed(null);
+        } finally {
+          setIsLoadingEmbed(false);
+        }
+      } else {
+        setTwitterEmbed(null);
+      }
+    };
+
+    // Debounce the API call
+    const timeoutId = setTimeout(fetchEmbed, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [twitterUrl, isValidTwitterUrl]);
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -255,7 +306,7 @@ export function ProposalSubmission({
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
-      message: proposal.trim(),
+      message: `${proposal.trim()}\n\nReference: ${twitterUrl}`,
     };
   };
 
@@ -281,7 +332,13 @@ export function ProposalSubmission({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!proposal.trim() || proposal.trim().length < 50) return;
+    if (
+      !proposal.trim() ||
+      !twitterUrl.trim() ||
+      !isValidTwitterUrl ||
+      !isWithinLimit
+    )
+      return;
 
     const extensionData = buildExtensionData();
     if (!extensionData) {
@@ -451,21 +508,69 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 isGenerating ||
                 isLoadingExtensions
               }
-              maxLength={2043}
             />
             {proposal.length > 0 && (
               <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
-                {proposal.length} characters
+                {combinedLength} / 2043 characters
               </div>
             )}
           </div>
-          {proposal.length >= 2043 && (
+          {!isWithinLimit && (
             <div className="text-xs text-red-500 mt-1">
-              ⚠️ Proposal exceeds the 2043-character limit. Please shorten your
-              message.
+              ⚠️ Combined text exceeds the 2043-character limit. Please shorten
+              your message or use a shorter Twitter URL.
             </div>
           )}
           <UnicodeIssueWarning issues={issues} />
+
+          <div className="relative">
+            <input
+              type="url"
+              value={twitterUrl}
+              onChange={(e) => setTwitterUrl(e.target.value)}
+              placeholder="https://x.com/username/status/1234567890123456789"
+              className="w-full p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
+              disabled={
+                !hasAccessToken ||
+                isSubmitting ||
+                isGenerating ||
+                isLoadingExtensions
+              }
+              required
+            />
+            {twitterUrl && !isValidTwitterUrl && (
+              <div className="text-xs text-red-500 mt-1">
+                ⚠️ Please enter a valid X.com (Twitter) post URL in the format:
+                https://x.com/username/status/1234567890123456789
+              </div>
+            )}
+          </div>
+
+          {/* Twitter Embed Preview */}
+          {twitterUrl && isValidTwitterUrl && (
+            <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+              <div className="text-sm font-medium text-muted-foreground mb-3">
+                Twitter Post Preview
+              </div>
+              {isLoadingEmbed ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    Loading preview...
+                  </div>
+                </div>
+              ) : twitterEmbed ? (
+                <div
+                  className="twitter-embed"
+                  dangerouslySetInnerHTML={{ __html: twitterEmbed.html }}
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground py-4">
+                  Failed to load Twitter post preview
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button
@@ -500,12 +605,13 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               disabled={
                 !hasAccessToken ||
                 !proposal.trim() ||
-                proposal.trim().length < 50 ||
+                !twitterUrl.trim() ||
+                !isValidTwitterUrl ||
+                !isWithinLimit ||
                 isSubmitting ||
                 isGenerating ||
                 isLoadingExtensions ||
-                hasAnyIssues ||
-                proposal.length >= 2043
+                hasAnyIssues
               }
               className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6"
             >
@@ -522,23 +628,31 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
             </div>
           )}
 
-          {hasAccessToken &&
-            proposal.trim().length > 0 &&
-            proposal.trim().length < 50 && (
-              <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
-                <strong>Minimum Length Required:</strong> Proposal needs{" "}
-                {50 - proposal.trim().length} more characters (minimum 50
-                characters)
-              </div>
-            )}
-
-          {hasAccessToken && proposal.trim().length >= 50 && (
-            <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-              💡 <strong>Tip:</strong> Make sure your proposal is clear and
-              includes specific actionable items. The community will vote on
-              this proposal.
+          {hasAccessToken && !twitterUrl.trim() && (
+            <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
+              <strong>Twitter URL Required:</strong> Please provide a reference
+              X.com (Twitter) post URL.
             </div>
           )}
+
+          {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
+            <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
+              <strong>Invalid Twitter URL:</strong> URL must be in the format
+              https://x.com/username/status/1234567890123456789
+            </div>
+          )}
+
+          {hasAccessToken &&
+            proposal.trim() &&
+            twitterUrl.trim() &&
+            isValidTwitterUrl &&
+            isWithinLimit && (
+              <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
+                💡 <strong>Tip:</strong> Make sure your proposal is clear and
+                includes specific actionable items. The community will vote on
+                this proposal.
+              </div>
+            )}
 
           {isLoadingExtensions && (
             <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
