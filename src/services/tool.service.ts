@@ -119,10 +119,12 @@ export async function executeBuy(
 export async function proposeSendMessage(
   accessToken: string,
   payload: {
+    agent_account_contract: string;
     action_proposals_voting_extension: string;
     action_proposal_contract_to_execute: string;
     dao_token_contract_address: string;
     message: string;
+    memo: string;
   }
 ): Promise<ApiResponse> {
   try {

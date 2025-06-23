@@ -16,6 +16,7 @@ import type { DAO, Token } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
+import { fetchAgents } from "@/services/agent.service";
 import {
   Dialog,
   DialogContent,
@@ -158,7 +159,7 @@ export function ProposalSubmission({
     "initial" | "confirmed-success" | "confirmed-failure"
   >("initial");
 
-  const { accessToken, isLoading: isSessionLoading } = useAuth();
+  const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
 
   // Error code mapping
   const errorDetailsArray = getAllErrorDetails();
@@ -173,6 +174,13 @@ export function ProposalSubmission({
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
     queryKey: ["daoExtensions", daoId],
     queryFn: () => fetchDAOExtensions(daoId),
+    staleTime: 10 * 60 * 1000, // 10 min
+  });
+
+  // Fetch user's DAO Manager agent
+  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: fetchAgents,
     staleTime: 10 * 60 * 1000, // 10 min
   });
 
@@ -285,7 +293,7 @@ export function ProposalSubmission({
 
   /* ---------------------- Helpers – extension data builder --------------------- */
   const buildExtensionData = () => {
-    if (!daoExtensions || daoExtensions.length === 0) return null;
+    if (!daoExtensions || daoExtensions.length === 0 || !agents) return null;
 
     const findExt = (type: string, subtype: string) =>
       daoExtensions.find((ext) => ext.type === type && ext.subtype === subtype);
@@ -297,25 +305,38 @@ export function ProposalSubmission({
     const actionProposalContractExt = findExt("ACTIONS", "SEND_MESSAGE");
     const daoTokenExt = findExt("TOKEN", "DAO");
 
-    if (!actionProposalsVotingExt || !actionProposalContractExt || !daoTokenExt)
+    // Find the user's agent based on profile_id
+    const userAgent = agents.find((agent) => agent.profile_id === userId);
+
+    if (
+      !actionProposalsVotingExt ||
+      !actionProposalContractExt ||
+      !daoTokenExt ||
+      !userAgent?.account_contract
+    ) {
       return null;
+    }
 
     return {
+      agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
         actionProposalsVotingExt.contract_principal,
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
       message: `${proposal.trim()}\n\nReference: ${twitterUrl}`,
+      memo: "Proposal submitted via aibtcdev frontend",
     };
   };
 
   /* ------------------------------ API call helper ------------------------------ */
   const sendRequest = async (payload: {
+    agent_account_contract: string;
     action_proposals_voting_extension: string;
     action_proposal_contract_to_execute: string;
     dao_token_contract_address: string;
     message: string;
+    memo: string;
   }) => {
     if (!accessToken) throw new Error("Missing access token");
 
@@ -506,7 +527,8 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 !hasAccessToken ||
                 isSubmitting ||
                 isGenerating ||
-                isLoadingExtensions
+                isLoadingExtensions ||
+                isLoadingAgents
               }
             />
             {proposal.length > 0 && (
@@ -534,7 +556,8 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 !hasAccessToken ||
                 isSubmitting ||
                 isGenerating ||
-                isLoadingExtensions
+                isLoadingExtensions ||
+                isLoadingAgents
               }
               required
             />
@@ -581,7 +604,8 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 !hasAccessToken ||
                 isSubmitting ||
                 isGenerating ||
-                isLoadingExtensions
+                isLoadingExtensions ||
+                isLoadingAgents
               }
               className="flex items-center gap-2 border-secondary/50 text-secondary hover:bg-secondary/10 hover:border-secondary"
             >
@@ -611,6 +635,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 isSubmitting ||
                 isGenerating ||
                 isLoadingExtensions ||
+                isLoadingAgents ||
                 hasAnyIssues
               }
               className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6"
@@ -657,6 +682,12 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
           {isLoadingExtensions && (
             <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
               ⏳ Loading DAO extensions...
+            </div>
+          )}
+
+          {isLoadingAgents && (
+            <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
+              ⏳ Loading user agent...
             </div>
           )}
         </form>

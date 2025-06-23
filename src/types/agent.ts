@@ -8,6 +8,7 @@ export interface Agent {
   agent_tools: string[];
   profile_id: string;
   is_archived?: boolean;
+  account_contract?: string;
 }
 
 export interface AgentPrompt {
