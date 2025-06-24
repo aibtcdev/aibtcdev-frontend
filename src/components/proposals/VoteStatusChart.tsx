@@ -258,12 +258,9 @@ const VoteStatusChart = ({
               className="absolute h-full bg-success/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
               style={{ width: `${voteCalculations.barPercentageFor}%` }}
             >
-              {voteCalculations.barPercentageFor > 15 && (
+              {voteCalculations.barPercentageFor && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsUp className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">
-                    {voteCalculations.barPercentageFor.toFixed(1)}%
-                  </span>
                   <span className="hidden sm:inline">
                     {voteCalculations.barPercentageFor.toFixed(1)}%
                   </span>
@@ -279,12 +276,9 @@ const VoteStatusChart = ({
                 left: `${voteCalculations.barPercentageFor}%`,
               }}
             >
-              {voteCalculations.barPercentageAgainst > 15 && (
+              {voteCalculations.barPercentageAgainst >= 4 && (
                 <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
                   <ThumbsDown className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">
-                    {voteCalculations.barPercentageAgainst.toFixed(1)}%
-                  </span>
                   <span className="hidden sm:inline">
                     {voteCalculations.barPercentageAgainst.toFixed(1)}%
                   </span>

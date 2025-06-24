@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
-import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
+import {
+  truncateString,
+  getExplorerLink,
+  formatAction,
+  formatNumber,
+} from "@/utils/format";
 import { getProposalStatus } from "@/utils/proposal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +25,7 @@ import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
+import { TokenBalance } from "../reusables/BalanceDisplay";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -118,15 +124,6 @@ export default function ProposalCard({
   }, [proposalStatus]);
 
   const StatusIcon = statusConfig.icon;
-
-  // Memoize formatting functions
-  const formatNumber = useMemo(() => {
-    return (num: number) => {
-      if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
-      if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
-      return num.toString();
-    };
-  }, []);
 
   // Memoize vote summary
   const voteSummary = useMemo(() => {
@@ -248,7 +245,8 @@ export default function ProposalCard({
           {totalVotes > 0 && (
             <div className="flex items-center gap-1 min-w-0 max-w-[80px] sm:max-w-none">
               <BarChart3 className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">{formatNumber(totalVotes)} votes</span>
+              {/* <span className="truncate">{formatNumber(totalVotes)} votes</span> */}
+              <TokenBalance variant="abbreviated" value={totalVotes} />
             </div>
           )}
         </div>
@@ -292,10 +290,13 @@ export default function ProposalCard({
           <div className="text-sm">
             <span className="text-foreground/75">Final result: </span>
             <span className="font-medium">
-              <span className="text-success">{formatNumber(votesFor)} For</span>
+              <span className="text-success">
+                <TokenBalance variant="abbreviated" value={votesFor} /> For
+              </span>
               ,{" "}
               <span className="text-destructive">
-                {formatNumber(votesAgainst)} Against
+                <TokenBalance variant="abbreviated" value={votesAgainst} />{" "}
+                Against
               </span>
             </span>
           </div>
