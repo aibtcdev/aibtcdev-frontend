@@ -16,8 +16,8 @@ export const fetchAgents = async (): Promise<Agent[]> => {
     const { data, error } = await supabase
       .from("agents")
       .select("*")
-      .eq("is_archived", false)
-      .order("name", { ascending: true });
+      .eq("is_archived", false);
+    // .order("name", { ascending: true });
 
     if (error) {
       console.error("Error fetching agents:", error);
