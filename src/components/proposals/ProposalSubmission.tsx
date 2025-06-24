@@ -303,7 +303,7 @@ export function ProposalSubmission({
       "ACTION_PROPOSAL_VOTING"
     );
     const actionProposalContractExt = findExt("ACTIONS", "SEND_MESSAGE");
-    const daoTokenExt = findExt("TOKEN", "DAO");
+    const daoTokenExt = findExt("TOKEN", "POOL");
 
     // Find the user's agent based on profile_id
     const userAgent = agents.find((agent) => agent.profile_id === userId);
