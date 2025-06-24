@@ -501,10 +501,10 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">
-              Create Proposal
+              Submit Contribution
             </h2>
             <p className="text-muted-foreground">
-              Submit a new governance proposal to the DAO
+              Propose a completed contribution to the DAO to request a reward.
             </p>
           </div>
         </div>
@@ -519,7 +519,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               }}
               placeholder={
                 hasAccessToken
-                  ? "Describe your proposal in detail. What changes do you want to make? What are the benefits? Include any relevant context or rationale..."
+                  ? "Describe what you contributed. What did you create or share? Why does it matter?"
                   : "Connect your wallet to create a proposal"
               }
               className="w-full min-h-[120px] p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
@@ -550,7 +550,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               type="url"
               value={twitterUrl}
               onChange={(e) => setTwitterUrl(e.target.value)}
-              placeholder="https://x.com/username/status/1234567890123456789"
+              placeholder="Paste the X.com (Twitter) post that shows your work"
               className="w-full p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
               disabled={
                 !hasAccessToken ||
@@ -654,7 +654,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
           )}
 
           {hasAccessToken && !twitterUrl.trim() && (
-            <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
+            <div className="text-sm rounded-lg p-3">
               <strong>Twitter URL Required:</strong> Please provide a reference
               X.com (Twitter) post URL.
             </div>

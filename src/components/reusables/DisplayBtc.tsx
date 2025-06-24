@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { WalletMinimalIcon } from "lucide-react";
+import { FaBitcoin } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
 
@@ -62,11 +63,11 @@ const DisplayBtc = () => {
   };
 
   return (
-    <div className="flex items-center gap-2 animate-pulse-slow">
+    <div className="flex items-center gap-2 animate-pulse-slow justify-center">
+      <FaBitcoin className="h-8 w-8 text-primary" />
       <span className="font-inter font-bold tracking-tight text-lg text-primary">
         {formatBalance(totalSbtc)}
       </span>
-      <WalletMinimalIcon className="h-8 w-8 text-primary" />
     </div>
   );
 };

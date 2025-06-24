@@ -276,10 +276,10 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         <ScrollArea className="flex-1 hidden md:block">
           <div className="flex h-full flex-col justify-between p-2">
             <div className="space-y-4 py-2">
-              <DAONavigation daoName={encodedName} pathname={pathname} />
               <div className="px-2">
                 <DAOBuyToken daoId={dao.id} daoName={dao.name} />
               </div>
+              <DAONavigation daoName={encodedName} pathname={pathname} />
             </div>
             <div className="space-y-2 px-2">
               <h3 className="px-2 text-sm font-semibold text-foreground/80">
