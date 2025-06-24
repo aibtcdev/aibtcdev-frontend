@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WalletMinimalIcon } from "lucide-react";
 import { FaBitcoin } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletStore } from "@/store/wallet";
