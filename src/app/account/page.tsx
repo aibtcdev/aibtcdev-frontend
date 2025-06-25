@@ -432,13 +432,16 @@ export default function AccountPage() {
   const [isRequestingSBTC, setIsRequestingSBTC] = useState(false);
   const [isRequestingSTX, setIsRequestingSTX] = useState(false);
 
-  // Fetch the DAO Manager agent
+  // Fetch the user agent
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
     queryFn: fetchAgents,
   });
 
-  const daoManagerAgentId = agents[0]?.id || "";
+  // Use the user agent's on-chain account address directly
+  const userAgent = agents[0] || null;
+  const userAgentAddress = userAgent?.account_contract || null;
+  const userAgentId = userAgent?.id || "";
 
   // Fetch wallet information when userId is available
   useEffect(() => {
@@ -479,9 +482,9 @@ export default function AccountPage() {
   };
 
   const {
-    walletAddress: daoManagerWalletAddress,
-    walletBalance: daoManagerWalletBalance,
-  } = getAgentWalletInfo(daoManagerAgentId);
+    walletAddress: userAgentWalletAddress,
+    walletBalance: userAgentWalletBalance,
+  } = getAgentWalletInfo(userAgentId);
 
   // Handler for requesting testnet sBTC
   const handleRequestSBTC = async () => {
@@ -603,12 +606,12 @@ export default function AccountPage() {
                 iconColor="text-primary"
                 linkType="address"
               />
-              {daoManagerWalletAddress && (
+              {userAgentWalletAddress && (
                 <>
                   <AccountRow
                     title="Agent Wallet"
                     subtitle="Automated governance account"
-                    address={daoManagerWalletAddress}
+                    address={userAgentWalletAddress}
                     icon={Wallet}
                     iconBg="bg-secondary/10"
                     iconColor="text-secondary"
@@ -617,20 +620,12 @@ export default function AccountPage() {
                   <AccountRow
                     title="Agent Account"
                     subtitle="Smart contract account for secure delegation"
-                    address={
-                      stacksAddress && daoManagerWalletAddress
-                        ? `.aibtc-user-agent-account-${stacksAddress.slice(0, 5)}-${stacksAddress.slice(-5)}-${daoManagerWalletAddress.slice(0, 5)}-${daoManagerWalletAddress.slice(-5)}`
-                        : null
-                    }
-                    explorerId={
-                      stacksAddress && daoManagerWalletAddress
-                        ? `.aibtc-user-agent-account-${stacksAddress.slice(0, 5)}-${stacksAddress.slice(-5)}-${daoManagerWalletAddress.slice(0, 5)}-${daoManagerWalletAddress.slice(-5)}`
-                        : null
-                    }
+                    address={userAgentAddress}
+                    explorerId={userAgentAddress}
                     icon={Settings}
                     iconBg="bg-muted/20"
                     iconColor="text-muted-foreground"
-                    linkType="tx"
+                    linkType="contract"
                   />
                 </>
               )}
@@ -718,7 +713,7 @@ export default function AccountPage() {
         <div className="grid gap-6">
           <BalanceSummaryCard
             title="Agent Wallet"
-            walletBalance={daoManagerWalletBalance}
+            walletBalance={userAgentWalletBalance}
             icon={Wallet}
             iconBg="bg-secondary/10"
             iconColor="text-secondary"
