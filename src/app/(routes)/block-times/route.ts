@@ -14,15 +14,17 @@ async function fetchBlockData(
         Accept: "application/json",
         "X-API-Key": apiKey || "",
       },
+      // USING force-cache won't work on cloudflare deployment
+      next: {
+        revalidate: 1200, // Cache for 20 minutes (1200 seconds)
+      },
     }
   );
 
   if (response.ok) {
     const data = await response.json();
-    console.log(`Fetched block ${blockNumber}:`, data);
     return data.burn_block_time_iso;
   }
-  console.warn(`Fetch failed for block ${blockNumber}: ${response.status}`);
   return null;
 }
 
@@ -43,15 +45,7 @@ export async function GET(request: Request) {
       ? "https://api.testnet.hiro.so"
       : "https://api.hiro.so";
 
-  const apiKey = process.env.NEXT_PUBLIC_HIRO_API_KEY || "";
-
-  // console.log("ENV in Edge Runtime:", {
-  //   NEXT_PUBLIC_STACKS_NETWORK: process.env.NEXT_PUBLIC_STACKS_NETWORK,
-  //   NEXT_PUBLIC_HIRO_API_KEY: Boolean(process.env.NEXT_PUBLIC_HIRO_API_KEY),
-  //   baseURL,
-  //   startBlock,
-  //   endBlock,
-  // });
+  const apiKey = process.env.HIRO_API_KEY || "";
 
   try {
     const [startBlockData, endBlockData] = await Promise.all([
