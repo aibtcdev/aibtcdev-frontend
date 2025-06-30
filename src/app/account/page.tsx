@@ -424,7 +424,8 @@ function BalanceSummaryCard({
 }
 
 export default function AccountPage() {
-  const { agentWallets, balances, fetchWallets } = useWalletStore();
+  const { agentWallets, balances, fetchWallets, fetchContractBalance } =
+    useWalletStore();
   const { userId, accessToken } = useAuth();
   const { toast } = useToast();
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
@@ -485,6 +486,18 @@ export default function AccountPage() {
     walletAddress: userAgentWalletAddress,
     walletBalance: userAgentWalletBalance,
   } = getAgentWalletInfo(userAgentId);
+
+  // Fetch contract account balance when address is available
+  useEffect(() => {
+    if (userAgentAddress) {
+      fetchContractBalance(userAgentAddress);
+    }
+  }, [userAgentAddress, fetchContractBalance]);
+
+  // Balance for the agent contract account
+  const userAgentContractBalance = userAgentAddress
+    ? balances[userAgentAddress]
+    : null;
 
   // Handler for requesting testnet sBTC
   const handleRequestSBTC = async () => {
@@ -625,7 +638,7 @@ export default function AccountPage() {
                     icon={Settings}
                     iconBg="bg-muted/20"
                     iconColor="text-muted-foreground"
-                    linkType="contract"
+                    linkType="tx"
                   />
                 </>
               )}
@@ -710,7 +723,7 @@ export default function AccountPage() {
           </h2>
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2">
           <BalanceSummaryCard
             title="Agent Wallet"
             walletBalance={userAgentWalletBalance}
@@ -718,6 +731,22 @@ export default function AccountPage() {
             iconBg="bg-secondary/10"
             iconColor="text-secondary"
           />
+          {userAgentAddress &&
+            (userAgentContractBalance ? (
+              <BalanceSummaryCard
+                title="Agent Account"
+                walletBalance={userAgentContractBalance}
+                icon={Settings}
+                iconBg="bg-muted/20"
+                iconColor="text-muted-foreground"
+              />
+            ) : (
+              <Card className="bg-card border border-border">
+                <CardContent className="py-4 text-center text-muted-foreground">
+                  Loading contract balance...
+                </CardContent>
+              </Card>
+            ))}
         </div>
       </div>
 

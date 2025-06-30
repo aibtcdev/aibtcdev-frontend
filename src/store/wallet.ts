@@ -41,6 +41,7 @@ interface WalletState {
   fetchBalances: (addresses: string[]) => Promise<void>;
   fetchSingleBalance: (address: string) => Promise<WalletBalance | null>;
   fetchWallets: (userId: string | null) => Promise<void>;
+  fetchContractBalance: (address: string) => Promise<WalletBalance | null>;
 }
 
 export const useWalletStore = create<WalletState>((set, get) => ({
@@ -149,5 +150,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         isLoading: false,
       });
     }
+  },
+
+  fetchContractBalance: async (address: string) => {
+    // Reuse single-balance fetch logic for contract account
+    return get().fetchSingleBalance(address);
   },
 }));
