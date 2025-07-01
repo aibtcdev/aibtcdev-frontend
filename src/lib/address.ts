@@ -25,8 +25,13 @@ export function getStacksAddress(): string | null {
     if (!data) {
       return null;
     }
+    console.log(data);
     const stxList = data.addresses.stx as AddressObject[];
-    return stxList[0]?.address || null;
+    const isTestnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet";
+    const preferred = stxList.find((addr) =>
+      isTestnet ? addr.address.startsWith("ST") : addr.address.startsWith("SP")
+    );
+    return preferred?.address || stxList[0]?.address || null;
   } catch (error) {
     console.error("Error getting Stacks address from local storage:", error);
     return null;
