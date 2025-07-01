@@ -119,7 +119,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
       }
 
       toast({
-        description: "connection succesfull...",
+        description: "connection succesful...",
         variant: "default",
       });
 
