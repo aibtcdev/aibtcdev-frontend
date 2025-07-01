@@ -103,6 +103,7 @@ interface ParsedOutput {
   data: {
     txid?: string;
     link?: string;
+    reason?: string;
   };
 }
 
@@ -924,8 +925,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                   Submission Failed
                 </DialogTitle>
                 <DialogDescription className="text-base text-muted-foreground">
-                  There was an error processing your proposal. Please check your
-                  connection and try again.
+                  There was an error processing sending your proposal.
                 </DialogDescription>
               </DialogHeader>
 
@@ -935,7 +935,9 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                     <div className="text-sm">
                       <span className="text-muted-foreground">Error: </span>
                       <span className="font-medium">
-                        {parsedApiResponse.message}
+                        {parsedApiResponse.data?.reason === "NotEnoughFunds"
+                          ? "Not enough DAO tokens in agent account. Transaction failed to broadcast."
+                          : parsedApiResponse.message}
                       </span>
                     </div>
                   </div>
