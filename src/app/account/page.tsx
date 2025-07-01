@@ -107,7 +107,19 @@ function AccountRow({
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground">{title}</p>
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
+            <p className="text-xs text-muted-foreground">
+              {subtitle}
+              {address && address.startsWith("ST") && (
+                <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase bg-blue-100 text-blue-800 rounded">
+                  Testnet
+                </span>
+              )}
+              {address && address.startsWith("SP") && (
+                <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase bg-green-100 text-green-800 rounded">
+                  Mainnet
+                </span>
+              )}
+            </p>
           </div>
         </div>
         <div className="text-xs text-muted-foreground">Not connected</div>
@@ -125,7 +137,19 @@ function AccountRow({
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-muted-foreground">
+            {subtitle}
+            {address && address.startsWith("ST") && (
+              <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase bg-blue-100 text-blue-800 rounded">
+                Testnet
+              </span>
+            )}
+            {address && address.startsWith("SP") && (
+              <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold uppercase bg-green-100 text-green-800 rounded">
+                Mainnet
+              </span>
+            )}
+          </p>
           <p className="font-mono text-xs text-muted-foreground mt-1">
             {address}
           </p>
