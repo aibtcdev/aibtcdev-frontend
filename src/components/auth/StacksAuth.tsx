@@ -21,7 +21,7 @@ import {
 import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
 import { runAutoInit } from "@/lib/auto-init";
-import { getLocalStorage } from "@stacks/connect";
+import { getStacksAddress } from "@/lib/address";
 
 // Define proper interface for wallet user data
 interface WalletAddress {
@@ -171,14 +171,8 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
 
     try {
       console.log("userData", userData);
-      // Extract STX address from the new data structure
-      // Support both addressType and symbol-based structures
-      const stxAddressObj = userData.addresses?.find(
-        (addr: WalletAddress) =>
-          addr.addressType === "stacks" || addr.symbol === "STX"
-      );
-      const stxAddress = stxAddressObj?.address;
-
+      // Extract STX address using getStacksAddress helper function
+      const stxAddress = getStacksAddress();
       if (!stxAddress) {
         throw new Error("No STX address found in wallet data");
       }
@@ -336,35 +330,6 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
       </Dialog>
     </StacksProvider>
   );
-}
-
-export function getStacksAddress(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const data = getLocalStorage();
-    console.log(data);
-    // Check if data has the new structure or old structure
-    if (data?.addresses && Array.isArray(data.addresses)) {
-      // New structure: array of address objects
-      // Support both addressType and symbol-based structures
-      const stxAddressObj = data.addresses.find(
-        (addr: WalletAddress) =>
-          addr.addressType === "stacks" || addr.symbol === "STX"
-      );
-      return stxAddressObj?.address || null;
-    } else if (data?.addresses?.stx) {
-      // Old structure: addresses.stx array
-      const stxAddresses = data.addresses.stx;
-      return stxAddresses.length > 0 ? stxAddresses[0].address : null;
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting Stacks address from local storage:", error);
-    return null;
-  }
 }
 
 async function ensureProfileHasStacksAddresses(
