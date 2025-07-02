@@ -9,8 +9,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Proposals",
-  description: "View all DAO proposals across all organizations in one place.",
+  title: "Contributions",
+  description: "View all contribution across all organizations in one place.",
 };
 
 export default function ProposalsLayout({
