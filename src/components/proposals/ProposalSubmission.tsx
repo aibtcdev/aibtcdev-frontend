@@ -32,10 +32,10 @@ import {
 } from "@/hooks/useUnicodeValidation";
 import {
   proposeSendMessage,
-  generateProposalRecommendation,
-  isProposalRecommendationError,
+  // generateProposalRecommendation,
+  // isProposalRecommendationError,
   type ApiResponse,
-  type ProposalRecommendationRequest,
+  // type ProposalRecommendationRequest,
 } from "@/services/tool.service";
 import {
   fetchTwitterEmbed,
@@ -143,7 +143,7 @@ export function ProposalSubmission({
   };
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+  // const [isGenerating, setIsGenerating] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
 
   // WebSocket state
@@ -528,7 +528,7 @@ export function ProposalSubmission({
               disabled={
                 !hasAccessToken ||
                 isSubmitting ||
-                isGenerating ||
+                // isGenerating ||
                 isLoadingExtensions ||
                 isLoadingAgents
               }
@@ -557,7 +557,7 @@ export function ProposalSubmission({
               disabled={
                 !hasAccessToken ||
                 isSubmitting ||
-                isGenerating ||
+                // isGenerating ||
                 isLoadingExtensions ||
                 isLoadingAgents
               }
@@ -635,7 +635,7 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
-                isGenerating ||
+                // isGenerating ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
                 hasAnyIssues
