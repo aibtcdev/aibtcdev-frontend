@@ -41,7 +41,12 @@ interface ApplicationLayoutProps {
 
 const navigation = [
   { id: "daos", name: "DAOs", href: "/daos", icon: Boxes },
-  { id: "proposals", name: "Contribution", href: "/proposals", icon: FileText },
+  {
+    id: "proposals",
+    name: "Contributions",
+    href: "/proposals",
+    icon: FileText,
+  },
   { id: "votes", name: "Voting", href: "/votes", icon: Vote },
   {
     id: "playground",

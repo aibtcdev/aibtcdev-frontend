@@ -72,7 +72,7 @@ function DAONavigation({
   const navItems = [
     {
       href: `/daos/${daoName}`,
-      label: "Proposals",
+      label: "Contributions",
       icon: FileText,
       isActive: pathname === `/daos/${daoName}`,
     },
