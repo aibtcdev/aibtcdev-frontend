@@ -65,7 +65,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
   if (!votes || votes.length === 0) {
     return (
       <div className="py-4 text-center text-muted-foreground rounded-md text-sm">
-        No votes have been recorded for this proposal yet.
+        No votes have been recorded for this contribution yet.
       </div>
     );
   }
