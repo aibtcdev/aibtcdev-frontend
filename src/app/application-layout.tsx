@@ -57,6 +57,8 @@ export default function ApplicationLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [leftPanelOpen, setLeftPanelOpen] = React.useState(false);
+  const [isDesktopMenuOpen, setDesktopMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   // Use existing auth infrastructure
   const { isAuthenticated, signOut } = useAuth();
@@ -71,7 +73,12 @@ export default function ApplicationLayout({
   // Handle navigation to protected routes
   const handleNavigation = async (href: string, e: React.MouseEvent) => {
     // Only intercept navigation to protected pages (account and votes)
-    if (href === "/account" || href === "/votes" || href === "/evaluation") {
+    if (
+      href === "/account" ||
+      href === "/votes" ||
+      href === "/evaluation" ||
+      href === "/deposit"
+    ) {
       e.preventDefault();
 
       if (!isAuthenticated) {
@@ -129,7 +136,10 @@ export default function ApplicationLayout({
         {/* Mobile User Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {isAuthenticated ? (
-            <DropdownMenu>
+            <DropdownMenu
+              open={isMobileMenuOpen}
+              onOpenChange={setMobileMenuOpen}
+            >
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -142,9 +152,39 @@ export default function ApplicationLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="center"
-                className="w-40 p-2 bg-background border border-border/20 rounded-xl shadow-lg"
+                className="w-56 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
               >
                 <div className="px-3 py-2 border-b border-border/20">
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    Total Agent Balance
+                  </div>
+                  <div className="text-lg font-bold text-foreground">
+                    <DisplayBtc />
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="my-1" />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/account", e);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/deposit", e);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <Wallet className="h-4 w-4" />
+                  <span>Deposit</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1" />
+                <div className="px-3 py-2 border-y border-border/20">
                   <div className="text-xs font-medium text-muted-foreground">
                     Network Status
                   </div>
@@ -152,13 +192,16 @@ export default function ApplicationLayout({
                     <NetworkIndicator />
                   </div>
                 </div>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-destructive rounded-lg"
+                  onClick={() => {
+                    handleSignOut();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
-                  Sign out
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -272,7 +315,10 @@ export default function ApplicationLayout({
         <div className="flex items-center gap-2 relative z-10 justify-end">
           {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
           {isAuthenticated ? (
-            <DropdownMenu>
+            <DropdownMenu
+              open={isDesktopMenuOpen}
+              onOpenChange={setDesktopMenuOpen}
+            >
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
@@ -297,14 +343,20 @@ export default function ApplicationLayout({
                 </div>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
-                  onClick={(e) => handleNavigation("/account", e)}
+                  onClick={(e) => {
+                    handleNavigation("/account", e);
+                    setDesktopMenuOpen(false);
+                  }}
                   className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <User className="h-4 w-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={(e) => handleNavigation("/deposit", e)}
+                  onClick={(e) => {
+                    handleNavigation("/deposit", e);
+                    setDesktopMenuOpen(false);
+                  }}
                   className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <Wallet className="h-4 w-4" />
@@ -321,7 +373,10 @@ export default function ApplicationLayout({
                 </div>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
-                  onClick={handleSignOut}
+                  onClick={() => {
+                    handleSignOut();
+                    setDesktopMenuOpen(false);
+                  }}
                   className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
