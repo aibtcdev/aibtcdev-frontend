@@ -111,7 +111,7 @@ const ProposalDetails = ({
                 On-chain Message
               </h3>
               <p className="text-muted-foreground">
-                Proposal description and details
+                Contribution description and details
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ const ProposalDetails = ({
               Voting Progress
             </h3>
             <p className="text-muted-foreground">
-              Real-time proposal voting analytics
+              Real-time contribution voting analytics
             </p>
           </div>
         </div>
@@ -225,7 +225,7 @@ const ProposalDetails = ({
             <div className="space-y-3">
               <div>
                 <div className="text-muted-foreground text-xs mb-1">
-                  Proposal ID
+                  Contribution ID
                 </div>
                 <div className="font-mono text-sm">#{proposal.proposal_id}</div>
               </div>

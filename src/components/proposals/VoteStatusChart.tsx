@@ -216,7 +216,7 @@ const VoteStatusChart = ({
               Updating...
             </span>
           ) : (
-            // Only show countdown for active proposals
+            // Only show countdown for active contributions
             isActive && (
               <span className="text-muted-foreground">
                 Next update: {nextRefreshIn}s
@@ -356,7 +356,7 @@ const VoteStatusChart = ({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs max-w-xs">
                   <p>
-                    Total liquid tokens available for voting.
+                    Total liquid tokens available for contribution voting.
                     <br />
                     {(
                       100 -
@@ -442,7 +442,7 @@ const VoteStatusChart = ({
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs max-w-xs">
                     <p>
-                      Total liquid tokens available for voting.
+                      Total liquid tokens available for contribution voting.
                       <br />
                       {(
                         100 -

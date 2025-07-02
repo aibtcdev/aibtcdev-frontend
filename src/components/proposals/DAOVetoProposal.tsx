@@ -325,7 +325,7 @@ export function DAOVetoProposal({
         ) : (
           <>
             <Shield className="h-4 w-4 mr-2" />
-            Veto Proposal
+            Veto Contribution
           </>
         )}
       </Button>
@@ -342,7 +342,7 @@ export function DAOVetoProposal({
                   Veto Transaction Successful
                 </DialogTitle>
                 <DialogDescription className="text-base">
-                  Your veto proposal has been successfully submitted to the
+                  Your veto contribution has been successfully submitted to the
                   blockchain.
                 </DialogDescription>
               </DialogHeader>
@@ -571,7 +571,7 @@ export function DAOVetoProposal({
                   Veto Transaction Failed
                 </DialogTitle>
                 <DialogDescription className="text-base">
-                  There was an error processing your veto proposal.
+                  There was an error processing your veto contribution.
                 </DialogDescription>
               </DialogHeader>
 

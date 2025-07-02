@@ -180,7 +180,7 @@ export const useVotingStatus = (
     // Ensure endDate is a valid Date object for reliable comparisons
     const isEnded =
       endDate instanceof Date && now.getTime() >= endDate.getTime();
-    // Ensure proposal status 'FAILED' prevents 'isActive' being true
+    // Ensure contribution status 'FAILED' prevents 'isActive' being true
     // Also ensure start date has passed
     const isActive =
       startDate instanceof Date &&
@@ -233,11 +233,11 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
         <div className="flex items-center gap-1.5 text-secondary">
           <Timer className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">
-            Voting has not started yet
+            Voting for this contribution has not started yet
           </span>
         </div>
         <p className="text-xs text-secondary/80 mt-1">
-          Voting starts in block #{vote_start}.
+          Voting for this contribution starts in block #{vote_start}.
         </p>
       </div>
     );
@@ -257,11 +257,13 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
           <Timer className="h-3.5 w-3.5 text-muted-foreground" />
           {isActive ? (
             <span className="text-xs font-medium text-primary">
-              Voting in progress
+              Voting in progress for this contribution
             </span>
           ) : (
             <span className="text-xs font-medium">
-              {isEnded ? "Voting Period" : "Voting Starts Soon"}
+              {isEnded
+                ? "Contribution Voting Period"
+                : "Contribution Voting Starts Soon"}
             </span>
           )}
         </div>

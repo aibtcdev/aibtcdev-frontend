@@ -4,7 +4,7 @@ import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import {
   Send,
-  Sparkles,
+  // Sparkles,
   Edit3,
   Check,
   ExternalLink,
@@ -131,14 +131,15 @@ export function ProposalSubmission({
   daoId,
   onSubmissionSuccess,
 }: ProposalSubmissionProps) {
-  const [proposal, setProposal] = useState("");
+  const [contribution, setContribution] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [twitterEmbed, setTwitterEmbed] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
-  const { issues, hasAnyIssues, cleanText } = useUnicodeValidation(proposal);
+  const { issues, hasAnyIssues, cleanText } =
+    useUnicodeValidation(contribution);
   const handleClean = () => {
-    setProposal(cleanText);
+    setContribution(cleanText);
   };
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,7 +192,7 @@ export function ProposalSubmission({
 
   // Calculate combined length including the Twitter URL
   const referenceText = twitterUrl ? `\n\nReference: ${twitterUrl}` : "";
-  const combinedLength = proposal.length + referenceText.length;
+  const combinedLength = contribution.length + referenceText.length;
   const isWithinLimit = combinedLength <= 2043;
 
   // Cleanup WebSocket on unmount
@@ -272,7 +273,7 @@ export function ProposalSubmission({
         // Update modal state based on status
         if (isSuccess) {
           setTxStatusView("confirmed-success");
-          setProposal(""); // Clear proposal only after successful confirmation
+          setContribution(""); // Clear proposal only after successful confirmation
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -325,8 +326,8 @@ export function ProposalSubmission({
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
-      message: `${proposal.trim()}\n\nReference: ${twitterUrl}`,
-      memo: "Proposal submitted via aibtcdev frontend",
+      message: `${contribution.trim()}\n\nReference: ${twitterUrl}`,
+      memo: "Contribution submitted via aibtcdev frontend",
     };
   };
 
@@ -355,7 +356,7 @@ export function ProposalSubmission({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
-      !proposal.trim() ||
+      !contribution.trim() ||
       !twitterUrl.trim() ||
       !isValidTwitterUrl ||
       !isWithinLimit
@@ -386,7 +387,7 @@ export function ProposalSubmission({
 
         // Call success callback
         onSubmissionSuccess?.();
-        // setProposal(""); // Do NOT clear here; will clear after confirmed-success
+        // setContribution(""); // Do NOT clear here; will clear after confirmed-success
       }
     } catch (err) {
       // Handle network errors or other unexpected errors
@@ -405,74 +406,74 @@ export function ProposalSubmission({
     }
   };
 
-  const handleAIGenerate = async () => {
-    if (!accessToken) {
-      console.error("No access token available for AI generation");
-      return;
-    }
+  //   const handleAIGenerate = async () => {
+  //     if (!accessToken) {
+  //       console.error("No access token available for AI generation");
+  //       return;
+  //     }
 
-    setIsGenerating(true);
-    try {
-      console.log("Generating AI proposal for DAO:", daoId);
+  //     setIsGenerating(true);
+  //     try {
+  //       console.log("Generating AI contribution for DAO:", daoId);
 
-      // Create the API request
-      const request: ProposalRecommendationRequest = {
-        dao_id: daoId,
-        focus_area: "governance", // Default focus area, could be made configurable
-        specific_needs:
-          "Generate a comprehensive proposal that addresses current DAO needs and opportunities",
-        model_name: "gpt-4.1", // Use the recommended model
-        temperature: 0.3, // Balance between creativity and focus
-      };
+  //       // Create the API request
+  //       const request: ProposalRecommendationRequest = {
+  //         dao_id: daoId,
+  //         focus_area: "governance", // Default focus area, could be made configurable
+  //         specific_needs:
+  //           "Generate a comprehensive contribution that addresses current DAO needs and opportunities",
+  //         model_name: "gpt-4.1", // Use the recommended model
+  //         temperature: 0.3, // Balance between creativity and focus
+  //       };
 
-      // Make the API call
-      const result = await generateProposalRecommendation(accessToken, request);
+  //       // Make the API call
+  //       const result = await generateProposalRecommendation(accessToken, request);
 
-      if (isProposalRecommendationError(result)) {
-        throw new Error(result.error);
-      }
+  //       if (isProposalRecommendationError(result)) {
+  //         throw new Error(result.error);
+  //       }
 
-      // Set the generated content as the proposal text
-      setProposal(result.content);
+  //       // Set the generated content as the contribution text
+  //       setContribution(result.content);
 
-      console.log("AI proposal generated successfully:", {
-        title: result.title,
-        priority: result.priority,
-        proposalsAnalyzed: result.proposals_analyzed,
-        tokenUsage: result.token_usage,
-      });
-    } catch (error) {
-      console.error("Failed to generate AI proposal:", error);
+  //       console.log("AI contribution generated successfully:", {
+  //         title: result.title,
+  //         priority: result.priority,
+  //         proposalsAnalyzed: result.proposals_analyzed,
+  //         tokenUsage: result.token_usage,
+  //       });
+  //     } catch (error) {
+  //       console.error("Failed to generate AI contribution:", error);
 
-      // Fallback to a basic template if the API fails
-      const fallbackText = `## Proposal Title
-[Insert your proposal title here]
+  //       // Fallback to a basic template if the API fails
+  //       const fallbackText = `## Contribution Title
+  // [Insert your contribution title here]
 
-## Objective
-Describe the main goal and purpose of this proposal.
+  // ## Objective
+  // Describe the main goal and purpose of this contribution.
 
-## Rationale
-Explain why this proposal is needed and how it benefits the DAO.
+  // ## Rationale
+  // Explain why this contribution is needed and how it benefits the DAO.
 
-## Implementation Plan
-Detail the specific steps needed to execute this proposal.
+  // ## Implementation Plan
+  // Detail the specific steps needed to execute this contribution.
 
-## Success Metrics
-Define how success will be measured.
+  // ## Success Metrics
+  // Define how success will be measured.
 
-## Timeline
-Provide an estimated timeline for completion.
+  // ## Timeline
+  // Provide an estimated timeline for completion.
 
-## Budget Requirements
-List any resources or funding needed.
+  // ## Budget Requirements
+  // List any resources or funding needed.
 
-Note: This is a template generated after AI assistance encountered an issue. Please customize it with your specific proposal details.`;
+  // Note: This is a template generated after AI assistance encountered an issue. Please customize it with your specific contribution details.`;
 
-      setProposal(fallbackText);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  //       setContribution(fallbackText);
+  //     } finally {
+  //       setIsGenerating(false);
+  //     }
+  //   };
 
   const handleRetry = () => {
     setShowResultDialog(false);
@@ -513,15 +514,15 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <textarea
-              value={proposal}
+              value={contribution}
               onChange={(e) => {
                 const value = e.target.value;
-                setProposal(value);
+                setContribution(value);
               }}
               placeholder={
                 hasAccessToken
                   ? "Describe what you contributed. What did you create or share? Why does it matter?"
-                  : "Connect your wallet to create a proposal"
+                  : "Connect your wallet to create a contribution"
               }
               className="w-full min-h-[120px] p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
               disabled={
@@ -532,7 +533,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 isLoadingAgents
               }
             />
-            {proposal.length > 0 && (
+            {contribution.length > 0 && (
               <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
                 {combinedLength} / 2043 characters
               </div>
@@ -597,7 +598,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
           )}
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            <Button
+            {/* <Button
               type="button"
               variant="outline"
               onClick={handleAIGenerate}
@@ -614,7 +615,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                 className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`}
               />
               {isGenerating ? "Generating..." : "Generate Message"}
-            </Button>
+            </Button> */}
             {hasAnyIssues && (
               <Button
                 type="button"
@@ -629,7 +630,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               type="submit"
               disabled={
                 !hasAccessToken ||
-                !proposal.trim() ||
+                !contribution.trim() ||
                 !twitterUrl.trim() ||
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
@@ -642,15 +643,15 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
               className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6"
             >
               {isSubmitting ? <Loader /> : <Send className="h-4 w-4" />}
-              {isSubmitting ? "Submitting..." : "Submit Proposal"}
+              {isSubmitting ? "Submitting..." : "Submit Contribution"}
             </Button>
           </div>
 
           {/* Error/Status Messages */}
           {!hasAccessToken && (
             <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-              💡 <strong>Note:</strong> Connect your wallet to submit proposals
-              to the DAO.
+              💡 <strong>Note:</strong> Connect your wallet to submit
+              contributions to the DAO.
             </div>
           )}
 
@@ -669,14 +670,14 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
           )}
 
           {hasAccessToken &&
-            proposal.trim() &&
+            contribution.trim() &&
             twitterUrl.trim() &&
             isValidTwitterUrl &&
             isWithinLimit && (
               <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-                💡 <strong>Tip:</strong> Make sure your proposal is clear and
-                includes specific actionable items. The community will vote on
-                this proposal.
+                💡 <strong>Tip:</strong> Make sure your contribution is clear
+                and includes specific actionable items. The community will vote
+                on this contribution.
               </div>
             )}
 
@@ -717,11 +718,11 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                         </div>
                         <DialogHeader className="text-center">
                           <DialogTitle className="text-2xl font-bold mb-2">
-                            Proposal Submitted
+                            Contribution Submitted
                           </DialogTitle>
                           <DialogDescription className="text-base text-muted-foreground">
-                            Your proposal is being processed on the blockchain.
-                            This may take a few minutes.
+                            Your contribution is being processed on the
+                            blockchain. This may take a few minutes.
                           </DialogDescription>
                         </DialogHeader>
 
@@ -773,11 +774,11 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                         </div>
                         <DialogHeader className="text-center">
                           <DialogTitle className="text-2xl font-bold mb-2">
-                            Proposal Confirmed
+                            Contribution Confirmed
                           </DialogTitle>
                           <DialogDescription className="text-base text-muted-foreground">
-                            Your proposal has been successfully submitted to the
-                            DAO and is now live for voting.
+                            Your contribution has been successfully submitted to
+                            the DAO and is now live for voting.
                           </DialogDescription>
                         </DialogHeader>
 
@@ -837,10 +838,10 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                         </div>
                         <DialogHeader className="text-center">
                           <DialogTitle className="text-2xl font-bold mb-2">
-                            Proposal Failed
+                            Contribution Failed
                           </DialogTitle>
                           <DialogDescription className="text-base text-muted-foreground">
-                            The proposal transaction could not be completed.
+                            The contribution transaction could not be completed.
                             Please try again.
                           </DialogDescription>
                         </DialogHeader>
@@ -925,7 +926,7 @@ Note: This is a template generated after AI assistance encountered an issue. Ple
                   Submission Failed
                 </DialogTitle>
                 <DialogDescription className="text-base text-muted-foreground">
-                  There was an error processing sending your proposal.
+                  There was an error processing sending your contribution.
                 </DialogDescription>
               </DialogHeader>
 

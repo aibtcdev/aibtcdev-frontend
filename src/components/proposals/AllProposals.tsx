@@ -79,7 +79,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
       key: "search",
       label: "Search",
       type: "search",
-      placeholder: "Search proposals...",
+      placeholder: "Search contributions...",
     },
     {
       key: "dao",
@@ -222,12 +222,12 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
         <div className="lg:hidden flex justify-between items-center">
           <div className="space-y-1 min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-foreground truncate">
-              All Proposals
+              All Contributions
             </h2>
             <p className="text-xs text-muted-foreground">
               {filteredAndSortedProposals.length > 0
-                ? `${filteredAndSortedProposals.length} ${filteredAndSortedProposals.length === 1 ? "proposal" : "proposals"}`
-                : "No proposals found"}
+                ? `${filteredAndSortedProposals.length} ${filteredAndSortedProposals.length === 1 ? "contribution" : "contributions"}`
+                : "No contributions found"}
             </p>
           </div>
           <Button
@@ -301,12 +301,12 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-lg font-medium text-foreground">
-                        No Proposals Found
+                        No Contributions Found
                       </h3>
                       <p className="text-sm text-muted-foreground max-w-md mx-auto">
                         {totalProposals === 0
-                          ? "No proposals have been created yet. Check back later for new governance proposals."
-                          : "No proposals match your current search and filter criteria. Try adjusting your filters or search terms."}
+                          ? "No contributions have been created yet. Check back later for new governance proposals."
+                          : "No contributions match your current search and filter criteria. Try adjusting your filters or search terms."}
                       </p>
                     </div>
                   </div>

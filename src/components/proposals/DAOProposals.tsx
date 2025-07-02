@@ -25,10 +25,10 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
           </div>
           <div className="space-y-2">
             <h3 className="text-lg font-medium text-foreground">
-              No Proposals Found
+              No Contributions Found
             </h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              This DAO has no active or concluded proposals.
+              This DAO has no active or concluded contributions.
             </p>
           </div>
         </div>

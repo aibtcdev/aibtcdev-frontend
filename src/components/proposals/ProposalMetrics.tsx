@@ -66,7 +66,7 @@ const ProposalMetrics = ({
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">
-                Total liquid tokens available for voting
+                Total liquid tokens available for contribution voting
               </p>
             </TooltipContent>
           </Tooltip>
@@ -126,7 +126,9 @@ const ProposalMetrics = ({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Minimum participation required</p>
+              <p className="text-xs">
+                Minimum participation required for a contribution
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -186,7 +188,9 @@ const ProposalMetrics = ({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Minimum approval percentage required</p>
+              <p className="text-xs">
+                Minimum approval percentage required for a contribution
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -260,7 +264,7 @@ const ProposalMetrics = ({
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Status of proposal execution</p>
+              <p className="text-xs">Status of contribution execution</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
