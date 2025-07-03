@@ -26,10 +26,10 @@ import {
 } from "@/components/ui/dialog";
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 import { getAllErrorDetails } from "@aibtc/types";
-import {
-  useUnicodeValidation,
-  UnicodeIssueWarning,
-} from "@/hooks/useUnicodeValidation";
+// import {
+//   useUnicodeValidation,
+//   UnicodeIssueWarning,
+// } from "@/hooks/useUnicodeValidation";
 import {
   proposeSendMessage,
   // generateProposalRecommendation,
@@ -42,6 +42,7 @@ import {
   isTwitterOEmbedError,
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
+import { ApproveAssetButton } from "../account/ApproveAsset";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -136,11 +137,11 @@ export function ProposalSubmission({
   const [twitterEmbed, setTwitterEmbed] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
-  const { issues, hasAnyIssues, cleanText } =
-    useUnicodeValidation(contribution);
-  const handleClean = () => {
-    setContribution(cleanText);
-  };
+  // const { issues, hasAnyIssues, cleanText } =
+  //   useUnicodeValidation(contribution);
+  // const handleClean = () => {
+  //   setContribution(cleanText);
+  // };
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // const [isGenerating, setIsGenerating] = useState(false);
@@ -545,8 +546,7 @@ export function ProposalSubmission({
               your message or use a shorter Twitter URL.
             </div>
           )}
-          <UnicodeIssueWarning issues={issues} />
-
+          {/* <UnicodeIssueWarning issues={issues} /> */}
           <div className="relative">
             <input
               type="url"
@@ -616,7 +616,7 @@ export function ProposalSubmission({
               />
               {isGenerating ? "Generating..." : "Generate Message"}
             </Button> */}
-            {hasAnyIssues && (
+            {/* {hasAnyIssues && (
               <Button
                 type="button"
                 variant="outline"
@@ -625,7 +625,7 @@ export function ProposalSubmission({
               >
                 Remove Issues
               </Button>
-            )}
+            )} */}
             <Button
               type="submit"
               disabled={
@@ -637,14 +637,42 @@ export function ProposalSubmission({
                 isSubmitting ||
                 // isGenerating ||
                 isLoadingExtensions ||
-                isLoadingAgents ||
-                hasAnyIssues
+                isLoadingAgents
+                // hasAnyIssues
               }
               className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6"
             >
               {isSubmitting ? <Loader /> : <Send className="h-4 w-4" />}
               {isSubmitting ? "Submitting..." : "Submit Contribution"}
             </Button>
+
+            {hasAccessToken &&
+              agents &&
+              daoExtensions &&
+              (() => {
+                const userAgent = agents.find((a) => a.profile_id === userId);
+                const votingExt = daoExtensions.find(
+                  (ext) =>
+                    ext.type === "EXTENSIONS" &&
+                    ext.subtype === "ACTION_PROPOSAL_VOTING"
+                );
+
+                if (
+                  !userAgent?.account_contract ||
+                  !votingExt?.contract_principal
+                )
+                  return null;
+
+                return (
+                  <ApproveAssetButton
+                    contractToApprove={votingExt.contract_principal}
+                    agentAccountContract={userAgent.account_contract}
+                    onSuccess={() => {
+                      console.log("Proposal contract approved");
+                    }}
+                  />
+                );
+              })()}
           </div>
 
           {/* Error/Status Messages */}
