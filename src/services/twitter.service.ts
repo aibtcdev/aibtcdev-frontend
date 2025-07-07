@@ -22,8 +22,7 @@ export const fetchTwitterEmbed = async (
   try {
     // Use your backend proxy endpoint that follows the same pattern as other tools
     const encodedUrl = encodeURIComponent(twitterUrl);
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/tools/twitter/oembed?url=${encodedUrl}`;
-
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/tools/social/twitter_embed?url=${encodedUrl}`;
     const response = await fetch(apiUrl);
 
     if (!response.ok) {
