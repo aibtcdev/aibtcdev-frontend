@@ -128,6 +128,38 @@ function parseOutput(raw: string): ParsedOutput | null {
   return null;
 }
 
+/**
+ * Cleans a Twitter/X.com URL by removing query parameters and extra arguments
+ * @param url - The raw URL input
+ * @returns The cleaned URL or empty string if invalid
+ */
+function cleanTwitterUrl(url: string): string {
+  if (!url.trim()) return "";
+  
+  try {
+    const urlObj = new URL(url.trim());
+    
+    // Check if it's a valid X.com or twitter.com domain
+    if (!urlObj.hostname.match(/^(x\.com|twitter\.com)$/)) {
+      return "";
+    }
+    
+    // Extract the pathname and validate the structure
+    const pathMatch = urlObj.pathname.match(/^\/([a-zA-Z0-9_]+)\/status\/(\d+)$/);
+    if (!pathMatch) {
+      return "";
+    }
+    
+    const [, username, statusId] = pathMatch;
+    
+    // Return the cleaned URL (always use x.com as the canonical domain)
+    return `https://x.com/${username}/status/${statusId}`;
+  } catch {
+    // If URL parsing fails, return empty string
+    return "";
+  }
+}
+
 export function ProposalSubmission({
   daoId,
   onSubmissionSuccess,
@@ -551,7 +583,11 @@ export function ProposalSubmission({
             <input
               type="url"
               value={twitterUrl}
-              onChange={(e) => setTwitterUrl(e.target.value)}
+              onChange={(e) => {
+                const rawUrl = e.target.value;
+                const cleanedUrl = cleanTwitterUrl(rawUrl);
+                setTwitterUrl(cleanedUrl);
+              }}
               placeholder="Paste the X.com (Twitter) post that shows your work"
               className="w-full p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
               disabled={
