@@ -941,14 +941,6 @@ export function ProposalSubmission({
                                       description;
                                   }
 
-                                  const needsApproval =
-                                    description
-                                      .toLowerCase()
-                                      .includes("not recognized") ||
-                                    description
-                                      .toLowerCase()
-                                      .includes("not supported");
-
                                   return (
                                     <>
                                       <span className="text-muted-foreground">
