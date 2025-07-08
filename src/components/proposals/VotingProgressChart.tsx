@@ -166,13 +166,38 @@ const VotingProgressChart = ({
     };
   }, [proposal, parsedVotes, chainState]);
 
-  const getStatusColor = (met: boolean, isActive: boolean) => {
+  const getStatusText = (
+    met: boolean,
+    isActive: boolean,
+    isEnded: boolean,
+    percentage?: number
+  ) => {
+    if (isActive) {
+      return percentage !== undefined
+        ? `Pending (${percentage.toFixed(1)}%)`
+        : "Pending";
+    }
+
+    if (!isEnded) {
+      return "Not Started";
+    }
+
+    return met ? "Met" : "Missed";
+  };
+
+  const getStatusColor = (
+    met: boolean,
+    isActive: boolean,
+    isEnded: boolean
+  ) => {
     if (isActive) return "text-orange-400";
+    if (!isEnded) return "text-gray-400"; // Not started
     return met ? "text-green-400" : "text-red-400";
   };
 
-  const getStatusIcon = (met: boolean, isActive: boolean) => {
+  const getStatusIcon = (met: boolean, isActive: boolean, isEnded: boolean) => {
     if (isActive) return <Clock className="h-4 w-4" />;
+    if (!isEnded) return <Clock className="h-4 w-4" />; // Not started
     return met ? (
       <CheckCircle2 className="h-4 w-4" />
     ) : (
@@ -180,19 +205,23 @@ const VotingProgressChart = ({
     );
   };
 
-  const getStatusText = (met: boolean, isActive: boolean) => {
-    if (isActive) return "Pending";
-    return met ? "Met" : "Missed";
-  };
-
   // Enhanced result status logic
   const getResultStatus = () => {
-    if (isActive || !isEnded) {
+    if (isActive) {
       return {
-        status: "Pending",
+        status: "Voting in progress",
         color: "text-orange-400",
         icon: <Clock className="h-4 w-4" />,
         bgColor: "bg-orange-500/10 border-orange-500/30",
+      };
+    }
+
+    if (!isEnded) {
+      return {
+        status: "Voting not started",
+        color: "text-gray-400",
+        icon: <Clock className="h-4 w-4" />,
+        bgColor: "bg-gray-500/10 border-gray-500/30",
       };
     }
 
@@ -246,16 +275,6 @@ const VotingProgressChart = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
-          <div className="text-sm">
-            <span
-              className={cn(
-                "font-medium",
-                calculations.metQuorum ? "text-green-400" : "text-red-400"
-              )}
-            >
-              {calculations.metQuorum ? "✓ Quorum Met" : "✗ Quorum Missed"}
-            </span>
           </div>
         </div>
 
@@ -378,18 +397,6 @@ const VotingProgressChart = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="text-sm">
-            <span
-              className={cn(
-                "font-medium",
-                calculations.metThreshold ? "text-green-400" : "text-red-400"
-              )}
-            >
-              {calculations.metThreshold
-                ? "✓ Threshold Met"
-                : "✗ Threshold Missed"}
-            </span>
-          </div>
         </div>
 
         <div className="relative">
@@ -439,11 +446,13 @@ const VotingProgressChart = ({
         <div
           className={cn(
             "p-4 rounded-lg border transition-colors",
-            isActive || !isEnded
+            isActive
               ? "bg-orange-500/10 border-orange-500/30"
-              : calculations.metQuorum
-                ? "bg-green-500/10 border-green-500/30"
-                : "bg-red-500/10 border-red-500/30"
+              : !isEnded
+                ? "bg-gray-500/10 border-gray-500/30"
+                : calculations.metQuorum
+                  ? "bg-green-500/10 border-green-500/30"
+                  : "bg-red-500/10 border-red-500/30"
           )}
         >
           <div className="flex flex-col gap-2">
@@ -454,14 +463,33 @@ const VotingProgressChart = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {getStatusIcon(calculations.metQuorum, isActive || !isEnded)}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {getStatusIcon(calculations.metQuorum, isActive, isEnded)}
+                  </TooltipTrigger>
+                  {isActive && (
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Live voting in progress. Status will finalize once the
+                        vote ends.
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(calculations.metQuorum, isActive || !isEnded)
+                  getStatusColor(calculations.metQuorum, isActive, isEnded)
                 )}
               >
-                {getStatusText(calculations.metQuorum, isActive || !isEnded)}
+                {getStatusText(
+                  calculations.metQuorum,
+                  isActive,
+                  isEnded,
+                  calculations.participationRate
+                )}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
@@ -476,11 +504,13 @@ const VotingProgressChart = ({
         <div
           className={cn(
             "p-4 rounded-lg border transition-colors",
-            isActive || !isEnded
+            isActive
               ? "bg-orange-500/10 border-orange-500/30"
-              : calculations.metThreshold
-                ? "bg-green-500/10 border-green-500/30"
-                : "bg-red-500/10 border-red-500/30"
+              : !isEnded
+                ? "bg-gray-500/10 border-gray-500/30"
+                : calculations.metThreshold
+                  ? "bg-green-500/10 border-green-500/30"
+                  : "bg-red-500/10 border-red-500/30"
           )}
         >
           <div className="flex flex-col gap-2">
@@ -491,17 +521,37 @@ const VotingProgressChart = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {getStatusIcon(calculations.metThreshold, isActive || !isEnded)}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {getStatusIcon(
+                      calculations.metThreshold,
+                      isActive,
+                      isEnded
+                    )}
+                  </TooltipTrigger>
+                  {isActive && (
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Live voting in progress. Status will finalize once the
+                        vote ends.
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(
-                    calculations.metThreshold,
-                    isActive || !isEnded
-                  )
+                  getStatusColor(calculations.metThreshold, isActive, isEnded)
                 )}
               >
-                {getStatusText(calculations.metThreshold, isActive || !isEnded)}
+                {getStatusText(
+                  calculations.metThreshold,
+                  isActive,
+                  isEnded,
+                  calculations.approvalRate
+                )}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
