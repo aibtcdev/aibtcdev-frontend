@@ -508,7 +508,7 @@ export default function AccountPage() {
 
   const {
     walletAddress: userAgentWalletAddress,
-    walletBalance: userAgentWalletBalance,
+    // walletBalance: userAgentWalletBalance,
   } = getAgentWalletInfo(userAgentId);
 
   // Fetch contract account balance when address is available
