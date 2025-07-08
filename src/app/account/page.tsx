@@ -508,7 +508,7 @@ export default function AccountPage() {
 
   const {
     walletAddress: userAgentWalletAddress,
-    walletBalance: userAgentWalletBalance,
+    // walletBalance: userAgentWalletBalance,
   } = getAgentWalletInfo(userAgentId);
 
   // Fetch contract account balance when address is available
@@ -747,14 +747,14 @@ export default function AccountPage() {
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <BalanceSummaryCard
+        <div className="grid gap-6 md:grid-cols-1">
+          {/* <BalanceSummaryCard
             title="Agent Wallet"
             walletBalance={userAgentWalletBalance}
             icon={Wallet}
             iconBg="bg-secondary/10"
             iconColor="text-secondary"
-          />
+          /> */}
           {userAgentAddress &&
             (userAgentContractBalance ? (
               <BalanceSummaryCard

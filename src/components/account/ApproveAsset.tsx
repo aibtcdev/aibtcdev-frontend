@@ -4,6 +4,12 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "../ui/tooltip";
 interface ApproveAssetButtonProps {
   contractToApprove: string;
   agentAccountContract: string;
@@ -80,7 +86,7 @@ export function ApproveAssetButton({
   };
 
   return (
-    <>
+    <TooltipProvider>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogTitle>
@@ -150,16 +156,26 @@ export function ApproveAssetButton({
           )}
         </DialogContent>
       </Dialog>
-      <Button
-        type="button"
-        onClick={() => {
-          setConfirmOpen(true);
-          setResponse(null);
-        }}
-        className={`bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md ${className}`}
-      >
-        Whitelist token
-      </Button>
-    </>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            onClick={() => {
+              setConfirmOpen(true);
+              setResponse(null);
+            }}
+            className={`bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md ${className}`}
+          >
+            Enable proposal submission
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p className="text-sm">
+            One time approval lets you submit contributions with the token from
+            your agent account. You can revoke it anytime later.
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
