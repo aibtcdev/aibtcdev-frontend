@@ -135,23 +135,25 @@ function parseOutput(raw: string): ParsedOutput | null {
  */
 function cleanTwitterUrl(url: string): string {
   if (!url.trim()) return "";
-  
+
   try {
     const urlObj = new URL(url.trim());
-    
+
     // Check if it's a valid X.com or twitter.com domain
     if (!urlObj.hostname.match(/^(x\.com|twitter\.com)$/)) {
       return "";
     }
-    
+
     // Extract the pathname and validate the structure
-    const pathMatch = urlObj.pathname.match(/^\/([a-zA-Z0-9_]+)\/status\/(\d+)$/);
+    const pathMatch = urlObj.pathname.match(
+      /^\/([a-zA-Z0-9_]+)\/status\/(\d+)$/
+    );
     if (!pathMatch) {
       return "";
     }
-    
+
     const [, username, statusId] = pathMatch;
-    
+
     // Return the cleaned URL (always use x.com as the canonical domain)
     return `https://x.com/${username}/status/${statusId}`;
   } catch {
@@ -525,6 +527,7 @@ export function ProposalSubmission({
   const parsedApiResponse = apiResponse
     ? parseOutput(apiResponse.output)
     : null;
+  console.log("parsedApiResponse", parsedApiResponse);
   const isInnerSuccess = apiResponse?.success && parsedApiResponse?.success;
 
   return (
@@ -584,9 +587,11 @@ export function ProposalSubmission({
               type="url"
               value={twitterUrl}
               onChange={(e) => {
-                const rawUrl = e.target.value;
-                const cleanedUrl = cleanTwitterUrl(rawUrl);
-                setTwitterUrl(cleanedUrl);
+                setTwitterUrl(e.target.value);
+              }}
+              onBlur={() => {
+                const cleaned = cleanTwitterUrl(twitterUrl);
+                if (cleaned) setTwitterUrl(cleaned);
               }}
               placeholder="Paste the X.com (Twitter) post that shows your work"
               className="w-full p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
@@ -682,7 +687,7 @@ export function ProposalSubmission({
               {isSubmitting ? "Submitting..." : "Submit Contribution"}
             </Button>
 
-            {hasAccessToken &&
+            {/* {hasAccessToken &&
               agents &&
               daoExtensions &&
               (() => {
@@ -708,7 +713,7 @@ export function ProposalSubmission({
                     }}
                   />
                 );
-              })()}
+              })()} */}
           </div>
 
           {/* Error/Status Messages */}
@@ -767,7 +772,7 @@ export function ProposalSubmission({
           if (!open) setTxStatusView("initial");
         }}
       >
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="p-6 sm:max-w-2xl">
           {isInnerSuccess ? (
             <>
               {(() => {
@@ -803,8 +808,8 @@ export function ProposalSubmission({
                               </div>
                             </div>
                           )}
-
-                          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <hr className="my-4 border-border/50" />
+                          <div className="flex justify-end gap-3 mt-6">
                             {parsed?.data?.link && (
                               <Button variant="outline" asChild>
                                 <a
@@ -868,7 +873,8 @@ export function ProposalSubmission({
                             )}
                           </div>
 
-                          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <hr className="my-4 border-border/50" />
+                          <div className="flex justify-end gap-3 mt-6">
                             {parsed?.data?.link && (
                               <Button variant="outline" asChild>
                                 <a
@@ -922,31 +928,100 @@ export function ProposalSubmission({
                             </div>
                             {websocketMessage?.tx_result && (
                               <div className="text-sm">
-                                <span className="text-muted-foreground">
-                                  Reason:{" "}
-                                </span>
-                                <span className="font-medium">
-                                  {(() => {
-                                    const raw =
-                                      websocketMessage.tx_result.repr ||
-                                      websocketMessage.tx_result.hex;
-                                    const match = raw.match(/u?(\d{4,})/);
-                                    if (match) {
-                                      const code = parseInt(match[1], 10);
-                                      const description =
-                                        errorCodeMap[code]?.description;
-                                      return (
-                                        description || "Transaction failed"
-                                      );
-                                    }
-                                    return "Transaction failed";
-                                  })()}
-                                </span>
+                                {(() => {
+                                  const raw =
+                                    websocketMessage.tx_result.repr ||
+                                    websocketMessage.tx_result.hex;
+                                  const match = raw.match(/u?(\d{4,})/);
+                                  let description = "Transaction failed";
+                                  if (match) {
+                                    const code = parseInt(match[1], 10);
+                                    description =
+                                      errorCodeMap[code]?.description ||
+                                      description;
+                                  }
+
+                                  const needsApproval =
+                                    description
+                                      .toLowerCase()
+                                      .includes("not recognized") ||
+                                    description
+                                      .toLowerCase()
+                                      .includes("not supported");
+
+                                  return (
+                                    <>
+                                      <span className="text-muted-foreground">
+                                        Reason:{" "}
+                                      </span>
+                                      <span className="font-medium">
+                                        {description}
+                                      </span>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
 
-                          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <hr className="my-4 border-border/50" />
+                          <div className="flex justify-end gap-3 mt-6">
+                            {(() => {
+                              // Insert approve button logic as sibling to actions
+                              const raw =
+                                websocketMessage?.tx_result?.repr ||
+                                websocketMessage?.tx_result?.hex ||
+                                "";
+                              const match = raw.match(/u?(\d{4,})/);
+                              let description = "Transaction failed";
+                              if (match) {
+                                const code = parseInt(match[1], 10);
+                                description =
+                                  errorCodeMap[code]?.description ||
+                                  description;
+                              }
+                              const needsApproval =
+                                description
+                                  .toLowerCase()
+                                  .includes("not recognized") ||
+                                description
+                                  .toLowerCase()
+                                  .includes("not supported");
+                              if (
+                                needsApproval &&
+                                hasAccessToken &&
+                                agents &&
+                                daoExtensions
+                              ) {
+                                const userAgent = agents.find(
+                                  (a) => a.profile_id === userId
+                                );
+                                const votingExt = daoExtensions.find(
+                                  (ext) =>
+                                    ext.type === "EXTENSIONS" &&
+                                    ext.subtype === "ACTION_PROPOSAL_VOTING"
+                                );
+                                if (
+                                  !userAgent?.account_contract ||
+                                  !votingExt?.contract_principal
+                                )
+                                  return null;
+                                return (
+                                  <ApproveAssetButton
+                                    contractToApprove={
+                                      votingExt.contract_principal
+                                    }
+                                    agentAccountContract={
+                                      userAgent.account_contract
+                                    }
+                                    onSuccess={() => {
+                                      console.log("Proposal contract approved");
+                                    }}
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
                             <Button variant="outline" onClick={handleRetry}>
                               Try Again
                             </Button>
@@ -1017,7 +1092,42 @@ export function ProposalSubmission({
                   )
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <hr className="my-4 border-border/50" />
+                <div className="flex justify-end gap-3 mt-6">
+                  {(() => {
+                    // Insert approve button logic as sibling to actions in network error case
+                    const needsApproval =
+                      hasAccessToken &&
+                      agents &&
+                      daoExtensions &&
+                      parsedApiResponse?.data?.reason ===
+                        "The specified asset is not recognized or supported.";
+                    if (needsApproval) {
+                      const userAgent = agents.find(
+                        (a) => a.profile_id === userId
+                      );
+                      const votingExt = daoExtensions.find(
+                        (ext) =>
+                          ext.type === "EXTENSIONS" &&
+                          ext.subtype === "ACTION_PROPOSAL_VOTING"
+                      );
+                      if (
+                        !userAgent?.account_contract ||
+                        !votingExt?.contract_principal
+                      )
+                        return null;
+                      return (
+                        <ApproveAssetButton
+                          contractToApprove={votingExt.contract_principal}
+                          agentAccountContract={userAgent.account_contract}
+                          onSuccess={() => {
+                            console.log("Proposal contract approved");
+                          }}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
                   <Button variant="outline" onClick={handleRetry}>
                     Try Again
                   </Button>
