@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import MessageDisplay from "./MessageDisplay";
-import TimeStatus, { useVotingStatus } from "./TimeStatus";
+import TimeStatus from "./TimeStatus";
 import BlockVisual from "./BlockVisual";
 import VotesTable from "./VotesTable";
 import VotingProgressChart from "./VotingProgressChart";
-// import VoteStatusChart from "./VoteStatusChart";
+import { useVotingStatus } from "@/hooks/useVotingStatus";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import {
   Blocks,

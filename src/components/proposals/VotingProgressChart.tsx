@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
-import { useVotingStatus } from "./TimeStatus";
+import { useVotingStatus } from "@/hooks/useVotingStatus";
 
 interface VotingProgressChartProps {
   proposal: Proposal | ProposalWithDAO;
@@ -35,11 +35,13 @@ const VotingProgressChart = ({
   proposal,
   tokenSymbol = "",
 }: VotingProgressChartProps) => {
+  console.log("VotingProgressChart props:", { proposal, tokenSymbol });
   const { isActive, isEnded } = useVotingStatus(
     proposal.status,
     safeNumberFromBigInt(proposal.vote_start),
     safeNumberFromBigInt(proposal.vote_end)
   );
+  console.log("isActive, isEnded:", isActive, isEnded);
 
   // State to store parsed vote values from live data
   const [parsedVotes, setParsedVotes] = useState({
@@ -48,6 +50,7 @@ const VotingProgressChart = ({
       ? proposal.votes_against.replace(/n$/, "")
       : "0",
   });
+  console.log("parsedVotes state:", parsedVotes);
 
   // Fetch live vote data with real-time updates
   const proposalId = proposal.id;
@@ -76,6 +79,7 @@ const VotingProgressChart = ({
 
   // Calculate vote totals from individual votes
   useEffect(() => {
+    console.log("individualVotes:", individualVotes);
     if (individualVotes && individualVotes.length > 0) {
       let votesFor = 0;
       let votesAgainst = 0;
@@ -145,6 +149,25 @@ const VotingProgressChart = ({
     const execEnd = safeNumberFromBigInt(proposal.exec_end);
     const concludedBy = proposal.concluded_by;
     const failedToExecute = currentBitcoinHeight > execEnd && !concludedBy;
+
+    console.log("calculations:", {
+      votesFor,
+      votesAgainst,
+      totalVotes,
+      liquidTokens,
+      quorumPercentage,
+      thresholdPercentage,
+      quorumTokensRequired,
+      thresholdRate,
+      participationRate,
+      quorumRate,
+      approvalRate,
+      votesForPercent,
+      votesAgainstPercent,
+      actuallyMetQuorum,
+      actuallyMetThreshold,
+      failedToExecute,
+    });
 
     return {
       votesFor,
@@ -252,6 +275,7 @@ const VotingProgressChart = ({
   };
 
   const resultStatus = getResultStatus();
+  console.log("resultStatus:", resultStatus);
 
   return (
     <div className="space-y-6 overflow-x-auto">
