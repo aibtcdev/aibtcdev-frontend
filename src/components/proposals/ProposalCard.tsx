@@ -1,15 +1,7 @@
 "use client";
 
 import type React from "react";
-import {
-  Clock,
-  User,
-  BarChart3,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Building2,
-} from "lucide-react";
+import { Clock, User, BarChart3, Building2 } from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
 import {
@@ -18,14 +10,13 @@ import {
   formatAction,
   formatNumber,
 } from "@/utils/format";
-import { getProposalStatus } from "@/utils/proposal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchLatestChainState } from "@/services/chain-state.service";
 import { TokenBalance } from "../reusables/BalanceDisplay";
+import { ProposalStatusBadge } from "./ProposalBadge";
+import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -40,90 +31,8 @@ export default function ProposalCard({
 }: ProposalCardProps) {
   const router = useRouter();
 
-  const { data: latestChainState } = useQuery({
-    queryKey: ["latestChainState"],
-    queryFn: fetchLatestChainState,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
-
-  const currentBlockHeight = latestChainState?.bitcoin_block_height
-    ? Number(latestChainState.bitcoin_block_height)
-    : null;
-
-  // Use the same status logic as AllProposals - consistent status calculation
-  const proposalStatus = getProposalStatus(proposal, currentBlockHeight);
-
-  // Memoize status configuration to prevent recalculation
-  const statusConfig = useMemo(() => {
-    switch (proposalStatus) {
-      case "DRAFT":
-        return {
-          icon: AlertCircle,
-          color: "text-muted-foreground",
-          bg: "bg-muted/10",
-          border: "border-muted/20",
-          label: "Draft",
-        };
-      case "PENDING":
-        return {
-          icon: Clock,
-          color: "text-secondary",
-          bg: "bg-secondary/10",
-          border: "border-secondary/20",
-          label: "Pending",
-        };
-      case "ACTIVE":
-        return {
-          icon: BarChart3,
-          color: "text-primary",
-          bg: "bg-primary/10",
-          border: "border-primary/20",
-          label: "Active",
-        };
-      case "VETO_PERIOD":
-        return {
-          icon: Clock,
-          color: "text-accent",
-          bg: "bg-accent/10",
-          border: "border-accent/20",
-          label: "Veto Period",
-        };
-      case "EXECUTION_WINDOW":
-        return {
-          icon: Clock,
-          color: "text-accent",
-          bg: "bg-accent/10",
-          border: "border-accent/20",
-          label: "Execution Window",
-        };
-      case "PASSED":
-        return {
-          icon: CheckCircle,
-          color: "text-success",
-          bg: "bg-success/10",
-          border: "border-success/20",
-          label: "Passed",
-        };
-      case "FAILED":
-        return {
-          icon: XCircle,
-          color: "text-destructive",
-          bg: "bg-destructive/10",
-          border: "border-destructive/20",
-          label: "Failed",
-        };
-      default:
-        return {
-          icon: AlertCircle,
-          color: "text-muted-foreground",
-          bg: "bg-muted/10",
-          border: "border-muted/20",
-          label: "Unknown",
-        };
-    }
-  }, [proposalStatus]);
-
-  const StatusIcon = statusConfig.icon;
+  // Use the unified status system
+  const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
 
   // Memoize vote summary
   const voteSummary = useMemo(() => {
@@ -180,12 +89,11 @@ export default function ProposalCard({
                   ? `#${proposal.proposal_id}: ${proposal.title}`
                   : proposal.title}
               </h3>
-              <div
-                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} border self-start sm:self-auto flex-shrink-0`}
-              >
-                <StatusIcon className="h-3 w-3" />
-                {statusConfig.label}
-              </div>
+              <ProposalStatusBadge
+                proposal={proposal}
+                size="sm"
+                className="self-start sm:self-auto flex-shrink-0"
+              />
             </div>
 
             {proposal.summary && (
@@ -245,14 +153,13 @@ export default function ProposalCard({
           {totalVotes > 0 && (
             <div className="flex items-center gap-1 min-w-0 max-w-[80px] sm:max-w-none">
               <BarChart3 className="h-3 w-3 flex-shrink-0" />
-              {/* <span className="truncate">{formatNumber(totalVotes)} votes</span> */}
               <TokenBalance variant="abbreviated" value={totalVotes} />
             </div>
           )}
         </div>
 
         {/* Voting Progress for Active Proposals */}
-        {statusConfig.label === "Active" && totalVotes > 0 && (
+        {isActive && totalVotes > 0 && (
           <div className="space-y-2 sm:space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
@@ -286,7 +193,7 @@ export default function ProposalCard({
         )}
 
         {/* Completed Status */}
-        {statusConfig.label === "Passed" && (
+        {isPassed && (
           <div className="text-sm">
             <span className="text-foreground/75">Final result: </span>
             <span className="font-medium">
@@ -303,10 +210,10 @@ export default function ProposalCard({
         )}
 
         {/* Enhanced Chart Section for detailed view */}
-        {(statusConfig.label === "Active" ||
+        {(isActive ||
           statusConfig.label === "Veto Period" ||
           statusConfig.label === "Execution Window" ||
-          statusConfig.label === "Passed" ||
+          isPassed ||
           statusConfig.label === "Failed") &&
           totalVotes > 0 && (
             <div className="mt-4 pt-4">
@@ -317,7 +224,7 @@ export default function ProposalCard({
                 proposalId={proposal.proposal_id?.toString()}
                 tokenSymbol={tokenSymbol}
                 liquidTokens={proposal.liquid_tokens || "0"}
-                isActive={statusConfig.label === "Active"}
+                isActive={isActive}
               />
             </div>
           )}
