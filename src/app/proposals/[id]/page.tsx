@@ -15,7 +15,7 @@ import Link from "next/link";
 import { getExplorerLink } from "@/utils/format";
 import { Loader } from "@/components/reusables/Loader";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalBadge";
-import { useProposalStatus } from "@/hooks/useProposalStatus";
+// import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 export const runtime = "edge";
 
@@ -23,8 +23,8 @@ function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
   const router = useRouter();
 
   // Use the unified status system - same as ProposalCard
-  const { statusConfig, isActive, isEnded, isPassed } =
-    useProposalStatus(proposal);
+  // const { statusConfig, isActive, isEnded, isPassed } =
+  //   useProposalStatus(proposal);
 
   return (
     <div className="mb-8">
