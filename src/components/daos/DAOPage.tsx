@@ -143,7 +143,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const encodedName = params.name as string;
 
   // Get auth data
-  const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
+  const { userId } = useAuth();
 
   // First, fetch the DAO by name to get its ID
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
@@ -155,7 +155,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const id = dao?.id;
 
   // Fetch agents data
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+  const { data: agents } = useQuery({
     queryKey: ["agents"],
     queryFn: fetchAgents,
     staleTime: 10 * 60 * 1000, // 10 min
