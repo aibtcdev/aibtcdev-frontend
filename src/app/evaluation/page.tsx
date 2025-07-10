@@ -113,7 +113,7 @@ export default function ProposalEvaluationPage() {
   // Handle reset to defaults
   const handleResetToDefaults = () => {
     setSelectedProposalId("");
-    setSelectedModel("openai/gpt-4.1");
+    setSelectedModel("x-ai/grok-4");
     setTemperature(0.1);
     setEvaluationResult(null);
     setSubmitError(null);

@@ -58,6 +58,18 @@ const OPENROUTER_MODELS = [
     label: "Mistral Nemo",
     provider: "Mistral AI",
   },
+
+  // x-ai Models
+  {
+    value: "x-ai/grok-4",
+    label: "Grok 4",
+    provider: "x-ai",
+  },
+  {
+    value: "x-ai/grok-3",
+    label: "Grok 3",
+    provider: "x-ai",
+  },
 ];
 
 // Group models by provider for better organization
