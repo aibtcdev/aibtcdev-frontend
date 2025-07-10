@@ -164,7 +164,7 @@ export function ApproveAssetButton({
               setConfirmOpen(true);
               setResponse(null);
             }}
-            className={`bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md ${className}`}
+            className={`bg-primary hover:bg-primary/90 px-2 ${className}`}
           >
             Enable proposal submission
           </Button>
