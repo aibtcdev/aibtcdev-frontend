@@ -2,9 +2,12 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchProposalVotes } from "@/services/vote.service";
+import { getProposalVotes } from "@/services/vote.service";
 import { fetchLatestChainState } from "@/services/chain-state.service";
-import { TokenBalance } from "@/components/reusables/BalanceDisplay";
+import {
+  BalanceDisplay,
+  TokenBalance,
+} from "@/components/reusables/BalanceDisplay";
 import {
   Tooltip,
   TooltipContent,
@@ -29,13 +32,19 @@ import { useVotingStatus } from "@/hooks/useVotingStatus";
 interface VotingProgressChartProps {
   proposal: Proposal | ProposalWithDAO;
   tokenSymbol?: string;
+  contractPrincipal?: string; // Added this prop for the contract principal
 }
 
 const VotingProgressChart = ({
   proposal,
   tokenSymbol = "",
+  contractPrincipal, // New prop
 }: VotingProgressChartProps) => {
-  console.log("VotingProgressChart props:", { proposal, tokenSymbol });
+  console.log("VotingProgressChart props:", {
+    proposal,
+    tokenSymbol,
+    contractPrincipal,
+  });
   const { isActive, isEnded } = useVotingStatus(
     proposal.status,
     safeNumberFromBigInt(proposal.vote_start),
@@ -52,18 +61,18 @@ const VotingProgressChart = ({
   });
   console.log("parsedVotes state:", parsedVotes);
 
-  // Fetch live vote data with real-time updates
+  // Fetch live vote data with real-time updates using getProposalVotes
   const proposalId = proposal.id;
 
-  const { data: individualVotes } = useQuery({
-    queryKey: ["proposalVotes", proposalId],
+  const { data: proposalVoteData } = useQuery({
+    queryKey: ["proposalVotes", proposalId, contractPrincipal],
     queryFn: async () => {
-      if (proposalId) {
-        return fetchProposalVotes(proposalId);
+      if (proposalId && contractPrincipal) {
+        return getProposalVotes(contractPrincipal, proposalId);
       }
-      return [];
+      return null;
     },
-    enabled: !!proposalId,
+    enabled: !!proposalId && !!contractPrincipal,
     refetchOnWindowFocus: false,
     staleTime: 0, // Always fresh data for real-time updates
     refetchInterval: false, // Disable polling since we have real-time updates
@@ -77,28 +86,17 @@ const VotingProgressChart = ({
     refetchInterval: 60000,
   });
 
-  // Calculate vote totals from individual votes
+  // Update vote totals from the getProposalVotes response
   useEffect(() => {
-    console.log("individualVotes:", individualVotes);
-    if (individualVotes && individualVotes.length > 0) {
-      let votesFor = 0;
-      let votesAgainst = 0;
-
-      individualVotes.forEach((vote) => {
-        const amount = Number(vote.amount || "0");
-        if (vote.answer === true) {
-          votesFor += amount;
-        } else if (vote.answer === false) {
-          votesAgainst += amount;
-        }
-      });
-
+    console.log("proposalVoteData:", proposalVoteData);
+    if (proposalVoteData) {
+      // Use the parsed vote data from getProposalVotes
       setParsedVotes({
-        votesFor: votesFor.toString(),
-        votesAgainst: votesAgainst.toString(),
+        votesFor: proposalVoteData.votesFor || "0",
+        votesAgainst: proposalVoteData.votesAgainst || "0",
       });
     } else {
-      // If no individual votes, fall back to proposal data
+      // If no vote data, fall back to proposal data
       setParsedVotes({
         votesFor: proposal.votes_for
           ? proposal.votes_for.replace(/n$/, "")
@@ -108,7 +106,7 @@ const VotingProgressChart = ({
           : "0",
       });
     }
-  }, [individualVotes, proposal.votes_for, proposal.votes_against]);
+  }, [proposalVoteData, proposal.votes_for, proposal.votes_against]);
 
   const calculations = useMemo(() => {
     const votesFor = Number(parsedVotes.votesFor || 0);
@@ -189,6 +187,7 @@ const VotingProgressChart = ({
     };
   }, [proposal, parsedVotes, chainState]);
 
+  // Rest of the component remains the same...
   const getStatusText = (
     met: boolean,
     isActive: boolean,
@@ -609,7 +608,14 @@ const VotingProgressChart = ({
             <div className="text-xs text-muted-foreground">
               {calculations.totalVotes > 0 ? (
                 <div className="space-y-1">
-                  <div>{calculations.totalVotes} total votes</div>
+                  <TokenBalance
+                    value={calculations.totalVotes.toString()}
+                    decimals={8}
+                    variant="abbreviated"
+                    symbol={tokenSymbol}
+                  />
+
+                  {/* <div></div> */}
                   {calculations.failedToExecute && (
                     <div className="text-orange-400">
                       ⚠️ Execution deadline passed without conclusion
