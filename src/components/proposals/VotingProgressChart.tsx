@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getProposalVotes } from "@/services/vote.service";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import {
-  BalanceDisplay,
+  // BalanceDisplay,
   TokenBalance,
 } from "@/components/reusables/BalanceDisplay";
 import {
