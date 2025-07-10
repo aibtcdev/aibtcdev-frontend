@@ -24,6 +24,7 @@ import {
   fetchProposals,
   fetchDAOByName,
 } from "@/services/dao.service";
+import { fetchAgents } from "@/services/agent.service";
 import { cn } from "@/lib/utils";
 import { Loader } from "@/components/reusables/Loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,6 +32,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
 import { CompactMetrics } from "@/components/daos/MetricsGrid";
 import { Separator } from "@/components/ui/separator";
+import { ApproveAssetButton } from "../account/ApproveAsset";
+import { useAuth } from "@/hooks/useAuth"; // Add this import
 
 // Re-integrating DAOSidebarHeader
 function DAOSidebarHeader({
@@ -139,6 +142,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const encodedName = params.name as string;
 
+  // Get auth data
+  const { userId } = useAuth();
+
   // First, fetch the DAO by name to get its ID
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
     queryKey: ["dao", encodedName],
@@ -147,6 +153,13 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   });
 
   const id = dao?.id;
+
+  // Fetch agents data
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: fetchAgents,
+    staleTime: 10 * 60 * 1000, // 10 min
+  });
 
   // Fetch token data
   const { data: token, isLoading: isLoadingToken } = useQuery({
@@ -241,6 +254,21 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     return Array.isArray(proposals) ? proposals.length : 0;
   }, [proposals]);
 
+  // Get the user's agent account contract
+  const userAgent = useMemo(() => {
+    if (!agents || !userId) return undefined;
+    return agents.find((a) => a.profile_id === userId);
+  }, [agents, userId]);
+
+  // Get the voting extension contract to approve
+  const votingExt = useMemo(() => {
+    if (!extensions) return undefined;
+    return extensions.find(
+      (ext) =>
+        ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
+    );
+  }, [extensions]);
+
   if (isBasicLoading || !dao) {
     return (
       <main className="flex h-screen w-full items-center justify-center">
@@ -279,6 +307,17 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
               <div className="px-2">
                 <DAOBuyToken daoId={dao.id} daoName={dao.name} />
               </div>
+              {userAgent?.account_contract && votingExt?.contract_principal ? (
+                <div className="px-2">
+                  <ApproveAssetButton
+                    agentAccountContract={userAgent.account_contract}
+                    contractToApprove={votingExt.contract_principal}
+                    onSuccess={() => {
+                      console.log("Proposal contract approved");
+                    }}
+                  />
+                </div>
+              ) : null}
               <DAONavigation daoName={encodedName} pathname={pathname} />
             </div>
             <div className="space-y-2 px-2">

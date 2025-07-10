@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, XCircle, Clock, Info } from "lucide-react";
-import { useVotingStatus } from "./TimeStatus";
+import { useVotingStatus } from "@/hooks/useVotingStatus";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { cn } from "@/lib/utils";
 import type { Proposal } from "@/types";

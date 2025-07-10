@@ -9,24 +9,22 @@ import ProposalDetails from "@/components/proposals/ProposalDetails";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useVotingStatus } from "@/components/proposals/TimeStatus";
-import { safeNumberFromBigInt, safeString } from "@/utils/proposal";
+import { safeString } from "@/utils/proposal";
 import { format } from "date-fns";
 import Link from "next/link";
 import { getExplorerLink } from "@/utils/format";
 import { Loader } from "@/components/reusables/Loader";
-import { ProposalStatusBadge } from "@/components/reusables/ProposalStatusBadge";
+import { ProposalStatusBadge } from "@/components/proposals/ProposalBadge";
+// import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 export const runtime = "edge";
 
 function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
   const router = useRouter();
 
-  const { isActive, isEnded } = useVotingStatus(
-    proposal.status,
-    safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end)
-  );
+  // Use the unified status system - same as ProposalCard
+  // const { statusConfig, isActive, isEnded, isPassed } =
+  //   useProposalStatus(proposal);
 
   return (
     <div className="mb-8">
@@ -81,11 +79,7 @@ function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <ProposalStatusBadge
-            isActive={isActive}
-            isEnded={isEnded}
-            passed={proposal.passed}
-          />
+          <ProposalStatusBadge proposal={proposal} size="lg" />
         </div>
       </div>
 
