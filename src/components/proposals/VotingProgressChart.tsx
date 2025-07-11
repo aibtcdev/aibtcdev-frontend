@@ -2,12 +2,10 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getProposalVotes } from "@/services/vote.service";
+// import { getProposalVotes } from "@/services/vote.service";
+import { getProposalVotes } from "@/lib/vote-utils";
 import { fetchLatestChainState } from "@/services/chain-state.service";
-import {
-  // BalanceDisplay,
-  TokenBalance,
-} from "@/components/reusables/BalanceDisplay";
+import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import {
   Tooltip,
   TooltipContent,
@@ -22,88 +20,123 @@ import {
   Users,
   Target,
   Zap,
-  AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
-import { useVotingStatus } from "@/hooks/useVotingStatus";
+import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 interface VotingProgressChartProps {
   proposal: Proposal | ProposalWithDAO;
   tokenSymbol?: string;
-  contractPrincipal?: string; // Added this prop for the contract principal
+  contractPrincipal?: string;
 }
 
 const VotingProgressChart = ({
   proposal,
   tokenSymbol = "",
-  contractPrincipal, // New prop
+  contractPrincipal,
 }: VotingProgressChartProps) => {
   console.log("VotingProgressChart props:", {
     proposal,
     tokenSymbol,
     contractPrincipal,
   });
-  const { isActive, isEnded } = useVotingStatus(
-    proposal.status,
-    safeNumberFromBigInt(proposal.vote_start),
-    safeNumberFromBigInt(proposal.vote_end)
-  );
-  console.log("isActive, isEnded:", isActive, isEnded);
+
+  // Use the new useProposalStatus hook
+  const {
+    status,
+    statusConfig,
+    isActive,
+    isEnded,
+    isPassed,
+    isFailed,
+    isVetoPeriod,
+    isExecutionWindow,
+  } = useProposalStatus(proposal);
+
+  console.log("Proposal status:", {
+    status,
+    isActive,
+    isEnded,
+    isPassed,
+    isFailed,
+  });
+
+  // Helper function to safely parse vote values
+  const parseVoteValue = (value: string | null | undefined): string => {
+    if (!value) return "0";
+    // Remove 'n' suffix if present and ensure it's a valid number
+    const cleaned = value.replace(/n$/, "");
+    return isNaN(Number(cleaned)) ? "0" : cleaned;
+  };
 
   // State to store parsed vote values from live data
   const [parsedVotes, setParsedVotes] = useState({
-    votesFor: proposal.votes_for ? proposal.votes_for.replace(/n$/, "") : "0",
-    votesAgainst: proposal.votes_against
-      ? proposal.votes_against.replace(/n$/, "")
-      : "0",
+    votesFor: parseVoteValue(proposal.votes_for),
+    votesAgainst: parseVoteValue(proposal.votes_against),
   });
+  console.log(proposal.votes_for, proposal.votes_against);
   console.log("parsedVotes state:", parsedVotes);
 
   // Fetch live vote data with real-time updates using getProposalVotes
-  const proposalId = proposal.id;
+  const proposalId = Number(proposal.id);
 
-  const { data: proposalVoteData } = useQuery({
+  const { data: proposalVoteData, isLoading: isLoadingVotes } = useQuery({
     queryKey: ["proposalVotes", proposalId, contractPrincipal],
     queryFn: async () => {
       if (proposalId && contractPrincipal) {
-        return getProposalVotes(contractPrincipal, proposalId);
+        const result = await getProposalVotes(contractPrincipal, proposalId);
+        console.log("getProposalVotes result:", result);
+        return result;
       }
       return null;
     },
     enabled: !!proposalId && !!contractPrincipal,
-    refetchOnWindowFocus: false,
-    staleTime: 0, // Always fresh data for real-time updates
-    refetchInterval: false, // Disable polling since we have real-time updates
+    refetchOnWindowFocus: true,
+    staleTime: 5000, // Consider data stale after 5 seconds
+    refetchInterval: isActive ? 10000 : false, // Refetch every 10 seconds if voting is active
+    retry: 3,
   });
 
   // Fetch current chain state to check execution deadline
   const { data: chainState } = useQuery({
     queryKey: ["latestChainState"],
     queryFn: fetchLatestChainState,
-    staleTime: 60000,
-    refetchInterval: 60000,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // 1 minute
   });
 
   // Update vote totals from the getProposalVotes response
   useEffect(() => {
-    console.log("proposalVoteData:", proposalVoteData);
+    console.log("proposalVoteData update:", proposalVoteData);
     if (proposalVoteData) {
-      // Use the parsed vote data from getProposalVotes
+      const newVotesFor = parseVoteValue(proposalVoteData.votesFor);
+      const newVotesAgainst = parseVoteValue(proposalVoteData.votesAgainst);
+
+      console.log("Setting parsed votes from API:", {
+        newVotesFor,
+        newVotesAgainst,
+      });
+
       setParsedVotes({
-        votesFor: proposalVoteData.votesFor || "0",
-        votesAgainst: proposalVoteData.votesAgainst || "0",
+        votesFor: newVotesFor,
+        votesAgainst: newVotesAgainst,
       });
     } else {
-      // If no vote data, fall back to proposal data
+      // Fallback to proposal data if no live data available
+      const fallbackVotesFor = parseVoteValue(proposal.votes_for);
+      const fallbackVotesAgainst = parseVoteValue(proposal.votes_against);
+
+      console.log("Setting parsed votes from proposal:", {
+        fallbackVotesFor,
+        fallbackVotesAgainst,
+      });
+
       setParsedVotes({
-        votesFor: proposal.votes_for
-          ? proposal.votes_for.replace(/n$/, "")
-          : "0",
-        votesAgainst: proposal.votes_against
-          ? proposal.votes_against.replace(/n$/, "")
-          : "0",
+        votesFor: fallbackVotesFor,
+        votesAgainst: fallbackVotesAgainst,
       });
     }
   }, [proposalVoteData, proposal.votes_for, proposal.votes_against]);
@@ -113,17 +146,17 @@ const VotingProgressChart = ({
     const votesAgainst = Number(parsedVotes.votesAgainst || 0);
     const totalVotes = votesFor + votesAgainst;
     const liquidTokens = Number(proposal.liquid_tokens || 0);
-    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum); // Already a percentage (e.g., 20 = 20%)
-    const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold); // Already a percentage (e.g., 60 = 60%)
+    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
+    const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
     // Calculate percentages based on liquid tokens
     const participationRate =
       liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
-    const quorumRate = quorumPercentage; // Already a percentage
+    const quorumRate = quorumPercentage;
 
     // Calculate approval rate from cast votes
     const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
-    const thresholdRate = thresholdPercentage; // Already a percentage
+    const thresholdRate = thresholdPercentage;
 
     // Calculate vote breakdown percentages
     const votesForPercent =
@@ -148,7 +181,7 @@ const VotingProgressChart = ({
     const concludedBy = proposal.concluded_by;
     const failedToExecute = currentBitcoinHeight > execEnd && !concludedBy;
 
-    console.log("calculations:", {
+    console.log("calculations updated:", {
       votesFor,
       votesAgainst,
       totalVotes,
@@ -185,19 +218,19 @@ const VotingProgressChart = ({
       metThreshold: actuallyMetThreshold,
       failedToExecute,
     };
-  }, [proposal, parsedVotes, chainState]);
+  }, [proposal, parsedVotes, chainState]); // Added parsedVotes to dependency array
 
-  // Rest of the component remains the same...
-  const getStatusText = (
-    met: boolean,
-    isActive: boolean,
-    isEnded: boolean,
-    percentage?: number
-  ) => {
+  // Helper functions using the new status system
+  const getStatusText = (met: boolean, percentage?: number) => {
+    // If voting hasn't started (PENDING, DRAFT), show "Pending"
+    if (status === "PENDING" || status === "DRAFT") {
+      return "Pending";
+    }
+
     if (isActive) {
       return percentage !== undefined
-        ? `Pending (${percentage.toFixed(1)}%)`
-        : "Pending";
+        ? `In Progress (${percentage.toFixed(1)}%)`
+        : "In Progress";
     }
 
     if (!isEnded) {
@@ -207,19 +240,25 @@ const VotingProgressChart = ({
     return met ? "Met" : "Missed";
   };
 
-  const getStatusColor = (
-    met: boolean,
-    isActive: boolean,
-    isEnded: boolean
-  ) => {
+  const getStatusColor = (met: boolean) => {
+    // If voting hasn't started, use consistent pending color
+    if (status === "PENDING" || status === "DRAFT") {
+      return "text-gray-400";
+    }
+
     if (isActive) return "text-orange-400";
-    if (!isEnded) return "text-gray-400"; // Not started
+    if (!isEnded) return "text-gray-400";
     return met ? "text-green-400" : "text-red-400";
   };
 
-  const getStatusIcon = (met: boolean, isActive: boolean, isEnded: boolean) => {
+  const getStatusIcon = (met: boolean) => {
+    // If voting hasn't started, use clock icon
+    if (status === "PENDING" || status === "DRAFT") {
+      return <Clock className="h-4 w-4" />;
+    }
+
     if (isActive) return <Clock className="h-4 w-4" />;
-    if (!isEnded) return <Clock className="h-4 w-4" />; // Not started
+    if (!isEnded) return <Clock className="h-4 w-4" />;
     return met ? (
       <CheckCircle2 className="h-4 w-4" />
     ) : (
@@ -227,50 +266,68 @@ const VotingProgressChart = ({
     );
   };
 
-  // Enhanced result status logic
+  // Enhanced result status logic using the new status system
   const getResultStatus = () => {
-    if (isActive) {
-      return {
-        status: "Voting in progress",
-        color: "text-orange-400",
-        icon: <Clock className="h-4 w-4" />,
-        bgColor: "bg-orange-500/10 border-orange-500/30",
-      };
-    }
+    const StatusIcon = statusConfig.icon;
 
-    if (!isEnded) {
-      return {
-        status: "Voting not started",
-        color: "text-gray-400",
-        icon: <Clock className="h-4 w-4" />,
-        bgColor: "bg-gray-500/10 border-gray-500/30",
-      };
+    switch (status) {
+      case "DRAFT":
+        return {
+          status: "Draft",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "PENDING":
+        return {
+          status: "Pending",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "ACTIVE":
+        return {
+          status: "Voting in Progress",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "VETO_PERIOD":
+        return {
+          status: "Veto Period",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "EXECUTION_WINDOW":
+        return {
+          status: "Execution Window",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "PASSED":
+        return {
+          status: "Passed",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      case "FAILED":
+        return {
+          status: "Failed",
+          color: statusConfig.color,
+          icon: <StatusIcon className="h-4 w-4" />,
+          bgColor: `${statusConfig.bg} ${statusConfig.border}`,
+        };
+      default:
+        return {
+          status: "Unknown",
+          color: "text-muted-foreground",
+          icon: <AlertCircle className="h-4 w-4" />,
+          bgColor: "bg-muted/10 border-muted/20",
+        };
     }
-
-    if (calculations.failedToExecute) {
-      return {
-        status: "Failed to Execute",
-        color: "text-red-400",
-        icon: <AlertTriangle className="h-4 w-4" />,
-        bgColor: "bg-red-500/10 border-red-500/30",
-      };
-    }
-
-    if (proposal.passed) {
-      return {
-        status: "Passed",
-        color: "text-green-400",
-        icon: <CheckCircle2 className="h-4 w-4" />,
-        bgColor: "bg-green-500/10 border-green-500/30",
-      };
-    }
-
-    return {
-      status: "Failed",
-      color: "text-red-400",
-      icon: <XCircle className="h-4 w-4" />,
-      bgColor: "bg-red-500/10 border-red-500/30",
-    };
   };
 
   const resultStatus = getResultStatus();
@@ -278,6 +335,14 @@ const VotingProgressChart = ({
 
   return (
     <div className="space-y-6 overflow-x-auto">
+      {/* Loading indicator for vote data */}
+      {isLoadingVotes && (
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          Updating vote data...
+        </div>
+      )}
+
       {/* Participation Progress Bar */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -489,7 +554,7 @@ const VotingProgressChart = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    {getStatusIcon(calculations.metQuorum, isActive, isEnded)}
+                    {getStatusIcon(calculations.metQuorum)}
                   </TooltipTrigger>
                   {isActive && (
                     <TooltipContent>
@@ -504,13 +569,11 @@ const VotingProgressChart = ({
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(calculations.metQuorum, isActive, isEnded)
+                  getStatusColor(calculations.metQuorum)
                 )}
               >
                 {getStatusText(
                   calculations.metQuorum,
-                  isActive,
-                  isEnded,
                   calculations.participationRate
                 )}
               </span>
@@ -547,11 +610,7 @@ const VotingProgressChart = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    {getStatusIcon(
-                      calculations.metThreshold,
-                      isActive,
-                      isEnded
-                    )}
+                    {getStatusIcon(calculations.metThreshold)}
                   </TooltipTrigger>
                   {isActive && (
                     <TooltipContent>
@@ -566,13 +625,11 @@ const VotingProgressChart = ({
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(calculations.metThreshold, isActive, isEnded)
+                  getStatusColor(calculations.metThreshold)
                 )}
               >
                 {getStatusText(
                   calculations.metThreshold,
-                  isActive,
-                  isEnded,
                   calculations.approvalRate
                 )}
               </span>
@@ -608,32 +665,42 @@ const VotingProgressChart = ({
             <div className="text-xs text-muted-foreground">
               {calculations.totalVotes > 0 ? (
                 <div className="space-y-1">
-                  <TokenBalance
-                    value={calculations.totalVotes.toString()}
-                    decimals={8}
-                    variant="abbreviated"
-                    symbol={tokenSymbol}
-                  />
+                  <div className="flex items-center gap-1">
+                    <span>Total votes:</span>
+                    <TokenBalance
+                      value={calculations.totalVotes.toString()}
+                      decimals={8}
+                      variant="abbreviated"
+                      symbol={tokenSymbol}
+                    />
+                  </div>
 
-                  {/* <div></div> */}
-                  {calculations.failedToExecute && (
-                    <div className="text-orange-400">
-                      ⚠️ Execution deadline passed without conclusion
+                  {/* Additional status-specific information */}
+                  {status === "EXECUTION_WINDOW" && (
+                    <div className="text-accent-foreground">
+                      ⏳ Awaiting execution
                     </div>
                   )}
-                  {!isActive &&
-                    isEnded &&
-                    !proposal.passed &&
-                    !calculations.failedToExecute &&
+                  {status === "VETO_PERIOD" && (
+                    <div className="text-accent-foreground">
+                      ⏳ Veto period active
+                    </div>
+                  )}
+                  {calculations.failedToExecute && (
+                    <div className="text-destructive">
+                      ⚠️ Execution deadline passed
+                    </div>
+                  )}
+                  {status === "FAILED" &&
                     calculations.metQuorum &&
                     calculations.metThreshold && (
-                      <div className="text-orange-400">
-                        ⚠️ Failed despite meeting quorum & threshold
+                      <div className="text-destructive">
+                        ⚠️ Failed despite meeting requirements
                       </div>
                     )}
                 </div>
               ) : (
-                "No votes yet"
+                <span>No votes cast</span>
               )}
             </div>
           </div>
