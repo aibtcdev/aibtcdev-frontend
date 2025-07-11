@@ -45,16 +45,8 @@ const VotingProgressChart = ({
   });
 
   // Use the new useProposalStatus hook
-  const {
-    status,
-    statusConfig,
-    isActive,
-    isEnded,
-    isPassed,
-    isFailed,
-    isVetoPeriod,
-    isExecutionWindow,
-  } = useProposalStatus(proposal);
+  const { status, statusConfig, isActive, isEnded, isPassed, isFailed } =
+    useProposalStatus(proposal);
 
   console.log("Proposal status:", {
     status,
