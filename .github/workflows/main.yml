@@ -1,0 +1,14 @@
+name: Add Issues to AIBTC Project
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  add-to-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/orgs/aibtcdev/projects/7
+          github-token: ${{ secrets.GITHUB_TOKEN }}
