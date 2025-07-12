@@ -1,0 +1,34 @@
+---
+description: 
+globs: src/app/**/layout.tsx
+alwaysApply: false
+---
+To ensure optimal search engine visibility, every file must include proper SEO configurations. This includes setting viewport properties for responsive design and metadata for search engine optimization.
+
+## How to Implement Good SEO
+
+Include the following configurations in your file to enhance SEO performance:
+
+### Example
+
+```typescript
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+export const metadata: Metadata = {
+  title: "DAOs",
+  description: "Bitcoin-backed DAOs. Fully autonomous governance.",
+};
+```
+
+### Explanation
+- **Viewport**: Configures the page to adapt to the device's width, with a fixed scale to prevent unwanted zooming, ensuring a mobile-friendly experience.
+- **Metadata**:
+  - `title`: A concise, descriptive title (e.g., "DAOs") that reflects the page content and includes relevant keywords.
+  - `description`: A brief summary (e.g., "Bitcoin-backed DAOs. Fully autonomous governance.") that captures the essence of the page and entices users to click.
+
+Ensure these configurations are tailored to each file's specific content for maximum SEO effectiveness.

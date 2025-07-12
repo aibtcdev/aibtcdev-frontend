@@ -1,18 +1,29 @@
-import clsx from "clsx";
+import * as React from "react";
+import { clsx } from "clsx";
 
-type HeadingProps = {
+interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
   level?: 1 | 2 | 3 | 4 | 5 | 6;
-} & React.ComponentPropsWithoutRef<"h1" | "h2" | "h3" | "h4" | "h5" | "h6">;
+}
 
 export function Heading({ className, level = 1, ...props }: HeadingProps) {
   const Element: `h${typeof level}` = `h${level}`;
+
+  const sizeClasses = {
+    1: "text-2xl md:text-3xl font-bold",
+    2: "text-xl md:text-2xl font-semibold",
+    3: "text-lg md:text-xl font-semibold",
+    4: "text-base md:text-lg font-medium",
+    5: "text-sm md:text-base font-medium",
+    6: "text-xs md:text-sm font-medium",
+  };
 
   return (
     <Element
       {...props}
       className={clsx(
         className,
-        "text-2xl/8 font-semibold text-zinc-950 sm:text-xl/8 dark:text-white"
+        sizeClasses[level],
+        "text-white leading-tight tracking-tight"
       )}
     />
   );

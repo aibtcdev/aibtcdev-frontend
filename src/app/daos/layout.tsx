@@ -1,15 +1,22 @@
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import React from "react";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   title: "DAOs",
   description: "Bitcoin-backed DAOs. Fully autonomous governance.",
 };
 
-export default function ChatLayout({
+export default function DAOsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="flex-1 flex flex-col">{children}</div>;
+  return <div className="h-full">{children}</div>;
 }

@@ -28,7 +28,23 @@ NEXT_PUBLIC_STACKS_NETWORK=testnet
 npm install
 ```
 
-### 4. Run Backend
+### 4. Setup Husky for Pre-commit Hooks
+Install and configure Husky to ensure code quality before commits:
+
+```bash
+# Initialize husky
+npx husky init
+
+# Add a pre-commit hook to run Prettier on staged TypeScript files
+echo 'npx prettier --write --list-different "**/*.{ts,tsx}"' > .husky/pre-commit
+
+# Make the pre-commit hook executable
+chmod +x .husky/pre-commit
+```
+
+This setup will automatically format your TypeScript and TSX files before each commit, ensuring consistent code formatting across the project.
+
+### 5. Run Backend
 Clone and set up the backend repository:
 ```bash
 git clone https://github.com/aibtcdev/aibtcdev-backend.git
@@ -36,11 +52,7 @@ cd aibtcdev-backend
 # Follow backend setup instructions
 ```
 
-### 5. Run Frontend Development Server
+### 6. Run Frontend Development Server
 ```bash
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-

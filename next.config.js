@@ -1,5 +1,5 @@
 // @ts-check
-const path = require('path')
+const path = require("path");
 
 /**
  * @type {import('next').NextConfig}
@@ -19,5 +19,5 @@ const nextConfig = {
     return config;
   },
 };
- 
-module.exports = nextConfig
+
+module.exports = nextConfig;

@@ -14,7 +14,7 @@ import {
 // Dynamically import TokenTransfer component to avoid SSR issues
 const TokenTransfer = dynamic(
   () =>
-    import("@/components/auth/token-transfer").then((mod) => mod.TokenTransfer),
+    import("@/components/auth/TokenTransfer").then((mod) => mod.TokenTransfer),
   { ssr: false }
 );
 
@@ -98,7 +98,6 @@ export const TransferTokenModal = memo(
               recipient={agent.walletAddress}
               contractAddress={contractAddress}
               contractName={contractName}
-              token={agent.tokenSymbol}
               buttonText="Transfer"
               onSuccess={handleTransferSuccess}
             />

@@ -82,8 +82,11 @@ export const updateSession = async (request: NextRequest) => {
     //   return NextResponse.redirect(new URL("/daos", request.url));
     // }
 
-    if (request.nextUrl.pathname.startsWith("/profile") && (userError || !user)) {
-      return NextResponse.redirect(new URL("/", request.url))
+    if (
+      request.nextUrl.pathname.startsWith("/profile") &&
+      (userError || !user)
+    ) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
 
     if (request.nextUrl.pathname === "/" && !userError) {
@@ -100,4 +103,4 @@ export const updateSession = async (request: NextRequest) => {
       },
     })
   }
-}
+};

@@ -1,124 +1,159 @@
-import { create } from 'zustand';
-import { supabase } from '@/utils/supabase/client';
-import { Wallet, Agent } from '@/types/supabase';
+import { create } from "zustand";
+import type { Wallet, Agent } from "@/types";
+import {
+  fetchWallets as fetchWalletsQuery,
+  fetchWalletBalance,
+  fetchWalletBalances,
+} from "@/services/wallet.service";
 
 export interface TokenBalance {
-    balance: string;
-    total_sent: string;
-    total_received: string;
+  balance: string;
+  total_sent: string;
+  total_received: string;
 }
 
 interface NFTBalance {
-    count: number;
-    total_sent: number;
-    total_received: number;
+  count: number;
+  total_sent: number;
+  total_received: number;
 }
 
 export interface WalletBalance {
-    stx: TokenBalance;
-    fungible_tokens: {
-        [key: string]: TokenBalance;
-    };
-    non_fungible_tokens: {
-        [key: string]: NFTBalance;
-    };
+  stx: TokenBalance;
+  fungible_tokens: {
+    [key: string]: TokenBalance;
+  };
+  non_fungible_tokens: {
+    [key: string]: NFTBalance;
+  };
 }
 
 export interface WalletWithAgent extends Wallet {
-    agent?: Agent;
+  agent?: Agent;
 }
 
 interface WalletState {
-    balances: Record<string, WalletBalance>;
-    userWallet: WalletWithAgent | null;
-    agentWallets: WalletWithAgent[];
-    isLoading: boolean;
-    error: string | null;
-    fetchBalances: (addresses: string[]) => Promise<void>;
-    fetchWallets: (userId: string) => Promise<void>;
+  balances: Record<string, WalletBalance>;
+  userWallet: WalletWithAgent | null;
+  agentWallets: WalletWithAgent[];
+  isLoading: boolean;
+  error: string | null;
+  fetchBalances: (addresses: string[]) => Promise<void>;
+  fetchSingleBalance: (address: string) => Promise<WalletBalance | null>;
+  fetchWallets: (userId: string | null) => Promise<void>;
+  fetchContractBalance: (address: string) => Promise<WalletBalance | null>;
 }
 
-export const useWalletStore = create<WalletState>((set) => ({
-    balances: {},
-    userWallet: null,
-    agentWallets: [],
-    isLoading: false,
-    error: null,
+export const useWalletStore = create<WalletState>((set, get) => ({
+  balances: {},
+  userWallet: null,
+  agentWallets: [],
+  isLoading: false,
+  error: null,
 
-    fetchWallets: async (userId: string) => {
-        try {
-            set({ isLoading: true, error: null });
-
-            const { data: walletsData, error: walletsError } = await supabase
-                .from("wallets")
-                .select("*, agent:agents(*)")
-                .eq("profile_id", userId);
-
-            if (walletsError) {
-                throw walletsError;
-            }
-
-            // Separate user wallet (agent_id is null) from agent wallets
-            const userWallet = walletsData?.find((wallet) => wallet.agent_id === null) || null;
-            const agentWallets = walletsData?.filter((wallet) => wallet.agent_id !== null) || [];
-
-            // Fetch balances for all addresses
-            // if NEXT_PUBLIC_STACKS_NETWORK is mainnet, use mainnet_address, otherwise use testnet_address
-            const allAddresses = walletsData
-                ?.map((wallet) => process.env.NEXT_PUBLIC_STACKS_NETWORK === 'mainnet' ? wallet.mainnet_address : wallet.testnet_address)
-                .filter((address): address is string => address !== null);
-
-            if (allAddresses && allAddresses.length > 0) {
-                await set((state) => {
-                    state.fetchBalances(allAddresses);
-                    return state;
-                });
-            }
-
-            set({
-                userWallet,
-                agentWallets,
-                isLoading: false
-            });
-        } catch (error) {
-            set({
-                error: error instanceof Error ? error.message : 'Failed to fetch wallets',
-                isLoading: false
-            });
-        }
-    },
-
-    fetchBalances: async (addresses) => {
-        try {
-            set({ isLoading: true, error: null });
-
-            const balancePromises = addresses.map(async (address) => {
-                const network = process.env.NEXT_PUBLIC_STACKS_NETWORK;
-                const response = await fetch(
-                    `https://api.${network}.hiro.so/extended/v1/address/${address}/balances`
-                );
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch balance for ${address}`);
-                }
-                const data = await response.json();
-                return [address, data] as [string, WalletBalance];
-            });
-
-            const results = await Promise.all(balancePromises);
-            const newBalances = Object.fromEntries(results);
-
-            set((state) => ({
-                balances: {
-                    ...state.balances,
-                    ...newBalances
-                },
-                isLoading: false
-            }));
-        } catch (error) {
-            set({
-                error: error instanceof Error ? error.message : 'Failed to fetch balances',
-                isLoading: false
-            });
-        }
+  fetchWallets: async (userId: string | null) => {
+    if (!userId) {
+      set({
+        userWallet: null,
+        agentWallets: [],
+        isLoading: false,
+      });
+      return;
     }
-})); 
+
+    try {
+      set({ isLoading: true, error: null });
+
+      // Use the query function from walletQueries.ts
+      const walletsData = await fetchWalletsQuery(userId);
+
+      // Separate user wallet (agent_id is null) from agent wallets
+      const userWallet =
+        walletsData?.find((wallet) => wallet.agent_id === null) || null;
+      const agentWallets =
+        walletsData?.filter((wallet) => wallet.agent_id !== null) || [];
+
+      // Fetch balances for all addresses
+      const allAddresses = walletsData
+        ?.map((wallet) =>
+          process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
+            ? wallet.mainnet_address
+            : wallet.testnet_address
+        )
+        .filter((address): address is string => address !== null);
+
+      if (allAddresses && allAddresses.length > 0) {
+        await get().fetchBalances(allAddresses);
+      }
+
+      set({
+        userWallet,
+        agentWallets,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch wallets",
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchSingleBalance: async (address: string) => {
+    try {
+      set({ isLoading: true, error: null });
+
+      // Use the query function from walletQueries.ts
+      const data = await fetchWalletBalance(address);
+
+      // Update the balances state with the new balance
+      set((state) => ({
+        balances: {
+          ...state.balances,
+          [address]: data,
+        },
+        isLoading: false,
+      }));
+
+      return data;
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : `Failed to fetch balance for ${address}`,
+        isLoading: false,
+      });
+      return null;
+    }
+  },
+
+  fetchBalances: async (addresses) => {
+    try {
+      set({ isLoading: true, error: null });
+
+      // Use the query function from walletQueries.ts
+      const newBalances = await fetchWalletBalances(addresses);
+
+      set((state) => ({
+        balances: {
+          ...state.balances,
+          ...newBalances,
+        },
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error ? error.message : "Failed to fetch balances",
+        isLoading: false,
+      });
+    }
+  },
+
+  fetchContractBalance: async (address: string) => {
+    // Reuse single-balance fetch logic for contract account
+    return get().fetchSingleBalance(address);
+  },
+}));

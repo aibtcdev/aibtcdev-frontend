@@ -1,11 +1,20 @@
 export interface Message {
   agent_id: string | null;
   thread_id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   created_at?: string | null;
-  status: 'sent' | 'processing' | 'end' | null;
-  type?: 'history' | 'task' | 'step' | 'result' | 'tool' | 'token' | 'message' | null;
+  status: "sent" | "planning" | "processing" | "complete" | "end" | null;
+  type?:
+    | "history"
+    | "task"
+    | "step"
+    | "result"
+    | "tool"
+    | "token"
+    | "message"
+    | "completion"
+    | null;
   tool?: string;
   tool_input?: string;
   tool_output?: string;
