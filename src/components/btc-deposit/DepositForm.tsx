@@ -91,7 +91,7 @@ export default function DepositForm({
         title: "Copied!",
         description: `${type} address copied to clipboard`,
       });
-    } catch (err) {
+    } catch {
       toast({
         title: "Failed to copy",
         description: "Please copy the address manually",
