@@ -46,39 +46,13 @@ export default function BitcoinDeposit() {
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
-      // Detect wallet provider from STX_PROVIDER in localStorage
-      let detectedWalletProvider: "xverse" | "leather" | null = null;
       const storedProvider = localStorage.getItem("STX_PROVIDER");
-      if (storedProvider === "XverseProviders.BitcoinProvider") {
-        detectedWalletProvider = "xverse";
-      } else if (storedProvider === "LeatherProvider") {
-        detectedWalletProvider = "leather";
-      } else {
-        // Fallback: Determine based on blockstack-session profile or local btcAddress storage
-        const blockstackSession = JSON.parse(
-          localStorage.getItem("blockstack-session") || "{}"
-        );
-        const userData = blockstackSession.userData;
-        if (userData?.profile) {
-          if (typeof userData.profile.btcAddress === "string") {
-            detectedWalletProvider = "xverse";
-          } else if (
-            userData.profile.btcAddress?.p2wpkh?.mainnet ||
-            userData.profile.btcAddress?.p2tr?.mainnet
-          ) {
-            detectedWalletProvider = "leather";
-          }
-        }
-        if (!detectedWalletProvider) {
-          // Final fallback: if a btcAddress is stored directly
-          const storedBtcAddress = localStorage.getItem("btcAddress");
-          if (storedBtcAddress) {
-            detectedWalletProvider = "leather";
-          }
-        }
-      }
-
-      // Update the wallet provider if detected
+      const detectedWalletProvider: "xverse" | "leather" | null =
+        storedProvider === "XverseProviders.BitcoinProvider"
+          ? "xverse"
+          : storedProvider === "LeatherProvider"
+            ? "leather"
+            : null;
       if (detectedWalletProvider !== activeWalletProvider) {
         setActiveWalletProvider(detectedWalletProvider);
       }

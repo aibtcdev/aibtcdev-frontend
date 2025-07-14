@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ChangeEvent, useEffect } from "react";
-import { getStacksAddress, getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress } from "@/lib/address";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
   FeeEstimates,
@@ -88,8 +89,10 @@ export default function DepositForm({
   // }, [accessToken]);
 
   // Get addresses from the lib - only if we have a session
-  const userAddress = accessToken ? getStacksAddress() : null;
-  const btcAddress = accessToken ? getBitcoinAddress() : null;
+  // const userAddress = accessToken ? getStacksAddress() : null;
+  const { userAgentAddress: userAddress } = useAgentAccount();
+  // const btcAddress = accessToken ? getBitcoinAddress() : null;
+  const btcAddress = userAddress ? getBitcoinAddress() : null;
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -370,6 +373,7 @@ export default function DepositForm({
         } as TransactionPrepareParams);
 
         console.log("Transaction prepared:", transactionData);
+        console.log("Agent (STX) Address:", userAddress);
 
         setConfirmationData({
           depositAmount: totalAmount,
@@ -511,6 +515,19 @@ export default function DepositForm({
 
   return (
     <div className="flex flex-col space-y-4 md:space-y-6 w-full max-w-md mx-auto">
+      {/* Display agent and BTC addresses */}
+      <div className="mb-4 text-sm text-muted-foreground">
+        {userAddress && (
+          <p>
+            <span className="font-medium">Agent Address:</span> {userAddress}
+          </p>
+        )}
+        {btcAddress && (
+          <p>
+            <span className="font-medium">BTC Address:</span> {btcAddress}
+          </p>
+        )}
+      </div>
       {/* From: Bitcoin */}
       <div>
         <div className="flex justify-between items-center mb-2">
