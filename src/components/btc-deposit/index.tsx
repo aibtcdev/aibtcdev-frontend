@@ -98,7 +98,7 @@ export default function BitcoinDeposit() {
       <div className="max-w-xl mx-auto mt-8">
         <div className="mb-6 text-center">
           <h2 className="text-xl font-semibold">
-            Deposit BTC in just 1 Bitcoin block
+            Deposit fast11 into your agent account.
           </h2>
           <p className="text-sm text-muted-foreground">
             Fast, secure, and trustless
