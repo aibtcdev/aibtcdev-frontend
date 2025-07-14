@@ -491,3 +491,25 @@ export const fetchDAOByName = async (
   // console.log(data)
   return data;
 };
+
+export const fetchDAOByNameWithExtensions = async (
+  encodedName: string
+): Promise<(DAO & { extensions: Extension[] }) | null> => {
+  const name = decodeURIComponent(encodedName);
+
+  const { data, error } = await supabase
+    .from("daos")
+    // select all dao fields plus the related extensions rows
+    .select(
+      `
+      *,
+      extensions:extensions(*)
+    `
+    )
+    .eq("name", name)
+    .eq("is_broadcasted", true)
+    .single();
+
+  if (error) throw error;
+  return data;
+};

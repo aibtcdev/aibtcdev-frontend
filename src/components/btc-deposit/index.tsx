@@ -95,7 +95,7 @@ export default function BitcoinDeposit() {
   // Render authentication prompt if not connected
   if (!accessToken) {
     return (
-      <div className="max-w-md mx-auto mt-8">
+      <div className="max-w-xl mx-auto mt-8">
         <div className="mb-6 text-center">
           <h2 className="text-xl font-semibold">
             Deposit BTC in just 1 Bitcoin block
@@ -116,14 +116,8 @@ export default function BitcoinDeposit() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-8">
+    <div className="max-w-xl mx-auto mt-8">
       <div className="mb-6 text-center">
-        <h2 className="text-xl font-semibold">
-          Deposit BTC in just 1 Bitcoin block
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Fast, secure, and trustless
-        </p>
         {btcUsdPrice && (
           <p className="text-xs text-muted-foreground mt-1">
             Current BTC price: ${btcUsdPrice.toLocaleString()}

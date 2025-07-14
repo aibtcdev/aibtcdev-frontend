@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent, useEffect } from "react";
 import { getBitcoinAddress } from "@/lib/address";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { fetchDAOByNameWithExtensions } from "@/services/dao.service";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
   FeeEstimates,
@@ -13,13 +14,13 @@ import type {
 } from "@faktoryfun/styx-sdk";
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
-import { Bitcoin } from "lucide-react";
+import { Bitcoin, Copy, CheckCircle, Wallet } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
@@ -53,8 +54,8 @@ export default function DepositForm({
 }: DepositFormProps) {
   const [amount, setAmount] = useState<string>("0.0001");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const { toast } = useToast();
-  // const [useBlazeSubnet, setUseBlazeSubnet] = useState<boolean>(false);
   const [feeEstimates, setFeeEstimates] = useState<{
     low: { rate: number; fee: number; time: string };
     medium: { rate: number; fee: number; time: string };
@@ -68,31 +69,36 @@ export default function DepositForm({
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
 
-  // Session is automatically initialized by the useAuth hook
-
-  // Use the activeWalletProvider state with a default value
-  // const [activeWalletProvider, setActiveWalletProvider] = useState<
-  //   "leather" | "xverse" | null
-  // >(null);
-
-  // Set the wallet provider based on the session when initialized
-  // useEffect(() => {
-  //   if (accessToken) {
-  //     // Determine which wallet is being used based on available information
-  //     // This is a placeholder - implement your actual wallet detection logic here
-  //     const detectedProvider = localStorage.getItem("walletProvider") as
-  //       | "leather"
-  //       | "xverse"
-  //       | null;
-  //     setActiveWalletProvider(detectedProvider);
-  //   }
-  // }, [accessToken]);
-
   // Get addresses from the lib - only if we have a session
-  // const userAddress = accessToken ? getStacksAddress() : null;
   const { userAgentAddress: userAddress } = useAgentAccount();
-  // const btcAddress = accessToken ? getBitcoinAddress() : null;
+
+  // Fetch DAO by hardcoded name "FAST11" along with its extensions
+  const { data: dao, isLoading: isLoadingDAO } = useQuery({
+    queryKey: ["dao", "FAST11"],
+    queryFn: () => fetchDAOByNameWithExtensions("FAST11"),
+    enabled: true,
+  });
+
   const btcAddress = userAddress ? getBitcoinAddress() : null;
+
+  // Helper function to copy address to clipboard
+  const copyToClipboard = async (text: string, type: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(type);
+      setTimeout(() => setCopiedAddress(null), 2000);
+      toast({
+        title: "Copied!",
+        description: `${type} address copied to clipboard`,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the address manually",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -360,8 +366,34 @@ export default function DepositForm({
         );
       }
 
+      // Ensure DAO dex extension is loaded before preparing transaction
+      if (isLoadingDAO) {
+        toast({
+          title: "Loading DAO info",
+          description: "Please wait a moment and try again.",
+        });
+        return;
+      }
+      const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
+      if (!dexExtension?.contract_principal) {
+        toast({
+          title: "DEX Extension Missing",
+          description: "Cannot find DEX extension for your DAO.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       try {
         console.log("Preparing transaction with SDK...");
+        console.log("Preparing transaction parameters:", {
+          btcAddress,
+          userAddress,
+          totalAmount,
+          feePriority: "medium",
+          feeRates: currentFeeRates,
+          extension: dexExtension.contract_principal,
+        });
 
         const transactionData = await styxSDK.prepareTransaction({
           amount: totalAmount, // Now includes service fee
@@ -370,6 +402,7 @@ export default function DepositForm({
           feePriority: "medium" as TransactionPriority,
           walletProvider: activeWalletProvider,
           feeRates: currentFeeRates,
+          extension: dexExtension,
         } as TransactionPrepareParams);
 
         console.log("Transaction prepared:", transactionData);
@@ -500,7 +533,7 @@ export default function DepositForm({
   // Determine button text based on connection state
   const getButtonText = () => {
     if (!accessToken) return "Connect Wallet";
-    return "Confirm Deposit";
+    return `Deposit ${dao?.name || "DAO"} Tokens`;
   };
 
   // Render loading state while initializing session
@@ -514,20 +547,99 @@ export default function DepositForm({
   }
 
   return (
-    <div className="flex flex-col space-y-4 md:space-y-6 w-full max-w-md mx-auto">
-      {/* Display agent and BTC addresses */}
-      <div className="mb-4 text-sm text-muted-foreground">
-        {userAddress && (
-          <p>
-            <span className="font-medium">Agent Address:</span> {userAddress}
-          </p>
-        )}
-        {btcAddress && (
-          <p>
-            <span className="font-medium">BTC Address:</span> {btcAddress}
-          </p>
-        )}
+    <div className="flex flex-col space-y-4 md:space-y-6 w-full max-w-lg mx-auto">
+      {/* Header with clear title */}
+      <div className="text-center space-y-2 mb-6">
+        <h2 className="text-2xl font-bold">
+          Deposit {dao?.name || "DAO"} Tokens
+        </h2>
+        <p className="text-sm text-muted-foreground">Into your agent account</p>
       </div>
+
+      {/* Agent Account Information Card */}
+      {accessToken && (userAddress || btcAddress) && (
+        <Card className="border-border/50 bg-gradient-to-br from-background to-muted/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              Agent Account Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {userAddress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Agent Address (STX)
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(userAddress, "Agent")}
+                    className="h-6 px-2"
+                  >
+                    {copiedAddress === "Agent" ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                <div className="font-mono text-xs bg-muted/50 p-2 rounded border break-all">
+                  {userAddress}
+                </div>
+              </div>
+            )}
+
+            {btcAddress && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Bitcoin Address
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(btcAddress, "Bitcoin")}
+                    className="h-6 px-2"
+                  >
+                    {copiedAddress === "Bitcoin" ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                <div className="font-mono text-xs bg-muted/50 p-2 rounded border break-all">
+                  {btcAddress}
+                </div>
+              </div>
+            )}
+
+            {dao && (
+              <div className="pt-2 border-t border-border/50">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">DAO:</span>
+                  <span className="font-medium">{dao.name}</span>
+                </div>
+                {dao.extensions?.find((ext) => ext.type === "TOKEN")
+                  ?.contract_principal && (
+                  <div className="flex items-center justify-between text-sm mt-1">
+                    <span className="text-muted-foreground">
+                      Token Contract:
+                    </span>
+                    <span className="font-mono text-xs bg-muted/30 px-2 py-1 rounded">
+                      {dao.extensions.find((ext) => ext.type === "TOKEN")
+                        ?.contract_principal || "N/A"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* From: Bitcoin */}
       <div>
         <div className="flex justify-between items-center mb-2">
@@ -644,46 +756,6 @@ export default function DepositForm({
         </CardContent>
       </Card>
 
-      {/* Blaze Fast Subnet Option NOT SURE IF I SHOULD ADD IT BUT KEEPING IT FOR LATER JUST IN CASE */}
-      {/* <div
-        className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
-        onClick={() => setUseBlazeSubnet(!useBlazeSubnet)}
-      >
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Switch
-              checked={useBlazeSubnet}
-              onCheckedChange={setUseBlazeSubnet}
-              className="data-[state=checked]:bg-orange-500"
-            />
-            {useBlazeSubnet && (
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" />
-            )}
-          </div>
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium cursor-pointer">
-              Use Blaze Fast Subnet
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Near-instant confirmations with high throughput
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Badge
-            variant="outline"
-            className="bg-orange-500 text-black font-bold"
-          >
-            BETA
-          </Badge>
-          {useBlazeSubnet && (
-            <div className="p-1 rounded bg-teal-500/10">
-              <Zap className="h-4 w-4 text-teal-500" />
-            </div>
-          )}
-        </div>
-      </div> */}
-
       {/* Accordion with Additional Info */}
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="how-it-works" className="border-none">
@@ -694,9 +766,9 @@ export default function DepositForm({
           </div>
           <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
             <p>
-              Your BTC deposit unlocks sBTC via Clarity&apos;s direct Bitcoin
-              state reading. No intermediaries or multi-signature scheme needed.
-              Trustless. Fast. Secure.
+              Your BTC deposit unlocks {dao?.name || "DAO"} tokens via
+              Clarity&apos;s direct Bitcoin state reading. No intermediaries or
+              multi-signature scheme needed. Trustless. Fast. Secure.
             </p>
           </AccordionContent>
         </AccordionItem>
