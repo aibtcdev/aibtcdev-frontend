@@ -46,38 +46,41 @@ export default function BitcoinDeposit() {
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
-      // Detect wallet provider based on the structure of btcAddress
+      // Detect wallet provider from STX_PROVIDER in localStorage
       let detectedWalletProvider: "xverse" | "leather" | null = null;
-
-      // Get user data from localStorage
-      const blockstackSession = JSON.parse(
-        localStorage.getItem("blockstack-session") || "{}"
-      );
-      const userData = blockstackSession.userData;
-
-      if (userData?.profile) {
-        // Check structure of btcAddress to determine wallet type
-        if (typeof userData.profile.btcAddress === "string") {
-          // Xverse stores btcAddress as a direct string
-          detectedWalletProvider = "xverse";
-        } else if (
-          userData.profile.btcAddress?.p2wpkh?.mainnet ||
-          userData.profile.btcAddress?.p2tr?.mainnet
-        ) {
-          // Leather stores addresses in a structured object
-          detectedWalletProvider = "leather";
-        } else {
-          // If no BTC address in profile, check localStorage
-          const storedBtcAddress = localStorage.getItem("btcAddress");
-          if (storedBtcAddress) {
-            detectedWalletProvider = "leather"; // Assume Leather if using localStorage
+      const storedProvider = localStorage.getItem("STX_PROVIDER");
+      if (storedProvider === "XverseProviders.BitcoinProvider") {
+        detectedWalletProvider = "xverse";
+      } else if (storedProvider === "LeatherProvider") {
+        detectedWalletProvider = "leather";
+      } else {
+        // Fallback: Determine based on blockstack-session profile or local btcAddress storage
+        const blockstackSession = JSON.parse(
+          localStorage.getItem("blockstack-session") || "{}"
+        );
+        const userData = blockstackSession.userData;
+        if (userData?.profile) {
+          if (typeof userData.profile.btcAddress === "string") {
+            detectedWalletProvider = "xverse";
+          } else if (
+            userData.profile.btcAddress?.p2wpkh?.mainnet ||
+            userData.profile.btcAddress?.p2tr?.mainnet
+          ) {
+            detectedWalletProvider = "leather";
           }
         }
-
-        // Update the wallet provider if detected
-        if (detectedWalletProvider !== activeWalletProvider) {
-          setActiveWalletProvider(detectedWalletProvider);
+        if (!detectedWalletProvider) {
+          // Final fallback: if a btcAddress is stored directly
+          const storedBtcAddress = localStorage.getItem("btcAddress");
+          if (storedBtcAddress) {
+            detectedWalletProvider = "leather";
+          }
         }
+      }
+
+      // Update the wallet provider if detected
+      if (detectedWalletProvider !== activeWalletProvider) {
+        setActiveWalletProvider(detectedWalletProvider);
       }
     }
   }, [accessToken, activeWalletProvider]);
