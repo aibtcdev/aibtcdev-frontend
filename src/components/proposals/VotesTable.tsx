@@ -71,6 +71,13 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
     );
   }
 
+  // Helper function to truncate addresses
+  const truncateAddress = (address: string) => {
+    return address.length > 10
+      ? `${address.substring(0, 5)}...${address.substring(address.length - 5)}`
+      : address;
+  };
+
   // --- Helper function to render flag badges ---
   const renderFlagBadges = (flags: string[] | null) => {
     if (!flags || flags.length === 0) return null;
@@ -99,16 +106,16 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
             <TableHead className="px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium whitespace-nowrap">
               Voter
             </TableHead>
-            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            <TableHead className="hidden sm:table-cell whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
               Vote
             </TableHead>
             <TableHead className="text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
               Amount
             </TableHead>
-            <TableHead className="text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
+            <TableHead className="hidden sm:table-cell text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
               Score
             </TableHead>
-            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            <TableHead className="hidden sm:table-cell whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
               Reasoning
             </TableHead>
             <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
@@ -129,14 +136,16 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
               >
                 <TableCell className="px-2 py-1.5 text-xs break-all text-muted-foreground">
                   {vote.address ? (
-                    <span title={vote.address}>{vote.address}</span>
+                    <span title={vote.address}>
+                      {truncateAddress(vote.address)}
+                    </span>
                   ) : (
                     "-"
                   )}
                 </TableCell>
 
                 {/* Vote Yes/No */}
-                <TableCell className="px-2 py-1.5 text-xs">
+                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs">
                   {vote.tx_id ? (
                     vote.answer ? (
                       <span className="flex items-center text-primary font-medium">
@@ -162,7 +171,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                   )}
                 </TableCell>
 
-                <TableCell className="text-xs text-center px-2 py-1.5">
+                <TableCell className="hidden sm:table-cell text-xs text-center px-2 py-1.5">
                   {parsedScore?.final_score !== undefined ? (
                     <span className="tabular-nums font-medium">
                       {parsedScore.final_score}
@@ -173,7 +182,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                 </TableCell>
 
                 {/* Reasoning */}
-                <TableCell className="px-2 py-1.5 text-xs break-words">
+                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs break-words">
                   {vote.reasoning ? (
                     <div className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                       <Dialog>
