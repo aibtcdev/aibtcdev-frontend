@@ -115,7 +115,32 @@ const ProposalDetails = ({
               </p>
             </div>
           </div>
-          <MessageDisplay message={proposal.content} />
+          {(() => {
+            const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+            const match = proposal.content.match(referenceRegex);
+            const referenceLink = match?.[1];
+            const cleanedContent = proposal.content
+              .replace(referenceRegex, "")
+              .trim();
+
+            return (
+              <>
+                <MessageDisplay message={cleanedContent} />
+                {referenceLink && (
+                  <div className="mt-4">
+                    <a
+                      href={referenceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary underline hover:text-primary/80 transition-colors"
+                    >
+                      Reference: {referenceLink}
+                    </a>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 
