@@ -308,7 +308,7 @@ export const fetchHolders = async (
 
   // Map holders with percentage calculations
   const holdersWithPercentage = data.map((holder) => ({
-    address: holder.wallet_id || "",
+    address: holder.address || "",
     balance: holder.amount || "0",
     percentage:
       totalSupply > 0 ? (Number(holder.amount || 0) / totalSupply) * 100 : 0,

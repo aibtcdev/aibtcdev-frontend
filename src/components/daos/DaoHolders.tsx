@@ -42,7 +42,6 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
       holder.address.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [holders, searchQuery]);
-
   const sortedHolders = useMemo(() => {
     return [...filteredHolders].sort((a, b) => {
       switch (sortBy) {
