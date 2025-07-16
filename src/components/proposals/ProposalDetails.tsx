@@ -132,9 +132,12 @@ const ProposalDetails = ({
                       href={referenceLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary underline hover:text-primary/80 transition-colors"
+                      className="text-sm text-primary underline hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere"
                     >
-                      Reference: {referenceLink}
+                      <span className="inline-block">Reference: </span>
+                      <span className="inline-block max-w-full break-all">
+                        {referenceLink}
+                      </span>
                     </a>
                   </div>
                 )}

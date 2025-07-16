@@ -19,7 +19,7 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
   if (deployedProposals.length === 0) {
     return (
       <div className="border-dashed border rounded-lg py-12">
-        <div className="text-center space-y-4 px-4">
+        <div className="text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
             <FileText className="h-6 w-6 text-muted-foreground" />
           </div>
