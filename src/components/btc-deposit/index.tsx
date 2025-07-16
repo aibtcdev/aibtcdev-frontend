@@ -46,38 +46,15 @@ export default function BitcoinDeposit() {
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
-      // Detect wallet provider based on the structure of btcAddress
-      let detectedWalletProvider: "xverse" | "leather" | null = null;
-
-      // Get user data from localStorage
-      const blockstackSession = JSON.parse(
-        localStorage.getItem("blockstack-session") || "{}"
-      );
-      const userData = blockstackSession.userData;
-
-      if (userData?.profile) {
-        // Check structure of btcAddress to determine wallet type
-        if (typeof userData.profile.btcAddress === "string") {
-          // Xverse stores btcAddress as a direct string
-          detectedWalletProvider = "xverse";
-        } else if (
-          userData.profile.btcAddress?.p2wpkh?.mainnet ||
-          userData.profile.btcAddress?.p2tr?.mainnet
-        ) {
-          // Leather stores addresses in a structured object
-          detectedWalletProvider = "leather";
-        } else {
-          // If no BTC address in profile, check localStorage
-          const storedBtcAddress = localStorage.getItem("btcAddress");
-          if (storedBtcAddress) {
-            detectedWalletProvider = "leather"; // Assume Leather if using localStorage
-          }
-        }
-
-        // Update the wallet provider if detected
-        if (detectedWalletProvider !== activeWalletProvider) {
-          setActiveWalletProvider(detectedWalletProvider);
-        }
+      const storedProvider = localStorage.getItem("STX_PROVIDER");
+      const detectedWalletProvider: "xverse" | "leather" | null =
+        storedProvider === "XverseProviders.BitcoinProvider"
+          ? "xverse"
+          : storedProvider === "LeatherProvider"
+            ? "leather"
+            : null;
+      if (detectedWalletProvider !== activeWalletProvider) {
+        setActiveWalletProvider(detectedWalletProvider);
       }
     }
   }, [accessToken, activeWalletProvider]);
@@ -118,10 +95,10 @@ export default function BitcoinDeposit() {
   // Render authentication prompt if not connected
   if (!accessToken) {
     return (
-      <div className="max-w-md mx-auto mt-8">
+      <div className="max-w-xl mx-auto mt-8">
         <div className="mb-6 text-center">
           <h2 className="text-xl font-semibold">
-            Deposit BTC in just 1 Bitcoin block
+            Deposit fast11 into your agent account.
           </h2>
           <p className="text-sm text-muted-foreground">
             Fast, secure, and trustless
@@ -139,14 +116,8 @@ export default function BitcoinDeposit() {
   }
 
   return (
-    <div className="max-w-md mx-auto mt-8">
+    <div className="max-w-xl mx-auto mt-8">
       <div className="mb-6 text-center">
-        <h2 className="text-xl font-semibold">
-          Deposit BTC in just 1 Bitcoin block
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Fast, secure, and trustless
-        </p>
         {btcUsdPrice && (
           <p className="text-xs text-muted-foreground mt-1">
             Current BTC price: ${btcUsdPrice.toLocaleString()}

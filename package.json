@@ -17,7 +17,7 @@
   "dependencies": {
     "@aibtc/types": "^0.4.1",
     "@faktoryfun/core-sdk": "^0.3.2",
-    "@faktoryfun/styx-sdk": "^1.1.8",
+    "@faktoryfun/styx-sdk": "^1.1.9",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-accordion": "^1.2.11",
