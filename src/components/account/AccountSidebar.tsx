@@ -1,8 +1,8 @@
 // components/account/AccountSidebar.tsx
 "use client";
-import Image from "next/image";
-import { Bot, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Bot, User } from "lucide-react";
 
 interface Props {
   agentAddress: string | null;
@@ -13,29 +13,11 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
     <aside className="w-full max-w-xs shrink-0 space-y-6">
       {/* Avatar */}
       <div className="flex flex-col items-center gap-2">
-        <div title="Your agent account Bitcoin Face">
-          {agentAddress ? (
-            <Image
-              src={`https://bitcoinfaces.xyz/api/get-image?name=${agentAddress}`}
-              alt="Agent Face"
-              width={112}
-              height={112}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="h-28 w-28 rounded-full bg-muted/20" />
-          )}
-        </div>
-        <a
-          href="https://bitcoinfaces.xyz"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Button variant="outline" className="text-xs px-3 py-1 h-7">
-            Get your Bitcoin Face
-            <ArrowUpRight className="w-3 h-3 ml-1" />
-          </Button>
-        </a>
+        <Avatar className="h-28 w-28">
+          <AvatarFallback delayMs={0}>
+            <User className="h-12 w-12 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
         <h2 className="text-lg font-semibold">Your Name</h2>
         <p className="text-sm text-muted-foreground">
           @{xHandle ?? "x‑handle"}
