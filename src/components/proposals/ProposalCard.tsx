@@ -97,9 +97,41 @@ export default function ProposalCard({
             </div>
 
             {proposal.summary && (
-              <p className="text-sm text-foreground/75 line-clamp-2 mb-3">
-                {proposal.summary}
-              </p>
+              <div className="text-sm text-foreground/75 mb-3 break-words overflow-hidden">
+                {(() => {
+                  // Find first URL in the summary
+                  const urlMatch = proposal.summary.match(/(https?:\/\/\S+)/);
+                  // Text before the URL
+                  const textBefore = urlMatch
+                    ? proposal.summary.split(urlMatch[0])[0]
+                    : proposal.summary;
+                  return (
+                    <>
+                      <span className="break-words">{textBefore.trim()}</span>
+                      {urlMatch && (
+                        <>
+                          {" "}
+                          <span
+                            role="link"
+                            className="text-primary underline cursor-pointer break-all inline-block"
+                            onClick={(e) => {
+                              e.preventDefault(); // Prevent default link behavior
+                              e.stopPropagation(); // Stop event from bubbling up
+                              window.open(
+                                urlMatch[0],
+                                "_blank",
+                                "noopener,noreferrer"
+                              );
+                            }}
+                          >
+                            {urlMatch[0]}
+                          </span>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             )}
           </div>
         </div>
@@ -216,7 +248,7 @@ export default function ProposalCard({
           isPassed ||
           statusConfig.label === "Failed") &&
           totalVotes > 0 && (
-            <div className="mt-4 pt-4">
+            <div className="">
               <VoteStatusChart
                 votesFor={proposal.votes_for}
                 votesAgainst={proposal.votes_against}
