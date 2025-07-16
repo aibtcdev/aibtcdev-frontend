@@ -1,7 +1,7 @@
 // components/account/AccountSidebar.tsx
 "use client";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
 
 interface Props {
