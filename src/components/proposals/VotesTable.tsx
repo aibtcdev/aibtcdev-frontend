@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
+import { TokenBalance } from "../reusables/BalanceDisplay";
 
 interface VotesTableProps {
   proposalId: string;
@@ -95,11 +96,17 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
       <Table className="min-w-full">
         <TableHeader>
           <TableRow className="border-border/50">
+            <TableHead className="px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium whitespace-nowrap">
+              Voter
+            </TableHead>
             <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
               Vote
             </TableHead>
-            <TableHead className="hidden sm:table-cell whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
-              Final Score
+            <TableHead className="text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
+              Amount
+            </TableHead>
+            <TableHead className="text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
+              Score
             </TableHead>
             <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
               Reasoning
@@ -120,6 +127,14 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                 key={vote.id}
                 className="border-border/50 hover:bg-muted/30 transition-colors"
               >
+                <TableCell className="px-2 py-1.5 text-xs break-all text-muted-foreground">
+                  {vote.address ? (
+                    <span title={vote.address}>{vote.address}</span>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+
                 {/* Vote Yes/No */}
                 <TableCell className="px-2 py-1.5 text-xs">
                   {vote.tx_id ? (
@@ -139,51 +154,19 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                   )}
                 </TableCell>
 
-                {/* Final Score */}
-                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs text-center">
+                <TableCell className="text-xs text-center px-2 py-1.5">
+                  {vote.amount !== null && vote.amount !== undefined ? (
+                    <TokenBalance value={vote.amount} variant="abbreviated" />
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+
+                <TableCell className="text-xs text-center px-2 py-1.5">
                   {parsedScore?.final_score !== undefined ? (
-                    <div className="text-primary cursor-pointer">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <span className="tabular-nums font-medium">
-                            {parsedScore.final_score}
-                          </span>
-                        </DialogTrigger>
-                        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle>Evaluation Breakdown</DialogTitle>
-                          </DialogHeader>
-                          <div className="mt-3 px-1 overflow-y-auto flex-1 space-y-4">
-                            {parsedScore.categories?.map(
-                              (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                cat: any,
-                                idx: number // TODO: define types for catagory
-                              ) => (
-                                <div key={idx} className="space-y-1">
-                                  <div className="flex justify-between items-baseline">
-                                    <span className="font-bold">
-                                      {cat.category}
-                                    </span>
-                                    <span className="tabular-nums font-semibold">
-                                      score: {cat.score}
-                                    </span>
-                                  </div>
-                                  <ul className="list-disc list-inside text-sm">
-                                    {cat.reasoning.map(
-                                      (line: string, i: number) => (
-                                        <li key={i}>{line}</li>
-                                      )
-                                    )}
-                                  </ul>
-                                  <hr />
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
+                    <span className="tabular-nums font-medium">
+                      {parsedScore.final_score}
+                    </span>
                   ) : (
                     <span className="text-muted-foreground">-</span>
                   )}
@@ -195,7 +178,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                     <div className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <div className="line-clamp-2 text-ellipsis overflow-hidden">
+                          <div className="line-clamp-2 text-ellipsis overflow-hidden max-w-[200px] sm:max-w-[300px]">
                             {vote.reasoning}
                           </div>
                         </DialogTrigger>
