@@ -115,7 +115,32 @@ const ProposalDetails = ({
               </p>
             </div>
           </div>
-          <MessageDisplay message={proposal.content} />
+          {(() => {
+            const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+            const match = proposal.content.match(referenceRegex);
+            const referenceLink = match?.[1];
+            const cleanedContent = proposal.content
+              .replace(referenceRegex, "")
+              .trim();
+
+            return (
+              <>
+                <MessageDisplay message={cleanedContent} />
+                {referenceLink && (
+                  <div className="mt-4">
+                    <a
+                      href={referenceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary underline hover:text-primary/80 transition-colors"
+                    >
+                      Reference: {referenceLink}
+                    </a>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 
@@ -138,15 +163,12 @@ const ProposalDetails = ({
       </div>
 
       {/* Vote Details - Full Width */}
-      <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-4 sm:p-8 border border-border/50 hover:border-border/80 transition-all duration-300 overflow-x-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <Vote className="h-6 w-6 text-primary" />
-          <h4 className="text-xl font-semibold text-foreground">
-            Vote Details
-          </h4>
-        </div>
-        <VotesTable proposalId={proposal.id} />
+
+      <div className="flex items-center gap-3 mb-6">
+        <Vote className="h-6 w-6 text-primary" />
+        <h4 className="text-xl font-semibold text-foreground">Vote Details</h4>
       </div>
+      <VotesTable proposalId={proposal.id} />
 
       {/* Blockchain Information - Compact Layout */}
       <div className="bg-card border border-border rounded-xl p-4 sm:p-6 md:p-8 overflow-x-auto">
