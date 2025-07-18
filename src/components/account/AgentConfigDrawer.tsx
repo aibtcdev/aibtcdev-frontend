@@ -234,170 +234,203 @@ export function AgentConfigDrawer({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[600px] sm:max-w-[600px]">
-        <SheetHeader className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Bot className="h-5 w-5 text-primary" />
+      <SheetContent className="w-full sm:w-[500px] sm:max-w-[500px] md:w-[600px] md:max-w-[600px] overflow-y-auto">
+        <div className="h-full flex flex-col">
+          <SheetHeader className="space-y-3 flex-shrink-0">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bot className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <SheetTitle className="text-lg sm:text-xl truncate">
+                  {existingPrompt ? "Edit" : "Configure"} AI Agent
+                </SheetTitle>
+                <SheetDescription className="text-sm">
+                  {selectedDao
+                    ? `Configure agent for ${selectedDao.name}`
+                    : "Set up automated governance behavior"}
+                </SheetDescription>
+              </div>
             </div>
-            <div>
-              <SheetTitle className="text-xl">
-                {existingPrompt ? "Edit" : "Configure"} AI Agent
-              </SheetTitle>
-              <SheetDescription>
-                {selectedDao
-                  ? `Configure agent for ${selectedDao.name}`
-                  : "Set up automated governance behavior"}
-              </SheetDescription>
-            </div>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        <div className="space-y-6 py-6">
-          {/* DAO Selection */}
-          {!daoId && (
-            <div className="space-y-2">
-              <Label htmlFor="dao">DAO Organization</Label>
-              <Select
-                value={formData.dao_id}
-                onValueChange={(value) => handleInputChange("dao_id", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a DAO to configure" />
-                </SelectTrigger>
-                <SelectContent>
-                  {daos.map((dao) => (
-                    <SelectItem key={dao.id} value={dao.id}>
-                      {dao.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.dao_id && (
-                <p className="text-sm text-destructive">{errors.dao_id}</p>
-              )}
-            </div>
-          )}
-
-          {/* AI Model Selection */}
-          <div className="space-y-3">
-            <Label>AI Model</Label>
-            <Select
-              value={formData.model}
-              onValueChange={(value) => handleInputChange("model", value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {AI_MODELS.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{model.label}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {model.description}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedModel && (
-              <div className="flex items-center gap-2 p-3 bg-muted/10 rounded-lg">
-                <Brain className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">{selectedModel.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedModel.description}
-                  </p>
+          <div className="flex-1 overflow-y-auto py-6">
+            <div className="space-y-6">
+              {/* DAO Selection */}
+              {!daoId && (
+                <div className="space-y-2">
+                  <Label htmlFor="dao">DAO Organization</Label>
+                  <Select
+                    value={formData.dao_id}
+                    onValueChange={(value) =>
+                      handleInputChange("dao_id", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a DAO to configure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {daos.map((dao) => (
+                        <SelectItem key={dao.id} value={dao.id}>
+                          <span className="truncate">{dao.name}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.dao_id && (
+                    <p className="text-sm text-destructive">{errors.dao_id}</p>
+                  )}
                 </div>
+              )}
+
+              {/* AI Model Selection */}
+              <div className="space-y-3">
+                <Label>AI Model</Label>
+                <Select
+                  value={formData.model}
+                  onValueChange={(value) => handleInputChange("model", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AI_MODELS.map((model) => (
+                      <SelectItem key={model.value} value={model.value}>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium truncate">
+                            {model.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {model.description}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedModel && (
+                  <div className="flex items-center gap-2 p-3 bg-muted/10 rounded-lg">
+                    <Brain className="h-4 w-4 text-primary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">
+                        {selectedModel.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {selectedModel.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {errors.model && (
+                  <p className="text-sm text-destructive">{errors.model}</p>
+                )}
               </div>
-            )}
-            {errors.model && (
-              <p className="text-sm text-destructive">{errors.model}</p>
-            )}
-          </div>
 
-          {/* Creativity Level */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Creativity Level
-              </Label>
-              <Badge variant="outline" className="font-mono">
-                {formData.temperature}
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <TemperatureSlider
-                value={formData.temperature}
-                onChange={(value) => handleInputChange("temperature", value)}
-                className="w-full"
-                min={0}
-                max={1}
-                step={0.1}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Conservative (0.0)</span>
-                <span>Balanced (0.5)</span>
-                <span>Creative (1.0)</span>
+              {/* Creativity Level */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Creativity Level</span>
+                  </Label>
+                  <Badge variant="outline" className="font-mono flex-shrink-0">
+                    {formData.temperature}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <TemperatureSlider
+                    value={formData.temperature}
+                    onChange={(value) =>
+                      handleInputChange("temperature", value)
+                    }
+                    className="w-full"
+                    min={0}
+                    max={1}
+                    step={0.1}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span className="truncate">Conservative (0.0)</span>
+                    <span className="truncate">Balanced (0.5)</span>
+                    <span className="truncate">Creative (1.0)</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Lower values make responses more focused and deterministic.
+                  Higher values increase creativity and variability.
+                </p>
+                {errors.temperature && (
+                  <p className="text-sm text-destructive">
+                    {errors.temperature}
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Instructions */}
+              <div className="space-y-3">
+                <Label htmlFor="instructions">Agent Instructions</Label>
+                <Textarea
+                  id="instructions"
+                  placeholder="Provide detailed instructions for how the AI agent should analyze and respond to DAO proposals. Include decision-making criteria, voting preferences, and any specific guidelines..."
+                  value={formData.prompt_text}
+                  onChange={(e) =>
+                    handleInputChange("prompt_text", e.target.value)
+                  }
+                  className="min-h-[120px] resize-none"
+                />
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs text-muted-foreground">
+                  <span className="truncate">
+                    Be specific about voting criteria and decision-making logic
+                  </span>
+                  <span className="text-right sm:text-left">
+                    {formData.prompt_text.length}/2000
+                  </span>
+                </div>
+                {errors.prompt_text && (
+                  <p className="text-sm text-destructive">
+                    {errors.prompt_text}
+                  </p>
+                )}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Lower values make responses more focused and deterministic. Higher
-              values increase creativity and variability.
-            </p>
-            {errors.temperature && (
-              <p className="text-sm text-destructive">{errors.temperature}</p>
-            )}
           </div>
 
-          <Separator />
-
-          {/* Instructions */}
-          <div className="space-y-3">
-            <Label htmlFor="instructions">Agent Instructions</Label>
-            <Textarea
-              id="instructions"
-              placeholder="Provide detailed instructions for how the AI agent should analyze and respond to DAO proposals. Include decision-making criteria, voting preferences, and any specific guidelines..."
-              value={formData.prompt_text}
-              onChange={(e) => handleInputChange("prompt_text", e.target.value)}
-              className="min-h-[120px] resize-none"
-            />
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>
-                Be specific about voting criteria and decision-making logic
-              </span>
-              <span>{formData.prompt_text.length}/2000</span>
-            </div>
-            {errors.prompt_text && (
-              <p className="text-sm text-destructive">{errors.prompt_text}</p>
-            )}
+          {/* Footer Actions */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-6 border-t flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full sm:w-auto"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                  <span className="truncate">
+                    {existingPrompt ? "Updating..." : "Creating..."}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  <span className="truncate">
+                    {existingPrompt
+                      ? "Update Configuration"
+                      : "Create Configuration"}
+                  </span>
+                </>
+              )}
+            </Button>
           </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-6 border-t">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
-                {existingPrompt ? "Updating..." : "Creating..."}
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                {existingPrompt
-                  ? "Update Configuration"
-                  : "Create Configuration"}
-              </>
-            )}
-          </Button>
         </div>
       </SheetContent>
     </Sheet>
