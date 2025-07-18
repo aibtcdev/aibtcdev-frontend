@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { AgentConfigTable } from "../AgentConfigTable";
 import { AgentConfigDrawer } from "../AgentConfigDrawer";
 import { useQuery } from "@tanstack/react-query";
@@ -28,16 +26,11 @@ export function AgentTab() {
     setIsDrawerOpen(true);
   };
 
-  const handleCreateNew = () => {
-    setSelectedDaoId(null);
-    setIsDrawerOpen(true);
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
+      <div className="flex flex-col ">
+        <div className=" flex-1">
           <h2 className="text-xl font-bold text-foreground">
             AI Agent Configuration
           </h2>
@@ -46,10 +39,13 @@ export function AgentTab() {
           </p>
         </div>
 
-        <Button onClick={handleCreateNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Configuration
-        </Button>
+        {/* <div className="flex-shrink-0">
+          <Button onClick={handleCreateNew} className="w-full sm:w-auto">
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden xs:inline">New Configuration</span>
+            <span className="xs:hidden">New</span>
+          </Button>
+        </div> */}
       </div>
 
       {/* Configuration Table */}

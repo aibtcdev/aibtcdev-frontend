@@ -78,7 +78,7 @@ export default function AccountPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 ">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col-reverse items-center lg:items-start lg:flex-row gap-8">
         {/* Sidebar */}
         <AccountSidebar
           agentAddress={userAgentAddress}

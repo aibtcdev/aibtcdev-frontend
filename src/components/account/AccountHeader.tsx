@@ -60,12 +60,7 @@ export function AccountHeader() {
             </div>
           </div>
 
-          {/* Right: Portfolio Summary */}
           <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Portfolio Value</p>
-            </div>
-
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
               <Wallet className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">

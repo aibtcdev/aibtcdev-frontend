@@ -75,122 +75,142 @@ export function AgentConfigTable({
   }
 
   return (
-    <div className="border rounded-lg">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[200px]">DAO Organization</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[120px]">AI Model</TableHead>
-            <TableHead className="w-[100px]">Creativity</TableHead>
-            <TableHead className="min-w-[250px]">Configuration</TableHead>
-            <TableHead className="w-[120px] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {daos.map((dao) => {
-            const prompt = getPromptForDao(dao.id);
-            const isConfigured = !!prompt;
+    <div className="border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto sm:overflow-visible">
+        <Table className="min-w-full table-fixed">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="sm:min-w-[160px]">
+                DAO Organization
+              </TableHead>
+              <TableHead className="sm:min-w-[80px]">Mode</TableHead>
+              <TableHead className="sm:min-w-[100px] hidden sm:table-cell">
+                AI Model
+              </TableHead>
+              <TableHead className="md:min-w-[100px] hidden md:table-cell">
+                Creativity
+              </TableHead>
+              <TableHead className="lg:min-w-[200px] hidden lg:table-cell">
+                Configuration
+              </TableHead>
+              <TableHead className="sm:min-w-[120px] text-right">
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {daos.map((dao) => {
+              const prompt = getPromptForDao(dao.id);
+              const isConfigured = !!prompt;
 
-            return (
-              <TableRow key={dao.id} className="hover:bg-muted/5">
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span className="font-semibold">{dao.name}</span>
-                  </div>
-                </TableCell>
-
-                <TableCell>
-                  {isConfigured ? (
-                    <Badge className="bg-green-100 text-green-800 border-green-200">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-600 mr-1" />
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1" />
-                      Disabled
-                    </Badge>
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  {isConfigured ? (
+              return (
+                <TableRow key={dao.id} className="hover:bg-muted/5">
+                  <TableCell className="sm:min-w-[160px]">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <span className="text-sm font-medium">
-                        {prompt.model}
-                      </span>
+                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                      <span className="font-semibold truncate">{dao.name}</span>
                     </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )}
-                </TableCell>
+                  </TableCell>
 
-                <TableCell>
-                  {isConfigured ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-12 bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{
-                            width: `${(prompt.temperature || 0) * 100}%`,
-                          }}
-                        />
+                  <TableCell className="sm:min-w-[80px]">
+                    {isConfigured ? (
+                      <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-600 mr-1 flex-shrink-0" />
+                        <span>Custom</span>
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground text-xs"
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1 flex-shrink-0" />
+                        <span>Default</span>
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="sm:min-w-[100px] hidden sm:table-cell">
+                    {isConfigured ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                        <span className="text-sm font-medium truncate">
+                          {prompt.model}
+                        </span>
                       </div>
-                      <span className="text-xs font-medium w-8 text-right">
-                        {prompt.temperature}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">—</span>
-                  )}
-                </TableCell>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
 
-                <TableCell>
-                  {isConfigured ? (
-                    <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
-                      {prompt.prompt_text}
-                    </p>
-                  ) : (
-                    <div className="flex items-center gap-2 text-muted-foreground italic text-sm">
-                      <Settings className="h-3 w-3" />
-                      No configuration set
-                    </div>
-                  )}
-                </TableCell>
+                  <TableCell className="md:min-w-[100px] hidden md:table-cell">
+                    {isConfigured ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 bg-muted/30 rounded-full h-1.5 overflow-hidden flex-shrink-0">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{
+                              width: `${(prompt.temperature || 0) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium w-8 text-right flex-shrink-0">
+                          {prompt.temperature}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
 
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onConfigure(dao.id)}
-                      className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      {isConfigured ? "Edit" : "Configure"}
-                    </Button>
+                  <TableCell className="lg:min-w-[200px] hidden lg:table-cell">
+                    {isConfigured ? (
+                      <p className="text-sm text-muted-foreground line-clamp-2 max-w-xs">
+                        {prompt.prompt_text}
+                      </p>
+                    ) : (
+                      <div className="flex items-center gap-2 text-muted-foreground italic text-sm">
+                        <Settings className="h-3 w-3 flex-shrink-0" />
+                        Not configured
+                      </div>
+                    )}
+                  </TableCell>
 
-                    {isConfigured && (
+                  <TableCell className="sm:min-w-[120px] text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(prompt.id)}
-                        disabled={deleteMutation.isPending}
-                        className="h-8 px-2 text-destructive hover:text-destructive"
+                        onClick={() => onConfigure(dao.id)}
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Pencil className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <span className="hidden sm:inline">
+                          {isConfigured ? "Edit" : "Configure"}
+                        </span>
+                        <span className="sm:hidden">
+                          {isConfigured ? "Edit" : "Setup"}
+                        </span>
                       </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+
+                      {isConfigured && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(prompt.id)}
+                          disabled={deleteMutation.isPending}
+                          className="h-8 px-2 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3 flex-shrink-0" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
