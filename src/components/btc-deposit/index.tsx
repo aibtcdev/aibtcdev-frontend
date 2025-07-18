@@ -16,6 +16,10 @@ import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
 import useSdkAllDepositsHistory from "@/hooks/deposit/useSdkAllDepositsHistory";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { fetchDAOByNameWithExtensions } from "@/services/dao.service";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/useToast";
 
 // Define the ConfirmationData type
 export type ConfirmationData = {
@@ -59,8 +63,31 @@ export default function BitcoinDeposit() {
     }
   }, [accessToken, activeWalletProvider]);
 
+  const { data: dao, isLoading: isLoadingDAO } = useQuery({
+    queryKey: ["dao", "FAST11"],
+    queryFn: () => fetchDAOByNameWithExtensions("FAST11"),
+    enabled: true,
+  });
+
+  if (isLoadingDAO) {
+    toast({
+      title: "Loading DAO info",
+      description: "Please wait a moment and try again.",
+    });
+    return;
+  }
+  const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
+  if (!dexExtension?.contract_principal) {
+    toast({
+      title: "DEX Extension Missing",
+      description: "Cannot find DEX extension for your DAO.",
+      variant: "destructive",
+    });
+    return;
+  }
+
   // Get addresses directly
-  const userAddress = accessToken ? getStacksAddress() : null;
+  const { userAgentAddress: userAddress } = useAgentAccount();
   const btcAddress = accessToken ? getBitcoinAddress() : null;
 
   // Data fetching hooks
@@ -202,6 +229,7 @@ export default function BitcoinDeposit() {
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
+          dexContract={dexExtension.contract_principal}
         />
       )}
     </div>

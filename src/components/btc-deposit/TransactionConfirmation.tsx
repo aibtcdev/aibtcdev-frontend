@@ -87,6 +87,10 @@ interface TransactionConfirmationProps {
     options?: RefetchOptions
   ) => Promise<QueryObserverResult<DepositHistoryResponse, Error>>;
   setIsRefetching: (isRefetching: boolean) => void;
+  dexContract: string;
+  minTokenOut?: number;
+  poolId?: string;
+  swapType?: "sbtc" | "usda" | "pepe" | "aibtc";
 }
 
 interface XverseSignPsbtResponse {
@@ -113,6 +117,10 @@ export default function TransactionConfirmation({
   refetchDepositHistory,
   refetchAllDeposits,
   setIsRefetching,
+  dexContract,
+  minTokenOut,
+  poolId,
+  swapType,
 }: TransactionConfirmationProps) {
   const { toast } = useToast();
   const [btcTxStatus, setBtcTxStatus] = useState<
@@ -248,6 +256,11 @@ export default function TransactionConfirmation({
         btcAmount: Number.parseFloat(confirmationData.depositAmount),
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
+        isBlaze: confirmationData.isBlaze || false,
+        poolId,
+        swapType,
+        minTokenOut,
+        dexContract,
       });
 
       // Create deposit record which will update pool status (reduce estimated available)
@@ -255,7 +268,11 @@ export default function TransactionConfirmation({
         btcAmount: Number.parseFloat(confirmationData.depositAmount),
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
-        isBlaze: confirmationData.isBlaze || false,
+        isBlaze: confirmationData.isBlaze ?? false,
+        poolId: "aibtc",
+        swapType: "aibtc",
+        minTokenOut: typeof minTokenOut === "number" ? minTokenOut : 0,
+        dexContract: dexContract,
       });
       console.log("Create deposit depositId:", depositId);
 
@@ -293,6 +310,7 @@ export default function TransactionConfirmation({
         console.log("Using BTC address from context:", senderBtcAddress);
 
         // Get a transaction prepared for signing
+        // TODO(biwas): Ensure swapType passed from parent matches createDeposit() call to keep routing consistent.
         console.log("Getting prepared transaction from SDK...");
         const preparedTransaction = await styxSDK.prepareTransaction({
           amount: confirmationData.depositAmount,
@@ -300,6 +318,11 @@ export default function TransactionConfirmation({
           btcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
+          poolId: poolId ?? undefined,
+          minTokenOut:
+            typeof minTokenOut === "number" ? minTokenOut : undefined,
+          swapType: swapType ?? "aibtc",
+          dexContract: dexContract ?? undefined,
         } as TransactionPrepareParams);
 
         // Here, update fee estimates from the prepared transaction
