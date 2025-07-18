@@ -40,48 +40,9 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
 
       {/* Configuration Settings - Responsive layout */}
       <div className="space-y-2 md:space-y-2">
-        <p className="text-sm font-semibold text-muted-foreground hidden md:block">
-          Configurations
+        <p className="text-sm font-semibold text-muted-foreground text-center md:text-left">
+          Agent Permissions
         </p>
-
-        {/* Mobile: Horizontal scroll container */}
-        <div className="md:hidden">
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            <div className="flex-shrink-0 w-64 p-3 rounded-md border bg-background">
-              <div className="mb-2">
-                <p className="text-sm font-medium">Proposal Submission</p>
-                <p className="text-xs text-muted-foreground">
-                  Enable submitting proposals via agent
-                </p>
-              </div>
-              <Button variant="default" className="text-sm h-8 px-4 w-full">
-                Enable
-              </Button>
-            </div>
-            <div className="flex-shrink-0 w-64 p-3 rounded-md border bg-background">
-              <div className="mb-2">
-                <p className="text-sm font-medium">Voting Contract</p>
-                <p className="text-xs text-muted-foreground">
-                  Enable on-chain voting via smart contract
-                </p>
-              </div>
-              <Button variant="default" className="text-sm h-8 px-4 w-full">
-                Enable
-              </Button>
-            </div>
-            <div className="flex-shrink-0 w-64 p-3 rounded-md border bg-background">
-              <div className="mb-2">
-                <p className="text-sm font-medium">Token Purchase</p>
-                <p className="text-xs text-muted-foreground">
-                  Enable users to purchase governance tokens
-                </p>
-              </div>
-              <Button variant="default" className="text-sm h-8 px-4 w-full">
-                Enable
-              </Button>
-            </div>
-          </div>
-        </div>
 
         {/* Desktop: Vertical stack */}
         <div className="hidden md:block space-y-2">
@@ -115,6 +76,43 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
               </p>
             </div>
             <Button variant="default" className="text-sm h-8 px-4">
+              Enable
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile: Centered vertical stack */}
+        <div className="md:hidden space-y-2 flex flex-col items-center">
+          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
+            <div className="mb-2">
+              <p className="text-sm font-medium">Proposal Submission</p>
+              <p className="text-xs text-muted-foreground">
+                Enable submitting proposals via agent
+              </p>
+            </div>
+            <Button variant="default" className="text-sm h-8 w-full">
+              Enable
+            </Button>
+          </div>
+          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
+            <div className="mb-2">
+              <p className="text-sm font-medium">Voting Contract</p>
+              <p className="text-xs text-muted-foreground">
+                Enable on-chain voting via smart contract
+              </p>
+            </div>
+            <Button variant="default" className="text-sm h-8 w-full">
+              Enable
+            </Button>
+          </div>
+          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
+            <div className="mb-2">
+              <p className="text-sm font-medium">Token Purchase</p>
+              <p className="text-xs text-muted-foreground">
+                Enable users to purchase governance tokens
+              </p>
+            </div>
+            <Button variant="default" className="text-sm h-8 w-full">
               Enable
             </Button>
           </div>

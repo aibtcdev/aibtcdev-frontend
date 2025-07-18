@@ -20,7 +20,7 @@ export default function AccountLayout({
 }) {
   return (
     <div className="">
-      <div className="pt-20">
+      <div className="md:pt-10 pt-2">
         {/* Account for sticky header */}
         {children}
       </div>
