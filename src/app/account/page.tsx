@@ -79,10 +79,11 @@ export default function AccountPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 ">
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* <AccountSidebar
+        {/* Sidebar */}
+        <AccountSidebar
           agentAddress={userAgentAddress}
-          xHandle={null}
-        /> */}
+          xHandle={null /* TODO: plug your data */}
+        />
 
         {/* Main panel */}
         <div className="flex-1">

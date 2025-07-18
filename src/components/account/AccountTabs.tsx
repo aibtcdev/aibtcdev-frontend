@@ -25,18 +25,18 @@ export function AccountTabs({
   return (
     <div className="max-w-7xl mx-auto">
       <Tabs defaultValue="overview" className="">
-        <TabsList className="flex justify-end gap-2 mb-4">
+        <TabsList className="flex justify-center sm:justify-end gap-2 mb-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <LayoutDashboard className="h-4 w-4" />
-            <span className="hidden sm:inline">Overview</span>
+            <span className=" sm:inline">Overview</span>
           </TabsTrigger>
           <TabsTrigger value="assets" className="flex items-center gap-2">
             <Coins className="h-4 w-4" />
-            <span className="hidden sm:inline">Assets</span>
+            <span className=" sm:inline">Assets</span>
           </TabsTrigger>
           <TabsTrigger value="agent" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
-            <span className="hidden sm:inline">Agent</span>
+            <span className=" sm:inline">Agent</span>
           </TabsTrigger>
         </TabsList>
 
