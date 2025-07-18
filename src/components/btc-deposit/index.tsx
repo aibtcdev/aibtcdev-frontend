@@ -9,7 +9,7 @@ import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
 import MyHistory from "@/components/btc-deposit/MyHistory";
 import AllDeposits from "@/components/btc-deposit/AllDeposits";
-import { getStacksAddress, getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
 import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
@@ -69,23 +69,7 @@ export default function BitcoinDeposit() {
     enabled: true,
   });
 
-  if (isLoadingDAO) {
-    toast({
-      title: "Loading DAO info",
-      description: "Please wait a moment and try again.",
-    });
-    return;
-  }
-  const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
-  if (!dexExtension?.contract_principal) {
-    toast({
-      title: "DEX Extension Missing",
-      description: "Cannot find DEX extension for your DAO.",
-      variant: "destructive",
-    });
-    return;
-  }
-
+  // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
   const { userAgentAddress: userAddress } = useAgentAccount();
   const btcAddress = accessToken ? getBitcoinAddress() : null;
@@ -114,6 +98,24 @@ export default function BitcoinDeposit() {
     isRefetching: isAllDepositsRefetching,
     refetch: refetchAllDeposits,
   } = useSdkAllDepositsHistory();
+  // ------------------------------------------------------
+
+  if (isLoadingDAO) {
+    toast({
+      title: "Loading DAO info",
+      description: "Please wait a moment and try again.",
+    });
+    return;
+  }
+  const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
+  if (!dexExtension?.contract_principal) {
+    toast({
+      title: "DEX Extension Missing",
+      description: "Cannot find DEX extension for your DAO.",
+      variant: "destructive",
+    });
+    return;
+  }
 
   // Determine if we're still loading critical data
   const isDataLoading =
