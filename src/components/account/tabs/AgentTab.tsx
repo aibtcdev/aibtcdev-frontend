@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { AgentConfigTable } from "../AgentConfigTable";
 import { AgentConfigDrawer } from "../AgentConfigDrawer";
 import { useQuery } from "@tanstack/react-query";
@@ -25,11 +23,6 @@ export function AgentTab() {
 
   const handleConfigureAgent = (daoId: string) => {
     setSelectedDaoId(daoId);
-    setIsDrawerOpen(true);
-  };
-
-  const handleCreateNew = () => {
-    setSelectedDaoId(null);
     setIsDrawerOpen(true);
   };
 
