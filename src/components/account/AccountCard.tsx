@@ -40,14 +40,16 @@ export function AccountCard({
       <div className="border-dashed border border-muted-foreground/30 rounded-md">
         <div className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-muted/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-muted/20 flex items-center justify-center flex-shrink-0">
               <Icon className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-muted-foreground truncate">
                 {title}
               </h3>
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-muted-foreground truncate">
+                {subtitle}
+              </p>
             </div>
             <Badge variant="outline" className="text-muted-foreground">
               Not Connected
@@ -71,31 +73,29 @@ export function AccountCard({
               <div className="space-y-3">
                 {/* Main Row */}
                 <div className="flex items-center gap-3">
-                  {/* Left: Icon and Info */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isPrimary ? "bg-primary/10" : "bg-secondary/10"
+                  {/* Left: Icon */}
+                  <div
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      isPrimary ? "bg-primary/10" : "bg-secondary/10"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${
+                        isPrimary ? "text-primary" : "text-secondary"
                       }`}
-                    >
-                      <Icon
-                        className={`h-5 w-5 ${
-                          isPrimary ? "text-primary" : "text-secondary"
-                        }`}
-                      />
-                    </div>
+                    />
                   </div>
 
                   {/* Center: Address and Network */}
-                  <div className="flex flex-col items-start gap-1 min-w-0 w-full">
-                    <span className="text-sm font-medium text-muted-foreground">
+                  <div className="flex-1 flex flex-col items-start gap-1 min-w-0">
+                    <span className="text-sm font-medium text-muted-foreground w-full truncate">
                       {isPrimary
                         ? "Primary browser wallet"
                         : "Agent account address"}
                     </span>
                     <button
                       onClick={() => copyToClipboard(address)}
-                      className="font-mono text-sm text-foreground hover:text-primary transition-colors break-all text-left"
+                      className="font-mono text-sm text-foreground hover:text-primary transition-colors w-full text-left truncate"
                     >
                       {address}
                     </button>
