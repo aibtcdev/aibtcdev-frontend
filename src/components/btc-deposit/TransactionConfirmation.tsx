@@ -133,8 +133,6 @@ export default function TransactionConfirmation({
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
 
-  // Session is automatically initialized by the useAuth hook
-
   const [feeEstimates, setFeeEstimates] = useState<{
     low: { rate: number; fee: number; time: string };
     medium: { rate: number; fee: number; time: string };
@@ -275,8 +273,6 @@ export default function TransactionConfirmation({
         dexContract: dexContract,
       });
       console.log("Create deposit depositId:", depositId);
-
-      // Store deposit ID for later use
       // setCurrentDepositId(depositId);
 
       try {
@@ -645,6 +641,7 @@ export default function TransactionConfirmation({
           throw new Error("No compatible wallet provider detected");
         }
 
+        // setBtcTxId(txid);
         console.log("Transaction successfully broadcast with txid:", txid);
 
         // Update the deposit record with the transaction ID
@@ -691,7 +688,6 @@ export default function TransactionConfirmation({
 
         // Update state with success
         setBtcTxStatus("success");
-        // setBtcTxId(txid);
 
         // Show success message
         toast({
