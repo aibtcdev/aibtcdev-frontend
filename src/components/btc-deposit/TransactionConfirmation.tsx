@@ -269,9 +269,9 @@ export default function TransactionConfirmation({
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
         isBlaze: confirmationData.isBlaze ?? false,
-        poolId: "aibtc",
-        swapType: "aibtc",
-        minTokenOut: typeof minTokenOut === "number" ? minTokenOut : 0,
+        poolId: poolId,
+        swapType: swapType,
+        minTokenOut: minTokenOut,
         dexContract: dexContract,
       });
       console.log("Create deposit depositId:", depositId);
@@ -318,13 +318,11 @@ export default function TransactionConfirmation({
           btcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
-          poolId: poolId ?? undefined,
-          minTokenOut:
-            typeof minTokenOut === "number" ? minTokenOut : undefined,
-          swapType: swapType ?? "aibtc",
-          dexContract: dexContract ?? undefined,
+          poolId: poolId,
+          minTokenOut: minTokenOut,
+          swapType: swapType,
+          dexContract: dexContract,
         } as TransactionPrepareParams);
-
         // Here, update fee estimates from the prepared transaction
         setFeeEstimates({
           low: {
@@ -344,6 +342,7 @@ export default function TransactionConfirmation({
           },
         });
 
+        console.log("PREPARED TRANSACTION: ", preparedTransaction);
         // Execute transaction with prepared data
         console.log("Creating transaction with SDK...");
         const transactionData = await styxSDK.executeTransaction({

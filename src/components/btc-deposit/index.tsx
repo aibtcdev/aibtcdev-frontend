@@ -46,7 +46,14 @@ export default function BitcoinDeposit() {
   >(null);
   const [activeTab, setActiveTab] = useState<string>("deposit");
   const [isRefetching, setIsRefetching] = useState(false);
+
+  // Add state for the missing transaction parameters
+  const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
+  const [poolId] = useState<string>("aibtc");
+  const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
+
   console.log(activeWalletProvider);
+
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
@@ -232,6 +239,9 @@ export default function BitcoinDeposit() {
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
           dexContract={dexExtension.contract_principal}
+          minTokenOut={minTokenOut}
+          poolId={poolId}
+          swapType={swapType}
         />
       )}
     </div>
