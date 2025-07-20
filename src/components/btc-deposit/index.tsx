@@ -9,13 +9,17 @@ import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
 import MyHistory from "@/components/btc-deposit/MyHistory";
 import AllDeposits from "@/components/btc-deposit/AllDeposits";
-import { getStacksAddress, getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
 import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
 import useSdkAllDepositsHistory from "@/hooks/deposit/useSdkAllDepositsHistory";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { fetchDAOByNameWithExtensions } from "@/services/dao.service";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "@/hooks/useToast";
 
 // Define the ConfirmationData type
 export type ConfirmationData = {
@@ -42,7 +46,14 @@ export default function BitcoinDeposit() {
   >(null);
   const [activeTab, setActiveTab] = useState<string>("deposit");
   const [isRefetching, setIsRefetching] = useState(false);
+
+  // Add state for the missing transaction parameters
+  const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
+  const [poolId] = useState<string>("aibtc");
+  const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
+
   console.log(activeWalletProvider);
+
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
@@ -59,8 +70,15 @@ export default function BitcoinDeposit() {
     }
   }, [accessToken, activeWalletProvider]);
 
+  const { data: dao, isLoading: isLoadingDAO } = useQuery({
+    queryKey: ["dao", "FAST11"],
+    queryFn: () => fetchDAOByNameWithExtensions("FAST11"),
+    enabled: true,
+  });
+
+  // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
-  const userAddress = accessToken ? getStacksAddress() : null;
+  const { userAgentAddress: userAddress } = useAgentAccount();
   const btcAddress = accessToken ? getBitcoinAddress() : null;
 
   // Data fetching hooks
@@ -87,6 +105,24 @@ export default function BitcoinDeposit() {
     isRefetching: isAllDepositsRefetching,
     refetch: refetchAllDeposits,
   } = useSdkAllDepositsHistory();
+  // ------------------------------------------------------
+
+  if (isLoadingDAO) {
+    toast({
+      title: "Loading DAO info",
+      description: "Please wait a moment and try again.",
+    });
+    return;
+  }
+  const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
+  if (!dexExtension?.contract_principal) {
+    toast({
+      title: "DEX Extension Missing",
+      description: "Cannot find DEX extension for your DAO.",
+      variant: "destructive",
+    });
+    return;
+  }
 
   // Determine if we're still loading critical data
   const isDataLoading =
@@ -202,6 +238,10 @@ export default function BitcoinDeposit() {
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
+          dexContract={dexExtension.contract_principal}
+          minTokenOut={minTokenOut}
+          poolId={poolId}
+          swapType={swapType}
         />
       )}
     </div>

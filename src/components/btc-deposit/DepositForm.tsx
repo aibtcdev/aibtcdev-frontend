@@ -135,14 +135,14 @@ export default function DepositForm({
     high: { rate: number; fee: number; time: string };
   }> => {
     try {
-      console.log("Fetching fee estimates directly from mempool.space");
+      // console.log("Fetching fee estimates directly from mempool.space");
       const response = await fetch(
         "https://mempool.space/api/v1/fees/recommended"
       );
       const data = await response.json();
 
       // Log the raw values to help with debugging
-      console.log("Raw mempool.space fee data:", data);
+      // console.log("Raw mempool.space fee data:", data);
 
       // Map to the correct fee estimate fields
       const lowRate = data.hourFee;
@@ -288,18 +288,18 @@ export default function DepositForm({
       const serviceFee = Number.parseFloat(calculateFee(amount));
       const totalAmount = (userInputAmount + serviceFee).toFixed(8);
 
-      console.log("Transaction amounts:", {
-        userInputAmount,
-        serviceFee,
-        totalAmount,
-      });
+      // console.log("Transaction amounts:", {
+      //   userInputAmount,
+      //   serviceFee,
+      //   totalAmount,
+      // });
 
       // Always fetch fresh fee estimates before transaction
       let currentFeeRates: FeeEstimates;
       try {
-        console.log(
-          "Fetching fresh fee estimates before transaction preparation"
-        );
+        // console.log(
+        //   "Fetching fresh fee estimates before transaction preparation"
+        // );
         const estimatesResult = await fetchMempoolFeeEstimates();
         currentFeeRates = {
           low: estimatesResult.low.rate,
@@ -309,7 +309,7 @@ export default function DepositForm({
 
         // Update the UI fee display
         setFeeEstimates(estimatesResult);
-        console.log("Using fee rates:", currentFeeRates);
+        // console.log("Using fee rates:", currentFeeRates);
       } catch (error) {
         console.warn("Error fetching fee estimates, using defaults:", error);
         currentFeeRates = { low: 1, medium: 3, high: 5 };
@@ -317,7 +317,7 @@ export default function DepositForm({
 
       const amountInSats = Math.round(Number.parseFloat(amount) * 100000000);
 
-      console.log(MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS);
+      // console.log(MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS);
       if (amountInSats < MIN_DEPOSIT_SATS) {
         toast({
           title: "Minimum deposit required",
@@ -385,15 +385,15 @@ export default function DepositForm({
       }
 
       try {
-        console.log("Preparing transaction with SDK...");
-        console.log("Preparing transaction parameters:", {
-          btcAddress,
-          userAddress,
-          totalAmount,
-          feePriority: "medium",
-          feeRates: currentFeeRates,
-          extension: dexExtension.contract_principal,
-        });
+        // console.log("Preparing transaction with SDK...");
+        // console.log("Preparing transaction parameters:", {
+        //   btcAddress,
+        //   userAddress,
+        //   totalAmount,
+        //   feePriority: "medium",
+        //   feeRates: currentFeeRates,
+        //   extension: dexExtension.contract_principal,
+        // });
 
         const transactionData = await styxSDK.prepareTransaction({
           amount: totalAmount, // Now includes service fee
@@ -405,8 +405,8 @@ export default function DepositForm({
           extension: dexExtension,
         } as TransactionPrepareParams);
 
-        console.log("Transaction prepared:", transactionData);
-        console.log("Agent (STX) Address:", userAddress);
+        // console.log("Transaction prepared:", transactionData);
+        // console.log("Agent (STX) Address:", userAddress);
 
         setConfirmationData({
           depositAmount: totalAmount,
