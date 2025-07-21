@@ -53,6 +53,7 @@ export function ApproveAssetButton({
           body: JSON.stringify({
             agent_account_contract: agentAccountContract,
             contract_to_approve: contractToApprove,
+            approval_type: "VOTING",
           }),
         }
       );
