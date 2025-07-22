@@ -32,7 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
 import { CompactMetrics } from "@/components/daos/MetricsGrid";
 import { Separator } from "@/components/ui/separator";
-import { ApproveAssetButton } from "../account/ApproveAsset";
+import { ApproveContractButton } from "@/components/account/ApproveContract";
 import { useAuth } from "@/hooks/useAuth"; // Add this import
 
 // Re-integrating DAOSidebarHeader
@@ -309,7 +309,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
               </div>
               {userAgent?.account_contract && votingExt?.contract_principal ? (
                 <div className="px-2">
-                  <ApproveAssetButton
+                  <ApproveContractButton
                     agentAccountContract={userAgent.account_contract}
                     contractToApprove={votingExt.contract_principal}
                     onSuccess={() => {

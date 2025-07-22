@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAgentAccountApprovalType } from "@aibtc/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
@@ -10,19 +11,22 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "../ui/tooltip";
-interface ApproveAssetButtonProps {
+
+interface ApproveContractButtonProps {
   contractToApprove: string;
   agentAccountContract: string;
   onSuccess?: () => void;
   className?: string;
 }
 
-export function ApproveAssetButton({
+const defaultApprovalType = getAgentAccountApprovalType("VOTING");
+
+export function ApproveContractButton({
   contractToApprove,
   agentAccountContract,
   onSuccess,
   className = "",
-}: ApproveAssetButtonProps) {
+}: ApproveContractButtonProps) {
   const { accessToken } = useAuth();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -53,6 +57,7 @@ export function ApproveAssetButton({
           body: JSON.stringify({
             agent_account_contract: agentAccountContract,
             contract_to_approve: contractToApprove,
+            approval_type: defaultApprovalType,
           }),
         }
       );
@@ -91,24 +96,48 @@ export function ApproveAssetButton({
         <DialogContent>
           <DialogTitle>
             {isLoading
-              ? "Whitelisting..."
+              ? "Approving Contract..."
               : response
                 ? response.success
                   ? "Success"
                   : "Failed"
-                : "Confirm Whitelisting"}
+                : "Confirm Contract Approval"}
           </DialogTitle>
           {!response && (
-            <p className="text-sm">
-              By whitelisting this asset you are approving agent account to
-              submit contribution, evaluate and vote on it autonomously.
-            </p>
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-col gap-1">
+                <span className="font-medium font-bold">Agent Account:</span>
+                <span className="break-all text-muted-foreground">
+                  {agentAccountContract}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="font-medium font-bold">
+                  Contract to Approve:
+                </span>
+                <span className="break-all text-muted-foreground">
+                  {contractToApprove}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="font-medium font-bold">Approval Type:</span>
+                <span>VOTING - {defaultApprovalType}</span>
+              </div>
+
+              <p className="text-sm">
+                By approving this contract you are allowing your agent account
+                to submit, evaluate and autonomously vote on contributions.
+              </p>
+            </div>
           )}
+
           {response && (
             <div>
               <p className="text-sm">
                 {response.success
-                  ? "Asset whitelisted successfully."
+                  ? "Contract approved successfully."
                   : response.message}
               </p>
               {response.link && (
@@ -123,6 +152,7 @@ export function ApproveAssetButton({
               )}
             </div>
           )}
+
           {response && (
             <div className="flex justify-end mt-4">
               <Button
@@ -134,6 +164,7 @@ export function ApproveAssetButton({
               </Button>
             </div>
           )}
+
           {!response && (
             <div className="flex justify-end gap-2 mt-4">
               <Button
@@ -150,7 +181,7 @@ export function ApproveAssetButton({
                 disabled={isLoading}
                 className="bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md"
               >
-                {isLoading ? "Whitelisting..." : "Confirm"}
+                {isLoading ? "Approving..." : "Confirm"}
               </Button>
             </div>
           )}
@@ -159,20 +190,22 @@ export function ApproveAssetButton({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            variant="ghost"
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setConfirmOpen(true);
               setResponse(null);
             }}
-            className={`bg-primary hover:bg-primary/90 px-2 ${className}`}
+            className={`flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-4 py-2 text-sm font-bold text-primary shadow-md backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 motion-reduce:transition-none sm:px-4 sm:py-3 sm:text-base ${className}`}
           >
-            Enable proposal submission
+            Enable Contributions
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">
           <p className="text-sm">
-            One time approval lets you submit contributions with the token from
-            your agent account. You can revoke it anytime later.
+            One time approval lets you submit and vote on contributions with the
+            token from your agent account. You can revoke it anytime later.
           </p>
         </TooltipContent>
       </Tooltip>
