@@ -11,7 +11,8 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "../ui/tooltip";
-interface ApproveAssetButtonProps {
+
+interface ApproveContractButtonProps {
   contractToApprove: string;
   agentAccountContract: string;
   onSuccess?: () => void;
@@ -20,12 +21,12 @@ interface ApproveAssetButtonProps {
 
 const defaultApprovalType = getAgentAccountApprovalType("VOTING");
 
-export function ApproveAssetButton({
+export function ApproveContractButton({
   contractToApprove,
   agentAccountContract,
   onSuccess,
   className = "",
-}: ApproveAssetButtonProps) {
+}: ApproveContractButtonProps) {
   const { accessToken } = useAuth();
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -95,24 +96,24 @@ export function ApproveAssetButton({
         <DialogContent>
           <DialogTitle>
             {isLoading
-              ? "Whitelisting..."
+              ? "Approving..."
               : response
                 ? response.success
                   ? "Success"
                   : "Failed"
-                : "Confirm Whitelisting"}
+                : "Confirm Approval"}
           </DialogTitle>
           {!response && (
             <p className="text-sm">
-              By whitelisting this asset you are approving agent account to
-              submit contribution, evaluate and vote on it autonomously.
+              By approving this contract you are allowing your agent account to
+              submit, evaluate and autonomously vote on contributions.
             </p>
           )}
           {response && (
             <div>
               <p className="text-sm">
                 {response.success
-                  ? "Asset whitelisted successfully."
+                  ? "Contract approved successfully."
                   : response.message}
               </p>
               {response.link && (
@@ -154,7 +155,7 @@ export function ApproveAssetButton({
                 disabled={isLoading}
                 className="bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md"
               >
-                {isLoading ? "Whitelisting..." : "Confirm"}
+                {isLoading ? "Approving..." : "Confirm"}
               </Button>
             </div>
           )}
@@ -170,13 +171,13 @@ export function ApproveAssetButton({
             }}
             className={`bg-primary hover:bg-primary/90 px-2 ${className}`}
           >
-            Enable proposal submission
+            Enable Contributions
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">
           <p className="text-sm">
-            One time approval lets you submit contributions with the token from
-            your agent account. You can revoke it anytime later.
+            One time approval lets you submit and vote on contributions with the
+            token from your agent account. You can revoke it anytime later.
           </p>
         </TooltipContent>
       </Tooltip>

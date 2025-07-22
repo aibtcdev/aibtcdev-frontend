@@ -42,7 +42,7 @@ import {
   isTwitterOEmbedError,
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
-import { ApproveAssetButton } from "../account/ApproveAsset";
+import { ApproveContractButton } from "../account/ApproveContract";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -705,7 +705,7 @@ export function ProposalSubmission({
                   return null;
 
                 return (
-                  <ApproveAssetButton
+                  <ApproveContractButton
                     contractToApprove={votingExt.contract_principal}
                     agentAccountContract={userAgent.account_contract}
                     onSuccess={() => {
@@ -999,7 +999,7 @@ export function ProposalSubmission({
                                 )
                                   return null;
                                 return (
-                                  <ApproveAssetButton
+                                  <ApproveContractButton
                                     contractToApprove={
                                       votingExt.contract_principal
                                     }
@@ -1109,7 +1109,7 @@ export function ProposalSubmission({
                       )
                         return null;
                       return (
-                        <ApproveAssetButton
+                        <ApproveContractButton
                           contractToApprove={votingExt.contract_principal}
                           agentAccountContract={userAgent.account_contract}
                           onSuccess={() => {
