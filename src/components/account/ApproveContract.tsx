@@ -93,16 +93,16 @@ export function ApproveContractButton({
   return (
     <TooltipProvider>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogTitle>
-          {isLoading
-            ? "Approving Contract..."
-            : response
-              ? response.success
-                ? "Success"
-                : "Failed"
-              : "Confirm Contract Approval"}
-        </DialogTitle>
         <DialogContent>
+          <DialogTitle>
+            {isLoading
+              ? "Approving Contract..."
+              : response
+                ? response.success
+                  ? "Success"
+                  : "Failed"
+                : "Confirm Contract Approval"}
+          </DialogTitle>
           {!response && (
             <div className="space-y-4 text-sm">
               <div className="flex flex-col gap-1">
