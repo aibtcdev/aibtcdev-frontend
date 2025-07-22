@@ -18,7 +18,6 @@ interface ApproveContractButtonProps {
   onSuccess?: () => void;
   className?: string;
 }
-
 const defaultApprovalType = getAgentAccountApprovalType("VOTING");
 
 export function ApproveContractButton({
@@ -57,7 +56,7 @@ export function ApproveContractButton({
           body: JSON.stringify({
             agent_account_contract: agentAccountContract,
             contract_to_approve: contractToApprove,
-            approval_type: defaultApprovalType,
+            approval_type: String(defaultApprovalType),
           }),
         }
       );
