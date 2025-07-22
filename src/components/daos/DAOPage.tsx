@@ -32,7 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
 import { CompactMetrics } from "@/components/daos/MetricsGrid";
 import { Separator } from "@/components/ui/separator";
-import { ApproveContractButton } from "../account/ApproveContract";
+import { ApproveContractButton } from "@/components/account/ApproveContract";
 import { useAuth } from "@/hooks/useAuth"; // Add this import
 
 // Re-integrating DAOSidebarHeader

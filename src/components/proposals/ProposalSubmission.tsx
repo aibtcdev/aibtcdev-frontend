@@ -42,7 +42,7 @@ import {
   isTwitterOEmbedError,
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
-import { ApproveContractButton } from "../account/ApproveContract";
+import { ApproveContractButton } from "@/components/account/ApproveContract";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
