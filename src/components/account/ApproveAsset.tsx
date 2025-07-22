@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getAgentAccountApprovalType } from "@aibtc/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
@@ -16,6 +17,8 @@ interface ApproveAssetButtonProps {
   onSuccess?: () => void;
   className?: string;
 }
+
+const defaultApprovalType = getAgentAccountApprovalType("VOTING");
 
 export function ApproveAssetButton({
   contractToApprove,
@@ -53,7 +56,7 @@ export function ApproveAssetButton({
           body: JSON.stringify({
             agent_account_contract: agentAccountContract,
             contract_to_approve: contractToApprove,
-            approval_type: "VOTING",
+            approval_type: defaultApprovalType,
           }),
         }
       );
