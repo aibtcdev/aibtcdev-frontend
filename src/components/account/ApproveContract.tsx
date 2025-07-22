@@ -11,8 +11,6 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "../ui/tooltip";
-import { AccountCard } from "./AccountCard";
-import { Wallet } from "lucide-react";
 
 interface ApproveContractButtonProps {
   contractToApprove: string;
