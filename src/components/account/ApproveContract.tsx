@@ -95,45 +95,44 @@ export function ApproveContractButton({
   return (
     <TooltipProvider>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogTitle>
+          {isLoading
+            ? "Approving Contract..."
+            : response
+              ? response.success
+                ? "Success"
+                : "Failed"
+              : "Confirm Contract Approval"}
+        </DialogTitle>
         <DialogContent>
-          <DialogTitle>
-            {isLoading
-              ? "Approving Contract..."
-              : response
-                ? response.success
-                  ? "Success"
-                  : "Failed"
-                : "Confirm Contract Approval"}
-          </DialogTitle>
           {!response && (
-            <div className="space-y-3">
-              <AccountCard
-                title="Agent Account"
-                subtitle="Agent account where approval is updated"
-                address={agentAccountContract}
-                icon={Wallet}
-                isPrimary={false}
-                network={
-                  agentAccountContract.startsWith("SP") ? "mainnet" : "testnet"
-                }
-              />
-              <AccountCard
-                title="Contract to Approve"
-                subtitle="Smart contract to be approved"
-                address={contractToApprove}
-                icon={Wallet}
-                isPrimary={false}
-                network={
-                  contractToApprove.startsWith("SP") ? "mainnet" : "testnet"
-                }
-              />
-              <h3>Approval Type: VOTING ({defaultApprovalType})</h3>
-              <p className="text-sm">
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">Agent Account:</span>
+                <span className="break-all text-muted-foreground">
+                  {agentAccountContract}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">Contract to Approve:</span>
+                <span className="break-all text-muted-foreground">
+                  {contractToApprove}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">Approval Type:</span>
+                <span>VOTING ({defaultApprovalType})</span>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
                 By approving this contract you are allowing your agent account
                 to submit, evaluate and autonomously vote on contributions.
               </p>
             </div>
           )}
+
           {response && (
             <div>
               <p className="text-sm">
@@ -153,6 +152,7 @@ export function ApproveContractButton({
               )}
             </div>
           )}
+
           {response && (
             <div className="flex justify-end mt-4">
               <Button
@@ -164,6 +164,7 @@ export function ApproveContractButton({
               </Button>
             </div>
           )}
+
           {!response && (
             <div className="flex justify-end gap-2 mt-4">
               <Button
