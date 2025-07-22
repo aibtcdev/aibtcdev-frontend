@@ -106,25 +106,27 @@ export function ApproveContractButton({
           {!response && (
             <div className="space-y-4 text-sm">
               <div className="flex flex-col gap-1">
-                <span className="font-medium">Agent Account:</span>
+                <span className="font-medium font-bold">Agent Account:</span>
                 <span className="break-all text-muted-foreground">
                   {agentAccountContract}
                 </span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="font-medium">Contract to Approve:</span>
+                <span className="font-medium font-bold">
+                  Contract to Approve:
+                </span>
                 <span className="break-all text-muted-foreground">
                   {contractToApprove}
                 </span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="font-medium">Approval Type:</span>
-                <span>VOTING ({defaultApprovalType})</span>
+                <span className="font-medium font-bold">Approval Type:</span>
+                <span>VOTING - {defaultApprovalType}</span>
               </div>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm">
                 By approving this contract you are allowing your agent account
                 to submit, evaluate and autonomously vote on contributions.
               </p>
