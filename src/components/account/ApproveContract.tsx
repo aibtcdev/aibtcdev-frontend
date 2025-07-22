@@ -11,6 +11,8 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "../ui/tooltip";
+import { AccountCard } from "./AccountCard";
+import { Wallet } from "lucide-react";
 
 interface ApproveContractButtonProps {
   contractToApprove: string;
@@ -96,18 +98,41 @@ export function ApproveContractButton({
         <DialogContent>
           <DialogTitle>
             {isLoading
-              ? "Approving..."
+              ? "Approving Contract..."
               : response
                 ? response.success
                   ? "Success"
                   : "Failed"
-                : "Confirm Approval"}
+                : "Confirm Contract Approval"}
           </DialogTitle>
           {!response && (
-            <p className="text-sm">
-              By approving this contract you are allowing your agent account to
-              submit, evaluate and autonomously vote on contributions.
-            </p>
+            <div className="space-y-3">
+              <AccountCard
+                title="Agent Account"
+                subtitle="Agent account where approval is updated"
+                address={agentAccountContract}
+                icon={Wallet}
+                isPrimary={false}
+                network={
+                  agentAccountContract.startsWith("SP") ? "mainnet" : "testnet"
+                }
+              />
+              <AccountCard
+                title="Contract to Approve"
+                subtitle="Smart contract to be approved"
+                address={contractToApprove}
+                icon={Wallet}
+                isPrimary={false}
+                network={
+                  contractToApprove.startsWith("SP") ? "mainnet" : "testnet"
+                }
+              />
+              <h3>Approval Type: VOTING ({defaultApprovalType})</h3>
+              <p className="text-sm">
+                By approving this contract you are allowing your agent account
+                to submit, evaluate and autonomously vote on contributions.
+              </p>
+            </div>
           )}
           {response && (
             <div>
