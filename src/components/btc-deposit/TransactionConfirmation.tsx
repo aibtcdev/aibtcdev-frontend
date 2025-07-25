@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { hex } from "@scure/base";
 import * as btc from "@scure/btc-signer";
 import { styxSDK, TransactionPriority } from "@faktoryfun/styx-sdk";
@@ -38,6 +38,15 @@ import type {
   DepositHistoryResponse,
   Deposit,
 } from "@faktoryfun/styx-sdk";
+import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
+
+interface HiroGetInResponse {
+  result?: string;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}
 
 export interface LeatherSignPsbtRequestParams {
   hex: string;
@@ -144,6 +153,12 @@ export default function TransactionConfirmation({
   });
 
   const [loadingFees, setLoadingFees] = useState(true);
+  const [buyQuote, setBuyQuote] = useState<HiroGetInResponse | null>(null);
+  const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+
+  const [computedMinTokenOut, setComputedMinTokenOut] = useState<
+    number | undefined
+  >(minTokenOut);
 
   const isP2SHAddress = (address: string): boolean => {
     return address.startsWith("3");
@@ -153,6 +168,45 @@ export default function TransactionConfirmation({
     return Math.round(txSize * rate);
   };
 
+  const getBuyQuote = useCallback(
+    async (amount: string): Promise<HiroGetInResponse | null> => {
+      // Parse the contract address and name from dexContract prop
+      // const [contractAddress, contractName] = dexContract.split(".");
+      try {
+        const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
+        console.log("Calling getBuyQuote with btcAmount:", btcAmount);
+
+        // Direct Hiro API call with proper Clarity encoding
+        // const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+
+        // HARD CODE THE CONTRACT NAME AND ADDRESS FOR NOW
+        const url = `https://api.hiro.so/v2/contracts/call-read/SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM/beast2-faktory-dex/get-in?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: userAddress,
+            arguments: [cvToHex(uintCV(btcAmount))], // ← Proper Clarity uint encoding
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = (await response.json()) as HiroGetInResponse;
+        console.log("getBuyQuote Hiro response:", data);
+        return data;
+      } catch {
+        console.error("[DEBUG] Error in getBuyQuote:");
+        return null;
+      }
+    },
+    [userAddress]
+  );
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
     const fetchFeeEstimates = async () => {
@@ -203,6 +257,59 @@ export default function TransactionConfirmation({
 
     fetchFeeEstimates();
   }, [open]);
+
+  useEffect(() => {
+    const fetchBuyQuoteOnOpen = async () => {
+      if (open && confirmationData.depositAmount) {
+        setLoadingQuote(true);
+        const data = await getBuyQuote(confirmationData.depositAmount);
+        setBuyQuote(data);
+        // Parse and apply slippage protection on tokens-out from buy quote result
+        if (data?.result) {
+          try {
+            const clarityValue = hexToCV(data.result);
+            const jsonValue = cvToJSON(clarityValue);
+            console.log("Parsed jsonValue:", jsonValue);
+            console.log("jsonValue.success:", jsonValue.success);
+            console.log("jsonValue.value:", jsonValue.value);
+
+            if (jsonValue.value?.value) {
+              console.log(
+                "Available keys:",
+                Object.keys(jsonValue.value.value)
+              );
+              console.log(
+                "tokens-out value:",
+                jsonValue.value.value["tokens-out"]
+              );
+
+              if (jsonValue.success && jsonValue.value.value["tokens-out"]) {
+                const rawAmount = jsonValue.value.value["tokens-out"].value;
+                console.log("Raw amount from quote:", rawAmount);
+                console.log("Raw amount type:", typeof rawAmount);
+
+                // Apply slippage protection
+                // HARD CODING SLIPPAGE TO 6
+                const slippageFactor = 1 - 6 / 100;
+                console.log("Slippage factor:", slippageFactor);
+                const minOut = Math.floor(Number(rawAmount) * slippageFactor);
+                console.log("Min token out calculated:", minOut);
+                setComputedMinTokenOut(minOut);
+              }
+            }
+          } catch (error) {
+            console.error("Error parsing buy quote result:", error);
+          }
+        }
+        setLoadingQuote(false);
+      }
+    };
+    fetchBuyQuoteOnOpen();
+  }, [open, confirmationData.depositAmount, dexContract, getBuyQuote]);
+
+  useEffect(() => {
+    if (buyQuote) console.log("buyQuote updated:", buyQuote);
+  }, [buyQuote]);
 
   const executeBitcoinTransaction = async (): Promise<void> => {
     console.log(
@@ -269,7 +376,7 @@ export default function TransactionConfirmation({
         isBlaze: confirmationData.isBlaze ?? false,
         poolId: poolId,
         swapType: swapType,
-        minTokenOut: minTokenOut,
+        minTokenOut: computedMinTokenOut,
         dexContract: dexContract,
       });
       console.log("Create deposit depositId:", depositId);
@@ -315,7 +422,7 @@ export default function TransactionConfirmation({
           feePriority,
           walletProvider: activeWalletProvider,
           poolId: poolId,
-          minTokenOut: minTokenOut,
+          minTokenOut: computedMinTokenOut,
           swapType: swapType,
           dexContract: dexContract,
         } as TransactionPrepareParams);
@@ -840,6 +947,22 @@ export default function TransactionConfirmation({
                     <Copy className="h-3 w-3" />
                   )}
                 </Button>
+              </div>
+
+              {/* Buy Quote */}
+              <div className="text-xs font-medium text-zinc-300">
+                Buy Quote:
+              </div>
+              <div className="col-span-2 relative">
+                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  {loadingQuote ? (
+                    <Loader />
+                  ) : computedMinTokenOut !== undefined ? (
+                    `${computedMinTokenOut}`
+                  ) : (
+                    "N/A"
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -49,7 +49,7 @@ export default function BitcoinDeposit() {
 
   // Add state for the missing transaction parameters
   const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
-  const [poolId] = useState<string>("aibtc");
+  // const [poolId] = useState<string>("aibtc");
   const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
 
   console.log(activeWalletProvider);
@@ -240,7 +240,7 @@ export default function BitcoinDeposit() {
           setIsRefetching={setIsRefetching}
           dexContract={dexExtension.contract_principal}
           minTokenOut={minTokenOut}
-          poolId={poolId}
+          // poolId={poolId}
           swapType={swapType}
         />
       )}

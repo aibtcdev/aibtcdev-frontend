@@ -629,8 +629,10 @@ export default function DepositForm({
                       Token Contract:
                     </span>
                     <span className="font-mono text-xs bg-muted/30 px-2 py-1 rounded">
-                      {dao.extensions.find((ext) => ext.type === "TOKEN")
-                        ?.contract_principal || "N/A"}
+                      {/* {dao.extensions.find((ext) => ext.type === "TOKEN") */}
+                      {/* ?.contract_principal || "N/A"} */}
+                      {/* HARD CODE IT FOR BEAST */}
+                      SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM.beast2-faktory
                     </span>
                   </div>
                 )}
