@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { hex } from "@scure/base";
 import * as btc from "@scure/btc-signer";
 import { styxSDK, TransactionPriority } from "@faktoryfun/styx-sdk";
@@ -39,6 +39,14 @@ import type {
   Deposit,
 } from "@faktoryfun/styx-sdk";
 import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
+
+interface HiroGetInResponse {
+  result?: string;
+  error?: {
+    code?: string;
+    message?: string;
+  };
+}
 
 export interface LeatherSignPsbtRequestParams {
   hex: string;
@@ -145,7 +153,7 @@ export default function TransactionConfirmation({
   });
 
   const [loadingFees, setLoadingFees] = useState(true);
-  const [buyQuote, setBuyQuote] = useState<any>(null);
+  const [buyQuote, setBuyQuote] = useState<HiroGetInResponse | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
 
   const [computedMinTokenOut, setComputedMinTokenOut] = useState<
@@ -160,42 +168,45 @@ export default function TransactionConfirmation({
     return Math.round(txSize * rate);
   };
 
-  const getBuyQuote = async (amount: string) => {
-    // Parse the contract address and name from dexContract prop
-    const [contractAddress, contractName] = dexContract.split(".");
-    try {
-      const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
-      console.log("Calling getBuyQuote with btcAmount:", btcAmount);
+  const getBuyQuote = useCallback(
+    async (amount: string): Promise<HiroGetInResponse | null> => {
+      // Parse the contract address and name from dexContract prop
+      // const [contractAddress, contractName] = dexContract.split(".");
+      try {
+        const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
+        console.log("Calling getBuyQuote with btcAmount:", btcAmount);
 
-      // Direct Hiro API call with proper Clarity encoding
-      // const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+        // Direct Hiro API call with proper Clarity encoding
+        // const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
-      // HARD CODE THE CONTRACT NAME AND ADDRESS FOR NOW
-      const url = `https://api.hiro.so/v2/contracts/call-read/SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM/beast2-faktory-dex/get-in?tip=latest`;
+        // HARD CODE THE CONTRACT NAME AND ADDRESS FOR NOW
+        const url = `https://api.hiro.so/v2/contracts/call-read/SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM/beast2-faktory-dex/get-in?tip=latest`;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sender: userAddress,
-          arguments: [cvToHex(uintCV(btcAmount))], // ← Proper Clarity uint encoding
-        }),
-      });
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: userAddress,
+            arguments: [cvToHex(uintCV(btcAmount))], // ← Proper Clarity uint encoding
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = (await response.json()) as HiroGetInResponse;
+        console.log("getBuyQuote Hiro response:", data);
+        return data;
+      } catch {
+        console.error("[DEBUG] Error in getBuyQuote:");
+        return null;
       }
-
-      const data = await response.json();
-      console.log("getBuyQuote Hiro response:", data);
-      return data;
-    } catch (error: any) {
-      console.error("[DEBUG] Error in getBuyQuote:", error);
-      return null;
-    }
-  };
+    },
+    [userAddress]
+  );
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
     const fetchFeeEstimates = async () => {
@@ -294,7 +305,11 @@ export default function TransactionConfirmation({
       }
     };
     fetchBuyQuoteOnOpen();
-  }, [open, confirmationData.depositAmount, dexContract]);
+  }, [open, confirmationData.depositAmount, dexContract, getBuyQuote]);
+
+  useEffect(() => {
+    if (buyQuote) console.log("buyQuote updated:", buyQuote);
+  }, [buyQuote]);
 
   const executeBitcoinTransaction = async (): Promise<void> => {
     console.log(

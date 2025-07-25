@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getAgentAccountApprovalType } from "@aibtc/types";
+// import { getAgentAccountApprovalType } from "@aibtc/types";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
@@ -18,7 +18,8 @@ interface ApproveContractButtonProps {
   onSuccess?: () => void;
   className?: string;
 }
-const defaultApprovalType = getAgentAccountApprovalType("VOTING");
+// const defaultApprovalType = getAgentAccountApprovalType("VOTING");
+const defaultApprovalType = "VOTING";
 
 export function ApproveContractButton({
   contractToApprove,
@@ -105,23 +106,21 @@ export function ApproveContractButton({
           {!response && (
             <div className="space-y-4 text-sm">
               <div className="flex flex-col gap-1">
-                <span className="font-medium font-bold">Agent Account:</span>
+                <span className=" font-bold">Agent Account:</span>
                 <span className="break-all text-muted-foreground">
                   {agentAccountContract}
                 </span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="font-medium font-bold">
-                  Contract to Approve:
-                </span>
+                <span className=" font-bold">Contract to Approve:</span>
                 <span className="break-all text-muted-foreground">
                   {contractToApprove}
                 </span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="font-medium font-bold">Approval Type:</span>
+                <span className=" font-bold">Approval Type:</span>
                 <span>VOTING - {defaultApprovalType}</span>
               </div>
 
