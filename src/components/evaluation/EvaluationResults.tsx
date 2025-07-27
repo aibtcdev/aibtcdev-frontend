@@ -159,25 +159,27 @@ export default function EvaluationResults({
       </div>
 
       {/* Flags & Recommendations */}
-      {result.flags && result.flags.length > 0 && (
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
-          <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            Flags & Recommendations
-          </h3>
-          <div className="space-y-2">
-            {result.flags.map((flag, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
-              >
-                <Info className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-foreground">{flag}</span>
-              </div>
-            ))}
+      {result.flags &&
+        Array.isArray(result.flags) &&
+        result.flags.length > 0 && (
+          <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+            <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              Flags & Recommendations
+            </h3>
+            <div className="space-y-2">
+              {result.flags.map((flag, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
+                >
+                  <Info className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-xs text-foreground">{flag}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Summary */}
       <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
@@ -200,67 +202,69 @@ export default function EvaluationResults({
         </h3>
 
         <div className="space-y-3">
-          {result.categories.map((category, index) => {
-            const ScoreIcon = getScoreIcon(category.score);
-            const CategoryIcon = getCategoryIcon(category.category);
+          {Array.isArray(result.categories) &&
+            result.categories.map((category, index) => {
+              const ScoreIcon = getScoreIcon(category.score);
+              const CategoryIcon = getCategoryIcon(category.category);
 
-            return (
-              <div
-                key={index}
-                className="border border-border/20 rounded-lg p-3"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-foreground text-sm">
-                      {category.category}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({(category.weight * 100).toFixed(0)}%)
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ScoreIcon
-                      className={`h-4 w-4 ${getScoreColor(category.score)}`}
-                    />
-                    <span
-                      className={`font-bold text-sm ${getScoreColor(category.score)}`}
-                    >
-                      {category.score}/100
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-muted/30 rounded-full h-1.5 mb-2">
-                  <div
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      category.score >= 80
-                        ? "bg-green-500"
-                        : category.score >= 60
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
-                    }`}
-                    style={{ width: `${category.score}%` }}
-                  />
-                </div>
-
-                {/* Category Reasoning */}
-                <div className="space-y-1">
-                  {category.reasoning.map((reason, reasonIndex) => (
-                    <div
-                      key={reasonIndex}
-                      className="bg-background/30 rounded p-2"
-                    >
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {reason}
-                      </p>
+              return (
+                <div
+                  key={index}
+                  className="border border-border/20 rounded-lg p-3"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-foreground text-sm">
+                        {category.category}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(category.weight * 100).toFixed(0)}%)
+                      </span>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      <ScoreIcon
+                        className={`h-4 w-4 ${getScoreColor(category.score)}`}
+                      />
+                      <span
+                        className={`font-bold text-sm ${getScoreColor(category.score)}`}
+                      >
+                        {category.score}/100
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-muted/30 rounded-full h-1.5 mb-2">
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        category.score >= 80
+                          ? "bg-green-500"
+                          : category.score >= 60
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                      style={{ width: `${category.score}%` }}
+                    />
+                  </div>
+
+                  {/* Category Reasoning */}
+                  <div className="space-y-1">
+                    {Array.isArray(category.reasoning) &&
+                      category.reasoning.map((reason, reasonIndex) => (
+                        <div
+                          key={reasonIndex}
+                          className="bg-background/30 rounded p-2"
+                        >
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {reason}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 

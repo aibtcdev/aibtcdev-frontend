@@ -409,7 +409,15 @@ export async function evaluateProposal(
       throw new Error(errorData.message || `Server error: ${response.status}`);
     }
 
-    return (await response.json()) as EvaluationResult;
+    const responseData = await response.json();
+
+    // Handle nested response structure
+    if (responseData.evaluation) {
+      return responseData.evaluation as EvaluationResult;
+    }
+
+    // Fallback for flat response structure
+    return responseData as EvaluationResult;
   } catch (error) {
     console.error("Evaluation error:", error);
     throw new Error(
