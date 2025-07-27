@@ -141,7 +141,7 @@ export default function EvaluationResults({
               {result.final_score}
             </div>
             <div className="text-xs text-muted-foreground">
-              {result.token_usage.model_name}
+              {result.token_usage?.model_name || "N/A"}
             </div>
           </div>
         </div>
@@ -282,21 +282,21 @@ export default function EvaluationResults({
             <TrendingUp className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">Total Tokens:</span>
             <span className="text-foreground font-medium">
-              {result.token_usage.total_tokens.toLocaleString()}
+              {result.token_usage?.total_tokens?.toLocaleString() || "N/A"}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Brain className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">Input:</span>
             <span className="text-foreground font-medium">
-              {result.token_usage.input_tokens.toLocaleString()}
+              {result.token_usage?.input_tokens?.toLocaleString() || "N/A"}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="text-muted-foreground">Output:</span>
             <span className="text-foreground font-medium">
-              {result.token_usage.output_tokens.toLocaleString()}
+              {result.token_usage?.output_tokens?.toLocaleString() || "N/A"}
             </span>
           </div>
         </div>
