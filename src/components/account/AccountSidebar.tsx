@@ -11,7 +11,7 @@ interface Props {
 
 export function AccountSidebar({ agentAddress, xHandle }: Props) {
   return (
-    <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6">
+    <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6 lg:sticky lg:top-8">
       {/* Avatar - Hidden on mobile */}
       <div className="hidden md:flex flex-col items-center gap-2">
         <Avatar className="h-28 w-28">
