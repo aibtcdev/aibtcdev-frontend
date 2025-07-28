@@ -1,6 +1,6 @@
 // components/account/AccountSidebar.tsx
 "use client";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
 
@@ -11,7 +11,7 @@ interface Props {
 
 export function AccountSidebar({ agentAddress, xHandle }: Props) {
   return (
-    <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6">
+    <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6 lg:sticky lg:top-8">
       {/* Avatar - Hidden on mobile */}
       <div className="hidden md:flex flex-col items-center gap-2">
         <Avatar className="h-28 w-28">
@@ -48,73 +48,63 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
         <div className="hidden md:block space-y-2">
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
-              <p className="text-sm font-medium">Proposal Submission</p>
-              <p className="text-xs text-muted-foreground">
-                Enable submitting proposals via agent
-              </p>
+              <p className="text-sm font-medium">Vote on contributions</p>
             </div>
-            <Button variant="default" className="text-sm h-8 px-4">
-              Enable
-            </Button>
+            <Switch id="canUseProposals-desktop" />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
-              <p className="text-sm font-medium">Voting Contract</p>
-              <p className="text-xs text-muted-foreground">
-                Enable on-chain voting via smart contract
-              </p>
+              <p className="text-sm font-medium">Manage approved contracts</p>
             </div>
-            <Button variant="default" className="text-sm h-8 px-4">
-              Enable
-            </Button>
+            <Switch id="canApproveRevokecontracts-desktop" />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
-              <p className="text-sm font-medium">Token Purchase</p>
-              <p className="text-xs text-muted-foreground">
-                Enable users to purchase governance tokens
+              <p className="text-sm font-medium">
+                Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Button variant="default" className="text-sm h-8 px-4">
-              Enable
-            </Button>
+            <Switch id="canBuySell-desktop" />
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+            <div>
+              <p className="text-sm font-medium">
+                Deposit tokens into the agent account
+              </p>
+            </div>
+            <Switch id="canDeposit-desktop" />
           </div>
         </div>
 
-        {/* Mobile: Centered vertical stack */}
-        <div className="md:hidden space-y-2 flex flex-col items-center">
-          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
-            <div className="mb-2">
-              <p className="text-sm font-medium">Proposal Submission</p>
-              <p className="text-xs text-muted-foreground">
-                Enable submitting proposals via agent
-              </p>
+        {/* Mobile: Vertical stack */}
+        <div className="md:hidden space-y-2">
+          <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+            <div>
+              <p className="text-sm font-medium">Vote on contributions</p>
             </div>
-            <Button variant="default" className="text-sm h-8 w-full">
-              Enable
-            </Button>
+            <Switch id="canUseProposals-mobile" />
           </div>
-          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
-            <div className="mb-2">
-              <p className="text-sm font-medium">Voting Contract</p>
-              <p className="text-xs text-muted-foreground">
-                Enable on-chain voting via smart contract
-              </p>
+          <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+            <div>
+              <p className="text-sm font-medium">Manage approved contracts</p>
             </div>
-            <Button variant="default" className="text-sm h-8 w-full">
-              Enable
-            </Button>
+            <Switch id="canApproveRevokecontracts-mobile" />
           </div>
-          <div className="flex flex-col items-center text-center p-3 rounded-md border bg-background w-full max-w-xs">
-            <div className="mb-2">
-              <p className="text-sm font-medium">Token Purchase</p>
-              <p className="text-xs text-muted-foreground">
-                Enable users to purchase governance tokens
+          <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+            <div>
+              <p className="text-sm font-medium">
+                Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Button variant="default" className="text-sm h-8 w-full">
-              Enable
-            </Button>
+            <Switch id="canBuySell-mobile" />
+          </div>
+          <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+            <div>
+              <p className="text-sm font-medium">
+                Deposit tokens into the agent account
+              </p>
+            </div>
+            <Switch id="canDeposit-mobile" />
           </div>
         </div>
       </div>
