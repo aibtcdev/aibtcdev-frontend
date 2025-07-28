@@ -2,7 +2,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Coins, Bot } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
-import { AssetsTab } from "./tabs/AssetsTab";
 import { AgentTab } from "./tabs/AgentTab";
 import { WalletBalance } from "@/store/wallet";
 
@@ -30,10 +29,7 @@ export function AccountTabs({
             <LayoutDashboard className="h-4 w-4" />
             <span className=" sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex items-center gap-2">
-            <Coins className="h-4 w-4" />
-            <span className=" sm:inline">Assets</span>
-          </TabsTrigger>
+
           <TabsTrigger value="agent" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
             <span className=" sm:inline">Agent</span>
@@ -42,15 +38,6 @@ export function AccountTabs({
 
         <TabsContent value="overview" className="space-y-6">
           <OverviewTab />
-        </TabsContent>
-
-        <TabsContent value="assets" className="space-y-6">
-          <AssetsTab
-            userAgentContractBalance={userAgentContractBalance}
-            accessToken={accessToken}
-            userId={userId}
-            fetchWallets={fetchWallets}
-          />
         </TabsContent>
 
         <TabsContent value="agent" className="space-y-6">

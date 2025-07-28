@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AccountTabs } from "@/components/account/AccountTabs";
+import { useQuery } from "@tanstack/react-query";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
-import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
-// import { AccountHeader } from "@/components/account/AccountHeader";
 import { AccountSidebar } from "@/components/account/AccountSidebar";
+import { AccountTabs } from "@/components/account/AccountTabs";
+import { AssetsDataTable } from "@/components/account/AssetsDataTable";
+import { Button } from "@/components/ui/button";
+import { fundTestnetSBTC, fundTestnetSTX } from "@/services/tool.service";
 
 export default function AccountPage() {
   const { agentWallets, balances, fetchWallets, fetchContractBalance } =
@@ -16,8 +18,9 @@ export default function AccountPage() {
   const { userId, accessToken } = useAuth();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [isRequestingSBTC, setIsRequestingSBTC] = useState(false);
+  const [isRequestingSTX, setIsRequestingSTX] = useState(false);
 
-  // Fetch the user agent
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
     queryFn: fetchAgents,
@@ -27,7 +30,6 @@ export default function AccountPage() {
   const userAgentAddress = userAgent?.account_contract || null;
   const userAgentId = userAgent?.id || "";
 
-  // Fetch wallet information when userId is available
   useEffect(() => {
     if (userId) {
       fetchWallets(userId).catch((err) => {
@@ -45,7 +47,6 @@ export default function AccountPage() {
     setIsClient(true);
   }, []);
 
-  // Get agent wallet information
   const getAgentWalletInfo = (agentId: string) => {
     if (!agentId) return { walletAddress: null, walletBalance: null };
 
@@ -65,7 +66,6 @@ export default function AccountPage() {
   const { walletAddress: userAgentWalletAddress } =
     getAgentWalletInfo(userAgentId);
 
-  // Fetch contract account balance when address is available
   useEffect(() => {
     if (userAgentAddress) {
       fetchContractBalance(userAgentAddress);
@@ -76,16 +76,57 @@ export default function AccountPage() {
     ? balances[userAgentAddress]
     : null;
 
+  const handleRequestToken = async (type: "sbtc" | "stx") => {
+    if (!accessToken) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const isSTX = type === "stx";
+    const setter = isSTX ? setIsRequestingSTX : setIsRequestingSBTC;
+    const service = isSTX ? fundTestnetSTX : fundTestnetSBTC;
+
+    setter(true);
+    try {
+      const result = await service(accessToken);
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Testnet ${isSTX ? "STX" : "sBTC"} requested successfully`,
+        });
+        if (userId) fetchWallets(userId);
+      } else {
+        toast({
+          title: "Error",
+          description:
+            result.error ||
+            `Failed to request testnet ${isSTX ? "STX" : "sBTC"}`,
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: `Failed to request testnet ${isSTX ? "STX" : "sBTC"}`,
+        variant: "destructive",
+      });
+    } finally {
+      setter(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 ">
       <div className="flex flex-col-reverse items-center lg:items-start lg:flex-row gap-8">
-        {/* Sidebar */}
         <AccountSidebar
           agentAddress={userAgentAddress}
           xHandle={null /* TODO: plug your data */}
         />
 
-        {/* Main panel */}
         <div className="flex-1">
           <AccountTabs
             isClient={isClient}
@@ -96,6 +137,53 @@ export default function AccountPage() {
             userId={userId}
             fetchWallets={fetchWallets}
           />
+
+          <div className="mt-8">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">
+                  Asset Portfolio
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Manage your tokens and balances
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <AssetsDataTable walletBalance={userAgentContractBalance} />
+            </div>
+
+            {process.env.NEXT_PUBLIC_STACKS_NETWORK !== "mainnet" && (
+              <div className="border-t border-border pt-4 mt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Need test tokens?
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRequestToken("sbtc")}
+                      disabled={isRequestingSBTC || !accessToken}
+                    >
+                      {isRequestingSBTC ? "Requesting..." : "Get sBTC"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRequestToken("stx")}
+                      disabled={isRequestingSTX || !accessToken}
+                    >
+                      {isRequestingSTX ? "Requesting..." : "Get STX"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
