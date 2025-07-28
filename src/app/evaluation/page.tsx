@@ -36,7 +36,7 @@ export default function ProposalEvaluationPage() {
     useState<EvaluationResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string>("openai/gpt-4.1");
+  const [selectedModel, setSelectedModel] = useState<string>("x-ai/grok-4");
   const [temperature, setTemperature] = useState<number>(0.1);
   const [systemPrompt, setSystemPrompt] = useState<string>("");
   const [userPrompt, setUserPrompt] = useState<string>("");
