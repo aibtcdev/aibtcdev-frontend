@@ -1,5 +1,6 @@
 // components/account/AccountSidebar.tsx
 "use client";
+import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
@@ -10,6 +11,13 @@ interface Props {
 }
 
 export function AccountSidebar({ agentAddress, xHandle }: Props) {
+  // State for each permission toggle
+  const [canUseProposals, setCanUseProposals] = useState(false);
+  const [canApproveRevokeContracts, setCanApproveRevokeContracts] =
+    useState(false);
+  const [canBuySell, setCanBuySell] = useState(false);
+  const [canDeposit, setCanDeposit] = useState(false);
+
   return (
     <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6 lg:sticky lg:top-8">
       {/* Avatar - Hidden on mobile */}
@@ -50,13 +58,19 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             <div>
               <p className="text-sm font-medium">Vote on contributions</p>
             </div>
-            <Switch id="canUseProposals-desktop" />
+            <Switch
+              checked={canUseProposals}
+              onCheckedChange={setCanUseProposals}
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
               <p className="text-sm font-medium">Manage approved contracts</p>
             </div>
-            <Switch id="canApproveRevokecontracts-desktop" />
+            <Switch
+              checked={canApproveRevokeContracts}
+              onCheckedChange={setCanApproveRevokeContracts}
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -64,7 +78,7 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Switch id="canBuySell-desktop" />
+            <Switch checked={canBuySell} onCheckedChange={setCanBuySell} />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -72,7 +86,7 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Deposit tokens into the agent account
               </p>
             </div>
-            <Switch id="canDeposit-desktop" />
+            <Switch checked={canDeposit} onCheckedChange={setCanDeposit} />
           </div>
         </div>
 
@@ -82,13 +96,19 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             <div>
               <p className="text-sm font-medium">Vote on contributions</p>
             </div>
-            <Switch id="canUseProposals-mobile" />
+            <Switch
+              checked={canUseProposals}
+              onCheckedChange={setCanUseProposals}
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
               <p className="text-sm font-medium">Manage approved contracts</p>
             </div>
-            <Switch id="canApproveRevokecontracts-mobile" />
+            <Switch
+              checked={canApproveRevokeContracts}
+              onCheckedChange={setCanApproveRevokeContracts}
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -96,7 +116,7 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Switch id="canBuySell-mobile" />
+            <Switch checked={canBuySell} onCheckedChange={setCanBuySell} />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -104,7 +124,7 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Deposit tokens into the agent account
               </p>
             </div>
-            <Switch id="canDeposit-mobile" />
+            <Switch checked={canDeposit} onCheckedChange={setCanDeposit} />
           </div>
         </div>
       </div>
