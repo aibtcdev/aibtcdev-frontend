@@ -1,6 +1,6 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Coins, Bot } from "lucide-react";
+import { LayoutDashboard, Bot } from "lucide-react";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { AgentTab } from "./tabs/AgentTab";
 import { WalletBalance } from "@/store/wallet";
@@ -15,12 +15,7 @@ interface AccountTabsProps {
   fetchWallets: (userId: string) => Promise<void>;
 }
 
-export function AccountTabs({
-  userAgentContractBalance,
-  accessToken,
-  userId,
-  fetchWallets,
-}: AccountTabsProps) {
+export function AccountTabs({}: AccountTabsProps) {
   return (
     <div className="max-w-7xl mx-auto">
       <Tabs defaultValue="overview" className="">
