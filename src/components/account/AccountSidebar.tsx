@@ -1,5 +1,6 @@
 // components/account/AccountSidebar.tsx
 "use client";
+import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
@@ -26,42 +27,53 @@ export function AccountSidebar({
   xHandle,
   network = "testnet",
 }: Props) {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Fetch agent permissions
+  // Fetch agent permissions with conditional cache busting
+  const fetchPermissions = async (
+    bustCache = false
+  ): Promise<AgentPermissions> => {
+    if (!agentAddress) throw new Error("No agent address");
+
+    const [contractAddress, contractName] = agentAddress.split(".");
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: contractAddress,
+          arguments: [],
+          // Add cache control in the request body
+          cacheControl: bustCache
+            ? {
+                bustCache: true, // Force a fresh request
+                ttl: 3600, // Cache for 1 hour
+              }
+            : undefined,
+        }),
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to fetch permissions");
+
+    const data = await res.json();
+    return (
+      data?.data || {
+        canUseProposals: true,
+        canApproveRevokeContracts: true,
+        canBuySell: false,
+        canDeposit: true,
+      }
+    );
+  };
+
   const { data: permissions, isLoading } = useQuery({
     queryKey: ["agent-permissions", agentAddress],
-    queryFn: async (): Promise<AgentPermissions> => {
-      if (!agentAddress) throw new Error("No agent address");
-
-      const [contractAddress, contractName] = agentAddress.split(".");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sender: contractAddress,
-            arguments: [],
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to fetch permissions");
-
-      const data = await res.json();
-      return (
-        data?.data || {
-          canUseProposals: true,
-          canApproveRevokeContracts: true,
-          canBuySell: false,
-          canDeposit: true,
-        }
-      );
-    },
+    queryFn: () => fetchPermissions(false), // Don't bust cache on initial load
     enabled: !!agentAddress,
   });
 
@@ -100,11 +112,19 @@ export function AccountSidebar({
         );
       }
     },
-    onSuccess: (data) => {
-      // Refetch permissions after successful update
-      queryClient.invalidateQueries({
+    onSuccess: async (data) => {
+      // First, invalidate the current query to remove stale data
+      await queryClient.invalidateQueries({
         queryKey: ["agent-permissions", agentAddress],
       });
+
+      // Then refetch with cache busting to get fresh data
+      await queryClient.fetchQuery({
+        queryKey: ["agent-permissions", agentAddress],
+        queryFn: () => fetchPermissions(true), // Bust cache after permission update
+        staleTime: 0, // Treat as immediately stale
+      });
+
       toast({
         title: "Transaction Submitted",
         description: `Permission update submitted. Transaction ID: ${data.txid}`,
@@ -135,12 +155,16 @@ export function AccountSidebar({
   };
 
   // Use default values if permissions are not loaded yet
-  const {
-    canUseProposals = true,
-    canApproveRevokeContracts = true,
-    canBuySell = false,
-    canDeposit = true,
-  } = permissions || {};
+  if (isLoading || !permissions) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        Loading permissions...
+      </div>
+    );
+  }
+
+  const { canUseProposals, canApproveRevokeContracts, canBuySell, canDeposit } =
+    permissions;
 
   return (
     <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6 lg:sticky lg:top-8">
