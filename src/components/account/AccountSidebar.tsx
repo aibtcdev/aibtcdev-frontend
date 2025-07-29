@@ -89,6 +89,7 @@ export function AccountSidebar({
           functionName,
           enabled,
         };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         // Handle user cancellation or other errors
         if (error.code === 4001) {
