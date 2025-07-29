@@ -1,6 +1,6 @@
 // components/account/AccountSidebar.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
@@ -17,6 +17,40 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
     useState(false);
   const [canBuySell, setCanBuySell] = useState(false);
   const [canDeposit, setCanDeposit] = useState(false);
+
+  useEffect(() => {
+    const fetchAgentPermissions = async () => {
+      if (!agentAddress) return;
+      const [contractAddress, contractName] = agentAddress.split(".");
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sender: contractAddress,
+              arguments: [],
+            }),
+          }
+        );
+        const data = await res.json();
+        const perms = data?.data;
+        if (perms) {
+          setCanUseProposals(perms.canUseProposals);
+          setCanApproveRevokeContracts(perms.canApproveRevokeContracts);
+          setCanBuySell(perms.canBuySell);
+          setCanDeposit(perms.canDeposit);
+        }
+      } catch (err) {
+        console.error("Failed to fetch agent permissions:", err);
+      }
+    };
+
+    fetchAgentPermissions();
+  }, [agentAddress]);
 
   return (
     <aside className="w-full max-w-xs shrink-0 space-y-6 md:space-y-6 lg:sticky lg:top-8">
