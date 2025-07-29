@@ -1,6 +1,6 @@
 // components/account/AccountSidebar.tsx
 "use client";
-import { useState } from "react";
+
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, User } from "lucide-react";
