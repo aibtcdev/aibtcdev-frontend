@@ -4,24 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchProposalVotes } from "@/services/vote.service";
 import type { Vote } from "@/types";
 import { ThumbsUp, ThumbsDown, ExternalLink } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { DataTable, Column } from "./data-table/DataTable";
 import { Badge } from "@/components/ui/badge";
-import ReactMarkdown from "react-markdown";
 import { TokenBalance } from "../reusables/BalanceDisplay";
+import { getExplorerLink } from "@/utils/format";
 
 interface VotesTableProps {
   proposalId: string;
@@ -42,35 +28,6 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
     gcTime: 1000 * 60 * 5, // 5 minutes garbage collection time
   });
 
-  // Note: Realtime updates are now handled globally by SupabaseRealtimeProvider
-
-  // --- Loading State ---
-  if (isLoading) {
-    return (
-      <div className="space-y-2 p-3 rounded-md">
-        <div className="h-3 sm:h-4 bg-muted rounded-full animate-pulse w-full"></div>
-        <div className="h-3 sm:h-4 bg-muted rounded-full animate-pulse w-5/6"></div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="text-destructive p-3 text-center rounded-md text-sm">
-        Error loading votes: {error?.message || "Unknown error"}
-      </div>
-    );
-  }
-
-  // --- Empty State ---
-  if (!votes || votes.length === 0) {
-    return (
-      <div className="py-4 text-center text-muted-foreground rounded-md text-sm">
-        No votes have been recorded for this contribution yet.
-      </div>
-    );
-  }
-
   // Helper function to truncate addresses
   const truncateAddress = (address: string) => {
     return address.length > 10
@@ -78,170 +35,180 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
       : address;
   };
 
-  // --- Helper function to render flag badges ---
-  const renderFlagBadges = (flags: string[] | null) => {
-    if (!flags || flags.length === 0) return null;
+  // Define columns for the data table
+  const columns: Column[] = [
+    {
+      key: "address",
+      label: "Voter",
+      sortable: true,
+      filterable: true,
+      width: 140,
+      minWidth: 120,
+      render: (value: string) => (
+        <span title={value} className="text-xs font-mono text-muted-foreground">
+          {value ? truncateAddress(value) : "-"}
+        </span>
+      ),
+    },
+    {
+      key: "answer",
+      label: "Vote",
+      sortable: true,
+      width: 80,
+      align: "center",
+      responsive: "sm",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render: (value: boolean, row: any) => {
+        if (!row.tx_id) {
+          return <span className="text-muted-foreground text-xs">-</span>;
+        }
 
-    return (
-      <div className="flex flex-wrap gap-2 mb-4">
-        {flags.map((flag, index) => (
-          <Badge
-            key={`${flag}-${index}`}
-            variant={index % 2 === 0 ? "default" : "secondary"}
-            className="font-medium text-xs"
-          >
-            {flag}
-          </Badge>
-        ))}
-      </div>
-    );
-  };
+        return value ? (
+          <span className="flex items-center justify-center text-primary font-medium">
+            <ThumbsUp className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="text-xs">Yes</span>
+          </span>
+        ) : (
+          <span className="flex items-center justify-center text-secondary font-medium">
+            <ThumbsDown className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="text-xs">No</span>
+          </span>
+        );
+      },
+    },
+    {
+      key: "amount",
+      label: "Amount",
+      sortable: true,
+      width: 100,
+      align: "center",
+      render: (value: number) => {
+        if (value !== null && value !== undefined) {
+          return <TokenBalance value={value} variant="abbreviated" />;
+        }
+        return <span className="text-muted-foreground text-xs">-</span>;
+      },
+    },
+    {
+      key: "evaluation_score",
+      label: "Score",
+      sortable: true,
+      width: 80,
+      align: "center",
+      responsive: "sm",
+      render: (value: string | object) => {
+        if (!value)
+          return <span className="text-muted-foreground text-xs">-</span>;
 
-  // --- Render Votes Table ---
-  return (
-    <div className="overflow-x-auto relative rounded-md border border-border/50">
-      <Table className="min-w-full">
-        <TableHeader>
-          <TableRow className="border-border/50">
-            <TableHead className="px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium whitespace-nowrap">
-              Voter
-            </TableHead>
-            <TableHead className="hidden sm:table-cell whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
-              Vote
-            </TableHead>
-            <TableHead className="text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
-              Amount
-            </TableHead>
-            <TableHead className="hidden sm:table-cell text-xs text-center px-2 py-1.5 text-muted-foreground uppercase tracking-wider font-medium">
-              Score
-            </TableHead>
-            <TableHead className="hidden sm:table-cell whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
-              Reasoning
-            </TableHead>
-            <TableHead className="whitespace-nowrap px-2 py-1.5 text-xs text-muted-foreground uppercase tracking-wider font-medium">
-              TX
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {votes.map((vote) => {
-            const parsedScore =
-              typeof vote.evaluation_score === "string"
-                ? JSON.parse(vote.evaluation_score)
-                : vote.evaluation_score;
+        try {
+          const parsedScore =
+            typeof value === "string" ? JSON.parse(value) : value;
+
+          // Handle object score format with final_score property
+          if (typeof parsedScore === "object" && parsedScore !== null) {
+            const finalScore =
+              parsedScore.final_score ?? parsedScore.score ?? parsedScore;
             return (
-              <TableRow
-                key={vote.id}
-                className="border-border/50 hover:bg-muted/30 transition-colors"
-              >
-                <TableCell className="px-2 py-1.5 text-xs break-all text-muted-foreground">
-                  {vote.address ? (
-                    <span title={vote.address}>
-                      {truncateAddress(vote.address)}
-                    </span>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-
-                {/* Vote Yes/No */}
-                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs">
-                  {vote.tx_id ? (
-                    vote.answer ? (
-                      <span className="flex items-center text-primary font-medium">
-                        <ThumbsUp className="h-3 w-3 mr-1 flex-shrink-0" />
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-secondary font-medium">
-                        <ThumbsDown className="h-3 w-3 mr-1 flex-shrink-0" />
-                        No
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-
-                <TableCell className="text-xs text-center px-2 py-1.5">
-                  {vote.amount !== null && vote.amount !== undefined ? (
-                    <TokenBalance value={vote.amount} variant="abbreviated" />
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-
-                <TableCell className="hidden sm:table-cell text-xs text-center px-2 py-1.5">
-                  {parsedScore?.final_score !== undefined ? (
-                    <span className="tabular-nums font-medium">
-                      {parsedScore.final_score}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-
-                {/* Reasoning */}
-                <TableCell className="hidden sm:table-cell px-2 py-1.5 text-xs break-words">
-                  {vote.reasoning ? (
-                    <div className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <div className="line-clamp-2 text-ellipsis overflow-hidden max-w-[200px] sm:max-w-[300px]">
-                            {vote.reasoning}
-                          </div>
-                        </DialogTrigger>
-                        <DialogContent className="w-[95vw] sm:w-[90vw] max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle>Vote Reasoning</DialogTitle>
-                          </DialogHeader>
-                          <div className="mt-3 px-1 overflow-y-auto flex-1">
-                            {/* Flag Badges */}
-                            {renderFlagBadges(vote.flags)}
-
-                            {/* Reasoning Content */}
-                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-li:my-1">
-                              <ReactMarkdown>
-                                {vote.reasoning || ""}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-
-                {/* TX Link */}
-                <TableCell className="px-2 py-1.5 text-center text-xs">
-                  {vote.tx_id ? (
-                    <a
-                      href={`https://explorer.stacks.co/txid/${
-                        vote.tx_id
-                      }?chain=${
-                        process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-                          ? "testnet"
-                          : "mainnet"
-                      }`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80 inline-block"
-                      title={`View transaction ${vote.tx_id}`}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-              </TableRow>
+              <Badge variant="secondary" className="text-xs">
+                {typeof finalScore === "number"
+                  ? finalScore.toFixed(1)
+                  : String(finalScore)}
+              </Badge>
             );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+          }
+
+          // Handle simple numeric scores
+          return (
+            <Badge variant="secondary" className="text-xs">
+              {typeof parsedScore === "number"
+                ? parsedScore.toFixed(1)
+                : String(parsedScore)}
+            </Badge>
+          );
+        } catch {
+          return <span className="text-muted-foreground text-xs">-</span>;
+        }
+      },
+    },
+    {
+      key: "reasoning",
+      label: "Reasoning",
+      filterable: true,
+      responsive: "sm",
+      render: (value: string) => {
+        if (!value)
+          return <span className="text-muted-foreground text-xs">-</span>;
+
+        return (
+          <div className="max-w-xs">
+            <p className="text-xs text-muted-foreground truncate" title={value}>
+              {value}
+            </p>
+          </div>
+        );
+      },
+    },
+    {
+      key: "tx_id",
+      label: "TX",
+      width: 60,
+      align: "center",
+      render: (value: string) => {
+        if (!value)
+          return <span className="text-muted-foreground text-xs">-</span>;
+
+        return (
+          <a
+            href={getExplorerLink("tx", value)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        );
+      },
+    },
+  ];
+
+  return (
+    <DataTable.Provider
+      data={votes || []}
+      columns={columns}
+      isLoading={isLoading}
+      error={isError ? error?.message || "Unknown error" : null}
+      defaultSort={{ column: "created_at", direction: "desc" }}
+      itemHeight={56}
+      containerHeight={400}
+    >
+      <DataTable.Container>
+        <DataTable.Toolbar
+          showSearch={true}
+          searchPlaceholder="Search votes..."
+        />
+
+        {isLoading ? (
+          <DataTable.Loading rows={8} />
+        ) : isError ? (
+          <DataTable.Error
+            title="Failed to load votes"
+            description={
+              error?.message ||
+              "There was an error loading the vote data. Please try again."
+            }
+            onRetry={() => window.location.reload()}
+          />
+        ) : !votes || votes.length === 0 ? (
+          <DataTable.Empty
+            icon={<ThumbsUp className="h-12 w-12 text-muted-foreground/50" />}
+            title="No votes recorded"
+            description="No votes have been recorded for this contribution yet."
+          />
+        ) : (
+          <DataTable.Virtualized />
+        )}
+      </DataTable.Container>
+    </DataTable.Provider>
   );
 };
 
