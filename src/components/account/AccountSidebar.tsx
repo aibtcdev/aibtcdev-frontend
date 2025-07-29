@@ -94,7 +94,8 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             </div>
             <Switch
               checked={canUseProposals}
-              onCheckedChange={setCanUseProposals}
+              disabled
+              className="pointer-events-none"
             />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
@@ -103,7 +104,8 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             </div>
             <Switch
               checked={canApproveRevokeContracts}
-              onCheckedChange={setCanApproveRevokeContracts}
+              disabled
+              className="pointer-events-none"
             />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
@@ -112,7 +114,11 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Switch checked={canBuySell} onCheckedChange={setCanBuySell} />
+            <Switch
+              checked={canBuySell}
+              disabled
+              className="pointer-events-none"
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -120,7 +126,11 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Deposit tokens into the agent account
               </p>
             </div>
-            <Switch checked={canDeposit} onCheckedChange={setCanDeposit} />
+            <Switch
+              checked={canDeposit}
+              disabled
+              className="pointer-events-none"
+            />
           </div>
         </div>
 
@@ -132,7 +142,8 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             </div>
             <Switch
               checked={canUseProposals}
-              onCheckedChange={setCanUseProposals}
+              disabled
+              className="pointer-events-none"
             />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
@@ -141,7 +152,8 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
             </div>
             <Switch
               checked={canApproveRevokeContracts}
-              onCheckedChange={setCanApproveRevokeContracts}
+              disabled
+              className="pointer-events-none"
             />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
@@ -150,7 +162,11 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Trade sBTC and DAO tokens in contract
               </p>
             </div>
-            <Switch checked={canBuySell} onCheckedChange={setCanBuySell} />
+            <Switch
+              checked={canBuySell}
+              disabled
+              className="pointer-events-none"
+            />
           </div>
           <div className="flex items-center justify-between p-3 rounded-md border bg-background">
             <div>
@@ -158,7 +174,11 @@ export function AccountSidebar({ agentAddress, xHandle }: Props) {
                 Deposit tokens into the agent account
               </p>
             </div>
-            <Switch checked={canDeposit} onCheckedChange={setCanDeposit} />
+            <Switch
+              checked={canDeposit}
+              disabled
+              className="pointer-events-none"
+            />
           </div>
         </div>
       </div>
