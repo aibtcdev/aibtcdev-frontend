@@ -161,6 +161,7 @@ export default function ProposalDetailsPage() {
           </div>
         }
       >
+        {/* proposal details */}
         <ProposalDetails proposal={proposal} />
       </Suspense>
     </div>
