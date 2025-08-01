@@ -2,6 +2,7 @@
 export * from "./dao";
 export * from "./proposal";
 export * from "./vote";
+export * from "./veto";
 export * from "./agent";
 export * from "./crew";
 export * from "./user";
