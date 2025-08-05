@@ -14,7 +14,7 @@ interface VotingSectionProps {
 
 export function VotingSection({
   proposal,
-  tokenSymbol = "STX",
+  tokenSymbol,
   defaultOpen = true,
 }: VotingSectionProps) {
   return (
@@ -38,6 +38,7 @@ export function VotingSection({
             <VotingProgressChart
               proposal={proposal}
               tokenSymbol={tokenSymbol}
+              contractPrincipal={proposal.contract_principal}
             />
           </ProposalSection.Content>
         </ProposalSection.Card>
