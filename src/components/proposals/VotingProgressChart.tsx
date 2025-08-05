@@ -73,8 +73,8 @@ const VotingProgressChart = ({
   console.log("parsedVotes state:", parsedVotes);
 
   // Fetch live vote data with real-time updates using getProposalVotes
-  const proposalId = Number(proposal.id);
-
+  const proposalId = Number(proposal.proposal_id);
+  // console.log(proposalId);
   const { data: proposalVoteData, isLoading: isLoadingVotes } = useQuery({
     queryKey: ["proposalVotes", proposalId, contractPrincipal],
     queryFn: async () => {

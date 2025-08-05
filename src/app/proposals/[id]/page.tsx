@@ -27,7 +27,7 @@ function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
   //   useProposalStatus(proposal);
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 ml-0 lg:ml-64">
       <Button
         variant="ghost"
         size="sm"
@@ -146,7 +146,7 @@ export default function ProposalDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
       <ProposalHeader proposal={proposal} />
 
       <Suspense
