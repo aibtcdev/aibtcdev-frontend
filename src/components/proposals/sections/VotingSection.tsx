@@ -14,7 +14,7 @@ interface VotingSectionProps {
 
 export function VotingSection({
   proposal,
-  tokenSymbol = "STX",
+  tokenSymbol,
   defaultOpen = true,
 }: VotingSectionProps) {
   return (
