@@ -9,5 +9,6 @@ export * from "./dao.service";
 export * from "./job.service";
 export * from "./tool.service";
 export * from "./vote.service";
+export * from "./veto.service";
 export * from "./wallet.service";
 export * from "./wallet-token.service";
