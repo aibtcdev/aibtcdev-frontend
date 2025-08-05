@@ -38,6 +38,7 @@ export function VotingSection({
             <VotingProgressChart
               proposal={proposal}
               tokenSymbol={tokenSymbol}
+              contractPrincipal={proposal.contract_principal}
             />
           </ProposalSection.Content>
         </ProposalSection.Card>
