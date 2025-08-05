@@ -145,23 +145,23 @@ export default function ProposalDetailsPage() {
     );
   }
 
-  const handleVote = () => {
-    // TODO: Implement voting functionality
-    console.log("Vote clicked");
-  };
+  // const handleVote = () => {
+  //   // TODO: Implement voting functionality
+  //   console.log("Vote clicked");
+  // };
 
-  const handleShare = () => {
-    // TODO: Implement share functionality
-    if (navigator.share) {
-      navigator.share({
-        title: proposal.title,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      // TODO: Show toast notification
-    }
-  };
+  // const handleShare = () => {
+  //   // TODO: Implement share functionality
+  //   if (navigator.share) {
+  //     navigator.share({
+  //       title: proposal.title,
+  //       url: window.location.href,
+  //     });
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     // TODO: Show toast notification
+  //   }
+  // };
 
   const handleReport = () => {
     // TODO: Implement report functionality
@@ -183,8 +183,8 @@ export default function ProposalDetailsPage() {
         <div className="hidden lg:block lg:col-span-3">
           <ProposalSidebar
             proposal={proposal}
-            onVote={handleVote}
-            onShare={handleShare}
+            // onVote={handleVote}
+            // onShare={handleShare}
           />
         </div>
 
@@ -212,8 +212,8 @@ export default function ProposalDetailsPage() {
 
       {/* Mobile Fixed Action Bar - One Primary Action */}
       <FixedActionBar
-        onPrimaryAction={handleVote}
-        onSecondaryAction={handleShare}
+        // onPrimaryAction={handleVote}
+        // onSecondaryAction={handleShare}
         primaryActionLabel="Vote"
         secondaryActions={[
           {

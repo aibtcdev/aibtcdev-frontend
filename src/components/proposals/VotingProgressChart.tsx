@@ -87,6 +87,7 @@ const VotingProgressChart = ({
     },
     enabled: !!proposalId && !!contractPrincipal,
     refetchOnWindowFocus: true,
+
     staleTime: 5000, // Consider data stale after 5 seconds
     refetchInterval: isActive ? 10000 : false, // Refetch every 10 seconds if voting is active
     retry: 3,
