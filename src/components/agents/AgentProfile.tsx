@@ -14,7 +14,7 @@ interface AgentProfileProps {
 }
 
 export function AgentProfile({
-  name = "Agent AIBTCDEV",
+  name = "Agent AIBTC",
   description = "AI Agent specialized in blockchain analysis and market intelligence",
   walletAddress = "bc1q...xyz",
   balance = "0.0023 BTC",
