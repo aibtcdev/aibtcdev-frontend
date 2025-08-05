@@ -1,20 +1,13 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalBadge";
+import { TimeRemainingMetric } from "./TimeRemainingMetric";
 import { useProposalHasVetos } from "@/hooks/useVetos";
 import type { ProposalWithDAO } from "@/types";
-import {
-  Clock,
-  Hash,
-  User,
-  AlertTriangle,
-  Shield,
-  Vote,
-  Share,
-} from "lucide-react";
+import { Hash, User, AlertTriangle, Shield, Vote, Share } from "lucide-react";
 import { getExplorerLink } from "@/utils/format";
 import { safeString } from "@/utils/proposal";
 import { cn } from "@/lib/utils";
@@ -108,38 +101,6 @@ function VetosMetric({ proposalId }: { proposalId: string }) {
   );
 }
 
-function TimeRemainingMetric({ proposal }: { proposal: ProposalWithDAO }) {
-  const now = Date.now();
-  const voteEnd = Number(proposal.vote_end) * 1000; // Convert to milliseconds
-  const timeLeft = voteEnd - now;
-
-  let displayValue: string;
-  let variant: "default" | "warning" | "success" = "default";
-
-  if (timeLeft <= 0) {
-    displayValue = "Ended";
-    variant = "default";
-  } else if (timeLeft < 24 * 60 * 60 * 1000) {
-    // Less than 24 hours
-    const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
-    displayValue = `${hoursLeft}h left`;
-    variant = "warning";
-  } else {
-    const daysLeft = Math.floor(timeLeft / (24 * 60 * 60 * 1000));
-    displayValue = `${daysLeft}d left`;
-    variant = "success";
-  }
-
-  return (
-    <MetricCard
-      icon={<Clock className="h-4 w-4" />}
-      label="Time"
-      value={displayValue}
-      variant={variant}
-    />
-  );
-}
-
 export function ProposalSidebar({
   proposal,
   className,
@@ -175,13 +136,13 @@ export function ProposalSidebar({
           label="Creator"
           value={
             <span className="font-mono">
-              {safeString(proposal.creator).slice(0, 8)}...
+              {`${safeString(proposal.creator).slice(0, 5)}...${safeString(proposal.creator).slice(-5)}`}
             </span>
           }
           link={getExplorerLink("address", proposal.creator)}
         />
 
-        {/* Time Remaining */}
+        {/* Time Information - Updated to show multiple metrics */}
         <TimeRemainingMetric proposal={proposal} />
 
         {/* Vetos */}
@@ -196,12 +157,11 @@ export function ProposalSidebar({
             Vote on Proposal
           </Button>
         )}
-
         {onShare && (
           <Button
             onClick={onShare}
             variant="outline"
-            className="w-full"
+            className="w-full bg-transparent"
             size="sm"
           >
             <Share className="h-4 w-4 mr-2" />
