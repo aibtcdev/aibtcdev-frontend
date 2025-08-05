@@ -8,10 +8,11 @@ import { safeNumberFromBigInt } from "@/utils/proposal";
 
 // Import section components
 import MessageSection from "./sections/MessageSection";
-import VotingSection from "./sections/VotingSection";
+// import VotingSection from "./sections/VotingSection";
 import VotesSection from "./sections/VotesSection";
 import VetosSection from "./sections/VetosSection";
 import ChainSection from "./sections/ChainSection";
+import VotingProgressChart from "./VotingProgressChart";
 
 interface ProposalDetailsProps {
   proposal: Proposal | ProposalWithDAO;
@@ -22,7 +23,7 @@ interface ProposalDetailsProps {
 const ProposalDetails = ({
   proposal,
   className = "",
-  tokenSymbol = "",
+  tokenSymbol,
 }: ProposalDetailsProps) => {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -95,12 +96,16 @@ const ProposalDetails = ({
       <MessageSection proposal={proposal} defaultOpen={true} />
 
       {/* Voting Progress - Primary Content, Always Open */}
-      <VotingSection
+      {/* <VotingSection
         proposal={proposal}
         tokenSymbol={tokenSymbol}
         defaultOpen={true}
+      /> */}
+      <VotingProgressChart
+        proposal={proposal}
+        tokenSymbol={tokenSymbol}
+        contractPrincipal={proposal.contract_principal}
       />
-
       {/* Secondary Content - Progressive Disclosure */}
       <VotesSection proposalId={proposal.id} defaultOpen={false} />
 
