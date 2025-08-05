@@ -8,6 +8,7 @@ export interface Vote {
   answer: boolean;
   proposal_id: string;
   proposal_title: string;
+  proposal_content: string | null;
   reasoning: string | null;
   tx_id: string | null;
   address: string | null;

@@ -417,7 +417,7 @@ export default function ApplicationLayout({
               <div className="flex items-center gap-3">
                 <Image
                   src="/logos/aibtcdev-avatar-1000px.png"
-                  alt="AIBTCDEV"
+                  alt="AIBTC"
                   width={24}
                   height={24}
                   className="rounded-lg shadow-lg shadow-primary/20"

@@ -13,15 +13,10 @@ import {
   Ban,
   FileText,
   XCircle,
+  ExternalLink,
+  Filter,
+  X,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Vote as VoteType } from "@/types";
@@ -31,19 +26,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import Link from "next/link";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 
 interface VotesViewProps {
   votes: VoteType[];
@@ -78,7 +67,6 @@ const formatRelativeTime = (dateStr: string): string => {
 // Helper function to safely convert bigint to number for comparison
 const safeNumberFromBigInt = (value: bigint | null): number => {
   if (value === null) return 0;
-  // Handle potential overflow for very large bigint values
   if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
     return Number.MAX_SAFE_INTEGER;
   }
@@ -110,270 +98,294 @@ const getVoteOutcome = (
   const execEnd = safeNumberFromBigInt(vote.exec_end);
   if (currentBitcoinHeight <= execEnd) return "pending";
 
-  // Determine if vote passed based on the answer
   return vote.answer ? "passed" : "failed";
 };
 
 function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence > 0.75) return "bg-green-500";
-    if (confidence > 0.5) return "bg-yellow-500";
-    return "bg-red-500";
-  };
-
-  const getStatusBadge = () => {
+  const getStatusInfo = () => {
     if (vote.voted === false) {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-primary/10 text-primary border-primary/20"
-        >
-          <Search className="h-3 w-3 mr-1" />
-          Evaluating
-        </Badge>
-      );
+      return {
+        badge: (
+          <Badge
+            variant="outline"
+            className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+          >
+            <Search className="h-3 w-3 mr-1" />
+            Evaluating
+          </Badge>
+        ),
+        description: "AI Agent is evaluating...",
+      };
     }
 
     if (isInVetoWindow(vote, currentBitcoinHeight)) {
-      return (
-        <Badge
-          variant="destructive"
-          className="bg-secondary/10 text-secondary border-secondary/20"
-        >
-          <Ban className="h-3 w-3 mr-1" />
-          Veto Period
-        </Badge>
-      );
+      return {
+        badge: (
+          <Badge
+            variant="destructive"
+            className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+          >
+            <Ban className="h-3 w-3 mr-1" />
+            Veto Period
+          </Badge>
+        ),
+        description: "In veto window",
+      };
     }
 
     const outcome = getVoteOutcome(vote, currentBitcoinHeight);
     if (outcome === "passed") {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-        >
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Passed
-        </Badge>
-      );
+      return {
+        badge: (
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Passed
+          </Badge>
+        ),
+        description: "Proposal passed",
+      };
     } else if (outcome === "failed") {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-        >
-          <XCircle className="h-3 w-3 mr-1" />
-          Failed
-        </Badge>
-      );
+      return {
+        badge: (
+          <Badge
+            variant="outline"
+            className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+          >
+            <XCircle className="h-3 w-3 mr-1" />
+            Failed
+          </Badge>
+        ),
+        description: "Proposal failed",
+      };
     }
 
-    return (
-      <Badge
-        variant="outline"
-        className="bg-primary/10 text-primary border-primary/20"
-      >
-        <Clock className="h-3 w-3 mr-1" />
-        In Progress
-      </Badge>
-    );
+    return {
+      badge: (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+        >
+          <Clock className="h-3 w-3 mr-1" />
+          In Progress
+        </Badge>
+      ),
+      description: "Voting in progress",
+    };
   };
 
   const getVoteResult = () => {
     if (vote.voted === false) {
-      return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Search className="h-4 w-4" />
-          <span>AI Agent is evaluating...</span>
-        </div>
-      );
+      return null;
     }
 
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger className="flex items-center gap-2 text-sm">
-            {vote.answer ? (
-              <div className="flex items-center gap-1.5 text-green-600">
-                <ThumbsUp className="h-4 w-4" />
-                <span className="font-medium">Voted Yes</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-red-600">
-                <ThumbsDown className="h-4 w-4" />
-                <span className="font-medium">Voted No</span>
-              </div>
-            )}
-          </TooltipTrigger>
-          <TooltipContent>
-            Your AI agent votes on your behalf based on predefined preferences.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center gap-2">
+        {vote.answer ? (
+          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+            <ThumbsUp className="h-4 w-4" />
+            <span className="font-medium text-sm">Voted Yes</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+            <ThumbsDown className="h-4 w-4" />
+            <span className="font-medium text-sm">Voted No</span>
+          </div>
+        )}
+      </div>
     );
   };
 
+  const statusInfo = getStatusInfo();
+
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden">
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0">
-            <h3
-              className="text-base font-semibold text-foreground leading-snug mb-2"
-              title={vote.proposal_title}
-            >
-              {vote.proposal_title}
-            </h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <p className="font-medium text-xs text-foreground truncate">
+    <Card className="group hover:shadow-md transition-all duration-200 border-border/50">
+      <CardContent className="p-4 sm:p-5">
+        {/* Header */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground leading-tight line-clamp-2">
+                {vote.proposal_title}
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="flex items-center gap-1"
+              >
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+                <span className="text-sm font-medium">
+                  {isExpanded ? "Hide reasoning" : "Show reasoning"}
+                </span>
+              </Button>
+            </div>
+
+            {/* Status and Vote Result */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {statusInfo.badge}
+              {getVoteResult()}
+            </div>
+
+            {/* Meta Information */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
                 {vote.dao_name}
-              </p>
-              {getStatusBadge()}
+              </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {formatRelativeTime(vote.created_at)}
               </span>
             </div>
           </div>
-          <div className="flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 h-7 w-7"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
         </div>
 
-        <div className="pt-2 mt-2 border-t border-border/30">
-          <div className="flex items-center justify-between">
-            {getVoteResult()}
-            <div className="flex items-center gap-2">
-              <Link href={`/proposals/${vote.proposal_id}`}>
-                <Button
-                  variant="outline"
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-border/30">
+          <div className="flex items-center gap-2">
+            <Link href={`/proposals/${vote.proposal_id}`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs bg-transparent"
+              >
+                <FileText className="h-3 w-3 mr-1.5" />
+                View Contribution
+              </Button>
+            </Link>
+
+            {vote.dao_id &&
+              vote.proposal_id &&
+              isInVetoWindow(vote, currentBitcoinHeight) && (
+                <DAOVetoProposal
+                  daoId={vote.dao_id}
+                  proposalId={vote.proposal_id}
                   size="sm"
-                  className="h-7 px-2 text-xs"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  View
-                </Button>
-              </Link>
-              {vote.dao_id &&
-                vote.proposal_id &&
-                isInVetoWindow(vote, currentBitcoinHeight) && (
-                  <DAOVetoProposal
-                    daoId={vote.dao_id}
-                    proposalId={vote.proposal_id}
-                    size="sm"
-                    variant="destructive"
-                  />
-                )}
-            </div>
+                  variant="destructive"
+                />
+              )}
           </div>
+
+          {vote.confidence !== null && (
+            <div className="text-xs text-muted-foreground">
+              Confidence: {Math.round(vote.confidence * 100)}%
+            </div>
+          )}
         </div>
 
+        {/* Expanded Content */}
         {isExpanded && (
-          <div className="pt-3 mt-3 space-y-3 border-t border-border/30">
-            {/* Key Information Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Proposal ID
-                </div>
-                <div className="text-sm font-medium">{vote.proposal_id}</div>
-              </div>
-
-              {vote.vote_start && (
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Vote Start Block
-                  </div>
-                  <div className="text-sm font-medium">
-                    {safeNumberFromBigInt(vote.vote_start)}
-                  </div>
-                </div>
-              )}
-
-              {vote.vote_end && (
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Vote End Block
-                  </div>
-                  <div className="text-sm font-medium">
-                    {safeNumberFromBigInt(vote.vote_end)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Reasoning - Compact Preview */}
+          <div className="pt-4 mt-4 space-y-4 border-t border-border/30">
+            {/* AI Reasoning */}
             {vote.reasoning && (
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">AI Agent Reasoning</h4>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                      >
-                        Read Full
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Vote Reasoning</DialogTitle>
-                      </DialogHeader>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{vote.reasoning}</ReactMarkdown>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <div className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                  {vote.reasoning}
+              <div>
+                <h4 className="text-sm font-semibold mb-2 text-foreground">
+                  AI Reasoning
+                </h4>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground">
+                    {vote.reasoning}
+                  </div>
                 </div>
               </div>
             )}
+
+            {/* Proposal Content */}
+            {vote.proposal_content &&
+              (() => {
+                const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+                const match = vote.proposal_content.match(referenceRegex);
+                const referenceLink = match?.[1];
+                const cleanedContent = vote.proposal_content
+                  .replace(referenceRegex, "")
+                  .trim();
+
+                return (
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2 text-foreground">
+                        Contribution Message
+                      </h4>
+                      <div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap break-words bg-muted/30 rounded-lg p-3">
+                        {cleanedContent}
+                      </div>
+                    </div>
+
+                    {referenceLink && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                          Reference
+                        </h5>
+                        <a
+                          href={referenceLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:text-primary/80 transition-colors break-all flex items-start gap-2"
+                        >
+                          <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <span className="break-all">{referenceLink}</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+            {/* Key Information */}
+            <div>
+              <h4 className="text-sm font-semibold mb-2 text-foreground">
+                Key Information
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Proposal ID
+                  </div>
+                  <div className="text-sm font-medium">{vote.proposal_id}</div>
+                </div>
+
+                {vote.vote_start && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Vote Start Block
+                    </div>
+                    <div className="text-sm font-medium">
+                      {safeNumberFromBigInt(vote.vote_start)}
+                    </div>
+                  </div>
+                )}
+
+                {vote.vote_end && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Vote End Block
+                    </div>
+                    <div className="text-sm font-medium">
+                      {safeNumberFromBigInt(vote.vote_end)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
-
-      {vote.confidence !== null && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="w-full">
-              <Progress
-                value={vote.confidence * 100}
-                className="h-1 rounded-none bg-muted/50"
-                indicatorClassName={getConfidenceColor(vote.confidence)}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {Math.round(vote.confidence * 100)}% confidence in this vote.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
     </Card>
   );
 }
 
 export function VotesView({ votes }: VotesViewProps) {
   const [visibleCount, setVisibleCount] = useState(10);
+  const [selectedDao, setSelectedDao] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch current Bitcoin block height
   const { data: chainState } = useQuery({
@@ -430,17 +442,14 @@ export function VotesView({ votes }: VotesViewProps) {
     [votes, currentBitcoinHeight]
   );
 
-  // Determine default tab based on available votes using useCallback
+  // Determine default tab based on available votes
   const getDefaultTab = useCallback((): TabType => {
     if (getTabCount("veto") > 0) return "veto";
     if (getTabCount("voting") > 0) return "voting";
     if (getTabCount("evaluation") > 0) return "evaluation";
-
-    // If there are any passed votes, show them, otherwise show all.
     if (getTabCount("passed") > 0) return "passed";
     if (votes.length > 0) return "all";
-
-    return "evaluation"; // Default if no votes at all
+    return "evaluation";
   }, [getTabCount, votes.length]);
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
@@ -455,55 +464,52 @@ export function VotesView({ votes }: VotesViewProps) {
     setVisibleCount(10);
   }, [activeTab]);
 
-  // Filter votes based on tab with block height logic
+  // Filter votes based on tab and DAO filter
   const filteredVotes = useMemo(() => {
-    switch (activeTab) {
-      case "evaluation":
-        return votes.filter((vote) => vote.voted === false);
-
-      case "voting":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_start || !vote.vote_end) return false;
-
-          const voteStart = safeNumberFromBigInt(vote.vote_start);
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-
-          return (
-            currentBitcoinHeight >= voteStart && currentBitcoinHeight <= voteEnd
+    const byTab = (() => {
+      switch (activeTab) {
+        case "evaluation":
+          return votes.filter((vote) => vote.voted === false);
+        case "voting":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_start || !vote.vote_end) return false;
+            const voteStart = safeNumberFromBigInt(vote.vote_start);
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            return (
+              currentBitcoinHeight >= voteStart &&
+              currentBitcoinHeight <= voteEnd
+            );
+          });
+        case "veto":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_end || !vote.exec_start) return false;
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            const execStart = safeNumberFromBigInt(vote.exec_start);
+            return (
+              currentBitcoinHeight > voteEnd &&
+              currentBitcoinHeight <= execStart
+            );
+          });
+        case "passed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
           );
-        });
-
-      case "veto":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_end || !vote.exec_start) return false;
-
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-          const execStart = safeNumberFromBigInt(vote.exec_start);
-
-          return (
-            currentBitcoinHeight > voteEnd && currentBitcoinHeight <= execStart
+        case "failed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
           );
-        });
+        case "all":
+        default:
+          return votes;
+      }
+    })();
 
-      case "passed":
-        return votes.filter((vote) => {
-          const outcome = getVoteOutcome(vote, currentBitcoinHeight);
-          return outcome === "passed";
-        });
-
-      case "failed":
-        return votes.filter((vote) => {
-          const outcome = getVoteOutcome(vote, currentBitcoinHeight);
-          return outcome === "failed";
-        });
-
-      case "all":
-      default:
-        return votes;
-    }
-  }, [votes, activeTab, currentBitcoinHeight]);
+    return selectedDao
+      ? byTab.filter((vote) => vote.dao_name === selectedDao)
+      : byTab;
+  }, [votes, activeTab, currentBitcoinHeight, selectedDao]);
 
   const paginatedVotes = filteredVotes.slice(0, visibleCount);
 
@@ -522,25 +528,6 @@ export function VotesView({ votes }: VotesViewProps) {
       case "all":
       default:
         return "All Votes";
-    }
-  };
-
-  const getTabTooltipContent = (tab: TabType): string => {
-    switch (tab) {
-      case "evaluation":
-        return "Proposals being assessed by AI agents for feasibility and alignment.";
-      case "voting":
-        return "Proposals currently open for voting by DAO members.";
-      case "veto":
-        return "A time window to challenge and potentially overturn a passed vote.";
-      case "passed":
-        return "Proposals that have been approved by voters.";
-      case "failed":
-        return "Proposals that have been rejected by voters.";
-      case "all":
-        return "View all proposals regardless of their status.";
-      default:
-        return "";
     }
   };
 
@@ -571,163 +558,281 @@ export function VotesView({ votes }: VotesViewProps) {
     "all",
   ];
 
-  const renderSidebar = (isMobile = false) => {
-    if (isMobile) {
-      return (
-        <div className="md:hidden mb-4">
-          <Select
-            onValueChange={(value: TabType) => setActiveTab(value)}
-            defaultValue={activeTab}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a view" />
-            </SelectTrigger>
-            <SelectContent>
-              {tabs.map((tab) => {
-                const tabCount = getTabCount(tab);
-                if (tab === "all" && votes.length === 0) return null;
-                return (
-                  <SelectItem key={tab} value={tab}>
-                    {getTabTitle(tab)} ({tabCount})
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+  // Get unique DAO names
+  const uniqueDaoNames = useMemo(() => {
+    const daoNamesSet = new Set(votes.map((v) => v.dao_name));
+    return Array.from(daoNamesSet);
+  }, [votes]);
+
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Status Filters */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-foreground">Status</h3>
+        <div className="space-y-1">
+          {tabs.map((tab) => {
+            const Icon = getTabIcon(tab);
+            const isActive = activeTab === tab;
+            const tabCount = getTabCount(tab);
+            const hasActionableItems =
+              (tab === "veto" || tab === "voting") && tabCount > 0;
+
+            if (tab === "all" && votes.length === 0) return null;
+
+            return (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setIsFilterOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
+                    : `hover:bg-muted/50 ${hasActionableItems ? "text-foreground" : "text-muted-foreground"}`
+                }`}
+              >
+                <Icon
+                  className={`h-4 w-4 ${
+                    tab === "veto" && tabCount > 0 && !isActive
+                      ? "animate-pulse text-red-500"
+                      : ""
+                  }`}
+                />
+                <span className="flex-1">{getTabTitle(tab)}</span>
+                {tabCount > 0 && (
+                  <Badge
+                    variant={isActive ? "default" : "secondary"}
+                    className="h-5 text-xs"
+                  >
+                    {tabCount}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
         </div>
-      );
-    }
+      </div>
 
-    return (
-      <aside className="hidden md:block sticky top-6 self-start">
-        <h2 className="text-lg font-semibold mb-4 pl-2">Filters</h2>
-        <TooltipProvider>
-          <nav className="flex flex-col space-y-1">
-            {tabs.map((tab) => {
-              const Icon = getTabIcon(tab);
-              const isActive = activeTab === tab;
-              const tabCount = getTabCount(tab);
-              const hasActionableItems =
-                (tab === "veto" || tab === "voting") && tabCount > 0;
+      <Separator />
 
-              if (tab === "all" && votes.length === 0) return null;
+      {/* DAO Filter */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-foreground">DAO</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => {
+              setSelectedDao(null);
+              setIsFilterOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+              selectedDao === null
+                ? "bg-primary/10 text-primary font-medium"
+                : "hover:bg-muted/50 text-muted-foreground"
+            }`}
+          >
+            <div className="w-4 h-4 flex items-center justify-center">
+              <div
+                className={`w-2 h-2 rounded-full ${selectedDao === null ? "bg-primary" : "bg-muted-foreground/30"}`}
+              />
+            </div>
+            <span className="flex-1">All DAOs</span>
+            <Badge
+              variant={selectedDao === null ? "default" : "secondary"}
+              className="h-5 text-xs"
+            >
+              {votes.length}
+            </Badge>
+          </button>
 
-              return (
-                <Tooltip key={tab} delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                        isActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : `hover:bg-muted/50 ${
-                              hasActionableItems
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
-                            }`
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 ${
-                          tab === "veto" && tabCount > 0 && !isActive
-                            ? "animate-pulse text-secondary"
-                            : ""
-                        }`}
-                      />
-                      <span className="flex-1 text-left">
-                        {getTabTitle(tab)}
-                      </span>
-                      {tabCount > 0 && (
-                        <Badge
-                          variant={isActive ? "default" : "secondary"}
-                          className="h-5"
-                        >
-                          {tabCount}
-                        </Badge>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{getTabTooltipContent(tab)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </nav>
-        </TooltipProvider>
-      </aside>
-    );
-  };
+          {uniqueDaoNames.map((daoName) => {
+            const daoVoteCount = votes.filter(
+              (vote) => vote.dao_name === daoName
+            ).length;
+            const isSelected = selectedDao === daoName;
+
+            return (
+              <button
+                key={daoName}
+                onClick={() => {
+                  setSelectedDao(daoName);
+                  setIsFilterOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+                  isSelected
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <div
+                    className={`w-2 h-2 rounded-full ${isSelected ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  />
+                </div>
+                <span className="flex-1 truncate" title={daoName}>
+                  {daoName}
+                </span>
+                <Badge
+                  variant={isSelected ? "default" : "secondary"}
+                  className="h-5 text-xs"
+                >
+                  {daoVoteCount}
+                </Badge>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[2400px] mx-auto px-2 sm:px-4">
-        <div className="md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 mt-6">
-          {renderSidebar()}
-          <main>
-            {renderSidebar(true)}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="lg:grid lg:grid-cols-[280px_1fr] gap-8 py-6">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block sticky top-6 self-start">
+            <div className="bg-card  rounded-lg p-4">
+              <h2 className="text-lg font-semibold mb-4 text-foreground">
+                Filters
+              </h2>
+              <FilterContent />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="space-y-6">
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">
+                  {getTabTitle(activeTab)}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {filteredVotes.length}{" "}
+                  {filteredVotes.length === 1 ? "proposal" : "proposals"}
+                  {selectedDao && ` from ${selectedDao}`}
+                </p>
+              </div>
+
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 bg-transparent"
+                  >
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <FilterContent />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Active Filters */}
+            {(activeTab !== "all" || selectedDao) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">
+                  Active filters:
+                </span>
+                {activeTab !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {getTabTitle(activeTab)}
+                    <button
+                      onClick={() => setActiveTab("all")}
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedDao && (
+                  <Badge variant="secondary" className="gap-1">
+                    {selectedDao}
+                    <button
+                      onClick={() => setSelectedDao(null)}
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            )}
 
             {/* Content */}
-            <div className="space-y-4">
-              {filteredVotes.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="text-center py-12">
-                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                      {(() => {
-                        const Icon = getTabIcon(activeTab);
-                        return (
-                          <Icon className="h-6 w-6 text-muted-foreground" />
-                        );
-                      })()}
-                    </div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      No {getTabTitle(activeTab).toLowerCase()} found
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {activeTab === "evaluation" &&
-                        "All proposals have moved beyond evaluation."}
-                      {activeTab === "voting" &&
-                        "No proposals are currently open for voting."}
-                      {activeTab === "veto" &&
-                        "No proposals are in the veto window."}
-                      {activeTab === "passed" &&
-                        "No proposals have passed yet."}
-                      {activeTab === "failed" &&
-                        "No proposals have failed yet."}
-                    </p>
-                    <Link href="/proposals">
-                      <Button variant="outline" className="gap-2">
-                        <FileText className="h-4 w-4" />
-                        Browse Proposals
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    {paginatedVotes.map((vote) => (
-                      <VoteCard
-                        key={vote.id}
-                        vote={vote}
-                        currentBitcoinHeight={currentBitcoinHeight}
-                      />
-                    ))}
+            {filteredVotes.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="text-center py-16">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    {(() => {
+                      const Icon = getTabIcon(activeTab);
+                      return <Icon className="h-8 w-8 text-muted-foreground" />;
+                    })()}
                   </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    No {getTabTitle(activeTab).toLowerCase()} found
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                    {activeTab === "evaluation" &&
+                      "All proposals have moved beyond evaluation."}
+                    {activeTab === "voting" &&
+                      "No proposals are currently open for voting."}
+                    {activeTab === "veto" &&
+                      "No proposals are in the veto window."}
+                    {activeTab === "passed" && "No proposals have passed yet."}
+                    {activeTab === "failed" && "No proposals have failed yet."}
+                    {activeTab === "all" &&
+                      selectedDao &&
+                      `No proposals found for ${selectedDao}.`}
+                    {activeTab === "all" &&
+                      !selectedDao &&
+                      "No proposals available."}
+                  </p>
+                  <Link href="/proposals">
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                      <FileText className="h-4 w-4" />
+                      Browse All Proposals
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {paginatedVotes.map((vote) => (
+                    <VoteCard
+                      key={vote.id}
+                      vote={vote}
+                      currentBitcoinHeight={currentBitcoinHeight}
+                    />
+                  ))}
+                </div>
 
-                  {filteredVotes.length > visibleCount && (
-                    <div className="text-center pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setVisibleCount((prev) => prev + 10)}
-                      >
-                        Show More
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                {filteredVotes.length > visibleCount && (
+                  <div className="text-center pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => setVisibleCount((prev) => prev + 10)}
+                      className="gap-2"
+                    >
+                      Load More Proposals
+                      <span className="text-xs text-muted-foreground">
+                        ({visibleCount} of {filteredVotes.length})
+                      </span>
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </main>
         </div>
       </div>
