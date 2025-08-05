@@ -12,6 +12,8 @@ interface ProposalTimingState {
   isActive: boolean;
   estimatedTimeRemaining: string | null;
   isEstimated: boolean;
+  estimatedStartTime: string | null;
+  isStartEstimated: boolean;
 }
 
 export function useProposalTiming(
@@ -45,17 +47,42 @@ export function useProposalTiming(
         isActive: false,
         estimatedTimeRemaining: null,
         isEstimated: false,
+        estimatedStartTime: null,
+        isStartEstimated: false,
       };
     }
 
     const isActive =
       currentBlock >= voteStartBlock && currentBlock < voteEndBlock;
+    const hasStarted = currentBlock >= voteStartBlock;
 
-    // Format start time
+    // Format start time or estimate it
     let startTime: string | null = null;
+    let estimatedStartTime: string | null = null;
+    let isStartEstimated = false;
+
     if (blockTimes?.startBlockTime) {
       const date = new Date(blockTimes.startBlockTime);
       startTime = date.toLocaleString();
+    } else {
+      // Estimate start time based on blocks difference
+      if (!hasStarted) {
+        // Future start time
+        const blocksUntilStart = voteStartBlock - currentBlock;
+        const minutesUntilStart = blocksUntilStart * minutesPerBlock;
+        const estimatedStartTimeMs = Date.now() + minutesUntilStart * 60 * 1000;
+        const estimatedDate = new Date(estimatedStartTimeMs);
+        estimatedStartTime = estimatedDate.toLocaleString();
+        isStartEstimated = true;
+      } else {
+        // Past start time (voting has started or ended)
+        const blocksPassed = currentBlock - voteStartBlock;
+        const minutesPassed = blocksPassed * minutesPerBlock;
+        const estimatedStartTimeMs = Date.now() - minutesPassed * 60 * 1000;
+        const estimatedDate = new Date(estimatedStartTimeMs);
+        estimatedStartTime = estimatedDate.toLocaleString();
+        isStartEstimated = true;
+      }
     }
 
     // Format end time
@@ -106,6 +133,8 @@ export function useProposalTiming(
       isActive,
       estimatedTimeRemaining,
       isEstimated,
+      estimatedStartTime,
+      isStartEstimated,
     };
   }, [
     currentBlock,

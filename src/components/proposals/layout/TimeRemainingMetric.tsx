@@ -63,8 +63,15 @@ interface TimeRemainingMetricProps {
 }
 
 export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
-  const { startTime, endTime, isActive, estimatedTimeRemaining, isEstimated } =
-    useProposalTiming(proposal);
+  const {
+    startTime,
+    endTime,
+    isActive,
+    estimatedTimeRemaining,
+    isEstimated,
+    estimatedStartTime,
+    isStartEstimated,
+  } = useProposalTiming(proposal);
 
   return (
     <div className="space-y-3">
@@ -72,8 +79,9 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
       <MetricCard
         icon={<Calendar className="h-4 w-4 text-primary" />}
         label={startTime ? "Voting Started" : "Voting Starts"}
-        value={startTime || "TBD"}
+        value={startTime || estimatedStartTime || "TBD"}
         variant="default"
+        isEstimated={isStartEstimated}
       />
 
       {/* Voting End Time */}

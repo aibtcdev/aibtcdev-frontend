@@ -136,7 +136,7 @@ export function ProposalSidebar({
           label="Creator"
           value={
             <span className="font-mono">
-              {safeString(proposal.creator).slice(0, 8)}...
+              {`${safeString(proposal.creator).slice(0, 5)}...${safeString(proposal.creator).slice(-5)}`}
             </span>
           }
           link={getExplorerLink("address", proposal.creator)}

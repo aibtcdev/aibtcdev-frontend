@@ -3,7 +3,15 @@
 import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Shield, Check, ExternalLink, AlertCircle } from "lucide-react";
+import {
+  Shield,
+  Check,
+  ExternalLink,
+  AlertCircle,
+  Clock,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import type { DAO } from "@/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -302,6 +310,34 @@ export function DAOVetoProposal({
     }
   };
 
+  /* ---------------------- Transaction Status Helper --------------------- */
+  const getTransactionStatus = () => {
+    if (!websocketMessage) {
+      if (isWaitingForTx)
+        return { status: "broadcasting", label: "Broadcasting", icon: Loader };
+      return null;
+    }
+
+    const { tx_status } = websocketMessage;
+
+    switch (tx_status) {
+      case "success":
+        return { status: "confirmed", label: "Confirmed", icon: CheckCircle2 };
+      case "pending":
+        return { status: "pending", label: "Pending", icon: Clock };
+      case "abort_by_response":
+      case "abort_by_post_condition":
+      case "dropped_replace_by_fee":
+      case "dropped_replace_across_fork":
+      case "dropped_too_expensive":
+      case "dropped_stale_garbage_collect":
+      case "dropped_problematic":
+        return { status: "failed", label: "Failed", icon: XCircle };
+      default:
+        return { status: "unknown", label: "Processing", icon: Clock };
+    }
+  };
+
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
   /* -------------------------------------------------------------------------- */
@@ -332,29 +368,32 @@ export function DAOVetoProposal({
 
       {/* ----------------------------- Result Modal ----------------------------- */}
       <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
-        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-auto">
+        <DialogContent className="sm:max-w-2xl">
           {apiResponse?.success ? (
             // Success state
             <>
               <DialogHeader>
                 <DialogTitle className="text-xl flex items-center gap-2">
                   <Check className="w-6 h-6" />
-                  Veto Transaction Successful
+                  Veto Transaction Submitted
                 </DialogTitle>
-                <DialogDescription className="text-base">
-                  Your veto contribution has been successfully submitted to the
-                  blockchain.
+                <DialogDescription>
+                  Your veto contribution has been successfully broadcasted to
+                  the blockchain.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-4 space-y-4">
+              <div className="mt-6 space-y-6">
                 {(() => {
                   const parsed = parseOutput(apiResponse.output);
+                  const txStatus = getTransactionStatus();
+
                   return (
                     <>
+                      {/* Transaction Link */}
                       {parsed?.data?.link && (
                         <div className="flex justify-center">
-                          <Button asChild>
+                          <Button asChild variant="outline">
                             <a
                               href={parsed.data.link}
                               target="_blank"
@@ -362,190 +401,115 @@ export function DAOVetoProposal({
                               className="inline-flex items-center gap-2"
                             >
                               <ExternalLink className="w-4 h-4" />
-                              View on Explorer
+                              View Transaction
                             </a>
                           </Button>
                         </div>
                       )}
 
-                      {/* WebSocket Status and Message */}
+                      {/* Transaction Status */}
                       {parsed?.data?.txid && (
-                        <div className="border rounded-lg p-4 bg-muted">
-                          <h4 className="font-semibold mb-2">
-                            Transaction Monitoring
-                          </h4>
-                          <p className="text-sm mb-2">
-                            Transaction ID:{" "}
-                            <code className=" px-1 py-0.5 rounded">
-                              {parsed.data.txid}
-                            </code>
-                          </p>
+                        <div className="border rounded-lg p-6">
+                          <div className="text-center space-y-4">
+                            <h3 className="text-lg font-semibold">
+                              Transaction Status
+                            </h3>
 
-                          {isWaitingForTx && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Loader />
-                              <span>
-                                Waiting for transaction confirmation via
-                                WebSocket...
-                              </span>
-                            </div>
-                          )}
+                            {txStatus && (
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                  {txStatus.icon === Loader ? (
+                                    <Loader />
+                                  ) : (
+                                    <txStatus.icon
+                                      className={`w-6 h-6 ${
+                                        txStatus.status === "confirmed"
+                                          ? "text-green-600"
+                                          : txStatus.status === "failed"
+                                            ? "text-red-600"
+                                            : "text-blue-600"
+                                      }`}
+                                    />
+                                  )}
+                                  <span className="text-lg font-medium">
+                                    {txStatus.label}
+                                  </span>
+                                </div>
 
-                          {websocketError && (
-                            <div className="text-sm text-red-500">
-                              <strong>WebSocket Error:</strong> {websocketError}
-                            </div>
-                          )}
+                                {txStatus.status === "confirmed" && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Your veto contribution has been confirmed on
+                                    the blockchain.
+                                  </p>
+                                )}
 
-                          {websocketMessage && (
-                            <div className="mt-3">
-                              <h5 className="font-medium mb-3">
-                                Transaction Status Update:
-                              </h5>
-                              {(() => {
-                                const {
-                                  tx_status,
-                                  tx_result,
-                                  block_height,
-                                  block_time_iso,
-                                  tx_id,
-                                } = websocketMessage;
-                                const isSuccess = tx_status === "success";
-                                const isPending = tx_status === "pending";
-                                const isFailed =
-                                  tx_status === "abort_by_response" ||
-                                  tx_status === "abort_by_post_condition" ||
-                                  tx_status === "dropped_replace_by_fee" ||
-                                  tx_status === "dropped_replace_across_fork" ||
-                                  tx_status === "dropped_too_expensive" ||
-                                  tx_status ===
-                                    "dropped_stale_garbage_collect" ||
-                                  tx_status === "dropped_problematic";
+                                {txStatus.status === "pending" && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Your transaction is being processed. This
+                                    may take a few minutes.
+                                  </p>
+                                )}
 
-                                return (
-                                  <div className="space-y-3">
-                                    {/* Status Badge */}
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium">
-                                        Status:
-                                      </span>
-                                      <span
-                                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                          isSuccess
-                                            ? "bg-green-100 text-green-800"
-                                            : isPending
-                                              ? "bg-orange-100 text-orange-800"
-                                              : isFailed
-                                                ? "bg-red-100 text-red-800"
-                                                : "bg-gray-100 text-gray-800"
-                                        }`}
-                                      >
-                                        {tx_status?.toUpperCase() || "UNKNOWN"}
-                                      </span>
-                                    </div>
+                                {txStatus.status === "failed" && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Your transaction failed to process. You can
+                                    try again.
+                                  </p>
+                                )}
 
-                                    {/* Transaction Details */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                      {tx_id && (
-                                        <div>
-                                          <span className="font-medium">
-                                            Transaction ID:
-                                          </span>
-                                          <p className="font-mono text-xs mt-1 break-all">
-                                            {tx_id}
-                                          </p>
-                                        </div>
-                                      )}
+                                {txStatus.status === "broadcasting" && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Broadcasting your transaction to the
+                                    network...
+                                  </p>
+                                )}
+                              </div>
+                            )}
 
-                                      {block_height && (
-                                        <div>
-                                          <span className="font-medium">
-                                            Block Height:
-                                          </span>
-                                          <p className="mt-1">
-                                            {block_height.toLocaleString()}
-                                          </p>
-                                        </div>
-                                      )}
+                            {!txStatus && !websocketError && (
+                              <div className="flex flex-col items-center gap-3">
+                                <Loader />
+                                <span className="text-lg font-medium">
+                                  Monitoring Transaction
+                                </span>
+                                <p className="text-sm text-muted-foreground">
+                                  Waiting for blockchain confirmation...
+                                </p>
+                              </div>
+                            )}
 
-                                      {block_time_iso && (
-                                        <div>
-                                          <span className="font-medium">
-                                            Block Time:
-                                          </span>
-                                          <p className="mt-1">
-                                            {new Date(
-                                              block_time_iso
-                                            ).toLocaleString()}
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Success Result */}
-                                    {isSuccess && tx_result && (
-                                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-green-800 mb-2">
-                                          ✅ Veto Transaction Successful
-                                        </h6>
-                                        <div className="text-sm text-green-700">
-                                          <span className="font-medium">
-                                            Result:
-                                          </span>
-                                          <p className="font-mono mt-1">
-                                            {tx_result.repr || tx_result.hex}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Failed Result */}
-                                    {isFailed && tx_result && (
-                                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-red-800 mb-2">
-                                          ❌ Veto Transaction Failed
-                                        </h6>
-                                        <div className="text-sm text-red-700">
-                                          <span className="font-medium">
-                                            Error Details:
-                                          </span>
-                                          <p className="font-mono mt-1">
-                                            {tx_result.repr || tx_result.hex}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Pending State */}
-                                    {isPending && (
-                                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                                        <h6 className="font-medium text-orange-800 mb-2">
-                                          ⏳ Veto Transaction Pending
-                                        </h6>
-                                        <p className="text-sm text-orange-700">
-                                          Transaction is being processed...
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Raw Data Toggle */}
-                                    <details className="mt-3">
-                                      <summary className="cursor-pointer hover:underline text-sm text-gray-600">
-                                        View raw WebSocket data
-                                      </summary>
-                                      <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-3 rounded border mt-2 max-h-48 overflow-auto font-mono">
-                                        {JSON.stringify(
-                                          websocketMessage,
-                                          null,
-                                          2
-                                        )}
-                                      </pre>
-                                    </details>
+                            {/* Transaction Details */}
+                            {websocketMessage?.block_height &&
+                              txStatus?.status === "confirmed" && (
+                                <div className="pt-4 border-t space-y-2">
+                                  <div className="text-sm">
+                                    <span className="font-medium">
+                                      Block Height:
+                                    </span>{" "}
+                                    {websocketMessage.block_height.toLocaleString()}
                                   </div>
-                                );
-                              })()}
-                            </div>
-                          )}
+                                  {websocketMessage.block_time_iso && (
+                                    <div className="text-sm">
+                                      <span className="font-medium">
+                                        Confirmed At:
+                                      </span>{" "}
+                                      {new Date(
+                                        websocketMessage.block_time_iso
+                                      ).toLocaleString()}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                            {/* WebSocket Error */}
+                            {websocketError && (
+                              <div className="text-sm text-muted-foreground">
+                                Unable to monitor transaction status
+                                automatically. You can check the transaction
+                                status using the link above.
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </>
@@ -554,10 +518,7 @@ export function DAOVetoProposal({
               </div>
 
               <div className="flex justify-end mt-6">
-                <Button
-                  variant="default"
-                  onClick={() => setShowResultDialog(false)}
-                >
+                <Button onClick={() => setShowResultDialog(false)}>
                   Close
                 </Button>
               </div>
@@ -568,40 +529,27 @@ export function DAOVetoProposal({
               <DialogHeader>
                 <DialogTitle className="text-xl flex items-center gap-2">
                   <AlertCircle className="w-6 h-6" />
-                  Veto Transaction Failed
+                  Transaction Failed
                 </DialogTitle>
-                <DialogDescription className="text-base">
+                <DialogDescription>
                   There was an error processing your veto contribution.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="mt-4">
-                <div className="bg-muted border rounded-lg p-4">
+              <div className="mt-6">
+                <div className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">Error Details</h4>
-                  <div className="text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {apiResponse?.error || "An unknown error occurred"}
-                  </div>
-                  {apiResponse?.output && (
-                    <details className="mt-3">
-                      <summary className="cursor-pointer hover:underline">
-                        View full response
-                      </summary>
-                      <pre className="whitespace-pre-wrap text-xs bg-white p-3 rounded border mt-2 max-h-48 overflow-auto font-mono">
-                        {apiResponse.output}
-                      </pre>
-                    </details>
-                  )}
+                  </p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 mt-6">
+              <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={handleRetry}>
                   Try Again
                 </Button>
-                <Button
-                  variant="default"
-                  onClick={() => setShowResultDialog(false)}
-                >
+                <Button onClick={() => setShowResultDialog(false)}>
                   Close
                 </Button>
               </div>
