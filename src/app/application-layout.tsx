@@ -8,7 +8,7 @@ import {
   Boxes,
   Menu,
   X,
-  FileText,
+  // FileText,
   Vote,
   ChevronDown,
   LogOut,
