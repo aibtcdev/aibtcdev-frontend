@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
 import DAOProposals from "@/components/proposals/DAOProposals";
-import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
+// import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -67,7 +67,7 @@ function PageContent() {
 
   return (
     <div className="w-full space-y-6">
-      <ProposalSubmission daoId={dao.id} />
+      {/* <ProposalSubmission daoId={dao.id} /> */}
       <DAOProposals
         key={`${dao.id}-${proposals?.length || 0}`}
         proposals={proposals || []}

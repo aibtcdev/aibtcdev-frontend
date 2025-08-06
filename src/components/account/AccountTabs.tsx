@@ -1,8 +1,9 @@
 "use client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Bot } from "lucide-react";
-import { OverviewTab } from "./tabs/OverviewTab";
-import { AgentTab } from "./tabs/AgentTab";
+import { LayoutDashboard, Bot, Wallet } from "lucide-react";
+import { ProfileTab } from "./tabs/ProfileTab";
+import { WalletTab } from "./tabs/WalletTab";
+import { InstructionsTab } from "./tabs/InstructionsTab";
 import { WalletBalance } from "@/store/wallet";
 
 interface AccountTabsProps {
@@ -15,28 +16,52 @@ interface AccountTabsProps {
   fetchWallets: (userId: string) => Promise<void>;
 }
 
-export function AccountTabs({}: AccountTabsProps) {
+export function AccountTabs({
+  userAgentAddress,
+  userAgentContractBalance,
+}: AccountTabsProps) {
   return (
     <div className="max-w-7xl mx-auto">
-      <Tabs defaultValue="overview" className="">
-        <TabsList className="flex justify-center sm:justify-end gap-2 mb-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
+      <Tabs defaultValue="profile" className="">
+        <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
+          <TabsTrigger
+            value="profile"
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             <LayoutDashboard className="h-4 w-4" />
-            <span className=" sm:inline">Overview</span>
+            <span className=" sm:inline">Profile</span>
           </TabsTrigger>
 
-          <TabsTrigger value="agent" className="flex items-center gap-2">
+          <TabsTrigger
+            value="wallet"
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Wallet className="h-4 w-4" />
+            <span className=" sm:inline">Wallet</span>
+          </TabsTrigger>
+
+          <TabsTrigger
+            value="instructions"
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             <Bot className="h-4 w-4" />
-            <span className=" sm:inline">Agent</span>
+            <span className=" sm:inline">Instructions</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <OverviewTab />
+        <TabsContent value="profile" className="py-6">
+          <ProfileTab agentAddress={userAgentAddress} />
         </TabsContent>
 
-        <TabsContent value="agent" className="space-y-6">
-          <AgentTab />
+        <TabsContent value="wallet" className="py-6">
+          <WalletTab
+            userAgentContractBalance={userAgentContractBalance}
+            agentAddress={userAgentAddress}
+          />
+        </TabsContent>
+
+        <TabsContent value="instructions" className="py-6">
+          <InstructionsTab />
         </TabsContent>
       </Tabs>
     </div>

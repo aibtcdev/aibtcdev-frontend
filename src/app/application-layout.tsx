@@ -30,10 +30,10 @@ import { NetworkIndicator } from "@/components/reusables/NetworkIndicator";
 import AuthButton from "@/components/home/AuthButton";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
-import DisplayBtc from "@/components/reusables/DisplayBtc";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { ThemeToggle } from "@/components/reusables/ThemeToggle";
+import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -47,13 +47,13 @@ const navigation = [
   //   href: "/proposals",
   //   icon: FileText,
   // },
-  { id: "votes", name: "Vote", href: "/votes", icon: Vote },
-  {
-    id: "playground",
-    name: "Playground",
-    href: "/evaluation",
-    icon: FlaskConical,
-  },
+  { id: "votes", name: "Voting", href: "/votes", icon: Vote },
+  // {
+  //   id: "playground",
+  //   name: "Playground",
+  //   href: "/evaluation",
+  //   icon: FlaskConical,
+  // },
 ];
 
 export default function ApplicationLayout({
@@ -151,7 +151,8 @@ export default function ApplicationLayout({
                   size="sm"
                   className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-transparent rounded-lg"
                 >
-                  <DisplayBtc />
+                  {/* <DisplayBtc /> */}
+                  <DisplayAgentAddress />
                   <ChevronDown className="h-3 w-3 text-primary/70" />
                 </Button>
               </DropdownMenuTrigger>
@@ -159,34 +160,38 @@ export default function ApplicationLayout({
                 align="center"
                 className="w-56 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
               >
-                <div className="px-3 py-2 border-b border-border/20">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">
-                    Total Agent Balance
-                  </div>
-                  <div className="text-lg font-bold text-foreground">
-                    <DisplayBtc />
-                  </div>
-                </div>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
                     handleNavigation("/account", e);
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <User className="h-4 w-4" />
-                  <span>Account Settings</span>
+                  <span className="group-hover:text-white">Profile</span>
                 </DropdownMenuItem>
+                {/* TODO: create /account/wallet route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/deposit", e);
+                    handleNavigation("/account/wallet", e);
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <Wallet className="h-4 w-4" />
-                  <span>Deposit</span>
+                  <span className="group-hover:text-white">Wallet</span>
+                </DropdownMenuItem>
+                {/* TODO: create /account/instructions route */}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/account/instructions", e);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  <span className="group-hover:text-white">Instructions</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -203,10 +208,10 @@ export default function ApplicationLayout({
                     handleSignOut();
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Sign out</span>
+                  <span className="group-hover:text-white">Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -256,7 +261,7 @@ export default function ApplicationLayout({
 
         {/* Center Section - Navigation  */}
         <nav className="flex justify-center relative z-10">
-          <div className="inline-flex items-center gap-1">
+          <div className="inline-flex items-center gap-3">
             {navigation.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
@@ -327,45 +332,50 @@ export default function ApplicationLayout({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-bold bg-transparent hover:bg-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                   aria-label="Bitcoin balance dropdown menu"
                 >
-                  <DisplayBtc />
-                  <ChevronDown className="h-3 w-3 text-primary/70 transition-transform duration-200 ease-in-out group-data-[state=open]:rotate-180" />
+                  {/* <DisplayBtc /> */}
+                  <DisplayAgentAddress />
+                  <ChevronDown className="h-3 w-3 transition-transform duration-200 ease-in-out" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="center"
                 className="w-64 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
               >
-                <div className="px-3 py-2 border-b border-border/20">
-                  <div className="text-sm font-medium text-muted-foreground mb-2">
-                    Total Agent Balance
-                  </div>
-                  <div className="text-lg font-bold text-foreground">
-                    <DisplayBtc />
-                  </div>
-                </div>
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
                     handleNavigation("/account", e);
                     setDesktopMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <User className="h-4 w-4" />
-                  <span>Account Settings</span>
+                  <span className="group-hover:text-white">Profile</span>
                 </DropdownMenuItem>
+                {/* TODO: create /account/wallet route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/deposit", e);
+                    handleNavigation("/account/wallet", e);
                     setDesktopMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <Wallet className="h-4 w-4" />
-                  <span>Deposit</span>
+                  <span className="group-hover:text-white">Wallet</span>
+                </DropdownMenuItem>
+                {/* TODO: create /account/instructions route */}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/account/instructions", e);
+                    setDesktopMenuOpen(false);
+                  }}
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <FlaskConical className="h-4 w-4" />
+                  <span className="group-hover:text-white">Instructions</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -382,10 +392,10 @@ export default function ApplicationLayout({
                     handleSignOut();
                     setDesktopMenuOpen(false);
                   }}
-                  className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Sign out</span>
+                  <span className="group-hover:text-white">Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
