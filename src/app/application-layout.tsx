@@ -47,13 +47,13 @@ const navigation = [
   //   href: "/proposals",
   //   icon: FileText,
   // },
-  { id: "votes", name: "Vote", href: "/votes", icon: Vote },
-  {
-    id: "playground",
-    name: "Playground",
-    href: "/evaluation",
-    icon: FlaskConical,
-  },
+  { id: "votes", name: "Voting", href: "/votes", icon: Vote },
+  // {
+  //   id: "playground",
+  //   name: "Playground",
+  //   href: "/evaluation",
+  //   icon: FlaskConical,
+  // },
 ];
 
 export default function ApplicationLayout({
@@ -256,7 +256,7 @@ export default function ApplicationLayout({
 
         {/* Center Section - Navigation  */}
         <nav className="flex justify-center relative z-10">
-          <div className="inline-flex items-center gap-1">
+          <div className="inline-flex items-center gap-3">
             {navigation.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
