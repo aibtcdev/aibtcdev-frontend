@@ -84,6 +84,12 @@ const safeNumberFromBigInt = (value: bigint | null): number => {
   return Number(value);
 };
 
+// Truncate an address like 0x12345…cdef1
+const truncateAddress = (addr: string, head = 5, tail = 5): string => {
+  if (!addr) return "";
+  return `${addr.slice(0, head)}…${addr.slice(-tail)}`;
+};
+
 // Helper function to check if a vote is in the veto window
 const isInVetoWindow = (
   vote: VoteType,
@@ -188,8 +194,8 @@ function VoteAnalysisModal({
             </h4>
             {vote.voted === false ? (
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                <Search className="h-4 w-4" />
-                <span className="font-medium">Still Evaluating</span>
+                <Clock className="h-4 w-4" />
+                <span className="font-medium">Awaiting Vote</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -292,6 +298,8 @@ function VoteAnalysisModal({
 }
 
 function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
+  // No agent display needed
+
   const getStatusBadge = () => {
     if (vote.voted === false) {
       return (
@@ -299,8 +307,8 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
           variant="outline"
           className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
         >
-          <Search className="h-3 w-3 mr-1" />
-          Evaluating
+          <Clock className="h-3 w-3 mr-1" />
+          Awaiting Vote
         </Badge>
       );
     }
@@ -355,28 +363,37 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     if (vote.voted === false) {
       return (
         <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-          <Search className="h-4 w-4" />
-          <span className="font-medium text-sm">Evaluating</span>
+          <Clock className="h-4 w-4" />
+          <span className="font-medium text-sm">Awaiting Vote</span>
         </div>
       );
     }
 
+    const confidenceText =
+      vote.confidence !== null
+        ? ` (${Math.round(vote.confidence * 100)}% confidence)`
+        : "";
+
     return (
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 text-sm">
+        <span className="text-foreground font-medium">Your agent voted</span>
         {vote.answer ? (
           <>
             <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <span className="font-medium text-sm text-green-600 dark:text-green-400">
+            <span className="text-green-600 dark:text-green-400 font-medium">
               Yes
             </span>
           </>
         ) : (
           <>
             <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-            <span className="font-medium text-sm text-red-600 dark:text-red-400">
+            <span className="text-red-600 dark:text-red-400 font-medium">
               No
             </span>
           </>
+        )}
+        {confidenceText && (
+          <span className="text-muted-foreground ml-1">{confidenceText}</span>
         )}
       </div>
     );
@@ -561,7 +578,7 @@ export function VotesView({ votes }: VotesViewProps) {
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
       case "evaluation":
-        return "Evaluation";
+        return "Awaiting Vote";
       case "voting":
         return "Active Voting";
       case "veto":
@@ -747,6 +764,11 @@ export function VotesView({ votes }: VotesViewProps) {
 
           {/* Main Content */}
           <main className="space-y-6">
+            {/* Desktop heading (hidden on mobile) */}
+            <h1 className="hidden lg:block text-2xl font-semibold mb-4 text-foreground">
+              Your Agent&apos;s Votes Across All DAOs
+            </h1>
+
             {/* Mobile Header */}
             <div className="lg:hidden flex items-center justify-between">
               <div>
@@ -828,7 +850,7 @@ export function VotesView({ votes }: VotesViewProps) {
                   </h3>
                   <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                     {activeTab === "evaluation" &&
-                      "All proposals have moved beyond evaluation."}
+                      "Your agent has already voted on every proposal."}
                     {activeTab === "voting" &&
                       "No proposals are currently open for voting."}
                     {activeTab === "veto" &&
