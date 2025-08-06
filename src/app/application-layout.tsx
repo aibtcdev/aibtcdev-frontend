@@ -30,7 +30,6 @@ import { NetworkIndicator } from "@/components/reusables/NetworkIndicator";
 import AuthButton from "@/components/home/AuthButton";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
-import DisplayBtc from "@/components/reusables/DisplayBtc";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { ThemeToggle } from "@/components/reusables/ThemeToggle";
