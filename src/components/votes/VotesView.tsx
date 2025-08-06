@@ -5,8 +5,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   Vote,
-  ChevronDown,
-  ChevronUp,
   Search,
   CheckCircle,
   Clock,
@@ -16,9 +14,17 @@ import {
   ExternalLink,
   Filter,
   X,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -39,6 +45,11 @@ interface VotesViewProps {
 }
 
 interface VoteCardProps {
+  vote: VoteType;
+  currentBitcoinHeight: number;
+}
+
+interface VoteAnalysisModalProps {
   vote: VoteType;
   currentBitcoinHeight: number;
 }
@@ -101,282 +112,316 @@ const getVoteOutcome = (
   return vote.answer ? "passed" : "failed";
 };
 
-function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+function VoteAnalysisModal({
+  vote,
+  currentBitcoinHeight,
+}: VoteAnalysisModalProps) {
+  // Parse contribution content and reference
+  const parseContributionContent = () => {
+    if (!vote.proposal_content) return { content: "", reference: null };
 
-  const getStatusInfo = () => {
+    const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+    const match = vote.proposal_content.match(referenceRegex);
+    const referenceLink = match?.[1];
+    const cleanedContent = vote.proposal_content
+      .replace(referenceRegex, "")
+      .trim();
+
+    return { content: cleanedContent, reference: referenceLink };
+  };
+
+  const { content, reference } = parseContributionContent();
+
+  return (
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-semibold pr-8">
+          Vote Analysis
+        </DialogTitle>
+      </DialogHeader>
+
+      <div className="space-y-6">
+        {/* Proposal Title & DAO */}
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-1">
+            {vote.proposal_title}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {vote.dao_name} • {formatRelativeTime(vote.created_at)}
+          </p>
+        </div>
+
+        {/* Contribution Message */}
+        <div>
+          <h4 className="text-sm font-semibold mb-3 text-foreground">
+            Contribution Message
+          </h4>
+          <div className="bg-muted/30 rounded-lg p-4">
+            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+              {content || "No contribution message available."}
+            </div>
+          </div>
+
+          {reference && (
+            <div className="mt-3 bg-muted/50 rounded-lg p-3">
+              <h5 className="text-xs font-medium text-muted-foreground mb-2">
+                Reference
+              </h5>
+              <a
+                href={reference}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:text-primary/80 transition-colors break-all flex items-start gap-2"
+              >
+                <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span className="break-all">{reference}</span>
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Agent Vote & Actions */}
+        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+          <div>
+            <h4 className="text-sm font-semibold mb-2 text-foreground">
+              Agent Vote
+            </h4>
+            {vote.voted === false ? (
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <Search className="h-4 w-4" />
+                <span className="font-medium">Still Evaluating</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                {vote.answer ? (
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <ThumbsUp className="h-5 w-5" />
+                    <span className="font-medium">Voted Yes</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <ThumbsDown className="h-5 w-5" />
+                    <span className="font-medium">Voted No</span>
+                  </div>
+                )}
+                {vote.confidence !== null && (
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({Math.round(vote.confidence * 100)}% confidence)
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Veto Button */}
+          {vote.dao_id &&
+            vote.proposal_id &&
+            isInVetoWindow(vote, currentBitcoinHeight) && (
+              <DAOVetoProposal
+                daoId={vote.dao_id}
+                proposalId={vote.proposal_id}
+                size="default"
+                variant="destructive"
+              />
+            )}
+        </div>
+
+        {/* AI Reasoning */}
+        {vote.reasoning && (
+          <div>
+            <h4 className="text-sm font-semibold mb-3 text-foreground">
+              AI Reasoning
+            </h4>
+            <div className="bg-muted/30 rounded-lg p-4">
+              <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground leading-relaxed">
+                {vote.reasoning}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Technical Details */}
+        <div>
+          <h4 className="text-sm font-semibold mb-3 text-foreground">
+            Technical Details
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="text-xs text-muted-foreground mb-1">
+                Proposal ID
+              </div>
+              <div className="text-sm font-mono">{vote.proposal_id}</div>
+            </div>
+
+            {vote.vote_start && (
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Vote Start Block
+                </div>
+                <div className="text-sm font-mono">
+                  {safeNumberFromBigInt(vote.vote_start)}
+                </div>
+              </div>
+            )}
+
+            {vote.vote_end && (
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Vote End Block
+                </div>
+                <div className="text-sm font-mono">
+                  {safeNumberFromBigInt(vote.vote_end)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end pt-4 border-t">
+          <Link href={`/proposals/${vote.proposal_id}`}>
+            <Button variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              View Full Proposal
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </DialogContent>
+  );
+}
+
+function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
+  const getStatusBadge = () => {
     if (vote.voted === false) {
-      return {
-        badge: (
-          <Badge
-            variant="outline"
-            className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
-          >
-            <Search className="h-3 w-3 mr-1" />
-            Evaluating
-          </Badge>
-        ),
-        description: "AI Agent is evaluating...",
-      };
+      return (
+        <Badge
+          variant="outline"
+          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+        >
+          <Search className="h-3 w-3 mr-1" />
+          Evaluating
+        </Badge>
+      );
     }
 
     if (isInVetoWindow(vote, currentBitcoinHeight)) {
-      return {
-        badge: (
-          <Badge
-            variant="destructive"
-            className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-          >
-            <Ban className="h-3 w-3 mr-1" />
-            Veto Period
-          </Badge>
-        ),
-        description: "In veto window",
-      };
+      return (
+        <Badge
+          variant="destructive"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+        >
+          <Ban className="h-3 w-3 mr-1" />
+          Veto Period
+        </Badge>
+      );
     }
 
     const outcome = getVoteOutcome(vote, currentBitcoinHeight);
     if (outcome === "passed") {
-      return {
-        badge: (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-          >
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Passed
-          </Badge>
-        ),
-        description: "Proposal passed",
-      };
-    } else if (outcome === "failed") {
-      return {
-        badge: (
-          <Badge
-            variant="outline"
-            className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
-          >
-            <XCircle className="h-3 w-3 mr-1" />
-            Failed
-          </Badge>
-        ),
-        description: "Proposal failed",
-      };
-    }
-
-    return {
-      badge: (
+      return (
         <Badge
           variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
         >
-          <Clock className="h-3 w-3 mr-1" />
-          In Progress
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Passed
         </Badge>
-      ),
-      description: "Voting in progress",
-    };
+      );
+    } else if (outcome === "failed") {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+        >
+          <XCircle className="h-3 w-3 mr-1" />
+          Failed
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge
+        variant="outline"
+        className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
+      >
+        <Clock className="h-3 w-3 mr-1" />
+        Voting
+      </Badge>
+    );
   };
 
   const getVoteResult = () => {
     if (vote.voted === false) {
-      return null;
+      return (
+        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+          <Search className="h-4 w-4" />
+          <span className="font-medium text-sm">Evaluating</span>
+        </div>
+      );
     }
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {vote.answer ? (
-          <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-            <ThumbsUp className="h-4 w-4" />
-            <span className="font-medium text-sm">Voted Yes</span>
-          </div>
+          <>
+            <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="font-medium text-sm text-green-600 dark:text-green-400">
+              Yes
+            </span>
+          </>
         ) : (
-          <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
-            <ThumbsDown className="h-4 w-4" />
-            <span className="font-medium text-sm">Voted No</span>
-          </div>
+          <>
+            <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <span className="font-medium text-sm text-red-600 dark:text-red-400">
+              No
+            </span>
+          </>
         )}
       </div>
     );
   };
 
-  const statusInfo = getStatusInfo();
-
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 border-border/50">
-      <CardContent className="p-4 sm:p-5">
-        {/* Header */}
-        <div className="flex items-start gap-3 mb-3">
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground leading-tight line-clamp-2">
-                {vote.proposal_title}
-              </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1"
-              >
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-                <span className="text-sm font-medium">
-                  {isExpanded ? "Hide reasoning" : "Show reasoning"}
-                </span>
-              </Button>
-            </div>
+    <Card className="group hover:shadow-md transition-all duration-200">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-foreground leading-tight line-clamp-2">
+              {vote.proposal_title}
+            </h3>
 
-            {/* Status and Vote Result */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {statusInfo.badge}
-              {getVoteResult()}
-            </div>
-
-            {/* Meta Information */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
+            {/* DAO, Vote, Status */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="font-medium text-foreground text-sm">
                 {vote.dao_name}
               </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {formatRelativeTime(vote.created_at)}
-              </span>
+              {getVoteResult()}
+              {getStatusBadge()}
+            </div>
+
+            {/* Time */}
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {formatRelativeTime(vote.created_at)}
             </div>
           </div>
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-border/30">
-          <div className="flex items-center gap-2">
-            <Link href={`/proposals/${vote.proposal_id}`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-xs bg-transparent"
-              >
-                <FileText className="h-3 w-3 mr-1.5" />
-                View Contribution
+          {/* Action Button */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="shrink-0 gap-2">
+                <Eye className="h-4 w-4" />
+                See Analysis
               </Button>
-            </Link>
-
-            {vote.dao_id &&
-              vote.proposal_id &&
-              isInVetoWindow(vote, currentBitcoinHeight) && (
-                <DAOVetoProposal
-                  daoId={vote.dao_id}
-                  proposalId={vote.proposal_id}
-                  size="sm"
-                  variant="destructive"
-                />
-              )}
-          </div>
-
-          {vote.confidence !== null && (
-            <div className="text-xs text-muted-foreground">
-              Confidence: {Math.round(vote.confidence * 100)}%
-            </div>
-          )}
+            </DialogTrigger>
+            <VoteAnalysisModal
+              vote={vote}
+              currentBitcoinHeight={currentBitcoinHeight}
+            />
+          </Dialog>
         </div>
-
-        {/* Expanded Content */}
-        {isExpanded && (
-          <div className="pt-4 mt-4 space-y-4 border-t border-border/30">
-            {/* AI Reasoning */}
-            {vote.reasoning && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-foreground">
-                  AI Reasoning
-                </h4>
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground">
-                    {vote.reasoning}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Proposal Content */}
-            {vote.proposal_content &&
-              (() => {
-                const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
-                const match = vote.proposal_content.match(referenceRegex);
-                const referenceLink = match?.[1];
-                const cleanedContent = vote.proposal_content
-                  .replace(referenceRegex, "")
-                  .trim();
-
-                return (
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2 text-foreground">
-                        Contribution Message
-                      </h4>
-                      <div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap break-words bg-muted/30 rounded-lg p-3">
-                        {cleanedContent}
-                      </div>
-                    </div>
-
-                    {referenceLink && (
-                      <div className="bg-muted/50 rounded-lg p-3">
-                        <h5 className="text-xs font-medium text-muted-foreground mb-2">
-                          Reference
-                        </h5>
-                        <a
-                          href={referenceLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:text-primary/80 transition-colors break-all flex items-start gap-2"
-                        >
-                          <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                          <span className="break-all">{referenceLink}</span>
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-            {/* Key Information */}
-            <div>
-              <h4 className="text-sm font-semibold mb-2 text-foreground">
-                Key Information
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div className="bg-muted/30 rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Proposal ID
-                  </div>
-                  <div className="text-sm font-medium">{vote.proposal_id}</div>
-                </div>
-
-                {vote.vote_start && (
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Vote Start Block
-                    </div>
-                    <div className="text-sm font-medium">
-                      {safeNumberFromBigInt(vote.vote_start)}
-                    </div>
-                  </div>
-                )}
-
-                {vote.vote_end && (
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      Vote End Block
-                    </div>
-                    <div className="text-sm font-medium">
-                      {safeNumberFromBigInt(vote.vote_end)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -692,7 +737,7 @@ export function VotesView({ votes }: VotesViewProps) {
         <div className="lg:grid lg:grid-cols-[280px_1fr] gap-8 py-6">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block sticky top-6 self-start">
-            <div className="bg-card  rounded-lg p-4">
+            <div className="bg-card rounded-lg p-4">
               <h2 className="text-lg font-semibold mb-4 text-foreground">
                 Filters
               </h2>
