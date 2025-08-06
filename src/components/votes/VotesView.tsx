@@ -84,12 +84,6 @@ const safeNumberFromBigInt = (value: bigint | null): number => {
   return Number(value);
 };
 
-// Truncate an address like 0x12345…cdef1
-const truncateAddress = (addr: string, head = 5, tail = 5): string => {
-  if (!addr) return "";
-  return `${addr.slice(0, head)}…${addr.slice(-tail)}`;
-};
-
 // Helper function to check if a vote is in the veto window
 const isInVetoWindow = (
   vote: VoteType,

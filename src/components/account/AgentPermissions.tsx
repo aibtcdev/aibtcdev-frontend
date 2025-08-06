@@ -90,6 +90,7 @@ export function AgentPermissions({ agentAddress, network = "testnet" }: Props) {
           functionName,
           enabled,
         };
+        // eslint-disable-next-line
       } catch (error: any) {
         if (error.code === 4001) {
           throw new Error("User cancelled the transaction");
