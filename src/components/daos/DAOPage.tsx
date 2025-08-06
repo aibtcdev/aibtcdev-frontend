@@ -10,8 +10,8 @@ import {
   FileText,
   Users,
   BarChart3,
-  Home,
-  Plus,
+  // Home,
+  // Plus,
 } from "lucide-react";
 import {
   fetchToken,
@@ -23,55 +23,55 @@ import {
   fetchProposals,
   fetchDAOByName,
 } from "@/services/dao.service";
-import { fetchAgents } from "@/services/agent.service";
-import { cn } from "@/lib/utils";
+// import { fetchAgents } from "@/services/agent.service";
+// import { cn } from "@/lib/utils";
 import { Loader } from "@/components/reusables/Loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
-import { Separator } from "@/components/ui/separator";
-import { ApproveContractButton } from "@/components/account/ApproveContract";
-import { useAuth } from "@/hooks/useAuth";
+// import { ScrollArea } from "@/components/ui/scroll-area";
+// import { DAOBuyToken } from "@/components/daos/DaoBuyToken";
+// import { Separator } from "@/components/ui/separator";
+// import { ApproveContractButton } from "@/components/account/ApproveContract";
+// import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 
 // Re-integrating DAOSidebarHeader
-function DAOSidebarHeader({
-  dao,
-  token,
-}: {
-  dao: { id: string; name: string };
-  token?: { image_url?: string };
-}) {
-  return (
-    <div className="flex items-center gap-4 p-4">
-      <Avatar className="h-10 w-10 border-2 border-primary/20 flex-shrink-0">
-        <AvatarImage
-          src={
-            token?.image_url ||
-            "/placeholder.svg?height=40&width=40&query=DAO logo"
-          }
-          alt={dao.name}
-        />
-        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 font-bold text-foreground">
-          {dao.name.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <h2 className="text-base font-bold text-foreground truncate">
-          {dao.name}
-        </h2>
-        <div className="flex items-center gap-1.5 mt-1">
-          <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-          <span className="text-xs text-success font-medium">Active</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+// function DAOSidebarHeader({
+//   dao,
+//   token,
+// }: {
+//   dao: { id: string; name: string };
+//   token?: { image_url?: string };
+// }) {
+//   return (
+//     <div className="flex items-center gap-4 p-4">
+//       <Avatar className="h-10 w-10 border-2 border-primary/20 flex-shrink-0">
+//         <AvatarImage
+//           src={
+//             token?.image_url ||
+//             "/placeholder.svg?height=40&width=40&query=DAO logo"
+//           }
+//           alt={dao.name}
+//         />
+//         <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 font-bold text-foreground">
+//           {dao.name.charAt(0)}
+//         </AvatarFallback>
+//       </Avatar>
+//       <div className="flex-1 min-w-0">
+//         <h2 className="text-base font-bold text-foreground truncate">
+//           {dao.name}
+//         </h2>
+//         <div className="flex items-center gap-1.5 mt-1">
+//           <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+//           <span className="text-xs text-success font-medium">Active</span>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 export function DAOPage({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -79,7 +79,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const encodedName = params.name as string;
 
   // Get auth data
-  const { userId } = useAuth();
+  // const { userId } = useAuth();
 
   // First, fetch the DAO by name to get its ID
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
@@ -91,11 +91,11 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const id = dao?.id;
 
   // Fetch agents data
-  const { data: agents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: fetchAgents,
-    staleTime: 10 * 60 * 1000, // 10 min
-  });
+  // const { data: agents } = useQuery({
+  //   queryKey: ["agents"],
+  //   queryFn: fetchAgents,
+  //   staleTime: 10 * 60 * 1000, // 10 min
+  // });
 
   // Fetch token data
   const { data: token, isLoading: isLoadingToken } = useQuery({
@@ -193,19 +193,19 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   }, [proposals]);
 
   // Get the user's agent account contract
-  const userAgent = useMemo(() => {
-    if (!agents || !userId) return undefined;
-    return agents.find((a) => a.profile_id === userId);
-  }, [agents, userId]);
+  // const userAgent = useMemo(() => {
+  //   if (!agents || !userId) return undefined;
+  //   return agents.find((a) => a.profile_id === userId);
+  // }, [agents, userId]);
 
   // Get the voting extension contract to approve
-  const votingExt = useMemo(() => {
-    if (!extensions) return undefined;
-    return extensions.find(
-      (ext) =>
-        ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
-    );
-  }, [extensions]);
+  // const votingExt = useMemo(() => {
+  //   if (!extensions) return undefined;
+  //   return extensions.find(
+  //     (ext) =>
+  //       ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
+  //   );
+  // }, [extensions]);
 
   // Define navigation items for horizontal tabs in the new order
   const navItems = [

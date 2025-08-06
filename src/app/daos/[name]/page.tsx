@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
 import DAOProposals from "@/components/proposals/DAOProposals";
-import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
+// import { ProposalSubmission } from "@/components/proposals/ProposalSubmission";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {

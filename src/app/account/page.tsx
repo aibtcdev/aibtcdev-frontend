@@ -73,7 +73,7 @@ export default function AccountPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Agent Settings</h1>
         <p className="text-muted-foreground">
           Manage your profile and agent account.
         </p>
