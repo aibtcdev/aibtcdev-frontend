@@ -67,7 +67,7 @@ function PageContent() {
 
   return (
     <div className="w-full space-y-6">
-      <ProposalSubmission daoId={dao.id} />
+      {/* <ProposalSubmission daoId={dao.id} /> */}
       <DAOProposals
         key={`${dao.id}-${proposals?.length || 0}`}
         proposals={proposals || []}
