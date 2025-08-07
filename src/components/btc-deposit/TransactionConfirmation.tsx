@@ -171,16 +171,13 @@ export default function TransactionConfirmation({
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       // Parse the contract address and name from dexContract prop
-      // const [contractAddress, contractName] = dexContract.split(".");
+      const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
         console.log("Calling getBuyQuote with btcAmount:", btcAmount);
 
         // Direct Hiro API call with proper Clarity encoding
-        // const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
-
-        // HARD CODE THE CONTRACT NAME AND ADDRESS FOR NOW
-        const url = `https://api.hiro.so/v2/contracts/call-read/SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM/beast2-faktory-dex/get-in?tip=latest`;
+        const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
           method: "POST",
@@ -205,7 +202,7 @@ export default function TransactionConfirmation({
         return null;
       }
     },
-    [userAddress]
+    [userAddress, dexContract]
   );
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
