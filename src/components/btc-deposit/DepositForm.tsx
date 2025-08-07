@@ -13,7 +13,7 @@ import type {
 } from "@faktoryfun/styx-sdk";
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
-import { Bitcoin, Wallet } from "lucide-react";
+import { Bitcoin } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
