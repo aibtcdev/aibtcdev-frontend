@@ -71,7 +71,7 @@ export default function DepositForm({
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const { toast } = useToast();
-  const [feeEstimates, setFeeEstimates] = useState<{
+  const [feeEstimates] = useState<{
     low: { rate: number; fee: number; time: string };
     medium: { rate: number; fee: number; time: string };
     high: { rate: number; fee: number; time: string };
@@ -88,6 +88,8 @@ export default function DepositForm({
 
   // Get addresses from the lib - only if we have a session
   // const { userAgentAddress: userAddress } = useAgentAccount();
+
+  // TODO: HARDCODE IT FOR NOW AND REMOVE IT LATER AND UNCOMMENT THE ABOVE LINE
   const userAddress =
     "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
 
@@ -280,6 +282,15 @@ export default function DepositForm({
         description: "Please connect your wallet first",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Manual address type check before preparing transaction
+    if (btcAddress && !btcAddress.startsWith("bc1")) {
+      handleAddressTypeError(
+        new Error("Non-SegWit address detected"),
+        activeWalletProvider
+      );
       return;
     }
 
