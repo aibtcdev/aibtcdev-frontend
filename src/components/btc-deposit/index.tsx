@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
 import MyHistory from "@/components/btc-deposit/MyHistory";
-import AllDeposits from "@/components/btc-deposit/AllDeposits";
 import { getBitcoinAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
 import AuthButton from "@/components/home/AuthButton";
@@ -17,20 +16,17 @@ import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
 import useSdkAllDepositsHistory from "@/hooks/deposit/useSdkAllDepositsHistory";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
-import { fetchDAOByNameWithExtensions } from "@/services/dao.service";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "@/hooks/useToast";
+import { ConfirmationData } from "@/components/btc-deposit/DepositForm";
 
-// Define the ConfirmationData type
-export type ConfirmationData = {
-  depositAmount: string;
-  depositAddress: string;
-  stxAddress: string;
-  opReturnHex: string;
-  isBlaze?: boolean;
-};
+interface BitcoinDepositProps {
+  dexContract: string;
+  daoName: string;
+}
 
-export default function BitcoinDeposit() {
+export default function BitcoinDeposit({
+  dexContract,
+  daoName,
+}: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
 
@@ -52,8 +48,6 @@ export default function BitcoinDeposit() {
   // const [poolId] = useState<string>("aibtc");
   const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
 
-  console.log(activeWalletProvider);
-
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
@@ -70,15 +64,11 @@ export default function BitcoinDeposit() {
     }
   }, [accessToken, activeWalletProvider]);
 
-  const { data: dao, isLoading: isLoadingDAO } = useQuery({
-    queryKey: ["dao", "FAST11"],
-    queryFn: () => fetchDAOByNameWithExtensions("FAST11"),
-    enabled: true,
-  });
-
   // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
   const { userAgentAddress: userAddress } = useAgentAccount();
+  // const userAddress =
+  //   "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
   const btcAddress = accessToken ? getBitcoinAddress() : null;
 
   // Data fetching hooks
@@ -99,30 +89,8 @@ export default function BitcoinDeposit() {
   } = useSdkDepositHistory(userAddress);
 
   // All network deposits - using the provided hook
-  const {
-    data: allDepositsHistory,
-    isLoading: isAllDepositsLoading,
-    isRefetching: isAllDepositsRefetching,
-    refetch: refetchAllDeposits,
-  } = useSdkAllDepositsHistory();
+  const { refetch: refetchAllDeposits } = useSdkAllDepositsHistory();
   // ------------------------------------------------------
-
-  if (isLoadingDAO) {
-    toast({
-      title: "Loading DAO info",
-      description: "Please wait a moment and try again.",
-    });
-    return;
-  }
-  const dexExtension = dao?.extensions?.find((ext) => ext.type === "TOKEN");
-  if (!dexExtension?.contract_principal) {
-    toast({
-      title: "DEX Extension Missing",
-      description: "Cannot find DEX extension for your DAO.",
-      variant: "destructive",
-    });
-    return;
-  }
 
   // Determine if we're still loading critical data
   const isDataLoading =
@@ -131,10 +99,10 @@ export default function BitcoinDeposit() {
   // Render authentication prompt if not connected
   if (!accessToken) {
     return (
-      <div className="max-w-xl mx-auto mt-8">
+      <div className="max-w-xl mx-auto">
         <div className="mb-6 text-center">
           <h2 className="text-xl font-semibold">
-            Deposit fast11 into your agent account.
+            Deposit {daoName} into your agent account.
           </h2>
           <p className="text-sm text-muted-foreground">
             Fast, secure, and trustless
@@ -152,24 +120,15 @@ export default function BitcoinDeposit() {
   }
 
   return (
-    <div className="max-w-xl mx-auto mt-8">
-      <div className="mb-6 text-center">
-        {btcUsdPrice && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Current BTC price: ${btcUsdPrice.toLocaleString()}
-          </p>
-        )}
-      </div>
-
+    <div className="max-w-xl mx-auto">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="deposit">Deposit</TabsTrigger>
           <TabsTrigger value="history">My History</TabsTrigger>
-          <TabsTrigger value="all">All Deposits</TabsTrigger>
         </TabsList>
 
         <TabsContent value="deposit">
-          <Card className="bg-card border-border/30 p-4">
+          <Card className="bg-card border-border/30 p-4 h-full">
             {isDataLoading ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <Loader />
@@ -190,6 +149,9 @@ export default function BitcoinDeposit() {
                 setConfirmationData={setConfirmationData}
                 setShowConfirmation={setShowConfirmation}
                 activeWalletProvider={activeWalletProvider}
+                dexContract={dexContract}
+                daoName={daoName}
+                userAddress={userAddress}
               />
             )}
           </Card>
@@ -201,26 +163,6 @@ export default function BitcoinDeposit() {
             isLoading={isHistoryLoading || isRefetching}
             btcUsdPrice={btcUsdPrice}
             isRefetching={isHistoryRefetching || isRefetching}
-          />
-        </TabsContent>
-
-        <TabsContent value="all">
-          <AllDeposits
-            allDepositsHistory={
-              allDepositsHistory
-                ? {
-                    aggregateData: {
-                      ...allDepositsHistory.aggregateData,
-                      totalVolume:
-                        allDepositsHistory.aggregateData.totalVolume.toString(),
-                    },
-                    recentDeposits: allDepositsHistory.recentDeposits,
-                  }
-                : undefined
-            }
-            isLoading={isAllDepositsLoading || isRefetching}
-            btcUsdPrice={btcUsdPrice}
-            isRefetching={isAllDepositsRefetching || isRefetching}
           />
         </TabsContent>
       </Tabs>
@@ -238,7 +180,7 @@ export default function BitcoinDeposit() {
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
-          dexContract={dexExtension.contract_principal}
+          dexContract={dexContract}
           minTokenOut={minTokenOut}
           // poolId={poolId}
           swapType={swapType}

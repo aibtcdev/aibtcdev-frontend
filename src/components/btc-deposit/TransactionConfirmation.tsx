@@ -128,7 +128,7 @@ export default function TransactionConfirmation({
   setIsRefetching,
   dexContract,
   minTokenOut,
-  poolId,
+  // poolId,
   swapType,
 }: TransactionConfirmationProps) {
   const { toast } = useToast();
@@ -171,16 +171,15 @@ export default function TransactionConfirmation({
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       // Parse the contract address and name from dexContract prop
-      // const [contractAddress, contractName] = dexContract.split(".");
+      const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
-        console.log("Calling getBuyQuote with btcAmount:", btcAmount);
+        console.log(
+          `Calling getBuyQuote with ${amount} BTC (${btcAmount} sats)`
+        );
 
         // Direct Hiro API call with proper Clarity encoding
-        // const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
-
-        // HARD CODE THE CONTRACT NAME AND ADDRESS FOR NOW
-        const url = `https://api.hiro.so/v2/contracts/call-read/SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM/beast2-faktory-dex/get-in?tip=latest`;
+        const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
           method: "POST",
@@ -205,7 +204,7 @@ export default function TransactionConfirmation({
         return null;
       }
     },
-    [userAddress]
+    [userAddress, dexContract]
   );
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
@@ -260,9 +259,9 @@ export default function TransactionConfirmation({
 
   useEffect(() => {
     const fetchBuyQuoteOnOpen = async () => {
-      if (open && confirmationData.depositAmount) {
+      if (open && confirmationData.userInputAmount) {
         setLoadingQuote(true);
-        const data = await getBuyQuote(confirmationData.depositAmount);
+        const data = await getBuyQuote(confirmationData.userInputAmount);
         setBuyQuote(data);
         // Parse and apply slippage protection on tokens-out from buy quote result
         if (data?.result) {
@@ -290,7 +289,7 @@ export default function TransactionConfirmation({
 
                 // Apply slippage protection
                 // HARD CODING SLIPPAGE TO 6
-                const slippageFactor = 1 - 6 / 100;
+                const slippageFactor = 1 - 4 / 100;
                 console.log("Slippage factor:", slippageFactor);
                 const minOut = Math.floor(Number(rawAmount) * slippageFactor);
                 console.log("Min token out calculated:", minOut);
@@ -305,7 +304,13 @@ export default function TransactionConfirmation({
       }
     };
     fetchBuyQuoteOnOpen();
-  }, [open, confirmationData.depositAmount, dexContract, getBuyQuote]);
+  }, [
+    open,
+    confirmationData.depositAmount,
+    dexContract,
+    getBuyQuote,
+    confirmationData.userInputAmount,
+  ]);
 
   useEffect(() => {
     if (buyQuote) console.log("buyQuote updated:", buyQuote);
@@ -362,7 +367,7 @@ export default function TransactionConfirmation({
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
         isBlaze: confirmationData.isBlaze || false,
-        poolId,
+        // poolId,
         swapType,
         minTokenOut,
         dexContract,
@@ -374,7 +379,7 @@ export default function TransactionConfirmation({
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
         isBlaze: confirmationData.isBlaze ?? false,
-        poolId: poolId,
+        // poolId: poolId,
         swapType: swapType,
         minTokenOut: computedMinTokenOut,
         dexContract: dexContract,
@@ -417,11 +422,11 @@ export default function TransactionConfirmation({
         console.log("Getting prepared transaction from SDK...");
         const preparedTransaction = await styxSDK.prepareTransaction({
           amount: confirmationData.depositAmount,
-          userAddress,
-          btcAddress,
+          userAddress: userAddress,
+          btcAddress: senderBtcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
-          poolId: poolId,
+          // poolId: poolId,
           minTokenOut: computedMinTokenOut,
           swapType: swapType,
           dexContract: dexContract,

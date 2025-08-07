@@ -65,9 +65,6 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
       <div className="space-y-8">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Token Holders</h2>
-          <p className="text-muted-foreground mt-2">
-            View and analyze the distribution of token holders
-          </p>
         </div>
 
         <div className="space-y-6">

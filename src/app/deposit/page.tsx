@@ -1,10 +1,15 @@
-import BitcoinDeposit from "@/components/btc-deposit";
+// import BitcoinDeposit from "@/components/btc-deposit";
+
+// const page = () => {
+//   return (
+//     <div>
+//       <BitcoinDeposit />
+//     </div>
+//   );
+// };
+// export default page;
 
 const page = () => {
-  return (
-    <div>
-      <BitcoinDeposit />
-    </div>
-  );
+  return <div>deposit page..</div>;
 };
 export default page;
