@@ -53,13 +53,14 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const { dex, treasuryAddress, dexContract } = useMemo(() => {
     if (!extensions)
       return { dex: undefined, treasuryAddress: undefined, dexContract: null };
-    // const dexExtension = extensions.find(
-    //   (ext) =>
-    //     ext.type === "dex" || ext.type === "TOKEN_DEX" || ext.type === "TOKEN"
-    // );
-    // const dexPrincipal = dexExtension?.contract_principal;
-    const dexPrincipal =
-      "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM.beast2-faktory-dex";
+    const dexExtension = extensions.find(
+      (ext) =>
+        ext.type === "dex" || ext.type === "TOKEN_DEX" || ext.type === "TOKEN"
+    );
+    const dexPrincipal = dexExtension?.contract_principal;
+
+    // const dexPrincipal =
+    //   "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM.beast2-faktory-dex";
     return {
       dex: dexPrincipal,
       treasuryAddress: extensions.find((ext) => ext.type === "aibtc-treasury")

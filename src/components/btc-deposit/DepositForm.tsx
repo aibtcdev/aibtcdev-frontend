@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent, useEffect, useCallback } from "react";
 import { getBitcoinAddress } from "@/lib/address";
-// import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
   FeeEstimates,
@@ -87,11 +87,11 @@ export default function DepositForm({
   const { accessToken, isLoading } = useAuth();
 
   // Get addresses from the lib - only if we have a session
-  // const { userAgentAddress: userAddress } = useAgentAccount();
+  const { userAgentAddress: userAddress } = useAgentAccount();
 
   // TODO: HARDCODE IT FOR NOW AND REMOVE IT LATER AND UNCOMMENT THE ABOVE LINE
-  const userAddress =
-    "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
+  // const userAddress =
+  //   "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
 
@@ -515,6 +515,9 @@ export default function DepositForm({
 
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
+      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
+        ⚠️ Still in testing phase. Do not send real transaction.
+      </div>
       <div className="text-center space-y-1">
         <h2 className="text-xl ">
           Deposit <span className="font-bold">{daoName}</span>
@@ -571,11 +574,6 @@ export default function DepositForm({
             </DialogContent>
           </Dialog>
         )}
-      </div>
-
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
-        ⚠️ Warning: The agent account and token DEX contract are currently
-        hardcoded. Do not submit a real transaction.
       </div>
 
       <div>
