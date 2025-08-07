@@ -84,6 +84,13 @@ export const updateSession = async (request: NextRequest) => {
       return NextResponse.redirect(new URL("/daos", request.url));
     }
 
+    if (
+      request.nextUrl.pathname.startsWith("/account") &&
+      (userError || !user)
+    ) {
+      return NextResponse.redirect(new URL("/daos", request.url));
+    }
+
     return response;
   } catch (error) {
     console.error(error);
