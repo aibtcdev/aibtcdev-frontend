@@ -45,7 +45,7 @@ export default function BitcoinDeposit({
 
   // Add state for the missing transaction parameters
   const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
-  // const [poolId] = useState<string>("aibtc");
+  const [poolId] = useState<string>("aibtc");
   const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
 
   // Add this useEffect hook after the state declarations

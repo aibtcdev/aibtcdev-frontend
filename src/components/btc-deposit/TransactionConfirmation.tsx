@@ -128,7 +128,7 @@ export default function TransactionConfirmation({
   setIsRefetching,
   dexContract,
   minTokenOut,
-  poolId,
+  // poolId,
   swapType,
 }: TransactionConfirmationProps) {
   const { toast } = useToast();
@@ -174,7 +174,9 @@ export default function TransactionConfirmation({
       const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
-        console.log("Calling getBuyQuote with btcAmount:", btcAmount);
+        console.log(
+          `Calling getBuyQuote with ${amount} BTC (${btcAmount} sats)`
+        );
 
         // Direct Hiro API call with proper Clarity encoding
         const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
@@ -359,7 +361,7 @@ export default function TransactionConfirmation({
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
         isBlaze: confirmationData.isBlaze || false,
-        poolId,
+        // poolId,
         swapType,
         minTokenOut,
         dexContract,
@@ -371,7 +373,7 @@ export default function TransactionConfirmation({
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
         isBlaze: confirmationData.isBlaze ?? false,
-        poolId: poolId,
+        // poolId: poolId,
         swapType: swapType,
         minTokenOut: computedMinTokenOut,
         dexContract: dexContract,
@@ -418,7 +420,7 @@ export default function TransactionConfirmation({
           btcAddress: senderBtcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
-          poolId: poolId,
+          // poolId: poolId,
           minTokenOut: computedMinTokenOut,
           swapType: swapType,
           dexContract: dexContract,

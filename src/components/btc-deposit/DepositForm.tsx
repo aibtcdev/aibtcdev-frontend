@@ -198,62 +198,6 @@ export default function DepositForm({
     refetchOnWindowFocus: false,
   });
 
-  // Fetch fee estimates from mempool.space
-  const fetchMempoolFeeEstimates = async (): Promise<{
-    low: { rate: number; fee: number; time: string };
-    medium: { rate: number; fee: number; time: string };
-    high: { rate: number; fee: number; time: string };
-  }> => {
-    try {
-      const response = await fetch(
-        "https://mempool.space/api/v1/fees/recommended"
-      );
-      const data = await response.json();
-
-      const lowRate = data.hourFee;
-      const mediumRate = data.halfHourFee;
-      const highRate = data.fastestFee;
-
-      return {
-        low: {
-          rate: lowRate,
-          fee: Math.round(lowRate * 148),
-          time: "~1 hour",
-        },
-        medium: {
-          rate: mediumRate,
-          fee: Math.round(mediumRate * 148),
-          time: "~30 min",
-        },
-        high: {
-          rate: highRate,
-          fee: Math.round(highRate * 148),
-          time: "~10 min",
-        },
-      };
-    } catch (error) {
-      console.error("Error fetching fee estimates from mempool.space:", error);
-      return {
-        low: { rate: 3, fee: 444, time: "~1 hour" },
-        medium: { rate: 3, fee: 444, time: "~30 min" },
-        high: { rate: 5, fee: 740, time: "~10 min" },
-      };
-    }
-  };
-
-  useEffect(() => {
-    const getFeeEstimates = async () => {
-      try {
-        const estimates = await fetchMempoolFeeEstimates();
-        setFeeEstimates(estimates);
-      } catch (error) {
-        console.error("Error fetching initial fee estimates:", error);
-      }
-    };
-
-    getFeeEstimates();
-  }, []);
-
   const formatUsdValue = (amount: number): string => {
     if (!amount || amount <= 0) return "$0.00";
     return new Intl.NumberFormat("en-US", {
@@ -294,8 +238,7 @@ export default function DepositForm({
   const handleMaxClick = async (): Promise<void> => {
     if (btcBalance !== null && btcBalance !== undefined) {
       try {
-        const feeRates = await styxSDK.getFeeEstimates();
-        const selectedRate = feeRates.medium;
+        const selectedRate = feeEstimates.medium.rate;
         const estimatedSize = 1 * 70 + 2 * 33 + 12;
         const networkFeeSats = estimatedSize * selectedRate;
         const networkFee = networkFeeSats / 100000000;
@@ -349,20 +292,11 @@ export default function DepositForm({
       const serviceFee = Number.parseFloat(calculateFee(amount));
       const totalAmount = (userInputAmount + serviceFee).toFixed(8);
 
-      let currentFeeRates: FeeEstimates;
-      try {
-        const estimatesResult = await fetchMempoolFeeEstimates();
-        currentFeeRates = {
-          low: estimatesResult.low.rate,
-          medium: estimatesResult.medium.rate,
-          high: estimatesResult.high.rate,
-        };
-
-        setFeeEstimates(estimatesResult);
-      } catch (error) {
-        console.warn("Error fetching fee estimates, using defaults:", error);
-        currentFeeRates = { low: 1, medium: 3, high: 5 };
-      }
+      const currentFeeRates: FeeEstimates = {
+        low: feeEstimates.low.rate,
+        medium: feeEstimates.medium.rate,
+        high: feeEstimates.high.rate,
+      };
 
       const amountInSats = Math.round(Number.parseFloat(amount) * 100000000);
 
