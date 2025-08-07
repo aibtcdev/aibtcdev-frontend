@@ -628,6 +628,11 @@ export default function DepositForm({
         )}
       </div>
 
+      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
+        ⚠️ Warning: The agent account and token DEX contract are currently
+        hardcoded. Do not submit a real transaction.
+      </div>
+
       <div>
         <div className="flex justify-end items-center mb-1">
           <span className="font-medium text-sm ">
