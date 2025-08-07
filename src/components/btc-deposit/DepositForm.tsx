@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent, useEffect, useCallback } from "react";
 import { getBitcoinAddress } from "@/lib/address";
-import { useAgentAccount } from "@/hooks/useAgentAccount";
+// import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
   FeeEstimates,
@@ -13,7 +13,7 @@ import type {
 } from "@faktoryfun/styx-sdk";
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
-import { Bitcoin } from "lucide-react";
+// import { Bitcoin } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,11 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
 
@@ -37,6 +38,7 @@ interface DepositFormProps {
   activeWalletProvider: "leather" | "xverse" | null;
   dexContract: string;
   daoName: string;
+  userAddress: string | null;
 }
 
 interface HiroGetInResponse {
@@ -49,6 +51,7 @@ interface HiroGetInResponse {
 
 export interface ConfirmationData {
   depositAmount: string;
+  userInputAmount: string;
   depositAddress: string;
   stxAddress: string;
   opReturnHex: string;
@@ -65,6 +68,7 @@ export default function DepositForm({
   daoName,
 }: DepositFormProps) {
   const [amount, setAmount] = useState<string>("0.0001");
+  const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const { toast } = useToast();
   const [feeEstimates, setFeeEstimates] = useState<{
@@ -83,7 +87,9 @@ export default function DepositForm({
   const { accessToken, isLoading } = useAuth();
 
   // Get addresses from the lib - only if we have a session
-  const { userAgentAddress: userAddress } = useAgentAccount();
+  // const { userAgentAddress: userAddress } = useAgentAccount();
+  const userAddress =
+    "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
 
@@ -131,8 +137,12 @@ export default function DepositForm({
             const jsonValue = cvToJSON(clarityValue);
             if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
               const rawAmount = jsonValue.value.value["tokens-out"].value;
+              const slippageFactor = 1 - 4 / 100; // 4% slippage
+              const amountAfterSlippage = Math.floor(
+                Number(rawAmount) * slippageFactor
+              );
               setBuyQuote(
-                (Number(rawAmount) / 10 ** 6).toLocaleString(undefined, {
+                (amountAfterSlippage / 10 ** 6).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })
@@ -425,6 +435,7 @@ export default function DepositForm({
 
         setConfirmationData({
           depositAmount: totalAmount,
+          userInputAmount: amount,
           depositAddress: transactionData.depositAddress,
           stxAddress: userAddress,
           opReturnHex: transactionData.opReturnData,
@@ -559,65 +570,68 @@ export default function DepositForm({
 
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
-      <div className="text-center space-y-1 mb-4">
+      <div className="text-center space-y-1">
         <h2 className="text-xl ">
-          Deposit <span className="font-bold">{daoName}</span> Into your agent
-          account
+          Deposit <span className="font-bold">{daoName}</span>
         </h2>
-      </div>
-
-      {accessToken && (userAddress || btcAddress) && (
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="account-details">
-            <AccordionTrigger className="text-sm">
-              Agent Details
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-2 pt-2">
+        {accessToken && (userAddress || btcAddress) && (
+          <Dialog
+            open={isAgentDetailsOpen}
+            onOpenChange={setIsAgentDetailsOpen}
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="link"
+                className="text-xs text-muted-foreground h-auto p-0"
+              >
+                View Agent Details
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Agent Details</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 pt-2 text-xs">
                 {userAddress && (
-                  <div>
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
                       Agent Address (STX)
                     </span>
-                    <div className="font-mono text-xs bg-muted/50 p-2 rounded border break-all">
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
                       {userAddress}
                     </div>
                   </div>
                 )}
                 {btcAddress && (
-                  <div>
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
                       Bitcoin Address
                     </span>
-                    <div className="font-mono text-xs bg-muted/50 p-2 rounded border break-all">
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
                       {btcAddress}
                     </div>
                   </div>
                 )}
                 {dexContract && (
-                  <div>
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
                       Token Contract
                     </span>
-                    <div className="font-mono text-xs bg-muted/50 p-2 rounded border break-all">
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
                       {dexContract}
                     </div>
                   </div>
                 )}
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )}
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
 
       <div>
-        <div className="flex justify-between items-center mb-1">
-          <div className="flex items-center gap-2">
-            <Bitcoin className="h-4 w-4" />
-            <span className="font-medium text-sm">Bitcoin</span>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {formatUsdValue(calculateUsdValue(amount))}
+        <div className="flex justify-end items-center mb-1">
+          <span className="font-medium text-sm ">
+            You will spend {formatUsdValue(calculateUsdValue(amount))}
           </span>
         </div>
 
@@ -636,7 +650,7 @@ export default function DepositForm({
         {accessToken && (
           <div className="flex justify-end mt-1">
             <span className="text-xs text-muted-foreground">
-              Balance:{" "}
+              Available Balance:{" "}
               {isBalanceLoading
                 ? "Loading..."
                 : btcBalance !== null && btcBalance !== undefined
@@ -650,7 +664,7 @@ export default function DepositForm({
           </div>
         )}
 
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 justify-end">
           {presetAmounts.map((presetAmount, index) => (
             <Button
               key={presetAmount}
@@ -673,9 +687,11 @@ export default function DepositForm({
       </div>
 
       <div className="mt-2">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-end items-center mb-1">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">You will receive</span>
+            <span className="font-medium text-sm">
+              Your agent account will receive
+            </span>
           </div>
         </div>
         <div className="relative">
@@ -688,44 +704,28 @@ export default function DepositForm({
             {daoName} Tokens
           </span>
         </div>
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          Includes 4% slippage protection
+        </div>
       </div>
 
       <Card className="border-border/30">
         <CardContent className="p-3">
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">
-              Estimated time
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {feeEstimates.medium.time}
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">Your Deposit</span>
+            <span>{amount || "0.00"} BTC</span>
+          </div>
+          <div className="flex justify-between items-center text-xs mt-1">
+            <span className="text-muted-foreground">Service Fee</span>
+            <span>{calculateFee(amount)} BTC</span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-medium mt-2 pt-2 border-t border-border/30">
+            <span>Total</span>
+            <span>
+              {(Number(amount || 0) + Number(calculateFee(amount))).toFixed(8)}{" "}
+              BTC
             </span>
           </div>
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-xs text-muted-foreground">Service fee</span>
-            <span className="text-xs text-muted-foreground">
-              {amount && Number.parseFloat(amount) > 0 && btcUsdPrice
-                ? formatUsdValue(
-                    Number.parseFloat(calculateFee(amount)) * btcUsdPrice
-                  )
-                : "$0.00"}{" "}
-              ~ {calculateFee(amount)} BTC
-            </span>
-          </div>
-
-          {poolStatus && (
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-muted-foreground">
-                Pool liquidity
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatUsdValue(
-                  (poolStatus.estimatedAvailable / 100000000) *
-                    (btcUsdPrice || 0)
-                )}{" "}
-                ~ {(poolStatus.estimatedAvailable / 100000000).toFixed(8)} BTC
-              </span>
-            </div>
-          )}
         </CardContent>
       </Card>
 

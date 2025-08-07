@@ -257,9 +257,9 @@ export default function TransactionConfirmation({
 
   useEffect(() => {
     const fetchBuyQuoteOnOpen = async () => {
-      if (open && confirmationData.depositAmount) {
+      if (open && confirmationData.userInputAmount) {
         setLoadingQuote(true);
-        const data = await getBuyQuote(confirmationData.depositAmount);
+        const data = await getBuyQuote(confirmationData.userInputAmount);
         setBuyQuote(data);
         // Parse and apply slippage protection on tokens-out from buy quote result
         if (data?.result) {
@@ -287,7 +287,7 @@ export default function TransactionConfirmation({
 
                 // Apply slippage protection
                 // HARD CODING SLIPPAGE TO 6
-                const slippageFactor = 1 - 6 / 100;
+                const slippageFactor = 1 - 4 / 100;
                 console.log("Slippage factor:", slippageFactor);
                 const minOut = Math.floor(Number(rawAmount) * slippageFactor);
                 console.log("Min token out calculated:", minOut);
@@ -414,8 +414,8 @@ export default function TransactionConfirmation({
         console.log("Getting prepared transaction from SDK...");
         const preparedTransaction = await styxSDK.prepareTransaction({
           amount: confirmationData.depositAmount,
-          userAddress,
-          btcAddress,
+          userAddress: userAddress,
+          btcAddress: senderBtcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
           poolId: poolId,

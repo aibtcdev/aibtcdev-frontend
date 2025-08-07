@@ -15,16 +15,8 @@ import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
 import useSdkAllDepositsHistory from "@/hooks/deposit/useSdkAllDepositsHistory";
-import { useAgentAccount } from "@/hooks/useAgentAccount";
-
-// Define the ConfirmationData type
-export type ConfirmationData = {
-  depositAmount: string;
-  depositAddress: string;
-  stxAddress: string;
-  opReturnHex: string;
-  isBlaze?: boolean;
-};
+// import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { ConfirmationData } from "@/components/btc-deposit/DepositForm";
 
 interface BitcoinDepositProps {
   dexContract: string;
@@ -74,7 +66,9 @@ export default function BitcoinDeposit({
 
   // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
-  const { userAgentAddress: userAddress } = useAgentAccount();
+  // const { userAgentAddress: userAddress } = useAgentAccount();
+  const userAddress =
+    "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
   const btcAddress = accessToken ? getBitcoinAddress() : null;
 
   // Data fetching hooks
@@ -157,6 +151,7 @@ export default function BitcoinDeposit({
                 activeWalletProvider={activeWalletProvider}
                 dexContract={dexContract}
                 daoName={daoName}
+                userAddress={userAddress}
               />
             )}
           </Card>
