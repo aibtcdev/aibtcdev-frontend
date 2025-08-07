@@ -228,7 +228,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
 
-              <div className="w-full bg-black rounded-lg">
+              <div className="w-full bg-muted rounded-lg">
                 <div className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
                   <div className="flex items-center justify-center gap-2 py-2 px-4">
                     <span className="text-xs font-medium text-white">
