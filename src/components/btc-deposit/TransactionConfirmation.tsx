@@ -304,7 +304,13 @@ export default function TransactionConfirmation({
       }
     };
     fetchBuyQuoteOnOpen();
-  }, [open, confirmationData.depositAmount, dexContract, getBuyQuote]);
+  }, [
+    open,
+    confirmationData.depositAmount,
+    dexContract,
+    getBuyQuote,
+    confirmationData.userInputAmount,
+  ]);
 
   useEffect(() => {
     if (buyQuote) console.log("buyQuote updated:", buyQuote);
