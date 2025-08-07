@@ -266,7 +266,9 @@ export const DAOCard = ({
 
                   {/* Proposal Count */}
                   <div>
-                    <p className="text-xs text-muted-foreground">Proposals</p>
+                    <p className="text-xs text-muted-foreground">
+                      Contributions
+                    </p>
                     <p className="text-sm font-bold text-foreground">
                       {proposalCount ?? "—"}
                     </p>
@@ -501,7 +503,9 @@ export const CompactDAOCard = ({
                 <div className="font-bold text-foreground text-sm">
                   {proposalCount ?? "—"}
                 </div>
-                <div className="text-xs text-muted-foreground">Proposals</div>
+                <div className="text-xs text-muted-foreground">
+                  Contributions
+                </div>
               </div>
             </div>
 

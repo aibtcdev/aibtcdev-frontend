@@ -168,7 +168,7 @@ function ListHeader() {
           Holders
         </div>
         <div className="hidden xl:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Proposals
+          Contributions
         </div>
       </div>
       <div className="border-b border-border/50 -mt-px" />

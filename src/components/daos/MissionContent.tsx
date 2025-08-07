@@ -124,9 +124,7 @@ export function MissionContent({ description }: MissionContentProps) {
           <Info className="h-5 w-5 text-secondary" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            Mission Statement
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">Charter</h2>
           <p className="text-sm text-muted-foreground">
             Learn about our vision and goals
           </p>
