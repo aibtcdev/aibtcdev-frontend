@@ -315,6 +315,7 @@ export default function TransactionConfirmation({
     confirmationData.depositAmount,
     getBuyQuote,
     confirmationData.userInputAmount,
+    swapType,
   ]);
 
   useEffect(() => {
