@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
 import MyHistory from "@/components/btc-deposit/MyHistory";
-import { getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
 import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
@@ -19,6 +19,7 @@ import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { ConfirmationData } from "@/components/btc-deposit/DepositForm";
 
 interface BitcoinDepositProps {
+  dexId: number;
   dexContract: string;
   daoName: string;
 }
@@ -26,6 +27,7 @@ interface BitcoinDepositProps {
 export default function BitcoinDeposit({
   dexContract,
   daoName,
+  dexId,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
@@ -66,7 +68,8 @@ export default function BitcoinDeposit({
 
   // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
-  const { userAgentAddress: userAddress } = useAgentAccount();
+  const userAddress = getStacksAddress();
+  const { userAgentAddress } = useAgentAccount();
   // const userAddress =
   //   "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
   const btcAddress = accessToken ? getBitcoinAddress() : null;
@@ -152,6 +155,7 @@ export default function BitcoinDeposit({
                 dexContract={dexContract}
                 daoName={daoName}
                 userAddress={userAddress}
+                dexId={dexId}
               />
             )}
           </Card>
@@ -180,10 +184,11 @@ export default function BitcoinDeposit({
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
-          dexContract={dexContract}
+          aiAccountReceiver={userAgentAddress || ""}
           minTokenOut={minTokenOut}
-          // poolId={poolId}
+          poolId="aibtc"
           swapType={swapType}
+          dexId={dexId}
         />
       )}
     </div>

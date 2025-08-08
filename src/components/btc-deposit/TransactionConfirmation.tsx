@@ -96,10 +96,11 @@ interface TransactionConfirmationProps {
     options?: RefetchOptions
   ) => Promise<QueryObserverResult<DepositHistoryResponse, Error>>;
   setIsRefetching: (isRefetching: boolean) => void;
-  dexContract: string;
   minTokenOut?: number;
   poolId?: string;
   swapType?: "sbtc" | "usda" | "pepe" | "aibtc";
+  dexId?: number;
+  aiAccountReceiver?: string;
 }
 
 interface XverseSignPsbtResponse {
@@ -126,17 +127,16 @@ export default function TransactionConfirmation({
   refetchDepositHistory,
   refetchAllDeposits,
   setIsRefetching,
-  dexContract,
   minTokenOut,
-  // poolId,
+  poolId,
   swapType,
+  dexId,
+  aiAccountReceiver,
 }: TransactionConfirmationProps) {
   const { toast } = useToast();
   const [btcTxStatus, setBtcTxStatus] = useState<
     "idle" | "pending" | "success" | "error"
   >("idle");
-  // const [btcTxId, setBtcTxId] = useState<string>("");
-  // const [currentDepositId, setCurrentDepositId] = useState<string | null>(null);
   const { copiedText, copyToClipboard } = useClipboard();
 
   // Get session state from Zustand store
@@ -170,15 +170,21 @@ export default function TransactionConfirmation({
 
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
-      // Parse the contract address and name from dexContract prop
-      const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
         console.log(
-          `Calling getBuyQuote with ${amount} BTC (${btcAmount} sats)`
+          `Calling getBuyQuote for ${swapType} with ${amount} BTC (${btcAmount} sats)`
         );
 
-        // Direct Hiro API call with proper Clarity encoding
+        // This will need to be updated based on the actual quote endpoint for different swap types
+        // For now, keeping the existing logic but noting it may need changes
+        if (!aiAccountReceiver) {
+          console.warn("No aiAccountReceiver provided for quote");
+          return null;
+        }
+
+        const [contractAddress, contractName] = aiAccountReceiver.split(".");
+
         const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
@@ -188,7 +194,7 @@ export default function TransactionConfirmation({
           },
           body: JSON.stringify({
             sender: userAddress,
-            arguments: [cvToHex(uintCV(btcAmount))], // ← Proper Clarity uint encoding
+            arguments: [cvToHex(uintCV(btcAmount))],
           }),
         });
 
@@ -197,15 +203,16 @@ export default function TransactionConfirmation({
         }
 
         const data = (await response.json()) as HiroGetInResponse;
-        console.log("getBuyQuote Hiro response:", data);
+        console.log(`getBuyQuote Hiro response for ${swapType}:`, data);
         return data;
-      } catch {
-        console.error("[DEBUG] Error in getBuyQuote:");
+      } catch (error) {
+        console.error(`[DEBUG] Error in getBuyQuote for ${swapType}:`, error);
         return null;
       }
     },
-    [userAddress, dexContract]
+    [userAddress, swapType, aiAccountReceiver]
   );
+
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
     const fetchFeeEstimates = async () => {
@@ -268,9 +275,7 @@ export default function TransactionConfirmation({
           try {
             const clarityValue = hexToCV(data.result);
             const jsonValue = cvToJSON(clarityValue);
-            console.log("Parsed jsonValue:", jsonValue);
-            console.log("jsonValue.success:", jsonValue.success);
-            console.log("jsonValue.value:", jsonValue.value);
+            console.log("Parsed jsonValue for aibtc:", jsonValue);
 
             if (jsonValue.value?.value) {
               console.log(
@@ -284,20 +289,21 @@ export default function TransactionConfirmation({
 
               if (jsonValue.success && jsonValue.value.value["tokens-out"]) {
                 const rawAmount = jsonValue.value.value["tokens-out"].value;
-                console.log("Raw amount from quote:", rawAmount);
-                console.log("Raw amount type:", typeof rawAmount);
+                console.log(`Raw amount from ${swapType} quote:`, rawAmount);
 
-                // Apply slippage protection
-                // HARD CODING SLIPPAGE TO 6
+                // Apply slippage protection (4% slippage)
                 const slippageFactor = 1 - 4 / 100;
                 console.log("Slippage factor:", slippageFactor);
                 const minOut = Math.floor(Number(rawAmount) * slippageFactor);
-                console.log("Min token out calculated:", minOut);
+                console.log(
+                  `Min token out calculated for ${swapType}:`,
+                  minOut
+                );
                 setComputedMinTokenOut(minOut);
               }
             }
           } catch (error) {
-            console.error("Error parsing buy quote result:", error);
+            console.error(`Error parsing ${swapType} buy quote result:`, error);
           }
         }
         setLoadingQuote(false);
@@ -307,18 +313,17 @@ export default function TransactionConfirmation({
   }, [
     open,
     confirmationData.depositAmount,
-    dexContract,
     getBuyQuote,
     confirmationData.userInputAmount,
   ]);
 
   useEffect(() => {
-    if (buyQuote) console.log("buyQuote updated:", buyQuote);
-  }, [buyQuote]);
+    if (buyQuote) console.log(`buyQuote updated for ${swapType}:`, buyQuote);
+  }, [buyQuote, swapType]);
 
   const executeBitcoinTransaction = async (): Promise<void> => {
     console.log(
-      "Starting transaction with activeWalletProvider:",
+      `Starting ${swapType} transaction with activeWalletProvider:`,
       activeWalletProvider
     );
 
@@ -361,31 +366,32 @@ export default function TransactionConfirmation({
     setBtcTxStatus("pending");
 
     try {
-      // Create deposit record
-      console.log("Creating deposit with data:", {
-        btcAmount: Number.parseFloat(confirmationData.depositAmount),
+      // Create deposit record with new structure
+      console.log(`Creating ${swapType} deposit with data:`, {
+        btcAmount: parseFloat(confirmationData.depositAmount),
         stxReceiver: userAddress || "",
         btcSender: btcAddress || "",
-        isBlaze: confirmationData.isBlaze || false,
-        // poolId,
-        swapType,
-        minTokenOut,
-        dexContract,
-      });
-
-      // Create deposit record which will update pool status (reduce estimated available)
-      const depositId = await styxSDK.createDeposit({
-        btcAmount: Number.parseFloat(confirmationData.depositAmount),
-        stxReceiver: userAddress || "",
-        btcSender: btcAddress || "",
-        isBlaze: confirmationData.isBlaze ?? false,
-        // poolId: poolId,
+        isBlaze: false,
         swapType: swapType,
         minTokenOut: computedMinTokenOut,
-        dexContract: dexContract,
+        poolId: poolId,
+        dexId: dexId,
+        aiAccountReceiver: aiAccountReceiver,
       });
-      console.log("Create deposit depositId:", depositId);
-      // setCurrentDepositId(depositId);
+
+      const depositId = await styxSDK.createDeposit({
+        btcAmount: parseFloat(confirmationData.depositAmount),
+        stxReceiver: userAddress || "", // User's STX address (for filtering)
+        btcSender: btcAddress || "",
+        isBlaze: false,
+        swapType: swapType,
+        minTokenOut: computedMinTokenOut,
+        poolId: poolId,
+        dexId: dexId,
+        aiAccountReceiver: aiAccountReceiver,
+      });
+
+      console.log(`Create ${swapType} deposit depositId:`, depositId);
 
       try {
         if (
@@ -399,7 +405,6 @@ export default function TransactionConfirmation({
           "Window object has LeatherProvider:",
           !!window.LeatherProvider
         );
-        console.log("Full window object keys:", Object.keys(window));
 
         if (!userAddress) {
           throw new Error("STX address is missing or invalid");
@@ -417,20 +422,21 @@ export default function TransactionConfirmation({
         const senderBtcAddress = btcAddress;
         console.log("Using BTC address from context:", senderBtcAddress);
 
-        // Get a transaction prepared for signing
-        // TODO(biwas): Ensure swapType passed from parent matches createDeposit() call to keep routing consistent.
-        console.log("Getting prepared transaction from SDK...");
+        // Get a transaction prepared for signing with new structure
+        console.log(`Getting prepared ${swapType} transaction from SDK...`);
         const preparedTransaction = await styxSDK.prepareTransaction({
           amount: confirmationData.depositAmount,
           userAddress: userAddress,
           btcAddress: senderBtcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
-          // poolId: poolId,
-          minTokenOut: computedMinTokenOut,
+          minTokenOut: computedMinTokenOut || 0,
           swapType: swapType,
-          dexContract: dexContract,
+          poolId: poolId,
+          dexId: dexId,
+          aiAccountReceiver: aiAccountReceiver,
         } as TransactionPrepareParams);
+
         // Here, update fee estimates from the prepared transaction
         setFeeEstimates({
           low: {
@@ -450,9 +456,13 @@ export default function TransactionConfirmation({
           },
         });
 
-        console.log("PREPARED TRANSACTION: ", preparedTransaction);
+        console.log(
+          `PREPARED ${swapType?.toUpperCase()} TRANSACTION: `,
+          preparedTransaction
+        );
+
         // Execute transaction with prepared data
-        console.log("Creating transaction with SDK...");
+        console.log(`Creating ${swapType} transaction with SDK...`);
         const transactionData = await styxSDK.executeTransaction({
           depositId,
           preparedData: {
@@ -471,7 +481,10 @@ export default function TransactionConfirmation({
           btcAddress: senderBtcAddress,
         });
 
-        console.log("Transaction execution prepared:", transactionData);
+        console.log(
+          `${swapType?.toUpperCase()} transaction execution prepared:`,
+          transactionData
+        );
 
         // Create a transaction object from the PSBT
         let tx = new btc.Transaction({
@@ -589,7 +602,7 @@ export default function TransactionConfirmation({
 
         // Extract transaction details from response
         const { transactionDetails } = transactionData;
-        console.log("Transaction summary:", transactionDetails);
+        console.log("AIBTC transaction summary:", transactionDetails);
 
         // Generate PSBT and request signing
         const txPsbt = tx.toPSBT();
@@ -753,12 +766,14 @@ export default function TransactionConfirmation({
           throw new Error("No compatible wallet provider detected");
         }
 
-        // setBtcTxId(txid);
-        console.log("Transaction successfully broadcast with txid:", txid);
+        console.log(
+          "AIBTC transaction successfully broadcast with txid:",
+          txid
+        );
 
         // Update the deposit record with the transaction ID
         console.log(
-          "Attempting to update deposit with ID:",
+          "Attempting to update aibtc deposit with ID:",
           depositId,
           "Type:",
           typeof depositId
@@ -766,7 +781,7 @@ export default function TransactionConfirmation({
 
         try {
           console.log(
-            "About to update deposit with ID:",
+            "About to update aibtc deposit with ID:",
             depositId,
             "and txid:",
             txid
@@ -785,11 +800,14 @@ export default function TransactionConfirmation({
           });
 
           console.log(
-            "Successfully updated deposit:",
+            `Successfully updated ${swapType} deposit:`,
             JSON.stringify(updateResult, null, 2)
           );
         } catch (error) {
-          console.error("Error updating deposit with ID:", depositId);
+          console.error(
+            `Error updating ${swapType} deposit with ID:`,
+            depositId
+          );
           console.error("Update error details:", error);
           if (error instanceof Error) {
             console.error("Error name:", error.name);
@@ -803,7 +821,7 @@ export default function TransactionConfirmation({
 
         // Show success message
         toast({
-          title: "Deposit Initiated",
+          title: `${swapType?.toUpperCase()} Deposit Initiated`,
           description: `Your Bitcoin transaction has been sent successfully with txid: ${txid.substring(
             0,
             10
@@ -849,12 +867,12 @@ export default function TransactionConfirmation({
         });
       }
     } catch (err: unknown) {
-      console.error("Error creating deposit record:", err);
+      console.error(`Error creating ${swapType} deposit record:`, err);
       setBtcTxStatus("error");
 
       toast({
         title: "Error",
-        description: "Failed to initiate deposit. Please try again.",
+        description: `Failed to initiate ${swapType} deposit. Please try again.`,
         variant: "destructive",
       });
     }
@@ -864,7 +882,7 @@ export default function TransactionConfirmation({
   if (isLoading) {
     return (
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-aut">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <div className="flex flex-col items-center justify-center py-8">
             <Loader />
             <p className="mt-4 text-s">Loading your session...</p>
@@ -933,7 +951,46 @@ export default function TransactionConfirmation({
                 </div>
               </div>
 
-              <div className="text-xs font-medium text-zinc-300 self-start ">
+              {aiAccountReceiver && (
+                <>
+                  <div className="text-xs font-medium text-zinc-300">
+                    AI Account:
+                  </div>
+                  <div className="col-span-2 relative">
+                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      {aiAccountReceiver}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {poolId && (
+                <>
+                  <div className="text-xs font-medium text-zinc-300">
+                    Pool ID:
+                  </div>
+                  <div className="col-span-2 relative">
+                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      {poolId}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {dexId !== undefined && (
+                <>
+                  <div className="text-xs font-medium text-zinc-300">
+                    DEX ID:
+                  </div>
+                  <div className="col-span-2 relative">
+                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      {dexId}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="text-xs font-medium text-zinc-300 self-start">
                 OP_RETURN:
               </div>
               <div className="col-span-2 relative">
@@ -963,10 +1020,19 @@ export default function TransactionConfirmation({
                   {loadingQuote ? (
                     <Loader />
                   ) : computedMinTokenOut !== undefined ? (
-                    `${computedMinTokenOut}`
+                    `${computedMinTokenOut} ${swapType?.toUpperCase() || "tokens"}`
                   ) : (
                     "N/A"
                   )}
+                </div>
+              </div>
+
+              <div className="text-xs font-medium text-zinc-300">
+                Swap Type:
+              </div>
+              <div className="col-span-2 relative">
+                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  {swapType?.toUpperCase()}
                 </div>
               </div>
             </div>

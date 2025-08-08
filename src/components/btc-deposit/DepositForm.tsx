@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, useEffect, useCallback } from "react";
-import { getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
@@ -13,7 +13,6 @@ import type {
 } from "@faktoryfun/styx-sdk";
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
-// import { Bitcoin } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +38,7 @@ interface DepositFormProps {
   dexContract: string;
   daoName: string;
   userAddress: string | null;
+  dexId: number;
 }
 
 interface HiroGetInResponse {
@@ -55,7 +55,7 @@ export interface ConfirmationData {
   depositAddress: string;
   stxAddress: string;
   opReturnHex: string;
-  isBlaze?: boolean;
+  dexId: number;
 }
 
 export default function DepositForm({
@@ -66,6 +66,7 @@ export default function DepositForm({
   activeWalletProvider,
   dexContract,
   daoName,
+  dexId,
 }: DepositFormProps) {
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
@@ -87,11 +88,9 @@ export default function DepositForm({
   const { accessToken, isLoading } = useAuth();
 
   // Get addresses from the lib - only if we have a session
-  const { userAgentAddress: userAddress } = useAgentAccount();
-
-  // TODO: HARDCODE IT FOR NOW AND REMOVE IT LATER AND UNCOMMENT THE ABOVE LINE
-  // const userAddress =
-  //   "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
+  const { userAgentAddress } = useAgentAccount();
+  const hasAgentAccount = Boolean(userAgentAddress);
+  const userAddress = getStacksAddress();
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
 
@@ -267,6 +266,7 @@ export default function DepositForm({
   };
 
   const handleDepositConfirm = async (): Promise<void> => {
+    console.log("button clicked....");
     if (!amount || Number.parseFloat(amount) <= 0) {
       toast({
         title: "Invalid amount",
@@ -284,15 +284,24 @@ export default function DepositForm({
       });
       return;
     }
-
-    // Manual address type check before preparing transaction
-    if (btcAddress && !btcAddress.startsWith("bc1")) {
-      handleAddressTypeError(
-        new Error("Non-SegWit address detected"),
-        activeWalletProvider
-      );
+    if (!hasAgentAccount) {
+      toast({
+        title: "No Agent Account",
+        description:
+          "You don’t have an agent account yet. Please create one before depositing.",
+        variant: "destructive",
+      });
       return;
     }
+    // Manual address type check before preparing transaction
+    // if (btcAddress && !btcAddress.startsWith("bc1")) {
+    //   console.log("nonsegwitaddrsss");
+    //   handleAddressTypeError(
+    //     new Error("Non-SegWit address detected"),
+    //     activeWalletProvider
+    //   );
+    //   return;
+    // }
 
     try {
       if (!btcAddress) {
@@ -368,8 +377,9 @@ export default function DepositForm({
       }
 
       try {
+        console.log("preparing transaction...");
         const transactionData = await styxSDK.prepareTransaction({
-          amount: totalAmount, // Now includes service fee
+          amount: totalAmount,
           userAddress,
           btcAddress,
           feePriority: "medium" as TransactionPriority,
@@ -384,6 +394,7 @@ export default function DepositForm({
           depositAddress: transactionData.depositAddress,
           stxAddress: userAddress,
           opReturnHex: transactionData.opReturnData,
+          dexId: dexId,
         });
 
         setShowConfirmation(true);
@@ -501,7 +512,8 @@ export default function DepositForm({
 
   const getButtonText = () => {
     if (!accessToken) return "Connect Wallet";
-    return `Deposit`;
+    if (!hasAgentAccount) return "No Agent Account";
+    return "Deposit";
   };
 
   if (isLoading) {
@@ -687,13 +699,22 @@ export default function DepositForm({
           </div>
         </div>
       ) : (
-        <Button
-          size="lg"
-          className="h-12 text-lg bg-primary w-full"
-          onClick={handleDepositConfirm}
-        >
-          {getButtonText()}
-        </Button>
+        <>
+          {!hasAgentAccount && (
+            <p className="text-center text-sm text-destructive mb-1">
+              You don’t have an agent account. Please create one before
+              depositing.
+            </p>
+          )}
+          <Button
+            size="lg"
+            className="h-12 text-lg bg-primary w-full"
+            onClick={handleDepositConfirm}
+            disabled={!hasAgentAccount}
+          >
+            {getButtonText()}
+          </Button>
+        </>
       )}
     </div>
   );
