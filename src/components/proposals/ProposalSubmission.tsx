@@ -28,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getExplorerLink, truncateString } from "@/utils/format";
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 import { getAllErrorDetails } from "@aibtc/types";
 // import {
@@ -144,7 +152,7 @@ function cleanTwitterUrl(url: string): string {
     const urlObj = new URL(url.trim());
 
     // Check if it's a valid X.com or twitter.com domain
-    if (!urlObj.hostname.match(/^(x\.com|twitter\.com)$/)) {
+    if (!urlObj.hostname.match(/^(x.com|twitter.com)$/)) {
       return "";
     }
 
@@ -172,6 +180,9 @@ export function ProposalSubmission({
 }: ProposalSubmissionProps) {
   const [contribution, setContribution] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
+  const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
+    string | null
+  >(null);
   const [twitterEmbed, setTwitterEmbed] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
@@ -213,7 +224,7 @@ export function ProposalSubmission({
       map[err.code] = err;
       return map;
     },
-    {} as Record<number, (typeof errorDetailsArray)[0]>
+    {} as Record<number, (typeof errorDetailsArray)[0]> // Explicitly type the accumulator
   );
 
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
@@ -232,7 +243,8 @@ export function ProposalSubmission({
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
     queryKey: ["airdrops", "sender", stacksAddress],
-    queryFn: () => fetchAirdropsBySender(stacksAddress!),
+    // queryFn: () => fetchAirdropsBySender(stacksAddress!),
+    queryFn: () => fetchAirdropsBySender(),
     enabled: !!stacksAddress,
     staleTime: 5 * 60 * 1000, // 5 min
   });
@@ -242,8 +254,16 @@ export function ProposalSubmission({
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
   // Calculate combined length including the Twitter URL
-  const referenceText = twitterUrl ? `\n\nReference: ${twitterUrl}` : "";
-  const combinedLength = contribution.length + referenceText.length;
+  const twitterReferenceText = twitterUrl
+    ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
+    : "";
+  const airdropReferenceText = selectedAirdropTxHash
+    ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
+    : "";
+  const combinedLength =
+    contribution.length +
+    twitterReferenceText.length +
+    airdropReferenceText.length;
   const isWithinLimit = combinedLength <= 2043;
 
   // Cleanup WebSocket on unmount
@@ -337,6 +357,8 @@ export function ProposalSubmission({
         if (isSuccess) {
           setTxStatusView("confirmed-success");
           setContribution(""); // Clear proposal only after successful confirmation
+          setTwitterUrl("");
+          setSelectedAirdropTxHash(null);
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -382,6 +404,13 @@ export function ProposalSubmission({
       return null;
     }
 
+    const twitterReference = twitterUrl
+      ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
+      : "";
+    const airdropReference = selectedAirdropTxHash
+      ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
+      : "";
+
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -389,7 +418,7 @@ export function ProposalSubmission({
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
-      message: `${contribution.trim()}\n\nReference: ${twitterUrl}`,
+      message: `${contribution.trim()}${twitterReference}${airdropReference}`,
       memo: "Contribution submitted via aibtcdev frontend",
     };
   };
@@ -677,6 +706,54 @@ export function ProposalSubmission({
               </div>
             )}
           </div>
+
+          {/* Airdrop Selector */}
+          {senderAirdrops.length > 0 && (
+            <div className="space-y-2">
+              <label
+                htmlFor="airdrop-select"
+                className="text-sm font-medium text-foreground"
+              >
+                Attach an Airdrop (Optional)
+              </label>
+              <Select
+                onValueChange={(value) =>
+                  setSelectedAirdropTxHash(value === "none" ? null : value)
+                }
+                value={selectedAirdropTxHash || "none"}
+              >
+                <SelectTrigger
+                  id="airdrop-select"
+                  className="w-full bg-background/50 border-border/50"
+                >
+                  <SelectValue placeholder="Select an airdrop to reference" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {senderAirdrops.map((airdrop) => (
+                    <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>
+                          {new Date(airdrop.created_at).toLocaleDateString()} -{" "}
+                          {airdrop.recipients.length} recipients
+                        </span>
+                        <a
+                          href={getExplorerLink("tx", airdrop.tx_hash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline ml-4 flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {truncateString(airdrop.tx_hash, 6, 6)}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Twitter Embed Preview */}
           {twitterUrl && isValidTwitterUrl && (
@@ -1010,7 +1087,7 @@ export function ProposalSubmission({
                                   return (
                                     <>
                                       <span className="text-muted-foreground">
-                                        Reason:{" "}
+                                        Reason: "
                                       </span>
                                       <span className="font-medium">
                                         {description}
