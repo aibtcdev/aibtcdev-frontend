@@ -21,9 +21,15 @@ export function MessageSection({
 
   // Extract reference link from content
   const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+  const airdropReferenceRegex = /Airdrop Reference:\s*(https?:\/\/\S+)/i;
   const match = proposal.content.match(referenceRegex);
+  const airdropMatch = proposal.content.match(airdropReferenceRegex);
   const referenceLink = match?.[1];
-  const cleanedContent = proposal.content.replace(referenceRegex, "").trim();
+  const airdropReferenceLink = airdropMatch?.[1];
+  const cleanedContent = proposal.content
+    .replace(referenceRegex, "")
+    .replace(airdropReferenceRegex, "")
+    .trim();
 
   return (
     <ProposalSection.Provider
@@ -54,6 +60,21 @@ export function MessageSection({
                   <ExternalLink className="h-4 w-4 flex-shrink-0" />
                   <span className="inline-block max-w-full break-all">
                     {referenceLink}
+                  </span>
+                </a>
+              </div>
+            )}
+            {airdropReferenceLink && (
+              <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/50">
+                <a
+                  href={airdropReferenceLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                  <span className="inline-block max-w-full break-all">
+                    {airdropReferenceLink}
                   </span>
                 </a>
               </div>
