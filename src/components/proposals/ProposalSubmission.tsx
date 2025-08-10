@@ -28,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getExplorerLink, truncateString } from "@/utils/format";
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 import { getAllErrorDetails } from "@aibtc/types";
 // import {
@@ -144,7 +152,7 @@ function cleanTwitterUrl(url: string): string {
     const urlObj = new URL(url.trim());
 
     // Check if it's a valid X.com or twitter.com domain
-    if (!urlObj.hostname.match(/^(x\.com|twitter\.com)$/)) {
+    if (!urlObj.hostname.match(/^(x.com|twitter.com)$/)) {
       return "";
     }
 
@@ -172,6 +180,9 @@ export function ProposalSubmission({
 }: ProposalSubmissionProps) {
   const [contribution, setContribution] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
+  const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
+    string | null
+  >(null);
   const [twitterEmbed, setTwitterEmbed] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
@@ -213,7 +224,7 @@ export function ProposalSubmission({
       map[err.code] = err;
       return map;
     },
-    {} as Record<number, (typeof errorDetailsArray)[0]>
+    {} as Record<number, (typeof errorDetailsArray)[0]> // Explicitly type the accumulator
   );
 
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
@@ -233,6 +244,7 @@ export function ProposalSubmission({
   const { data: senderAirdrops = [] } = useQuery({
     queryKey: ["airdrops", "sender", stacksAddress],
     queryFn: () => fetchAirdropsBySender(stacksAddress!),
+    // queryFn: () => fetchAirdropsBySender(),
     enabled: !!stacksAddress,
     staleTime: 5 * 60 * 1000, // 5 min
   });
@@ -242,8 +254,16 @@ export function ProposalSubmission({
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
   // Calculate combined length including the Twitter URL
-  const referenceText = twitterUrl ? `\n\nReference: ${twitterUrl}` : "";
-  const combinedLength = contribution.length + referenceText.length;
+  const twitterReferenceText = twitterUrl
+    ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
+    : "";
+  const airdropReferenceText = selectedAirdropTxHash
+    ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
+    : "";
+  const combinedLength =
+    contribution.length +
+    twitterReferenceText.length +
+    airdropReferenceText.length;
   const isWithinLimit = combinedLength <= 2043;
 
   // Cleanup WebSocket on unmount
@@ -337,6 +357,8 @@ export function ProposalSubmission({
         if (isSuccess) {
           setTxStatusView("confirmed-success");
           setContribution(""); // Clear proposal only after successful confirmation
+          setTwitterUrl("");
+          setSelectedAirdropTxHash(null);
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -382,6 +404,13 @@ export function ProposalSubmission({
       return null;
     }
 
+    const twitterReference = twitterUrl
+      ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
+      : "";
+    const airdropReference = selectedAirdropTxHash
+      ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
+      : "";
+
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -389,7 +418,7 @@ export function ProposalSubmission({
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
-      message: `${contribution.trim()}\n\nReference: ${twitterUrl}`,
+      message: `${contribution.trim()}${twitterReference}${airdropReference}`,
       memo: "Contribution submitted via aibtcdev frontend",
     };
   };
@@ -577,29 +606,29 @@ export function ProposalSubmission({
 
         {/* Airdrop Notification */}
         {showAirdropNotification && senderAirdrops.length > 0 && (
-          <div className="mb-6 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent border-l-4 border-green-500 rounded-xl p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center mt-0.5">
-                  <Gift className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-foreground mb-1">
-                    🎉 Airdrop Activity Detected!
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    We found {senderAirdrops.length} airdrop
-                    {senderAirdrops.length > 1 ? "s" : ""} sent from your wallet
-                    address. This shows you're actively contributing to the
-                    ecosystem!
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-medium">Total recipients:</span>{" "}
+          <div className="mb-4 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent border-l-4 border-green-500 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gift className="h-4 w-4 text-green-600 flex-shrink-0" />
+                <div className="text-sm text-foreground">
+                  You’ve sent{" "}
+                  <span className="font-medium">{senderAirdrops.length}</span>{" "}
+                  airdrop
+                  {senderAirdrops.length > 1 ? "s" : ""};{" "}
+                  <span className="font-medium">
                     {senderAirdrops.reduce(
                       (total, airdrop) => total + airdrop.recipients.length,
                       0
                     )}
-                  </div>
+                  </span>{" "}
+                  recipient
+                  {senderAirdrops.reduce(
+                    (total, airdrop) => total + airdrop.recipients.length,
+                    0
+                  ) === 1
+                    ? ""
+                    : "s"}{" "}
+                  received.
                 </div>
               </div>
               <button
@@ -677,6 +706,60 @@ export function ProposalSubmission({
               </div>
             )}
           </div>
+
+          {/* Airdrop Selector */}
+          {senderAirdrops.length > 0 && (
+            <div className="space-y-2">
+              <label
+                htmlFor="airdrop-select"
+                className="text-sm font-medium text-foreground"
+              >
+                Attach an Airdrop (Optional)
+              </label>
+              <Select
+                onValueChange={(value) =>
+                  setSelectedAirdropTxHash(value === "none" ? null : value)
+                }
+                value={selectedAirdropTxHash || "none"}
+              >
+                <SelectTrigger
+                  id="airdrop-select"
+                  className="w-full bg-background/50 border-border/50"
+                >
+                  <SelectValue placeholder="Select an airdrop to reference" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {senderAirdrops.map((airdrop) => (
+                    <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>
+                          {new Date(airdrop.created_at).toLocaleDateString()} -{" "}
+                          {airdrop.recipients.length} recipients
+                        </span>
+                        <span className="ml-4 text-xs text-muted-foreground font-mono">
+                          {truncateString(airdrop.tx_hash, 6, 6)}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedAirdropTxHash && (
+                <div className="mt-2 flex items-center justify-end">
+                  <a
+                    href={getExplorerLink("tx", selectedAirdropTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    View selected airdrop on explorer
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Twitter Embed Preview */}
           {twitterUrl && isValidTwitterUrl && (
@@ -1010,7 +1093,7 @@ export function ProposalSubmission({
                                   return (
                                     <>
                                       <span className="text-muted-foreground">
-                                        Reason:{" "}
+                                        Reason: "
                                       </span>
                                       <span className="font-medium">
                                         {description}
