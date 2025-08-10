@@ -1,10 +1,5 @@
 import { supabase } from "./supabase";
-import type {
-  Airdrop,
-  CreateAirdrop,
-  UpdateAirdrop,
-  AirdropWithDetails,
-} from "@/types";
+import type { Airdrop, CreateAirdrop } from "@/types";
 
 /**
  * Fetches all airdrops ordered by creation date (newest first)
