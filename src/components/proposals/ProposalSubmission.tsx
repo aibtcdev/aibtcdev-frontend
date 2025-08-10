@@ -243,8 +243,8 @@ export function ProposalSubmission({
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
     queryKey: ["airdrops", "sender", stacksAddress],
-    // queryFn: () => fetchAirdropsBySender(stacksAddress!),
-    queryFn: () => fetchAirdropsBySender(),
+    queryFn: () => fetchAirdropsBySender(stacksAddress!),
+    // queryFn: () => fetchAirdropsBySender(),
     enabled: !!stacksAddress,
     staleTime: 5 * 60 * 1000, // 5 min
   });

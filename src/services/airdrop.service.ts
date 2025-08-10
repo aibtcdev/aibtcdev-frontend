@@ -132,13 +132,14 @@ export const fetchAirdropsByContract = async (
  *
  * Query key: ['airdrops', 'sender', sender]
  */
-export const fetchAirdropsBySender = async () // sender: string
-: Promise<Airdrop[]> => {
+export const fetchAirdropsBySender = async (
+  sender: string
+): Promise<Airdrop[]> => {
   try {
     const { data, error } = await supabase
       .from("airdrops")
       .select("*")
-      // .eq("sender", sender)
+      .eq("sender", sender)
       .order("created_at", { ascending: false });
 
     if (error) {
