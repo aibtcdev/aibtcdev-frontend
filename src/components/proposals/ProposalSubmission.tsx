@@ -9,6 +9,8 @@ import {
   Check,
   ExternalLink,
   AlertCircle,
+  Gift,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
@@ -17,6 +19,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
 import { fetchAgents } from "@/services/agent.service";
+import { fetchAirdropsBySender } from "@/services/airdrop.service";
+import { getStacksAddress } from "@/lib/address";
 import {
   Dialog,
   DialogContent,
@@ -196,6 +200,10 @@ export function ProposalSubmission({
     "initial" | "confirmed-success" | "confirmed-failure"
   >("initial");
 
+  // Airdrop notification state
+  const [stacksAddress, setStacksAddress] = useState<string | null>(null);
+  const [showAirdropNotification, setShowAirdropNotification] = useState(false);
+
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
 
   // Error code mapping
@@ -221,6 +229,14 @@ export function ProposalSubmission({
     staleTime: 10 * 60 * 1000, // 10 min
   });
 
+  // Fetch airdrops by sender address to check for matches
+  const { data: senderAirdrops = [] } = useQuery({
+    queryKey: ["airdrops", "sender", stacksAddress],
+    queryFn: () => fetchAirdropsBySender(stacksAddress!),
+    enabled: !!stacksAddress,
+    staleTime: 5 * 60 * 1000, // 5 min
+  });
+
   // Twitter URL validation
   const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
@@ -238,6 +254,18 @@ export function ProposalSubmission({
       }
     };
   }, []);
+
+  // Get connected wallet address
+  useEffect(() => {
+    setStacksAddress(getStacksAddress());
+  }, []);
+
+  // Show airdrop notification if user has sent airdrops
+  useEffect(() => {
+    if (senderAirdrops.length > 0 && !showAirdropNotification) {
+      setShowAirdropNotification(true);
+    }
+  }, [senderAirdrops, showAirdropNotification]);
 
   // Fetch Twitter embed when URL is valid
   useEffect(() => {
@@ -546,6 +574,44 @@ export function ProposalSubmission({
             </p>
           </div>
         </div>
+
+        {/* Airdrop Notification */}
+        {showAirdropNotification && senderAirdrops.length > 0 && (
+          <div className="mb-6 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent border-l-4 border-green-500 rounded-xl p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center mt-0.5">
+                  <Gift className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-foreground mb-1">
+                    🎉 Airdrop Activity Detected!
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    We found {senderAirdrops.length} airdrop
+                    {senderAirdrops.length > 1 ? "s" : ""} sent from your wallet
+                    address. This shows you're actively contributing to the
+                    ecosystem!
+                  </p>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium">Total recipients:</span>{" "}
+                    {senderAirdrops.reduce(
+                      (total, airdrop) => total + airdrop.recipients.length,
+                      0
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAirdropNotification(false)}
+                className="p-1 rounded-md hover:bg-muted/50 transition-colors duration-200"
+                aria-label="Dismiss notification"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
