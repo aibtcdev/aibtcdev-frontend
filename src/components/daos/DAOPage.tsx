@@ -269,7 +269,11 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             </div>
             <div className="lg:col-span-1">
               {dexContract && (
-                <BitcoinDeposit dexContract={dexContract} daoName={dao.name} />
+                <BitcoinDeposit
+                  dexContract={dexContract}
+                  daoName={dao.name}
+                  dexId={1}
+                />
               )}
             </div>
           </div>
