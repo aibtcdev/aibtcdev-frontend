@@ -1,71 +1,22 @@
 "use client";
 
 import { Switch } from "@/components/ui/switch";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
+import { useAgentPermissions } from "@/hooks/useAgentPermissions";
 
 interface Props {
   agentAddress: string | null;
-  network?: "mainnet" | "testnet";
 }
 
-interface AgentPermissions {
-  canUseProposals: boolean;
-  canApproveRevokeContracts: boolean;
-  canBuySell: boolean;
-  canDeposit: boolean;
-}
-
-export function AgentPermissions({ agentAddress, network = "testnet" }: Props) {
+export function AgentPermissions({ agentAddress }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const fetchPermissions = async (
-    bustCache = false
-  ): Promise<AgentPermissions> => {
-    if (!agentAddress) throw new Error("No agent address");
-
-    const [contractAddress, contractName] = agentAddress.split(".");
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          sender: contractAddress,
-          arguments: [],
-          cacheControl: bustCache
-            ? {
-                bustCache: true,
-                ttl: 3600,
-              }
-            : undefined,
-        }),
-      }
-    );
-
-    if (!res.ok) throw new Error("Failed to fetch permissions");
-
-    const data = await res.json();
-    return (
-      data?.data || {
-        canUseProposals: true,
-        canApproveRevokeContracts: true,
-        canBuySell: false,
-        canDeposit: true,
-      }
-    );
-  };
-
-  const { data: permissions, isLoading } = useQuery({
-    queryKey: ["agent-permissions", agentAddress],
-    queryFn: () => fetchPermissions(false),
-    enabled: !!agentAddress,
-  });
+  // Use the shared hook for consistency
+  const { data: permissions, isLoading } = useAgentPermissions(agentAddress);
 
   const updatePermissionMutation = useMutation({
     mutationFn: async ({
@@ -82,7 +33,9 @@ export function AgentPermissions({ agentAddress, network = "testnet" }: Props) {
           contract: agentAddress as `${string}.${string}`,
           functionName,
           functionArgs: [Cl.bool(enabled)],
-          network,
+          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+            | "mainnet"
+            | "testnet",
         });
 
         return {
@@ -101,14 +54,14 @@ export function AgentPermissions({ agentAddress, network = "testnet" }: Props) {
       }
     },
     onSuccess: async (data) => {
+      // Invalidate all agent permission queries
       await queryClient.invalidateQueries({
-        queryKey: ["agent-permissions", agentAddress],
+        queryKey: ["agent-permissions"],
       });
 
-      await queryClient.fetchQuery({
-        queryKey: ["agent-permissions", agentAddress],
-        queryFn: () => fetchPermissions(true),
-        staleTime: 0,
+      // Force refetch with cache busting
+      await queryClient.refetchQueries({
+        queryKey: ["agent-permissions"],
       });
 
       toast({
