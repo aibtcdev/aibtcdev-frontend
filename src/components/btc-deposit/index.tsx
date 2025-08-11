@@ -10,7 +10,7 @@ import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirm
 import MyHistory from "@/components/btc-deposit/MyHistory";
 import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
-import AuthButton from "@/components/home/AuthButton";
+// import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
