@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
@@ -13,7 +14,11 @@ export default function AccountPage() {
     useWalletStore();
   const { userId, accessToken } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+
+  // Get the tab parameter from URL, default to "profile"
+  const initialTab = searchParams.get("tab") || "profile";
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
@@ -86,6 +91,7 @@ export default function AccountPage() {
         accessToken={accessToken}
         userId={userId}
         fetchWallets={fetchWallets}
+        initialTab={initialTab}
       />
     </div>
   );

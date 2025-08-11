@@ -28,7 +28,7 @@ export function InstructionsTab() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="w-full max-w-5xl">
+      <div className="w-full ">
         {/* Configuration Table */}
         <AgentConfigTable
           daos={daos}
