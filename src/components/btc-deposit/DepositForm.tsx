@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
+import { useAgentPermissions } from "@/hooks/useAgentPermissions";
+import { DepositPermissionModal } from "@/components/btc-deposit/DepositPermissionModal";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -83,6 +85,7 @@ export default function DepositForm({
   });
   const [buyQuote, setBuyQuote] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
@@ -91,6 +94,11 @@ export default function DepositForm({
   const { userAgentAddress } = useAgentAccount();
   const hasAgentAccount = Boolean(userAgentAddress);
   const userAddress = getStacksAddress();
+
+  // Check agent permissions
+  const { data: permissions, isLoading: isPermissionsLoading } =
+    useAgentPermissions(userAgentAddress);
+  const canDeposit = permissions?.canDeposit ?? false;
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
 
@@ -266,13 +274,18 @@ export default function DepositForm({
   };
 
   const handleDepositConfirm = async (): Promise<void> => {
-    console.log("button clicked....");
-    if (!amount || Number.parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid BTC amount greater than 0",
+        title: "Invalid Amount",
+        description: "Please enter a valid deposit amount.",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check if user has deposit permission
+    if (!canDeposit) {
+      setShowPermissionModal(true);
       return;
     }
 
@@ -513,6 +526,7 @@ export default function DepositForm({
   const getButtonText = () => {
     if (!accessToken) return "Connect Wallet";
     if (!hasAgentAccount) return "No Agent Account";
+    if (!canDeposit) return "Enable Deposit";
     return "Deposit";
   };
 
@@ -601,6 +615,7 @@ export default function DepositForm({
             onChange={handleAmountChange}
             placeholder="0.00000000"
             className="text-right pr-12 pl-12 h-12 text-lg"
+            disabled={!accessToken}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
             BTC
@@ -631,6 +646,7 @@ export default function DepositForm({
               size="sm"
               variant={selectedPreset === presetAmount ? "default" : "outline"}
               onClick={() => handlePresetClick(presetAmount)}
+              disabled={!accessToken}
             >
               {presetLabels[index]}
             </Button>
@@ -639,7 +655,9 @@ export default function DepositForm({
             size="sm"
             variant={selectedPreset === "max" ? "default" : "outline"}
             onClick={handleMaxClick}
-            disabled={btcBalance === null || btcBalance === undefined}
+            disabled={
+              !accessToken || btcBalance === null || btcBalance === undefined
+            }
           >
             MAX
           </Button>
@@ -689,33 +707,48 @@ export default function DepositForm({
         </CardContent>
       </Card>
 
-      {!accessToken ? (
-        <div className="space-y-2">
+      <>
+        {!accessToken && (
           <p className="text-center text-sm text-muted-foreground mb-1">
             Connect your wallet to continue
           </p>
+        )}
+        {accessToken && !hasAgentAccount && (
+          <p className="text-center text-sm text-destructive mb-1">
+            You don't have an agent account. Please create one before
+            depositing.
+          </p>
+        )}
+        {hasAgentAccount && !isPermissionsLoading && !canDeposit && (
+          <p className="text-center text-sm text-destructive mb-1">
+            Your agent doesn't have deposit permission enabled.
+          </p>
+        )}
+        {!accessToken ? (
           <div className="flex justify-center">
-            <AuthButton redirectUrl="/deposit" />
+            <AuthButton />
           </div>
-        </div>
-      ) : (
-        <>
-          {!hasAgentAccount && (
-            <p className="text-center text-sm text-destructive mb-1">
-              You don’t have an agent account. Please create one before
-              depositing.
-            </p>
-          )}
+        ) : (
           <Button
             size="lg"
             className="h-12 text-lg bg-primary w-full"
-            onClick={handleDepositConfirm}
-            disabled={!hasAgentAccount}
+            onClick={
+              !canDeposit && hasAgentAccount
+                ? () => setShowPermissionModal(true)
+                : handleDepositConfirm
+            }
+            disabled={!hasAgentAccount || isPermissionsLoading || !accessToken}
           >
             {getButtonText()}
           </Button>
-        </>
-      )}
+        )}
+      </>
+
+      <DepositPermissionModal
+        open={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        agentAddress={userAgentAddress}
+      />
     </div>
   );
 }

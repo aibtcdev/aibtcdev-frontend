@@ -1,4 +1,6 @@
 "use client";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, Bot, Wallet } from "lucide-react";
 import { ProfileTab } from "./tabs/ProfileTab";
@@ -14,15 +16,38 @@ interface AccountTabsProps {
   accessToken: string | null;
   userId: string | null;
   fetchWallets: (userId: string) => Promise<void>;
+  initialTab?: string;
 }
 
 export function AccountTabs({
   userAgentAddress,
   userAgentContractBalance,
+  initialTab = "profile",
 }: AccountTabsProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Update active tab when initialTab changes (from URL navigation)
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  // Handle tab change and update URL
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+
+    // Create new URLSearchParams to preserve other query parameters
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.set("tab", value);
+
+    // Update URL without causing a page reload
+    router.replace(`/account?${newSearchParams.toString()}`, { scroll: false });
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
-      <Tabs defaultValue="profile" className="">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="">
         <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
           <TabsTrigger
             value="profile"

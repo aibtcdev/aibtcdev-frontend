@@ -10,7 +10,7 @@ import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirm
 import MyHistory from "@/components/btc-deposit/MyHistory";
 import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
-import AuthButton from "@/components/home/AuthButton";
+// import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
@@ -100,27 +100,27 @@ export default function BitcoinDeposit({
     isBtcPriceLoading || isPoolStatusLoading || btcUsdPrice === undefined;
 
   // Render authentication prompt if not connected
-  if (!accessToken) {
-    return (
-      <div className="max-w-xl mx-auto">
-        <div className="mb-6 text-center">
-          <h2 className="text-xl font-semibold">
-            Deposit {daoName} into your agent account.
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Fast, secure, and trustless
-          </p>
-        </div>
+  // if (!accessToken) {
+  //   return (
+  //     <div className="max-w-xl mx-auto">
+  //       <div className="mb-6 text-center">
+  //         <h2 className="text-xl font-semibold">
+  //           Deposit {daoName} into your agent account.
+  //         </h2>
+  //         <p className="text-sm text-muted-foreground">
+  //           Fast, secure, and trustless
+  //         </p>
+  //       </div>
 
-        <Card className="p-8 flex flex-col items-center justify-center space-y-6">
-          <p className="text-center">
-            Please connect your wallet to access the deposit feature
-          </p>
-          <AuthButton redirectUrl="/deposit" />
-        </Card>
-      </div>
-    );
-  }
+  //       <Card className="p-8 flex flex-col items-center justify-center space-y-6">
+  //         <p className="text-center">
+  //           Please connect your wallet to access the deposit feature
+  //         </p>
+  //         <AuthButton redirectUrl="/deposit" />
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="max-w-xl mx-auto">

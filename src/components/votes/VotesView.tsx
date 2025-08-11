@@ -15,6 +15,9 @@ import {
   Filter,
   X,
   Eye,
+  Settings,
+  Edit3,
+  Save,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +42,24 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/useToast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAgents } from "@/services/agent.service";
+import {
+  fetchActiveAgentPromptByDaoAndAgent,
+  updateAgentPrompt,
+  createAgentPrompt,
+} from "@/services/agent-prompt.service";
+import type { AgentPrompt } from "@/types";
 
 interface VotesViewProps {
   votes: VoteType[];
@@ -55,6 +76,12 @@ interface VoteAnalysisModalProps {
 }
 
 type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
+
+interface EditingPromptData {
+  prompt_text: string;
+  model: string;
+  temperature: number;
+}
 
 // Helper function to format time in a compact way
 const formatRelativeTime = (dateStr: string): string => {
@@ -116,6 +143,143 @@ function VoteAnalysisModal({
   vote,
   currentBitcoinHeight,
 }: VoteAnalysisModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [editingData, setEditingData] = useState<EditingPromptData>({
+    prompt_text: "",
+    model: "gpt-4o",
+    temperature: 0.1,
+  });
+  const [currentAgentPrompt, setCurrentAgentPrompt] =
+    useState<AgentPrompt | null>(null);
+  const [daoManagerAgentId, setDaoManagerAgentId] = useState<string>("");
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Fetch agents to get the DAO manager agent ID
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: fetchAgents,
+  });
+
+  // Set DAO manager agent ID
+  useEffect(() => {
+    if (agents.length > 0) {
+      setDaoManagerAgentId(agents[0].id);
+    }
+  }, [agents]);
+
+  // Fetch current agent prompt for this DAO
+  const { data: agentPrompt } = useQuery({
+    queryKey: [
+      "agentPrompts",
+      "active",
+      "dao",
+      vote.dao_id,
+      "agent",
+      daoManagerAgentId,
+    ],
+    queryFn: () =>
+      fetchActiveAgentPromptByDaoAndAgent(vote.dao_id, daoManagerAgentId),
+    enabled: !!vote.dao_id && !!daoManagerAgentId,
+  });
+
+  useEffect(() => {
+    if (agentPrompt) {
+      setCurrentAgentPrompt(agentPrompt);
+      setEditingData({
+        prompt_text: agentPrompt.prompt_text,
+        model: agentPrompt.model,
+        temperature: agentPrompt.temperature,
+      });
+      setIsCreating(false);
+    } else if (daoManagerAgentId && vote.dao_id) {
+      // No prompt exists, prepare for creation
+      setIsCreating(true);
+      setCurrentAgentPrompt(null);
+    }
+  }, [agentPrompt, daoManagerAgentId, vote.dao_id]);
+
+  // Create agent prompt mutation
+  const createPromptMutation = useMutation({
+    mutationFn: (
+      data: Omit<AgentPrompt, "id" | "created_at" | "updated_at">
+    ) => {
+      return createAgentPrompt(data);
+    },
+    onSuccess: (newPrompt) => {
+      toast({
+        title: "Success",
+        description: "Agent instructions created successfully",
+      });
+      setCurrentAgentPrompt(newPrompt);
+      setIsCreating(false);
+      queryClient.invalidateQueries({ queryKey: ["agentPrompts"] });
+      setIsEditingInstructions(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create agent instructions: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update agent prompt mutation
+  const updatePromptMutation = useMutation({
+    mutationFn: (data: Partial<AgentPrompt>) => {
+      if (!currentAgentPrompt?.id) {
+        throw new Error("No agent prompt found to update");
+      }
+      return updateAgentPrompt(currentAgentPrompt.id, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Agent instructions updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agentPrompts"] });
+      setIsEditingInstructions(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update agent instructions: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveInstructions = () => {
+    if (isCreating || !currentAgentPrompt) {
+      // Create new prompt
+      const newPromptData = {
+        dao_id: vote.dao_id,
+        agent_id: daoManagerAgentId,
+        profile_id: vote.profile_id || "",
+        prompt_text: editingData.prompt_text,
+        model: editingData.model,
+        temperature: editingData.temperature,
+        is_active: true,
+      };
+      createPromptMutation.mutate(newPromptData);
+    } else {
+      // Update existing prompt
+      updatePromptMutation.mutate(editingData);
+    }
+  };
+
+  const handleCancelInstructions = () => {
+    if (currentAgentPrompt) {
+      setEditingData({
+        prompt_text: currentAgentPrompt.prompt_text,
+        model: currentAgentPrompt.model,
+        temperature: currentAgentPrompt.temperature,
+      });
+    }
+    setIsEditingInstructions(false);
+  };
   // Parse contribution content and reference
   const parseContributionContent = () => {
     if (!vote.proposal_content) return { content: "", reference: null };
@@ -132,8 +296,24 @@ function VoteAnalysisModal({
 
   const { content, reference } = parseContributionContent();
 
+  const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+
+  // Extract first sentence from reasoning for summary
+  const getReasoningPreview = (reasoning: string) => {
+    if (!reasoning) return "";
+
+    const sentences = reasoning
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 0);
+    return sentences[0]?.trim() + "." || "";
+  };
+
+  const reasoningPreview = vote.reasoning
+    ? getReasoningPreview(vote.reasoning)
+    : null;
+
   return (
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="text-xl font-semibold pr-8">
           Vote Analysis
@@ -141,112 +321,292 @@ function VoteAnalysisModal({
       </DialogHeader>
 
       <div className="space-y-6">
-        {/* Proposal Title & DAO */}
-        <div>
-          <h3 className="text-lg font-semibold text-foreground mb-1">
-            {vote.proposal_title}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {vote.dao_name} • {formatRelativeTime(vote.created_at)}
-          </p>
-        </div>
-
-        {/* Contribution Message */}
-        <div>
-          <h4 className="text-sm font-semibold mb-3 text-foreground">
-            Contribution Message
-          </h4>
-          <div className="bg-muted/30 rounded-lg p-4">
-            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-              {content || "No contribution message available."}
+        {/* SUMMARY PANEL - Critical Info at Top */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6 space-y-6">
+          {/* Title and DAO Info */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-foreground">
+                {vote.proposal_title}
+              </h3>
+            </div>
+            <div className="text-right">
+              <Badge
+                variant="secondary"
+                className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-1"
+              >
+                {vote.dao_name}
+              </Badge>
+              <div className="text-sm text-muted-foreground">
+                {formatRelativeTime(vote.created_at)}
+              </div>
             </div>
           </div>
 
-          {reference && (
-            <div className="mt-3 bg-muted/50 rounded-lg p-3">
-              <h5 className="text-xs font-medium text-muted-foreground mb-2">
-                Reference
-              </h5>
-              <a
-                href={reference}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary hover:text-primary/80 transition-colors break-all flex items-start gap-2"
-              >
-                <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span className="break-all">{reference}</span>
-              </a>
+          {/* Agent Vote Decision */}
+          <div className="space-y-3">
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">
+                Your agent's vote on this contribution:{" "}
+              </span>
+              {vote.voted === false ? (
+                <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                  Pending
+                </span>
+              ) : (
+                <span
+                  className={`font-semibold ${
+                    vote.answer
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {vote.answer ? "Yes" : "No"}
+                </span>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Agent Vote & Actions */}
-        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-          <div>
-            <h4 className="text-sm font-semibold mb-2 text-foreground">
-              Agent Vote
-            </h4>
-            {vote.voted === false ? (
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                <Clock className="h-4 w-4" />
-                <span className="font-medium">Awaiting Vote</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {vote.answer ? (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <ThumbsUp className="h-5 w-5" />
-                    <span className="font-medium">Voted Yes</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <ThumbsDown className="h-5 w-5" />
-                    <span className="font-medium">Voted No</span>
-                  </div>
-                )}
-                {vote.confidence !== null && (
-                  <span className="text-sm text-muted-foreground ml-2">
-                    ({Math.round(vote.confidence * 100)}% confidence)
-                  </span>
-                )}
+            {vote.confidence !== null && (
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Agent's confidence on voting:{" "}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {Math.round(vote.confidence * 100)}%
+                </span>
               </div>
             )}
           </div>
+
+          {/* Agent's Reasoning */}
+          {reasoningPreview && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-foreground">
+                  Your agent's reason to vote {vote.answer ? "yes" : "no"} in
+                  this proposal:
+                </h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
+                  className="text-xs"
+                >
+                  {isReasoningExpanded ? "Show Less" : "Show More"}
+                </Button>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {isReasoningExpanded ? vote.reasoning : reasoningPreview}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Veto Button */}
           {vote.dao_id &&
             vote.proposal_id &&
             isInVetoWindow(vote, currentBitcoinHeight) && (
-              <DAOVetoProposal
-                daoId={vote.dao_id}
-                proposalId={vote.proposal_id}
-                size="default"
-                variant="destructive"
-              />
+              <div className="flex justify-end">
+                <DAOVetoProposal
+                  daoId={vote.dao_id}
+                  proposalId={vote.proposal_id}
+                  size="default"
+                  variant="destructive"
+                />
+              </div>
             )}
         </div>
 
-        {/* AI Reasoning */}
-        {vote.reasoning && (
-          <div>
-            <h4 className="text-sm font-semibold mb-3 text-foreground">
-              AI Reasoning
-            </h4>
-            <div className="bg-muted/30 rounded-lg p-4">
-              <div className="text-sm whitespace-pre-wrap break-words text-muted-foreground leading-relaxed">
-                {vote.reasoning}
+        {/* Agent Instructions */}
+        <div className="bg-muted/30 border rounded-xl p-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-muted-foreground p-1.5 rounded-lg">
+                  <Settings className="h-4 w-4 text-muted" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">
+                  Your instructions to Agent
+                </h4>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Customize how you want the agent to make decisions and vote on
+                this DAO and contributions submitted for this DAO.
+              </p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {isEditingInstructions ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelInstructions}
+                    disabled={
+                      updatePromptMutation.isPending ||
+                      createPromptMutation.isPending
+                    }
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveInstructions}
+                    disabled={
+                      updatePromptMutation.isPending ||
+                      createPromptMutation.isPending
+                    }
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {updatePromptMutation.isPending ||
+                    createPromptMutation.isPending
+                      ? isCreating
+                        ? "Creating..."
+                        : "Saving..."
+                      : isCreating
+                        ? "Create"
+                        : "Save"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingInstructions(true)}
+                >
+                  <Edit3 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Technical Details */}
-        <div>
-          <h4 className="text-sm font-semibold mb-3 text-foreground">
-            Technical Details
-          </h4>
+          <div>
+            {isEditingInstructions ? (
+              <Textarea
+                value={editingData.prompt_text}
+                onChange={(e) =>
+                  setEditingData({
+                    ...editingData,
+                    prompt_text: e.target.value,
+                  })
+                }
+                placeholder="Enter your agent instructions..."
+                className="min-h-[120px] resize-none"
+              />
+            ) : (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {currentAgentPrompt?.prompt_text ||
+                    (isCreating
+                      ? "No instructions set. Click Edit to create."
+                      : "No instructions configured.")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {isEditingInstructions && (
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Model</label>
+                <Select
+                  value={editingData.model}
+                  onValueChange={(value) =>
+                    setEditingData({ ...editingData, model: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                    <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                    <SelectItem value="claude-3-5-sonnet-20241022">
+                      Claude 3.5 Sonnet
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Temperature
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={editingData.temperature}
+                  onChange={(e) =>
+                    setEditingData({
+                      ...editingData,
+                      temperature: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className=""
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Contribution Details */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+            <h4 className="text-lg font-semibold text-foreground">
+              Contribution Details
+            </h4>
+          </div>
+
+          <div className="bg-muted/30 rounded-xl p-4">
+            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+              {content || "No contribution message available."}
+            </div>
+          </div>
+
+          {/* Reference Link as Preview Card */}
+          {reference && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-green-600 p-2 rounded-lg">
+                  <ExternalLink className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-foreground mb-1">
+                    Reference Link
+                  </h5>
+                  <a
+                    href={reference}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors break-all block"
+                  >
+                    {reference}
+                  </a>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click to view external source
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Technical Details - Moved to Bottom */}
+        <div className="border-t pt-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <h4 className="text-sm font-semibold text-foreground">
+              Technical Details
+            </h4>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-muted/30 rounded-lg p-3">
+            <div className="bg-muted/20 rounded-lg p-3 border border-muted">
               <div className="text-xs text-muted-foreground mb-1">
                 Proposal ID
               </div>
@@ -254,7 +614,7 @@ function VoteAnalysisModal({
             </div>
 
             {vote.vote_start && (
-              <div className="bg-muted/30 rounded-lg p-3">
+              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
                 <div className="text-xs text-muted-foreground mb-1">
                   Vote Start Block
                 </div>
@@ -265,7 +625,7 @@ function VoteAnalysisModal({
             )}
 
             {vote.vote_end && (
-              <div className="bg-muted/30 rounded-lg p-3">
+              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
                 <div className="text-xs text-muted-foreground mb-1">
                   Vote End Block
                 </div>
@@ -282,7 +642,7 @@ function VoteAnalysisModal({
           <Link href={`/proposals/${vote.proposal_id}`}>
             <Button variant="outline" className="gap-2">
               <FileText className="h-4 w-4" />
-              View Full Proposal
+              View Full Contribution
             </Button>
           </Link>
         </div>
@@ -422,9 +782,9 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
           {/* Action Button */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="shrink-0 gap-2">
+              <Button variant="outline" size="sm" className="gap-2">
                 <Eye className="h-4 w-4" />
-                See Analysis
+                View Details
               </Button>
             </DialogTrigger>
             <VoteAnalysisModal

@@ -71,8 +71,7 @@ export default function ApplicationLayout({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/");
-    window.location.reload();
+    // router.push("/");
   };
 
   // Handle navigation to protected routes
@@ -80,6 +79,7 @@ export default function ApplicationLayout({
     // Only intercept navigation to protected pages (account and votes)
     if (
       href === "/account" ||
+      href.startsWith("/account?") ||
       href === "/votes" ||
       href === "/evaluation" ||
       href === "/deposit"
@@ -163,7 +163,7 @@ export default function ApplicationLayout({
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account", e);
+                    handleNavigation("/account?tab=profile", e);
                     setMobileMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
@@ -171,10 +171,9 @@ export default function ApplicationLayout({
                   <User className="h-4 w-4" />
                   <span className="group-hover:text-white">Profile</span>
                 </DropdownMenuItem>
-                {/* TODO: create /account/wallet route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account/wallet", e);
+                    handleNavigation("/account?tab=wallet", e);
                     setMobileMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
@@ -182,10 +181,9 @@ export default function ApplicationLayout({
                   <Wallet className="h-4 w-4" />
                   <span className="group-hover:text-white">Wallet</span>
                 </DropdownMenuItem>
-                {/* TODO: create /account/instructions route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account/instructions", e);
+                    handleNavigation("/account?tab=instructions", e);
                     setMobileMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
@@ -347,7 +345,7 @@ export default function ApplicationLayout({
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account", e);
+                    handleNavigation("/account?tab=profile", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
@@ -355,10 +353,9 @@ export default function ApplicationLayout({
                   <User className="h-4 w-4" />
                   <span className="group-hover:text-white">Profile</span>
                 </DropdownMenuItem>
-                {/* TODO: create /account/wallet route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account/wallet", e);
+                    handleNavigation("/account?tab=wallet", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
@@ -366,10 +363,9 @@ export default function ApplicationLayout({
                   <Wallet className="h-4 w-4" />
                   <span className="group-hover:text-white">Wallet</span>
                 </DropdownMenuItem>
-                {/* TODO: create /account/instructions route */}
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account/instructions", e);
+                    handleNavigation("/account?tab=instructions", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"

@@ -411,6 +411,14 @@ export function ProposalSubmission({
       ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
       : "";
 
+    // Clean the final message to ensure no invisible characters
+    const cleanMessage =
+      `${contribution.trim()}${twitterReference}${airdropReference}`
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "")
+        .normalize("NFC")
+        .trim();
+
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -418,7 +426,7 @@ export function ProposalSubmission({
       action_proposal_contract_to_execute:
         actionProposalContractExt.contract_principal,
       dao_token_contract_address: daoTokenExt.contract_principal,
-      message: `${contribution.trim()}${twitterReference}${airdropReference}`,
+      message: cleanMessage,
       memo: "Contribution submitted via aibtcdev frontend",
     };
   };
@@ -648,7 +656,18 @@ export function ProposalSubmission({
               value={contribution}
               onChange={(e) => {
                 const value = e.target.value;
-                setContribution(value);
+                // Clean the input to remove invisible characters and normalize whitespace
+                const cleanedValue = value
+                  // Remove zero-width characters and other invisible Unicode characters
+                  .replace(/[\u200B-\u200D\uFEFF]/g, "")
+                  // Remove other control characters except newlines and tabs
+                  .replace(
+                    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+                    ""
+                  )
+                  // Normalize Unicode characters
+                  .normalize("NFC");
+                setContribution(cleanedValue);
               }}
               placeholder={
                 hasAccessToken

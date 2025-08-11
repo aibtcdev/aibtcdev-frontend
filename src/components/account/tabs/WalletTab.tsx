@@ -16,7 +16,7 @@ export function WalletTab({
 }: WalletTabProps) {
   return (
     <div className="flex flex-col items-center">
-      <div className="w-full max-w-5xl">
+      <div className="w-full">
         <div className="mt-6">
           <AssetsDataTable walletBalance={userAgentContractBalance} />
         </div>

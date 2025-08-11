@@ -1,19 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { fetchAgents } from "@/services/agent.service";
 import { AccountTabs } from "@/components/account/AccountTabs";
+import { Loader } from "@/components/reusables/Loader";
 
-export default function AccountPage() {
+function AccountPageContent() {
   const { agentWallets, balances, fetchWallets, fetchContractBalance } =
     useWalletStore();
   const { userId, accessToken } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+
+  // Get the tab parameter from URL, default to "profile"
+  const initialTab = searchParams.get("tab") || "profile";
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
@@ -86,7 +92,32 @@ export default function AccountPage() {
         accessToken={accessToken}
         userId={userId}
         fetchWallets={fetchWallets}
+        initialTab={initialTab}
       />
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Agent Settings
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your profile and agent account.
+            </p>
+          </div>
+          <div className="flex justify-center items-center py-8">
+            <Loader />
+          </div>
+        </div>
+      }
+    >
+      <AccountPageContent />
+    </Suspense>
   );
 }
