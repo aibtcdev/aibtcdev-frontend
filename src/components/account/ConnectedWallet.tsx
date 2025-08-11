@@ -20,7 +20,6 @@ export function ConnectedWallet() {
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
-    window.location.reload();
   };
 
   return (

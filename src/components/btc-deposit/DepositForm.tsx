@@ -615,6 +615,7 @@ export default function DepositForm({
             onChange={handleAmountChange}
             placeholder="0.00000000"
             className="text-right pr-12 pl-12 h-12 text-lg"
+            disabled={!accessToken}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
             BTC
@@ -645,6 +646,7 @@ export default function DepositForm({
               size="sm"
               variant={selectedPreset === presetAmount ? "default" : "outline"}
               onClick={() => handlePresetClick(presetAmount)}
+              disabled={!accessToken}
             >
               {presetLabels[index]}
             </Button>
@@ -653,7 +655,9 @@ export default function DepositForm({
             size="sm"
             variant={selectedPreset === "max" ? "default" : "outline"}
             onClick={handleMaxClick}
-            disabled={btcBalance === null || btcBalance === undefined}
+            disabled={
+              !accessToken || btcBalance === null || btcBalance === undefined
+            }
           >
             MAX
           </Button>
@@ -722,7 +726,7 @@ export default function DepositForm({
         )}
         {!accessToken ? (
           <div className="flex justify-center">
-            <AuthButton redirectUrl="/deposit" />
+            <AuthButton />
           </div>
         ) : (
           <Button

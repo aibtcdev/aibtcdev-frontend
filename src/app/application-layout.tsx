@@ -71,8 +71,7 @@ export default function ApplicationLayout({
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/");
-    window.location.reload();
+    // router.push("/");
   };
 
   // Handle navigation to protected routes
