@@ -4,7 +4,8 @@ import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 async function fetchApprovals(
   agentAccountId: string,
   contractIds: string[],
-  type: (typeof AGENT_ACCOUNT_APPROVAL_TYPES)[keyof typeof AGENT_ACCOUNT_APPROVAL_TYPES] = AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN
+  type: (typeof AGENT_ACCOUNT_APPROVAL_TYPES)[keyof typeof AGENT_ACCOUNT_APPROVAL_TYPES] = AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
+  bustCache: boolean = false
 ) {
   const [agentAddr, agentName] = agentAccountId.split(".");
   if (!agentAddr || !agentName) throw new Error("Invalid agent account id");
@@ -28,7 +29,7 @@ async function fetchApprovals(
               },
             ],
             senderAddress: agentAddr,
-            // cacheControl: { bustCache: true },
+            cacheControl: { bustCache }, // Add cache busting here
           }),
         }
       );
@@ -36,7 +37,6 @@ async function fetchApprovals(
       if (!res.ok) return { id: targetContractId, approved: false };
 
       const data = await res.json();
-      // Handle the success/data response format
       const result = data?.success ? data?.data : false;
       return {
         id: targetContractId,
@@ -55,8 +55,9 @@ export function useBatchContractApprovals(
 ) {
   return useQuery({
     queryKey: ["batch-approvals", agentAccountId, contractIds, type],
-    queryFn: () => fetchApprovals(agentAccountId!, contractIds, type),
+    queryFn: () => fetchApprovals(agentAccountId!, contractIds, type, true), // Always bust cache on refetch
     enabled: !!agentAccountId && contractIds.length > 0,
     staleTime: 0,
+    gcTime: 0, // Don't cache the results
   });
 }

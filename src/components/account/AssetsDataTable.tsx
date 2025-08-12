@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -17,6 +17,10 @@ import {
 } from "@/components/reusables/BalanceDisplay";
 import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/useToast";
 
 interface AssetsDataTableProps {
   walletBalance: {
@@ -38,15 +42,19 @@ interface AssetRow {
   contractId?: string;
 }
 
-// Simple toggle component
-const SimpleToggle = ({
+// Functional toggle component with click handler
+const FunctionalToggle = ({
   approved,
   loading,
   label,
+  onClick,
+  disabled,
 }: {
   approved?: boolean;
   loading: boolean;
   label: string;
+  onClick: () => void;
+  disabled?: boolean;
 }) => {
   if (loading) {
     return (
@@ -60,19 +68,23 @@ const SimpleToggle = ({
 
   return (
     <div className="flex items-center justify-center">
-      <div
+      <button
+        onClick={onClick}
+        disabled={disabled}
         className={`
-        relative inline-flex h-4 w-7 items-center rounded-full transition-colors
-        ${approved ? "bg-primary" : "bg-muted"}
-      `}
+          relative inline-flex h-4 w-7 items-center rounded-full transition-colors cursor-pointer
+          ${approved ? "bg-primary" : "bg-muted"}
+          ${disabled ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"}
+        `}
+        aria-label={label}
       >
         <span
           className={`
-          inline-block h-3 w-3 transform rounded-full bg-white transition-transform
-          ${approved ? "translate-x-3.5" : "translate-x-0.5"}
-        `}
+            inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+            ${approved ? "translate-x-3.5" : "translate-x-0.5"}
+          `}
         />
-      </div>
+      </button>
     </div>
   );
 };
@@ -81,6 +93,10 @@ export function AssetsDataTable({
   walletBalance,
   agentAccountId,
 }: AssetsDataTableProps) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [updatingContract, setUpdatingContract] = useState<string | null>(null);
+
   // Transform wallet balance into table rows
   const assets = useMemo(() => {
     const rows: AssetRow[] = [];
@@ -164,38 +180,107 @@ export function AssetsDataTable({
     return ids;
   }, [assets]);
 
-  // Fetch approvals for all types
-  const swapApprovals = useBatchContractApprovals(
-    agentAccountId || null,
-    contractIds,
-    AGENT_ACCOUNT_APPROVAL_TYPES.SWAP
-  );
-
-  const votingApprovals = useBatchContractApprovals(
-    agentAccountId || null,
-    contractIds,
-    AGENT_ACCOUNT_APPROVAL_TYPES.VOTING
-  );
-
+  // Fetch approvals for token type only
   const tokenApprovals = useBatchContractApprovals(
     agentAccountId || null,
     contractIds,
     AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN
   );
 
+  // Mutation for updating contract approvals
+  const updateApprovalMutation = useMutation({
+    mutationFn: async ({
+      contractId,
+      enabled,
+      type,
+    }: {
+      contractId: string;
+      enabled: boolean;
+      type: number;
+    }) => {
+      if (!agentAccountId) throw new Error("No agent account ID");
+
+      // Set the contract that's being updated
+      setUpdatingContract(contractId);
+
+      const functionName = enabled ? "approve-contract" : "revoke-contract";
+
+      try {
+        const response = await request("stx_callContract", {
+          contract: agentAccountId as `${string}.${string}`,
+          functionName,
+          functionArgs: [Cl.principal(contractId), Cl.uint(type)],
+          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+            | "mainnet"
+            | "testnet",
+        });
+
+        return {
+          txid: response.txid,
+          contractId,
+          enabled,
+          type,
+        };
+      } catch (error: any) {
+        if (error.code === 4001) {
+          throw new Error("User cancelled the transaction");
+        }
+        throw new Error(
+          `Failed to update approval: ${error.message || "Unknown error"}`
+        );
+      }
+    },
+    onSuccess: async (data) => {
+      // Clear the updating state
+      setUpdatingContract(null);
+
+      // Invalidate and refetch approval queries with cache busting
+      await queryClient.invalidateQueries({
+        queryKey: ["batch-approvals", agentAccountId, contractIds, data.type],
+      });
+
+      // Force refetch with cache busting
+      await queryClient.refetchQueries({
+        queryKey: ["batch-approvals", agentAccountId, contractIds, data.type],
+        type: "all",
+      });
+
+      toast({
+        title: "Transaction Submitted",
+        description: `Contract ${data.enabled ? "approval" : "revocation"} submitted. Transaction ID: ${data.txid}`,
+      });
+    },
+    onError: (error) => {
+      // Clear the updating state
+      setUpdatingContract(null);
+
+      if (error.message === "User cancelled the transaction") {
+        toast({
+          title: "Transaction Cancelled",
+          description: "You cancelled the approval update.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: `Failed to update approval: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
+  // Handle toggle click
+  const handleToggleClick = (contractId: string, currentApproval: boolean) => {
+    updateApprovalMutation.mutate({
+      contractId,
+      enabled: !currentApproval,
+      type: AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
+    });
+  };
+
   // Debug logging
   console.log("Agent Account ID:", agentAccountId);
   console.log("Contract IDs:", contractIds);
-  console.log("Swap Approvals:", {
-    loading: swapApprovals.isLoading,
-    data: swapApprovals.data,
-    error: swapApprovals.error,
-  });
-  console.log("Voting Approvals:", {
-    loading: votingApprovals.isLoading,
-    data: votingApprovals.data,
-    error: votingApprovals.error,
-  });
   console.log("Token Approvals:", {
     loading: tokenApprovals.isLoading,
     data: tokenApprovals.data,
@@ -249,16 +334,8 @@ export function AssetsDataTable({
                   Balance
                 </TableHead>
                 <TableHead className="text-center min-w-[100px] px-2 py-3 hidden sm:table-cell">
-                  <span className="hidden md:inline">Token</span>
-                  <span className="md:hidden">T</span>
-                </TableHead>
-                <TableHead className="text-center min-w-[100px] px-2 py-3 hidden sm:table-cell">
-                  <span className="hidden md:inline">Voting</span>
-                  <span className="md:hidden">V</span>
-                </TableHead>
-                <TableHead className="text-center min-w-[100px] px-2 py-3 hidden sm:table-cell">
-                  <span className="hidden md:inline">Swap</span>
-                  <span className="md:hidden">S</span>
+                  <span className="hidden md:inline">Token Approval</span>
+                  <span className="md:hidden">Token</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -270,10 +347,12 @@ export function AssetsDataTable({
                   !!asset.contractId &&
                   asset.type === "fungible" &&
                   asset.symbol !== "BTC";
-                const isLoading =
-                  tokenApprovals.isLoading ||
-                  votingApprovals.isLoading ||
-                  swapApprovals.isLoading;
+                const isLoading = tokenApprovals.isLoading;
+                const currentApproval =
+                  tokenApprovals.data?.[asset.contractId!] || false;
+                const isThisContractUpdating =
+                  updatingContract === asset.contractId;
+
                 return (
                   <TableRow
                     key={asset.id}
@@ -302,34 +381,17 @@ export function AssetsDataTable({
                     {/* Token Approval */}
                     <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
                       {isApprovalApplicable ? (
-                        <SimpleToggle
-                          approved={tokenApprovals.data?.[asset.contractId!]}
-                          loading={isLoading}
+                        <FunctionalToggle
+                          approved={currentApproval}
+                          loading={isLoading || isThisContractUpdating}
                           label="Token approval"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    {/* Voting Approval */}
-                    <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
-                      {isApprovalApplicable ? (
-                        <SimpleToggle
-                          approved={votingApprovals.data?.[asset.contractId!]}
-                          loading={isLoading}
-                          label="Voting approval"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    {/* Swap Approval */}
-                    <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
-                      {isApprovalApplicable ? (
-                        <SimpleToggle
-                          approved={swapApprovals.data?.[asset.contractId!]}
-                          loading={isLoading}
-                          label="Swap approval"
+                          onClick={() =>
+                            handleToggleClick(
+                              asset.contractId!,
+                              currentApproval
+                            )
+                          }
+                          disabled={isThisContractUpdating}
                         />
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
