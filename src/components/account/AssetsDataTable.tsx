@@ -18,9 +18,13 @@ import {
 import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import { request } from "@stacks/connect";
-import { Cl } from "@stacks/transactions";
+import { Cl, createAsset } from "@stacks/transactions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
+import {
+  FungiblePostCondition,
+  PostConditionModeName,
+} from "@stacks/transactions";
 
 interface AssetsDataTableProps {
   walletBalance: {
@@ -29,6 +33,7 @@ interface AssetsDataTableProps {
     non_fungible_tokens: Record<string, { count: number }>;
   } | null;
   agentAccountId?: string | null | undefined;
+  userWalletAddress?: string | null;
 }
 
 interface AssetRow {
@@ -42,7 +47,6 @@ interface AssetRow {
   contractId?: string;
 }
 
-// Functional toggle component with click handler
 const FunctionalToggle = ({
   approved,
   loading,
@@ -65,7 +69,6 @@ const FunctionalToggle = ({
       </div>
     );
   }
-
   return (
     <div className="flex items-center justify-center">
       <button
@@ -92,59 +95,56 @@ const FunctionalToggle = ({
 export function AssetsDataTable({
   walletBalance,
   agentAccountId,
+  userWalletAddress,
 }: AssetsDataTableProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [updatingContract, setUpdatingContract] = useState<string | null>(null);
+  const [withdrawingContract, setWithdrawingContract] = useState<string | null>(
+    null
+  );
+  const [withdrawAmounts, setWithdrawAmounts] = useState<
+    Record<string, string>
+  >({});
 
-  // Transform wallet balance into table rows
   const assets = useMemo(() => {
     const rows: AssetRow[] = [];
-
     if (walletBalance?.stx) {
       rows.push({
         id: "stx",
         symbol: "STX",
         name: "Stacks",
         balance: walletBalance.stx.balance,
-        fiatValue: 850.32, // Mock value
+        fiatValue: 850.32,
         change24h: 2.4,
         type: "stx",
-        // No contractId for STX - won't show approvals
       });
     }
-
     if (walletBalance?.fungible_tokens) {
       Object.entries(walletBalance.fungible_tokens).forEach(
         ([tokenId, token]) => {
           const [, tokenSymbol] = tokenId.split("::");
           const isBtc = tokenId.includes("sbtc-token");
           const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
-
-          // Extract contract principal (remove the ::token-name part)
           const contractPrincipal = tokenId.split("::")[0];
-
           rows.push({
             id: tokenId,
             symbol: displaySymbol,
             name: isBtc ? "Bitcoin" : displaySymbol,
             balance: token.balance,
-            fiatValue: isBtc ? 384.24 : 0, // Mock values
+            fiatValue: isBtc ? 384.24 : 0,
             change24h: isBtc ? -1.2 : 0,
             type: "fungible",
-            // Only add contractId for non-BTC fungible tokens, use contract principal only
-            contractId: !isBtc ? contractPrincipal : undefined,
+            contractId: contractPrincipal,
           });
         }
       );
     }
-
     if (walletBalance?.non_fungible_tokens) {
       Object.entries(walletBalance.non_fungible_tokens).forEach(
         ([tokenId, token]) => {
           const [, tokenSymbol] = tokenId.split("::");
           const displaySymbol = tokenSymbol || "NFT";
-
           rows.push({
             id: tokenId,
             symbol: displaySymbol,
@@ -153,41 +153,229 @@ export function AssetsDataTable({
             fiatValue: 0,
             change24h: 0,
             type: "nft",
-            // No contractId for NFTs - won't show approvals
           });
         }
       );
     }
-    console.log(
-      "All asset IDs:",
-      rows.map((row) => row.id)
-    );
     return rows;
   }, [walletBalance]);
 
-  // Get all contract IDs for batch approval checking
-  const contractIds = useMemo(() => {
-    const ids = assets
-      .filter(
-        (asset) =>
-          asset.contractId &&
-          asset.type === "fungible" &&
-          asset.symbol !== "BTC"
-      )
-      .map((asset) => asset.contractId!);
+  const contractIds = useMemo(
+    () =>
+      assets
+        .filter((a) => a.contractId && a.type === "fungible")
+        .map((a) => a.contractId!),
+    [assets]
+  );
 
-    console.log("Contract IDs for approval checking:", ids);
-    return ids;
-  }, [assets]);
+  const withdrawFtMutation = useMutation({
+    mutationFn: async ({
+      contractId,
+      amount,
+    }: {
+      contractId: string;
+      amount: string | number;
+    }) => {
+      if (!agentAccountId) throw new Error("No agent account ID");
+      if (!userWalletAddress) throw new Error("No user wallet address");
+      if (!amount || Number(amount) <= 0)
+        throw new Error("Enter a valid amount");
 
-  // Fetch approvals for token type only
+      setWithdrawingContract(contractId);
+
+      try {
+        // Find the full token ID for the asset
+        const asset = assets.find((a) => a.contractId === contractId);
+        if (!asset) {
+          throw new Error("Asset not found");
+        }
+
+        console.log("Raw asset data:", asset);
+        console.log("Contract ID:", contractId);
+        console.log("Asset ID:", asset.id);
+
+        const tokenId = asset.id; // This is the full token ID like "contract.token::token-name"
+
+        // Parse the token ID to get components
+        if (!tokenId.includes("::")) {
+          throw new Error(`Invalid token ID format: ${tokenId}`);
+        }
+
+        const [contractAddress, tokenName] = tokenId.split("::");
+        console.log("Contract address part:", contractAddress);
+        console.log("Token name part:", tokenName);
+
+        if (!contractAddress.includes(".")) {
+          throw new Error(
+            `Invalid contract address format: ${contractAddress}`
+          );
+        }
+
+        const [address, contractName] = contractAddress.split(".");
+        console.log("Parsed components:", { address, contractName, tokenName });
+
+        if (!address || !contractName || !tokenName) {
+          throw new Error(
+            `Invalid token ID components - address: ${address}, contractName: ${contractName}, tokenName: ${tokenName}`
+          );
+        }
+
+        // Convert amount to uint (ensure it's a valid number)
+        const amountUint = Math.floor(Number(amount));
+        if (isNaN(amountUint) || amountUint <= 0) {
+          throw new Error("Invalid amount");
+        }
+
+        // Try multiple approaches for the post condition
+        let response;
+
+        // Approach 1: Try with post condition on the user wallet address (recipient)
+        if (userWalletAddress) {
+          try {
+            const assetString =
+              `${address}.${contractName}::${tokenName}` as `${string}.${string}::${string}`;
+
+            // Post condition: user wallet will receive the tokens
+            const postCondition: FungiblePostCondition = {
+              type: "ft-postcondition",
+              address: userWalletAddress, // The user wallet will receive the tokens
+              condition: "eq", // equal to
+              asset: assetString,
+              amount: amountUint.toString(),
+            };
+
+            console.log("Post condition (user receives):", {
+              type: "ft-postcondition",
+              address: userWalletAddress,
+              condition: "gte",
+              asset: assetString,
+              amount: amountUint.toString(),
+            });
+
+            console.log(
+              "Withdrawal transaction params (with post condition):",
+              {
+                contract: agentAccountId,
+                functionName: "withdraw-ft",
+                functionArgs: [
+                  `Cl.principal(${contractId})`,
+                  `Cl.uint(${amountUint})`,
+                ],
+                network: process.env.NEXT_PUBLIC_STACKS_NETWORK,
+                postConditions: [postCondition],
+                postConditionMode: "deny",
+              }
+            );
+
+            response = await request("stx_callContract", {
+              contract: agentAccountId as `${string}.${string}`,
+              functionName: "withdraw-ft",
+              functionArgs: [
+                Cl.contractPrincipal(address, contractName),
+                Cl.uint(amountUint),
+              ],
+              network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+                | "mainnet"
+                | "testnet",
+              postConditions: [postCondition],
+              postConditionMode: "deny" as PostConditionModeName,
+            });
+
+            console.log(
+              "Transaction successful with user wallet post condition",
+              response
+            );
+          } catch (err) {
+            console.error("Post condition approach failed:", err);
+            try {
+              // Some wallet SDKs return nested error objects; attempt safe stringify
+              const details =
+                typeof err === "object" && err
+                  ? JSON.stringify(err)
+                  : String(err);
+              console.error(
+                "Post condition approach failed (stringified):",
+                details
+              );
+            } catch (_) {
+              // ignore stringify errors
+            }
+            throw err;
+          }
+        } else {
+          // Fallback: No user wallet address, try without post conditions
+          console.log(
+            "No user wallet address, trying without post conditions..."
+          );
+
+          response = await request("stx_callContract", {
+            contract: agentAccountId as `${string}.${string}`,
+            functionName: "withdraw-ft",
+            functionArgs: [Cl.principal(contractId), Cl.uint(amountUint)],
+            network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+              | "mainnet"
+              | "testnet",
+            postConditionMode: "allow" as PostConditionModeName,
+          });
+        }
+        if (!response || !("txid" in response)) {
+          throw new Error(
+            "Transaction failed before broadcasting (no txid in response)"
+          );
+        }
+        return { txid: response.txid, contractId, amount };
+      } catch (error: any) {
+        console.error("Withdrawal error:", error);
+        try {
+          console.error(
+            "Withdrawal error (stringified):",
+            JSON.stringify(error)
+          );
+        } catch (_) {}
+        if (error.code === 4001) {
+          throw new Error("User cancelled the transaction");
+        }
+        throw new Error(
+          `Failed to withdraw: ${error.message || "Unknown error"}`
+        );
+      } finally {
+        setWithdrawingContract(null);
+      }
+    },
+    onSuccess: (data) => {
+      setWithdrawingContract(null);
+      toast({
+        title: "Withdrawal Submitted",
+        description: `Withdrawal transaction submitted. TXID: ${data.txid}`,
+      });
+      setWithdrawAmounts((prev) => ({ ...prev, [data.contractId]: "" }));
+
+      // Invalidate wallet balance to refresh data
+      queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
+    },
+    onError: (error) => {
+      setWithdrawingContract(null);
+      console.error("Withdrawal mutation error:", error);
+      toast({
+        title:
+          (error as Error).message === "User cancelled the transaction"
+            ? "Transaction Cancelled"
+            : "Withdrawal Error",
+        description: (error as Error).message,
+        variant:
+          (error as Error).message === "User cancelled the transaction"
+            ? undefined
+            : "destructive",
+      });
+    },
+  });
+
   const tokenApprovals = useBatchContractApprovals(
     agentAccountId || null,
     contractIds,
     AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN
   );
 
-  // Mutation for updating contract approvals
   const updateApprovalMutation = useMutation({
     mutationFn: async ({
       contractId,
@@ -199,77 +387,50 @@ export function AssetsDataTable({
       type: number;
     }) => {
       if (!agentAccountId) throw new Error("No agent account ID");
-
-      // Set the contract that's being updated
       setUpdatingContract(contractId);
-
       const functionName = enabled ? "approve-contract" : "revoke-contract";
 
-      try {
-        const response = await request("stx_callContract", {
-          contract: agentAccountId as `${string}.${string}`,
-          functionName,
-          functionArgs: [Cl.principal(contractId), Cl.uint(type)],
-          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-            | "mainnet"
-            | "testnet",
-        });
+      const response = await request("stx_callContract", {
+        contract: agentAccountId as `${string}.${string}`,
+        functionName,
+        functionArgs: [Cl.principal(contractId), Cl.uint(type)],
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+          | "mainnet"
+          | "testnet",
+      });
 
-        return {
-          txid: response.txid,
-          contractId,
-          enabled,
-          type,
-        };
-      } catch (error: any) {
-        if (error.code === 4001) {
-          throw new Error("User cancelled the transaction");
-        }
-        throw new Error(
-          `Failed to update approval: ${error.message || "Unknown error"}`
-        );
-      }
+      return { txid: response.txid, contractId, enabled, type };
     },
     onSuccess: async (data) => {
-      // Clear the updating state
       setUpdatingContract(null);
-
-      // Invalidate and refetch approval queries with cache busting
       await queryClient.invalidateQueries({
         queryKey: ["batch-approvals", agentAccountId, contractIds, data.type],
       });
-
-      // Force refetch with cache busting
       await queryClient.refetchQueries({
         queryKey: ["batch-approvals", agentAccountId, contractIds, data.type],
         type: "all",
       });
-
       toast({
         title: "Transaction Submitted",
-        description: `Contract ${data.enabled ? "approval" : "revocation"} submitted. Transaction ID: ${data.txid}`,
+        description: `Contract ${data.enabled ? "approval" : "revocation"} submitted. TXID: ${data.txid}`,
       });
     },
     onError: (error) => {
-      // Clear the updating state
       setUpdatingContract(null);
-
-      if (error.message === "User cancelled the transaction") {
-        toast({
-          title: "Transaction Cancelled",
-          description: "You cancelled the approval update.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: `Failed to update approval: ${error.message}`,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title:
+          (error as Error).message === "User cancelled the transaction"
+            ? "Transaction Cancelled"
+            : "Error",
+        description: (error as Error).message,
+        variant:
+          (error as Error).message === "User cancelled the transaction"
+            ? undefined
+            : "destructive",
+      });
     },
   });
 
-  // Handle toggle click
   const handleToggleClick = (contractId: string, currentApproval: boolean) => {
     updateApprovalMutation.mutate({
       contractId,
@@ -278,22 +439,48 @@ export function AssetsDataTable({
     });
   };
 
-  // Debug logging
-  console.log("Agent Account ID:", agentAccountId);
-  console.log("Contract IDs:", contractIds);
-  console.log("Token Approvals:", {
-    loading: tokenApprovals.isLoading,
-    data: tokenApprovals.data,
-    error: tokenApprovals.error,
-  });
+  const setAmount = (contractId: string, v: string) => {
+    // Only allow numeric input and limit to reasonable length
+    const numericValue = v.replace(/[^0-9]/g, "").slice(0, 18); // Prevent overflow
+    setWithdrawAmounts((prev) => ({
+      ...prev,
+      [contractId]: numericValue,
+    }));
+  };
+
+  const handleWithdraw = (contractId: string) => {
+    const amount = withdrawAmounts[contractId];
+    if (!amount || Number(amount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid amount to withdraw",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if amount exceeds balance
+    const asset = assets.find((a) => a.contractId === contractId);
+    if (asset && Number(amount) > Number(asset.balance)) {
+      toast({
+        title: "Insufficient Balance",
+        description: "Amount exceeds available balance",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    withdrawFtMutation.mutate({
+      contractId,
+      amount: amount,
+    });
+  };
 
   const renderBalance = (asset: AssetRow) => {
-    if (asset.type === "stx") {
+    if (asset.type === "stx")
       return <StxBalance value={asset.balance as string} variant="rounded" />;
-    }
-    if (asset.type === "fungible") {
-      const isBtc = asset.symbol === "BTC";
-      return isBtc ? (
+    if (asset.type === "fungible")
+      return asset.symbol === "BTC" ? (
         <BtcBalance value={asset.balance as string} variant="rounded" />
       ) : (
         <TokenBalance
@@ -302,7 +489,6 @@ export function AssetsDataTable({
           variant="rounded"
         />
       );
-    }
     return <span className="font-mono text-sm">{asset.balance}</span>;
   };
 
@@ -334,24 +520,22 @@ export function AssetsDataTable({
                   Balance
                 </TableHead>
                 <TableHead className="text-center min-w-[100px] px-2 py-3 hidden sm:table-cell">
-                  <span className="hidden md:inline">Token Approval</span>
-                  <span className="md:hidden">Token</span>
+                  Token Approval
+                </TableHead>
+                <TableHead className="text-center min-w-[160px] px-2 py-3 hidden sm:table-cell">
+                  Withdraw
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {assets.map((asset) => {
-                // Only show approvals for fungible tokens (excluding STX and BTC)
                 const isApprovalApplicable =
                   !!agentAccountId &&
                   !!asset.contractId &&
                   asset.type === "fungible" &&
                   asset.symbol !== "BTC";
-                const isLoading = tokenApprovals.isLoading;
                 const currentApproval =
                   tokenApprovals.data?.[asset.contractId!] || false;
-                const isThisContractUpdating =
-                  updatingContract === asset.contractId;
 
                 return (
                   <TableRow
@@ -378,12 +562,14 @@ export function AssetsDataTable({
                     <TableCell className="text-right px-4 py-3">
                       {renderBalance(asset)}
                     </TableCell>
-                    {/* Token Approval */}
                     <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
                       {isApprovalApplicable ? (
                         <FunctionalToggle
                           approved={currentApproval}
-                          loading={isLoading || isThisContractUpdating}
+                          loading={
+                            tokenApprovals.isLoading ||
+                            updatingContract === asset.contractId
+                          }
                           label="Token approval"
                           onClick={() =>
                             handleToggleClick(
@@ -391,8 +577,47 @@ export function AssetsDataTable({
                               currentApproval
                             )
                           }
-                          disabled={isThisContractUpdating}
+                          disabled={updatingContract === asset.contractId}
                         />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
+                      {asset.type === "fungible" && asset.contractId ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={withdrawAmounts[asset.contractId] ?? ""}
+                            onChange={(e) =>
+                              setAmount(asset.contractId!, e.target.value)
+                            }
+                            placeholder="amount"
+                            className="h-8 w-28 rounded border bg-transparent px-2 text-sm"
+                          />
+                          <button
+                            onClick={() => handleWithdraw(asset.contractId!)}
+                            disabled={
+                              withdrawingContract === asset.contractId ||
+                              !tokenApprovals.data?.[asset.contractId!] ||
+                              !withdrawAmounts[asset.contractId] ||
+                              Number(withdrawAmounts[asset.contractId]) <= 0
+                            }
+                            className={`h-8 px-3 rounded text-xs font-medium transition-colors ${
+                              tokenApprovals.data?.[asset.contractId!] &&
+                              withdrawAmounts[asset.contractId] &&
+                              Number(withdrawAmounts[asset.contractId]) > 0
+                                ? "bg-primary text-primary-foreground hover:opacity-90"
+                                : "bg-muted text-muted-foreground cursor-not-allowed"
+                            }`}
+                          >
+                            {withdrawingContract === asset.contractId
+                              ? "Withdrawing..."
+                              : "Withdraw"}
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}

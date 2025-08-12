@@ -4,6 +4,7 @@ import { AssetsDataTable } from "@/components/account/AssetsDataTable";
 import { WalletBalance } from "@/store/wallet";
 import { AccountCard } from "@/components/account/AccountCard";
 import { Bot } from "lucide-react";
+import { getStacksAddress } from "@/lib/address";
 
 interface WalletTabProps {
   userAgentContractBalance: WalletBalance | null;
@@ -14,6 +15,7 @@ export function WalletTab({
   userAgentContractBalance,
   agentAddress,
 }: WalletTabProps) {
+  const userAddress = getStacksAddress();
   return (
     <div className="flex flex-col items-center">
       <div className="w-full">
@@ -21,6 +23,7 @@ export function WalletTab({
           <AssetsDataTable
             walletBalance={userAgentContractBalance}
             agentAccountId={agentAddress}
+            userWalletAddress={userAddress}
           />
         </div>
 
