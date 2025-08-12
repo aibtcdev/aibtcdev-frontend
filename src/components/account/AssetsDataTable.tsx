@@ -21,10 +21,7 @@ import { request } from "@stacks/connect";
 import { Cl, createAsset } from "@stacks/transactions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
-import {
-  FungiblePostCondition,
-  PostConditionModeName,
-} from "@stacks/transactions";
+import { PostConditionModeName } from "@stacks/transactions";
 
 interface AssetsDataTableProps {
   walletBalance: {
@@ -229,28 +226,22 @@ export function AssetsDataTable({
         // Try multiple approaches for the post condition
         let response;
 
-        // Approach 1: Try with post condition on the user wallet address (recipient)
+        // Approach 1: Try with post condition on the agent contract (sender)
         if (userWalletAddress) {
           try {
             const assetString =
               `${address}.${contractName}::${tokenName}` as `${string}.${string}::${string}`;
 
-            // Post condition: user wallet will receive the tokens
-            const postCondition: FungiblePostCondition = {
-              type: "ft-postcondition",
-              address: userWalletAddress, // The user wallet will receive the tokens
-              condition: "eq", // equal to
+            // Post condition: agent contract will send the tokens
+            const postCondition = {
+              type: "ft-postcondition" as const,
+              contract: agentAccountId,
+              condition: "sends-eq" as const,
               asset: assetString,
               amount: amountUint.toString(),
             };
 
-            console.log("Post condition (user receives):", {
-              type: "ft-postcondition",
-              address: userWalletAddress,
-              condition: "gte",
-              asset: assetString,
-              amount: amountUint.toString(),
-            });
+            console.log("Post condition (agent sends):", postCondition);
 
             console.log(
               "Withdrawal transaction params (with post condition):",
@@ -258,7 +249,7 @@ export function AssetsDataTable({
                 contract: agentAccountId,
                 functionName: "withdraw-ft",
                 functionArgs: [
-                  `Cl.principal(${contractId})`,
+                  `Cl.contractPrincipal(${address}, ${contractName})`,
                   `Cl.uint(${amountUint})`,
                 ],
                 network: process.env.NEXT_PUBLIC_STACKS_NETWORK,
