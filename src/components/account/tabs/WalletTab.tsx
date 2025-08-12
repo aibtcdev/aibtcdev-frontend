@@ -18,7 +18,10 @@ export function WalletTab({
     <div className="flex flex-col items-center">
       <div className="w-full">
         <div className="mt-6">
-          <AssetsDataTable walletBalance={userAgentContractBalance} />
+          <AssetsDataTable
+            walletBalance={userAgentContractBalance}
+            agentAccountId={agentAddress}
+          />
         </div>
 
         {agentAddress && (
