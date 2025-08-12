@@ -18,7 +18,7 @@ import {
 import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import { request } from "@stacks/connect";
-import { Cl, createAsset } from "@stacks/transactions";
+import { Cl, Pc } from "@stacks/transactions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
 import { PostConditionModeName } from "@stacks/transactions";
@@ -229,17 +229,11 @@ export function AssetsDataTable({
         // Approach 1: Try with post condition on the agent contract (sender)
         if (userWalletAddress) {
           try {
-            const assetString =
-              `${address}.${contractName}::${tokenName}` as `${string}.${string}::${string}`;
-
             // Post condition: agent contract will send the tokens
-            const postCondition = {
-              type: "ft-postcondition" as const,
-              contract: agentAccountId,
-              condition: "sends-eq" as const,
-              asset: assetString,
-              amount: amountUint.toString(),
-            };
+            // FYI tokenName works because it matches assetName in our contracts
+            const postCondition = Pc.principal(agentAccountId)
+              .willSendEq(amountUint)
+              .ft(`${address}.${contractName}`, tokenName);
 
             console.log("Post condition (agent sends):", postCondition);
 
