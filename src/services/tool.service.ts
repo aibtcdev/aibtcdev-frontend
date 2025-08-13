@@ -125,6 +125,7 @@ export async function proposeSendMessage(
     dao_token_contract_address: string;
     message: string;
     memo: string;
+    airdrop_txid?: string;
   }
 ): Promise<ApiResponse> {
   try {

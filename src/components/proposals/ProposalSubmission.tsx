@@ -257,13 +257,8 @@ export function ProposalSubmission({
   const twitterReferenceText = twitterUrl
     ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
     : "";
-  const airdropReferenceText = selectedAirdropTxHash
-    ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
-    : "";
-  const combinedLength =
-    contribution.length +
-    twitterReferenceText.length +
-    airdropReferenceText.length;
+  // No airdrop reference in message length calculation
+  const combinedLength = contribution.length + twitterReferenceText.length;
   const isWithinLimit = combinedLength <= 2043;
 
   // Cleanup WebSocket on unmount
@@ -407,17 +402,13 @@ export function ProposalSubmission({
     const twitterReference = twitterUrl
       ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
-    const airdropReference = selectedAirdropTxHash
-      ? `\n\nAirdrop Reference: ${getExplorerLink("tx", selectedAirdropTxHash)}`
-      : "";
 
     // Clean the final message to ensure no invisible characters
-    const cleanMessage =
-      `${contribution.trim()}${twitterReference}${airdropReference}`
-        .replace(/[\u200B-\u200D\uFEFF]/g, "")
-        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "")
-        .normalize("NFC")
-        .trim();
+    const cleanMessage = `${contribution.trim()}${twitterReference}`
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "")
+      .normalize("NFC")
+      .trim();
 
     return {
       agent_account_contract: userAgent.account_contract,
@@ -428,6 +419,7 @@ export function ProposalSubmission({
       dao_token_contract_address: daoTokenExt.contract_principal,
       message: cleanMessage,
       memo: "Contribution submitted via aibtcdev frontend",
+      ...(selectedAirdropTxHash ? { airdrop_txid: selectedAirdropTxHash } : {}),
     };
   };
 
@@ -439,6 +431,7 @@ export function ProposalSubmission({
     dao_token_contract_address: string;
     message: string;
     memo: string;
+    airdrop_txid?: string;
   }) => {
     if (!accessToken) throw new Error("Missing access token");
 
