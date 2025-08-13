@@ -200,8 +200,8 @@ export function AssetsDataTable({
         }
         const [assetAddress, assetContractName] = assetContractId.split(".");
 
-        // Amount is in base units (you control decimals upstream)
-        const amountUint = Math.floor(Number(amount));
+        // Amount is in base units (microunits: 1e6)
+        const amountUint = Math.floor(Number(amount) * 1_000_000);
         if (Number.isNaN(amountUint) || amountUint <= 0) {
           throw new Error("Invalid amount");
         }
@@ -236,6 +236,7 @@ export function AssetsDataTable({
             "Transaction failed before broadcasting (no txid in response)"
           );
         }
+        console.log(response);
 
         return { txid: response.txid, contractId, amount, tokenName };
         // eslint-disable-next-line
