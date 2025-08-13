@@ -91,7 +91,7 @@ const FunctionalToggle = ({
 export function AssetsDataTable({
   walletBalance,
   agentAccountId,
-  userWalletAddress, // not needed for post-conditions; receiver is implied by contract call
+  // userWalletAddress,
 }: AssetsDataTableProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -238,6 +238,7 @@ export function AssetsDataTable({
         }
 
         return { txid: response.txid, contractId, amount, tokenName };
+        // eslint-disable-next-line
       } catch (error: any) {
         // Log the original error for debugging
         console.error("Original error:", error);
@@ -305,43 +306,20 @@ export function AssetsDataTable({
       enabled: boolean;
       type: number;
     }) => {
-      try {
-        if (!agentAccountId) throw new Error("No agent account ID");
-        setUpdatingContract(contractId);
-        const functionName = enabled ? "approve-contract" : "revoke-contract";
+      if (!agentAccountId) throw new Error("No agent account ID");
+      setUpdatingContract(contractId);
+      const functionName = enabled ? "approve-contract" : "revoke-contract";
 
-        const response = await request("stx_callContract", {
-          contract: agentAccountId as `${string}.${string}`,
-          functionName,
-          functionArgs: [Cl.principal(contractId), Cl.uint(type)],
-          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-            | "mainnet"
-            | "testnet",
-        });
+      const response = await request("stx_callContract", {
+        contract: agentAccountId as `${string}.${string}`,
+        functionName,
+        functionArgs: [Cl.principal(contractId), Cl.uint(type)],
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+          | "mainnet"
+          | "testnet",
+      });
 
-        return { txid: response.txid, contractId, enabled, type };
-      } catch (error: any) {
-        // Log the original error for debugging
-        console.error("Original approval error:", error);
-        console.error("Error name:", error?.name);
-        console.error("Error message:", error?.message);
-        console.error("Error code:", error?.code);
-        console.error("Contract ID:", contractId);
-        console.error("Enabled:", enabled);
-        console.error("Type:", type);
-
-        // Handle specific error cases
-        if (error?.code === 4001) {
-          throw new Error("User cancelled the transaction");
-        }
-
-        // Re-throw the original error message
-        if (error?.message) {
-          throw new Error(error.message);
-        }
-
-        throw new Error("Unknown error occurred");
-      }
+      return { txid: response.txid, contractId, enabled, type };
     },
     onSuccess: async (data) => {
       console.log("Approval success:", data);
@@ -359,7 +337,6 @@ export function AssetsDataTable({
       });
     },
     onError: (error) => {
-      console.error("Approval mutation error:", error);
       setUpdatingContract(null);
       toast({
         title:
