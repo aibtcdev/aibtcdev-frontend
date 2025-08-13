@@ -21,7 +21,6 @@ import { request } from "@stacks/connect";
 import { Cl, Pc } from "@stacks/transactions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
-import { PostConditionModeName } from "@stacks/transactions";
 
 interface AssetsDataTableProps {
   walletBalance: {
@@ -92,7 +91,7 @@ const FunctionalToggle = ({
 export function AssetsDataTable({
   walletBalance,
   agentAccountId,
-  userWalletAddress,
+  userWalletAddress, // not needed for post-conditions; receiver is implied by contract call
 }: AssetsDataTableProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -105,56 +104,63 @@ export function AssetsDataTable({
   >({});
 
   const assets = useMemo(() => {
-    const rows: AssetRow[] = [];
-    if (walletBalance?.stx) {
-      rows.push({
-        id: "stx",
-        symbol: "STX",
-        name: "Stacks",
-        balance: walletBalance.stx.balance,
-        fiatValue: 850.32,
-        change24h: 2.4,
-        type: "stx",
-      });
+    try {
+      const rows: AssetRow[] = [];
+      if (walletBalance?.stx) {
+        rows.push({
+          id: "stx",
+          symbol: "STX",
+          name: "Stacks",
+          balance: walletBalance.stx.balance,
+          fiatValue: 850.32,
+          change24h: 2.4,
+          type: "stx",
+        });
+      }
+      if (walletBalance?.fungible_tokens) {
+        Object.entries(walletBalance.fungible_tokens).forEach(
+          ([tokenId, token]) => {
+            // tokenId e.g. "SPXXXX.contract::token-name"
+            const [, tokenSymbol] = tokenId.split("::");
+            const isBtc = tokenId.includes("sbtc-token");
+            const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
+            const contractPrincipal = tokenId.split("::")[0]; // "SPXXXX.contract"
+            rows.push({
+              id: tokenId,
+              symbol: displaySymbol,
+              name: isBtc ? "Bitcoin" : displaySymbol,
+              balance: token.balance,
+              fiatValue: isBtc ? 384.24 : 0,
+              change24h: isBtc ? -1.2 : 0,
+              type: "fungible",
+              contractId: contractPrincipal,
+            });
+          }
+        );
+      }
+      if (walletBalance?.non_fungible_tokens) {
+        Object.entries(walletBalance.non_fungible_tokens).forEach(
+          ([tokenId, token]) => {
+            const [, tokenSymbol] = tokenId.split("::");
+            const displaySymbol = tokenSymbol || "NFT";
+            rows.push({
+              id: tokenId,
+              symbol: displaySymbol,
+              name: displaySymbol,
+              balance: token.count,
+              fiatValue: 0,
+              change24h: 0,
+              type: "nft",
+            });
+          }
+        );
+      }
+      return rows;
+    } catch (error) {
+      console.error("Error in assets useMemo:", error);
+      console.error("walletBalance:", walletBalance);
+      return [];
     }
-    if (walletBalance?.fungible_tokens) {
-      Object.entries(walletBalance.fungible_tokens).forEach(
-        ([tokenId, token]) => {
-          const [, tokenSymbol] = tokenId.split("::");
-          const isBtc = tokenId.includes("sbtc-token");
-          const displaySymbol = isBtc ? "BTC" : tokenSymbol || "Token";
-          const contractPrincipal = tokenId.split("::")[0];
-          rows.push({
-            id: tokenId,
-            symbol: displaySymbol,
-            name: isBtc ? "Bitcoin" : displaySymbol,
-            balance: token.balance,
-            fiatValue: isBtc ? 384.24 : 0,
-            change24h: isBtc ? -1.2 : 0,
-            type: "fungible",
-            contractId: contractPrincipal,
-          });
-        }
-      );
-    }
-    if (walletBalance?.non_fungible_tokens) {
-      Object.entries(walletBalance.non_fungible_tokens).forEach(
-        ([tokenId, token]) => {
-          const [, tokenSymbol] = tokenId.split("::");
-          const displaySymbol = tokenSymbol || "NFT";
-          rows.push({
-            id: tokenId,
-            symbol: displaySymbol,
-            name: displaySymbol,
-            balance: token.count,
-            fiatValue: 0,
-            change24h: 0,
-            type: "nft",
-          });
-        }
-      );
-    }
-    return rows;
   }, [walletBalance]);
 
   const contractIds = useMemo(
@@ -165,6 +171,7 @@ export function AssetsDataTable({
     [assets]
   );
 
+  // ===== Withdraw FT (WITH post conditions) =====
   const withdrawFtMutation = useMutation({
     mutationFn: async ({
       contractId,
@@ -173,174 +180,100 @@ export function AssetsDataTable({
       contractId: string;
       amount: string | number;
     }) => {
-      if (!agentAccountId) throw new Error("No agent account ID");
-      if (!userWalletAddress) throw new Error("No user wallet address");
-      if (!amount || Number(amount) <= 0)
-        throw new Error("Enter a valid amount");
-
-      setWithdrawingContract(contractId);
-
       try {
-        // Find the full token ID for the asset
+        if (!agentAccountId) throw new Error("No agent account ID");
+        if (!amount || Number(amount) <= 0)
+          throw new Error("Enter a valid amount");
+
+        setWithdrawingContract(contractId);
+
         const asset = assets.find((a) => a.contractId === contractId);
-        if (!asset) {
-          throw new Error("Asset not found");
+        if (!asset) throw new Error("Asset not found");
+
+        // tokenId: "SPXXXX.contract::token-name"
+        if (!asset.id.includes("::")) {
+          throw new Error(`Invalid token ID format: ${asset.id}`);
         }
-
-        console.log("Raw asset data:", asset);
-        console.log("Contract ID:", contractId);
-        console.log("Asset ID:", asset.id);
-
-        const tokenId = asset.id; // This is the full token ID like "contract.token::token-name"
-
-        // Parse the token ID to get components
-        if (!tokenId.includes("::")) {
-          throw new Error(`Invalid token ID format: ${tokenId}`);
+        const [assetContractId, tokenName] = asset.id.split("::"); // "SP....contract", "token-name"
+        if (!assetContractId.includes(".")) {
+          throw new Error(`Invalid contract principal: ${assetContractId}`);
         }
+        const [assetAddress, assetContractName] = assetContractId.split(".");
 
-        const [contractAddress, tokenName] = tokenId.split("::");
-        console.log("Contract address part:", contractAddress);
-        console.log("Token name part:", tokenName);
-
-        if (!contractAddress.includes(".")) {
-          throw new Error(
-            `Invalid contract address format: ${contractAddress}`
-          );
-        }
-
-        const [address, contractName] = contractAddress.split(".");
-        console.log("Parsed components:", { address, contractName, tokenName });
-
-        if (!address || !contractName || !tokenName) {
-          throw new Error(
-            `Invalid token ID components - address: ${address}, contractName: ${contractName}, tokenName: ${tokenName}`
-          );
-        }
-
-        // Convert amount to uint (ensure it's a valid number)
+        // Amount is in base units (you control decimals upstream)
         const amountUint = Math.floor(Number(amount));
-        if (isNaN(amountUint) || amountUint <= 0) {
+        if (Number.isNaN(amountUint) || amountUint <= 0) {
           throw new Error("Invalid amount");
         }
 
-        // Try multiple approaches for the post condition
-        let response;
-
-        // Approach 1: Try with post condition on the agent contract (sender)
-        if (userWalletAddress) {
-          try {
-            // Post condition: agent contract will send the tokens
-            // FYI tokenName works because it matches assetName in our contracts
-            const postCondition = Pc.principal(agentAccountId)
-              .willSendEq(amountUint)
-              .ft(`${address}.${contractName}`, tokenName);
-
-            console.log("Post condition (agent sends):", postCondition);
-
-            console.log(
-              "Withdrawal transaction params (with post condition):",
-              {
-                contract: agentAccountId,
-                functionName: "withdraw-ft",
-                functionArgs: [
-                  `Cl.contractPrincipal(${address}, ${contractName})`,
-                  `Cl.uint(${amountUint})`,
-                ],
-                network: process.env.NEXT_PUBLIC_STACKS_NETWORK,
-                postConditions: [postCondition],
-                postConditionMode: "deny",
-              }
-            );
-
-            response = await request("stx_callContract", {
-              contract: agentAccountId as `${string}.${string}`,
-              functionName: "withdraw-ft",
-              functionArgs: [
-                Cl.contractPrincipal(address, contractName),
-                Cl.uint(amountUint),
-              ],
-              network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-                | "mainnet"
-                | "testnet",
-              postConditions: [postCondition],
-              postConditionMode: "deny" as PostConditionModeName,
-            });
-
-            console.log(
-              "Transaction successful with user wallet post condition",
-              response
-            );
-          } catch (err) {
-            console.error("Post condition approach failed:", err);
-            try {
-              // Some wallet SDKs return nested error objects; attempt safe stringify
-              const details =
-                typeof err === "object" && err
-                  ? JSON.stringify(err)
-                  : String(err);
-              console.error(
-                "Post condition approach failed (stringified):",
-                details
-              );
-            } catch (_) {
-              // ignore stringify errors
-            }
-            throw err;
-          }
-        } else {
-          // Fallback: No user wallet address, try without post conditions
-          console.log(
-            "No user wallet address, trying without post conditions..."
+        // ---- POST CONDITION: agent account must SEND exactly 'amountUint' of this FT
+        const ftPostCondition = Pc.principal(
+          agentAccountId as `${string}.${string}`
+        )
+          .willSendEq(amountUint)
+          .ft(
+            `${assetAddress}.${assetContractName}` as `${string}.${string}`,
+            tokenName
           );
 
-          response = await request("stx_callContract", {
-            contract: agentAccountId as `${string}.${string}`,
-            functionName: "withdraw-ft",
-            functionArgs: [Cl.principal(contractId), Cl.uint(amountUint)],
-            network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-              | "mainnet"
-              | "testnet",
-            postConditionMode: "allow" as PostConditionModeName,
-          });
-        }
+        // Contract call with post-conditions enforced (deny anything outside)
+        const response = await request("stx_callContract", {
+          contract: agentAccountId as `${string}.${string}`,
+          functionName: "withdraw-ft",
+          functionArgs: [
+            Cl.contractPrincipal(assetAddress, assetContractName), // FT contract principal
+            Cl.uint(amountUint), // exact base units
+          ],
+          postConditions: [ftPostCondition],
+          postConditionMode: "deny",
+          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+            | "mainnet"
+            | "testnet",
+        });
+
         if (!response || !("txid" in response)) {
           throw new Error(
             "Transaction failed before broadcasting (no txid in response)"
           );
         }
-        return { txid: response.txid, contractId, amount };
+
+        return { txid: response.txid, contractId, amount, tokenName };
       } catch (error: any) {
-        console.error("Withdrawal error:", error);
-        try {
-          console.error(
-            "Withdrawal error (stringified):",
-            JSON.stringify(error)
-          );
-        } catch (_) {}
-        if (error.code === 4001) {
+        // Log the original error for debugging
+        console.error("Original error:", error);
+        console.error("Error name:", error?.name);
+        console.error("Error message:", error?.message);
+        console.error("Error code:", error?.code);
+
+        // Handle specific error cases
+        if (error?.code === 4001) {
           throw new Error("User cancelled the transaction");
         }
-        throw new Error(
-          `Failed to withdraw: ${error.message || "Unknown error"}`
-        );
+
+        // Re-throw the original error message instead of wrapping it
+        if (error?.message) {
+          throw new Error(error.message);
+        }
+
+        // Fallback for unknown errors
+        throw new Error("Unknown error occurred");
       } finally {
         setWithdrawingContract(null);
       }
     },
     onSuccess: (data) => {
+      console.log("Withdraw success:", data);
       setWithdrawingContract(null);
       toast({
         title: "Withdrawal Submitted",
-        description: `Withdrawal transaction submitted. TXID: ${data.txid}`,
+        description: `TXID: ${data.txid}`,
       });
       setWithdrawAmounts((prev) => ({ ...prev, [data.contractId]: "" }));
-
-      // Invalidate wallet balance to refresh data
       queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
     },
     onError: (error) => {
+      console.error("Withdraw mutation error:", error);
       setWithdrawingContract(null);
-      console.error("Withdrawal mutation error:", error);
       toast({
         title:
           (error as Error).message === "User cancelled the transaction"
@@ -355,6 +288,7 @@ export function AssetsDataTable({
     },
   });
 
+  // ===== Approvals (with error logging) =====
   const tokenApprovals = useBatchContractApprovals(
     agentAccountId || null,
     contractIds,
@@ -371,22 +305,46 @@ export function AssetsDataTable({
       enabled: boolean;
       type: number;
     }) => {
-      if (!agentAccountId) throw new Error("No agent account ID");
-      setUpdatingContract(contractId);
-      const functionName = enabled ? "approve-contract" : "revoke-contract";
+      try {
+        if (!agentAccountId) throw new Error("No agent account ID");
+        setUpdatingContract(contractId);
+        const functionName = enabled ? "approve-contract" : "revoke-contract";
 
-      const response = await request("stx_callContract", {
-        contract: agentAccountId as `${string}.${string}`,
-        functionName,
-        functionArgs: [Cl.principal(contractId), Cl.uint(type)],
-        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-          | "mainnet"
-          | "testnet",
-      });
+        const response = await request("stx_callContract", {
+          contract: agentAccountId as `${string}.${string}`,
+          functionName,
+          functionArgs: [Cl.principal(contractId), Cl.uint(type)],
+          network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+            | "mainnet"
+            | "testnet",
+        });
 
-      return { txid: response.txid, contractId, enabled, type };
+        return { txid: response.txid, contractId, enabled, type };
+      } catch (error: any) {
+        // Log the original error for debugging
+        console.error("Original approval error:", error);
+        console.error("Error name:", error?.name);
+        console.error("Error message:", error?.message);
+        console.error("Error code:", error?.code);
+        console.error("Contract ID:", contractId);
+        console.error("Enabled:", enabled);
+        console.error("Type:", type);
+
+        // Handle specific error cases
+        if (error?.code === 4001) {
+          throw new Error("User cancelled the transaction");
+        }
+
+        // Re-throw the original error message
+        if (error?.message) {
+          throw new Error(error.message);
+        }
+
+        throw new Error("Unknown error occurred");
+      }
     },
     onSuccess: async (data) => {
+      console.log("Approval success:", data);
       setUpdatingContract(null);
       await queryClient.invalidateQueries({
         queryKey: ["batch-approvals", agentAccountId, contractIds, data.type],
@@ -401,6 +359,7 @@ export function AssetsDataTable({
       });
     },
     onError: (error) => {
+      console.error("Approval mutation error:", error);
       setUpdatingContract(null);
       toast({
         title:
@@ -417,64 +376,81 @@ export function AssetsDataTable({
   });
 
   const handleToggleClick = (contractId: string, currentApproval: boolean) => {
-    updateApprovalMutation.mutate({
-      contractId,
-      enabled: !currentApproval,
-      type: AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
-    });
+    try {
+      updateApprovalMutation.mutate({
+        contractId,
+        enabled: !currentApproval,
+        type: AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
+      });
+    } catch (error) {
+      console.error("Error in handleToggleClick:", error);
+    }
   };
 
   const setAmount = (contractId: string, v: string) => {
-    // Only allow numeric input and limit to reasonable length
-    const numericValue = v.replace(/[^0-9]/g, "").slice(0, 18); // Prevent overflow
-    setWithdrawAmounts((prev) => ({
-      ...prev,
-      [contractId]: numericValue,
-    }));
+    try {
+      const numericValue = v.replace(/[^0-9]/g, "").slice(0, 18);
+      setWithdrawAmounts((prev) => ({
+        ...prev,
+        [contractId]: numericValue,
+      }));
+    } catch (error) {
+      console.error("Error in setAmount:", error);
+      console.error("contractId:", contractId);
+      console.error("value:", v);
+    }
   };
 
   const handleWithdraw = (contractId: string) => {
-    const amount = withdrawAmounts[contractId];
-    if (!amount || Number(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to withdraw",
-        variant: "destructive",
-      });
-      return;
-    }
+    try {
+      const amount = withdrawAmounts[contractId];
+      if (!amount || Number(amount) <= 0) {
+        toast({
+          title: "Invalid Amount",
+          description: "Please enter a valid amount to withdraw",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Check if amount exceeds balance
-    const asset = assets.find((a) => a.contractId === contractId);
-    if (asset && Number(amount) > Number(asset.balance)) {
-      toast({
-        title: "Insufficient Balance",
-        description: "Amount exceeds available balance",
-        variant: "destructive",
-      });
-      return;
-    }
+      const asset = assets.find((a) => a.contractId === contractId);
+      if (asset && Number(amount) > Number(asset.balance)) {
+        toast({
+          title: "Insufficient Balance",
+          description: "Amount exceeds available balance",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    withdrawFtMutation.mutate({
-      contractId,
-      amount: amount,
-    });
+      withdrawFtMutation.mutate({ contractId, amount });
+    } catch (error) {
+      console.error("Error in handleWithdraw:", error);
+      console.error("contractId:", contractId);
+      console.error("withdrawAmounts:", withdrawAmounts);
+    }
   };
 
   const renderBalance = (asset: AssetRow) => {
-    if (asset.type === "stx")
-      return <StxBalance value={asset.balance as string} variant="rounded" />;
-    if (asset.type === "fungible")
-      return asset.symbol === "BTC" ? (
-        <BtcBalance value={asset.balance as string} variant="rounded" />
-      ) : (
-        <TokenBalance
-          value={asset.balance as string}
-          symbol={asset.symbol}
-          variant="rounded"
-        />
-      );
-    return <span className="font-mono text-sm">{asset.balance}</span>;
+    try {
+      if (asset.type === "stx")
+        return <StxBalance value={asset.balance as string} variant="rounded" />;
+      if (asset.type === "fungible")
+        return asset.symbol === "BTC" ? (
+          <BtcBalance value={asset.balance as string} variant="rounded" />
+        ) : (
+          <TokenBalance
+            value={asset.balance as string}
+            symbol={asset.symbol}
+            variant="rounded"
+          />
+        );
+      return <span className="font-mono text-sm">{asset.balance}</span>;
+    } catch (error) {
+      console.error("Error in renderBalance:", error);
+      console.error("Asset:", asset);
+      return <span className="font-mono text-sm">Error</span>;
+    }
   };
 
   if (!walletBalance) {
@@ -514,101 +490,120 @@ export function AssetsDataTable({
             </TableHeader>
             <TableBody>
               {assets.map((asset) => {
-                const isApprovalApplicable =
-                  !!agentAccountId &&
-                  !!asset.contractId &&
-                  asset.type === "fungible" &&
-                  asset.symbol !== "BTC";
-                const currentApproval =
-                  tokenApprovals.data?.[asset.contractId!] || false;
+                try {
+                  const isApprovalApplicable =
+                    !!agentAccountId &&
+                    !!asset.contractId &&
+                    asset.type === "fungible" &&
+                    asset.symbol !== "BTC";
+                  const currentApproval =
+                    tokenApprovals.data?.[asset.contractId!] || false;
 
-                return (
-                  <TableRow
-                    key={asset.id}
-                    className="hover:bg-muted/5 transition-colors"
-                  >
-                    <TableCell className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-primary">
-                            {asset.symbol.slice(0, 2)}
-                          </span>
+                  return (
+                    <TableRow
+                      key={asset.id}
+                      className="hover:bg-muted/5 transition-colors"
+                    >
+                      <TableCell className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-primary">
+                              {asset.symbol.slice(0, 2)}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">
+                              {asset.symbol}
+                            </p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {asset.name}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold truncate">
-                            {asset.symbol}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {asset.name}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right px-4 py-3">
-                      {renderBalance(asset)}
-                    </TableCell>
-                    <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
-                      {isApprovalApplicable ? (
-                        <FunctionalToggle
-                          approved={currentApproval}
-                          loading={
-                            tokenApprovals.isLoading ||
-                            updatingContract === asset.contractId
-                          }
-                          label="Token approval"
-                          onClick={() =>
-                            handleToggleClick(
-                              asset.contractId!,
-                              currentApproval
-                            )
-                          }
-                          disabled={updatingContract === asset.contractId}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
-                      {asset.type === "fungible" && asset.contractId ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={withdrawAmounts[asset.contractId] ?? ""}
-                            onChange={(e) =>
-                              setAmount(asset.contractId!, e.target.value)
+                      </TableCell>
+                      <TableCell className="text-right px-4 py-3">
+                        {renderBalance(asset)}
+                      </TableCell>
+                      <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
+                        {isApprovalApplicable ? (
+                          <FunctionalToggle
+                            approved={currentApproval}
+                            loading={
+                              tokenApprovals.isLoading ||
+                              updatingContract === asset.contractId
                             }
-                            placeholder="amount"
-                            className="h-8 w-28 rounded border bg-transparent px-2 text-sm"
+                            label="Token approval"
+                            onClick={() =>
+                              handleToggleClick(
+                                asset.contractId!,
+                                currentApproval
+                              )
+                            }
+                            disabled={updatingContract === asset.contractId}
                           />
-                          <button
-                            onClick={() => handleWithdraw(asset.contractId!)}
-                            disabled={
-                              withdrawingContract === asset.contractId ||
-                              !tokenApprovals.data?.[asset.contractId!] ||
-                              !withdrawAmounts[asset.contractId] ||
-                              Number(withdrawAmounts[asset.contractId]) <= 0
-                            }
-                            className={`h-8 px-3 rounded text-xs font-medium transition-colors ${
-                              tokenApprovals.data?.[asset.contractId!] &&
-                              withdrawAmounts[asset.contractId] &&
-                              Number(withdrawAmounts[asset.contractId]) > 0
-                                ? "bg-primary text-primary-foreground hover:opacity-90"
-                                : "bg-muted text-muted-foreground cursor-not-allowed"
-                            }`}
-                          >
-                            {withdrawingContract === asset.contractId
-                              ? "Withdrawing..."
-                              : "Withdraw"}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            -
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center px-2 py-3 hidden sm:table-cell">
+                        {asset.type === "fungible" && asset.contractId ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={withdrawAmounts[asset.contractId] ?? ""}
+                              onChange={(e) =>
+                                setAmount(asset.contractId!, e.target.value)
+                              }
+                              placeholder="amount"
+                              className="h-8 w-28 rounded border bg-transparent px-2 text-sm"
+                            />
+                            <button
+                              onClick={() => handleWithdraw(asset.contractId!)}
+                              disabled={
+                                withdrawingContract === asset.contractId ||
+                                !tokenApprovals.data?.[asset.contractId!] ||
+                                !withdrawAmounts[asset.contractId] ||
+                                Number(withdrawAmounts[asset.contractId]) <= 0
+                              }
+                              className={`h-8 px-3 rounded text-xs font-medium transition-colors ${
+                                tokenApprovals.data?.[asset.contractId!] &&
+                                withdrawAmounts[asset.contractId] &&
+                                Number(withdrawAmounts[asset.contractId]) > 0
+                                  ? "bg-primary text-primary-foreground hover:opacity-90"
+                                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                              }`}
+                            >
+                              {withdrawingContract === asset.contractId
+                                ? "Withdrawing..."
+                                : "Withdraw"}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            -
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                } catch (error) {
+                  console.error("Error rendering asset row:", error);
+                  console.error("Asset:", asset);
+                  return (
+                    <TableRow key={asset.id}>
+                      <TableCell
+                        colSpan={4}
+                        className="text-center text-red-500"
+                      >
+                        Error rendering asset: {asset.symbol}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
               })}
             </TableBody>
           </Table>
