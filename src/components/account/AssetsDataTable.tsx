@@ -200,8 +200,8 @@ export function AssetsDataTable({
         }
         const [assetAddress, assetContractName] = assetContractId.split(".");
 
-        // Amount is in base units (microunits: 1e6)
-        const amountUint = Math.floor(Number(amount) * 1_000_000);
+        // Amount is in base units (microunits: 1e8)
+        const amountUint = Math.floor(Number(amount) * 1_000_000_00);
         if (Number.isNaN(amountUint) || amountUint <= 0) {
           throw new Error("Invalid amount");
         }
