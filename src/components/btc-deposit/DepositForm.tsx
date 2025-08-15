@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
-import { useAgentPermissions } from "@/hooks/useAgentPermissions";
-import { DepositPermissionModal } from "@/components/btc-deposit/DepositPermissionModal";
+// import { useAgentPermissions } from "@/hooks/useAgentPermissions";
+// import { DepositPermissionModal } from "@/components/btc-deposit/DepositPermissionModal";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -757,11 +757,11 @@ export default function DepositForm({
         )}
       </>
 
-      <DepositPermissionModal
+      {/* <DepositPermissionModal
         open={showPermissionModal}
         onClose={() => setShowPermissionModal(false)}
         agentAddress={userAgentAddress}
-      />
+      /> */}
     </div>
   );
 }
