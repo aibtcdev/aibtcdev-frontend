@@ -70,6 +70,7 @@ export default function DepositForm({
   daoName,
   dexId,
 }: DepositFormProps) {
+  const BUY_DISABLED = true;
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -524,6 +525,7 @@ export default function DepositForm({
   const presetLabels: string[] = ["0.0001 BTC", "0.0002 BTC"];
 
   const getButtonText = () => {
+    if (BUY_DISABLED) return "Buy Available Soon";
     if (!accessToken) return "Connect Wallet";
     if (!hasAgentAccount) return "No Agent Account";
     if (!canDeposit) return "Enable Deposit";
@@ -542,7 +544,7 @@ export default function DepositForm({
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
-        ⚠️ Still in testing phase. Do not send real transaction.
+        Buy Available Soon
       </div>
       <div className="text-center space-y-1">
         <h2 className="text-xl ">
@@ -615,7 +617,7 @@ export default function DepositForm({
             onChange={handleAmountChange}
             placeholder="0.00000000"
             className="text-right pr-12 pl-12 h-12 text-lg"
-            disabled={!accessToken}
+            disabled={!accessToken || BUY_DISABLED}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
             BTC
@@ -646,7 +648,7 @@ export default function DepositForm({
               size="sm"
               variant={selectedPreset === presetAmount ? "default" : "outline"}
               onClick={() => handlePresetClick(presetAmount)}
-              disabled={!accessToken}
+              disabled={!accessToken || BUY_DISABLED}
             >
               {presetLabels[index]}
             </Button>
@@ -656,7 +658,10 @@ export default function DepositForm({
             variant={selectedPreset === "max" ? "default" : "outline"}
             onClick={handleMaxClick}
             disabled={
-              !accessToken || btcBalance === null || btcBalance === undefined
+              !accessToken ||
+              BUY_DISABLED ||
+              btcBalance === null ||
+              btcBalance === undefined
             }
           >
             MAX
@@ -733,11 +738,18 @@ export default function DepositForm({
             size="lg"
             className="h-12 text-lg bg-primary w-full"
             onClick={
-              !canDeposit && hasAgentAccount
-                ? () => setShowPermissionModal(true)
-                : handleDepositConfirm
+              BUY_DISABLED
+                ? () => {}
+                : !canDeposit && hasAgentAccount
+                  ? () => setShowPermissionModal(true)
+                  : handleDepositConfirm
             }
-            disabled={!hasAgentAccount || isPermissionsLoading || !accessToken}
+            disabled={
+              !hasAgentAccount ||
+              isPermissionsLoading ||
+              !accessToken ||
+              BUY_DISABLED
+            }
           >
             {getButtonText()}
           </Button>
