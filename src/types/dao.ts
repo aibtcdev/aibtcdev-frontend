@@ -13,6 +13,7 @@ export interface DAO {
   author_id: string;
   user_id?: string;
   extensions?: Array<{
+    subtype: string;
     id: string;
     type: string;
     contract_principal?: string;

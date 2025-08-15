@@ -238,7 +238,7 @@ export const fetchTokenPrices = async (
 
   await Promise.all(
     daos.map(async (dao) => {
-      const extension = dao.extensions?.find((ext) => ext.type === "dex");
+      const extension = dao.extensions?.find((ext) => ext.subtype === "DEX");
       const token = tokens?.find((t) => t.dao_id === dao.id);
 
       if (extension?.contract_principal && token) {
