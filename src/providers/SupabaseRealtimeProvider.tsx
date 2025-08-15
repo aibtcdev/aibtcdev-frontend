@@ -155,7 +155,7 @@ export function SupabaseRealtimeProvider({
           table: "chain_states",
         },
         (payload) => {
-          console.log("Chain states table changed:", payload);
+          // console.log("Chain states table changed:", payload);
 
           // Invalidate all chain state queries
           queryClient.invalidateQueries({ queryKey: ["chainStates"] });

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ChangeEvent, useEffect } from "react";
-import { getStacksAddress, getBitcoinAddress } from "@/lib/address";
+import { useState, type ChangeEvent, useEffect, useCallback } from "react";
+import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { styxSDK } from "@faktoryfun/styx-sdk";
 import type {
   FeeEstimates,
@@ -12,7 +13,6 @@ import type {
 } from "@faktoryfun/styx-sdk";
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
-import { Bitcoin } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,12 +20,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
+import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
+import { useAgentPermissions } from "@/hooks/useAgentPermissions";
+import { DepositPermissionModal } from "@/components/btc-deposit/DepositPermissionModal";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -33,14 +37,27 @@ interface DepositFormProps {
   setConfirmationData: (data: ConfirmationData) => void;
   setShowConfirmation: (show: boolean) => void;
   activeWalletProvider: "leather" | "xverse" | null;
+  dexContract: string;
+  daoName: string;
+  userAddress: string | null;
+  dexId: number;
+}
+
+interface HiroGetInResponse {
+  result?: string;
+  error?: {
+    code?: string;
+    message?: string;
+  };
 }
 
 export interface ConfirmationData {
   depositAmount: string;
+  userInputAmount: string;
   depositAddress: string;
   stxAddress: string;
   opReturnHex: string;
-  isBlaze?: boolean;
+  dexId: number;
 }
 
 export default function DepositForm({
@@ -49,12 +66,17 @@ export default function DepositForm({
   setConfirmationData,
   setShowConfirmation,
   activeWalletProvider,
+  dexContract,
+  daoName,
+  dexId,
 }: DepositFormProps) {
+  // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
+  const BUY_DISABLED = false;
   const [amount, setAmount] = useState<string>("0.0001");
+  const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const { toast } = useToast();
-  // const [useBlazeSubnet, setUseBlazeSubnet] = useState<boolean>(false);
-  const [feeEstimates, setFeeEstimates] = useState<{
+  const [feeEstimates] = useState<{
     low: { rate: number; fee: number; time: string };
     medium: { rate: number; fee: number; time: string };
     high: { rate: number; fee: number; time: string };
@@ -63,33 +85,101 @@ export default function DepositForm({
     medium: { rate: 3, fee: 0, time: "~20 min" },
     high: { rate: 5, fee: 0, time: "~10 min" },
   });
+  const [buyQuote, setBuyQuote] = useState<string | null>(null);
+  const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
 
-  // Session is automatically initialized by the useAuth hook
-
-  // Use the activeWalletProvider state with a default value
-  // const [activeWalletProvider, setActiveWalletProvider] = useState<
-  //   "leather" | "xverse" | null
-  // >(null);
-
-  // Set the wallet provider based on the session when initialized
-  // useEffect(() => {
-  //   if (accessToken) {
-  //     // Determine which wallet is being used based on available information
-  //     // This is a placeholder - implement your actual wallet detection logic here
-  //     const detectedProvider = localStorage.getItem("walletProvider") as
-  //       | "leather"
-  //       | "xverse"
-  //       | null;
-  //     setActiveWalletProvider(detectedProvider);
-  //   }
-  // }, [accessToken]);
-
   // Get addresses from the lib - only if we have a session
-  const userAddress = accessToken ? getStacksAddress() : null;
-  const btcAddress = accessToken ? getBitcoinAddress() : null;
+  const { userAgentAddress } = useAgentAccount();
+  const hasAgentAccount = Boolean(userAgentAddress);
+  const userAddress = getStacksAddress();
+
+  // Check agent permissions
+  const { data: permissions, isLoading: isPermissionsLoading } =
+    useAgentPermissions(userAgentAddress);
+  const canDeposit = permissions?.canDeposit ?? false;
+
+  const btcAddress = userAddress ? getBitcoinAddress() : null;
+
+  const getBuyQuote = useCallback(
+    async (amount: string): Promise<HiroGetInResponse | null> => {
+      if (!dexContract || !userAddress) return null;
+      const [contractAddress, contractName] = dexContract.split(".");
+      try {
+        const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
+        const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: userAddress,
+            arguments: [cvToHex(uintCV(btcAmount))],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = (await response.json()) as HiroGetInResponse;
+        return data;
+      } catch (error) {
+        console.error("Error fetching buy quote:", error);
+        return null;
+      }
+    },
+    [userAddress, dexContract]
+  );
+
+  useEffect(() => {
+    const fetchQuote = async () => {
+      if (amount && Number.parseFloat(amount) > 0) {
+        setLoadingQuote(true);
+        const quoteData = await getBuyQuote(amount);
+        if (quoteData?.result) {
+          try {
+            const clarityValue = hexToCV(quoteData.result);
+            const jsonValue = cvToJSON(clarityValue);
+            if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
+              const rawAmount = jsonValue.value.value["tokens-out"].value;
+              const slippageFactor = 1 - 4 / 100; // 4% slippage
+              const amountAfterSlippage = Math.floor(
+                Number(rawAmount) * slippageFactor
+              );
+              setBuyQuote(
+                (amountAfterSlippage / 10 ** 6).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              );
+            } else {
+              setBuyQuote(null);
+            }
+          } catch (error) {
+            console.error("Error parsing quote result:", error);
+            setBuyQuote(null);
+          }
+        } else {
+          setBuyQuote(null);
+        }
+        setLoadingQuote(false);
+      } else {
+        setBuyQuote(null);
+      }
+    };
+
+    const debounce = setTimeout(() => {
+      fetchQuote();
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(debounce);
+  }, [amount, getBuyQuote]);
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -118,70 +208,6 @@ export default function DepositForm({
     retry: 2,
     refetchOnWindowFocus: false,
   });
-
-  // Fetch fee estimates from mempool.space
-  const fetchMempoolFeeEstimates = async (): Promise<{
-    low: { rate: number; fee: number; time: string };
-    medium: { rate: number; fee: number; time: string };
-    high: { rate: number; fee: number; time: string };
-  }> => {
-    try {
-      console.log("Fetching fee estimates directly from mempool.space");
-      const response = await fetch(
-        "https://mempool.space/api/v1/fees/recommended"
-      );
-      const data = await response.json();
-
-      // Log the raw values to help with debugging
-      console.log("Raw mempool.space fee data:", data);
-
-      // Map to the correct fee estimate fields
-      const lowRate = data.hourFee;
-      const mediumRate = data.halfHourFee;
-      const highRate = data.fastestFee;
-
-      // Don't modify the rates, use them as-is
-      return {
-        low: {
-          rate: lowRate,
-          fee: Math.round(lowRate * 148),
-          time: "~1 hour",
-        },
-        medium: {
-          rate: mediumRate,
-          fee: Math.round(mediumRate * 148),
-          time: "~30 min",
-        },
-        high: {
-          rate: highRate,
-          fee: Math.round(highRate * 148),
-          time: "~10 min",
-        },
-      };
-    } catch (error) {
-      console.error("Error fetching fee estimates from mempool.space:", error);
-      // Fallback to default values that better reflect current network conditions
-      return {
-        low: { rate: 3, fee: 444, time: "~1 hour" },
-        medium: { rate: 3, fee: 444, time: "~30 min" },
-        high: { rate: 5, fee: 740, time: "~10 min" },
-      };
-    }
-  };
-
-  // Fetch fee estimates on component mount
-  useEffect(() => {
-    const getFeeEstimates = async () => {
-      try {
-        const estimates = await fetchMempoolFeeEstimates();
-        setFeeEstimates(estimates);
-      } catch (error) {
-        console.error("Error fetching initial fee estimates:", error);
-      }
-    };
-
-    getFeeEstimates();
-  }, []);
 
   const formatUsdValue = (amount: number): string => {
     if (!amount || amount <= 0) return "$0.00";
@@ -223,8 +249,7 @@ export default function DepositForm({
   const handleMaxClick = async (): Promise<void> => {
     if (btcBalance !== null && btcBalance !== undefined) {
       try {
-        const feeRates = await styxSDK.getFeeEstimates();
-        const selectedRate = feeRates.medium;
+        const selectedRate = feeEstimates.medium.rate;
         const estimatedSize = 1 * 70 + 2 * 33 + 12;
         const networkFeeSats = estimatedSize * selectedRate;
         const networkFee = networkFeeSats / 100000000;
@@ -251,12 +276,18 @@ export default function DepositForm({
   };
 
   const handleDepositConfirm = async (): Promise<void> => {
-    if (!amount || Number.parseFloat(amount) <= 0) {
+    if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid BTC amount greater than 0",
+        title: "Invalid Amount",
+        description: "Please enter a valid deposit amount.",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check if user has deposit permission
+    if (!canDeposit) {
+      setShowPermissionModal(true);
       return;
     }
 
@@ -268,47 +299,42 @@ export default function DepositForm({
       });
       return;
     }
+    if (!hasAgentAccount) {
+      toast({
+        title: "No Agent Account",
+        description:
+          "You don’t have an agent account yet. Please create one before depositing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Manual address type check before preparing transaction
+    // if (btcAddress && !btcAddress.startsWith("bc1")) {
+    //   console.log("nonsegwitaddrsss");
+    //   handleAddressTypeError(
+    //     new Error("Non-SegWit address detected"),
+    //     activeWalletProvider
+    //   );
+    //   return;
+    // }
 
     try {
       if (!btcAddress) {
         throw new Error("No Bitcoin address found in your wallet");
       }
 
-      // IMPORTANT: Calculate the total amount including service fee
       const userInputAmount = Number.parseFloat(amount);
       const serviceFee = Number.parseFloat(calculateFee(amount));
       const totalAmount = (userInputAmount + serviceFee).toFixed(8);
 
-      console.log("Transaction amounts:", {
-        userInputAmount,
-        serviceFee,
-        totalAmount,
-      });
-
-      // Always fetch fresh fee estimates before transaction
-      let currentFeeRates: FeeEstimates;
-      try {
-        console.log(
-          "Fetching fresh fee estimates before transaction preparation"
-        );
-        const estimatesResult = await fetchMempoolFeeEstimates();
-        currentFeeRates = {
-          low: estimatesResult.low.rate,
-          medium: estimatesResult.medium.rate,
-          high: estimatesResult.high.rate,
-        };
-
-        // Update the UI fee display
-        setFeeEstimates(estimatesResult);
-        console.log("Using fee rates:", currentFeeRates);
-      } catch (error) {
-        console.warn("Error fetching fee estimates, using defaults:", error);
-        currentFeeRates = { low: 1, medium: 3, high: 5 };
-      }
+      const currentFeeRates: FeeEstimates = {
+        low: feeEstimates.low.rate,
+        medium: feeEstimates.medium.rate,
+        high: feeEstimates.high.rate,
+      };
 
       const amountInSats = Math.round(Number.parseFloat(amount) * 100000000);
 
-      console.log(MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS);
       if (amountInSats < MIN_DEPOSIT_SATS) {
         toast({
           title: "Minimum deposit required",
@@ -346,7 +372,6 @@ export default function DepositForm({
       const networkFeeInBTC = 0.000006;
       const totalRequiredBTC = amountInBTC + networkFeeInBTC;
 
-      // Check if btcBalance is available and sufficient
       const currentBalance = btcBalance ?? 0;
       if (currentBalance < totalRequiredBTC) {
         const shortfallBTC = totalRequiredBTC - currentBalance;
@@ -357,26 +382,34 @@ export default function DepositForm({
         );
       }
 
-      try {
-        console.log("Preparing transaction with SDK...");
+      if (!dexContract) {
+        toast({
+          title: "DEX Contract Missing",
+          description: "DEX contract has not been specified.",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      try {
+        console.log("preparing transaction...");
         const transactionData = await styxSDK.prepareTransaction({
-          amount: totalAmount, // Now includes service fee
+          amount: totalAmount,
           userAddress,
           btcAddress,
           feePriority: "medium" as TransactionPriority,
           walletProvider: activeWalletProvider,
           feeRates: currentFeeRates,
+          dexContract: dexContract,
         } as TransactionPrepareParams);
-
-        console.log("Transaction prepared:", transactionData);
 
         setConfirmationData({
           depositAmount: totalAmount,
+          userInputAmount: amount,
           depositAddress: transactionData.depositAddress,
           stxAddress: userAddress,
           opReturnHex: transactionData.opReturnData,
-          // isBlaze: useBlazeSubnet,
+          dexId: dexId,
         });
 
         setShowConfirmation(true);
@@ -429,7 +462,6 @@ export default function DepositForm({
     }
   };
 
-  // Helper functions for error handling
   function isAddressTypeError(error: Error): boolean {
     return (
       error.message.includes("inputType: sh without redeemScript") ||
@@ -493,13 +525,14 @@ export default function DepositForm({
   const presetAmounts: string[] = ["0.0001", "0.0002"];
   const presetLabels: string[] = ["0.0001 BTC", "0.0002 BTC"];
 
-  // Determine button text based on connection state
   const getButtonText = () => {
+    if (BUY_DISABLED) return "Buy Available Soon";
     if (!accessToken) return "Connect Wallet";
-    return "Confirm Deposit";
+    if (!hasAgentAccount) return "No Agent Account";
+    if (!canDeposit) return "Enable Deposit";
+    return "Deposit";
   };
 
-  // Render loading state while initializing session
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4 py-8">
@@ -510,16 +543,72 @@ export default function DepositForm({
   }
 
   return (
-    <div className="flex flex-col space-y-4 md:space-y-6 w-full max-w-md mx-auto">
-      {/* From: Bitcoin */}
+    <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
+      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
+        Testing
+      </div>
+      <div className="text-center space-y-1">
+        <h2 className="text-xl ">
+          Deposit <span className="font-bold">{daoName}</span>
+        </h2>
+        {accessToken && (userAddress || btcAddress) && (
+          <Dialog
+            open={isAgentDetailsOpen}
+            onOpenChange={setIsAgentDetailsOpen}
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="link"
+                className="text-xs text-muted-foreground h-auto p-0"
+              >
+                View Agent Details
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Agent Details</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 pt-2 text-xs">
+                {userAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Agent Address (STX)
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {userAddress}
+                    </div>
+                  </div>
+                )}
+                {btcAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Bitcoin Address
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {btcAddress}
+                    </div>
+                  </div>
+                )}
+                {dexContract && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Token Contract
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {dexContract}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
       <div>
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-2">
-            <Bitcoin className="h-5 w-5" />
-            <span className="font-medium">Bitcoin</span>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {formatUsdValue(calculateUsdValue(amount))}
+        <div className="flex justify-end items-center mb-1">
+          <span className="font-medium text-sm ">
+            You will spend {formatUsdValue(calculateUsdValue(amount))}
           </span>
         </div>
 
@@ -528,18 +617,18 @@ export default function DepositForm({
             value={amount}
             onChange={handleAmountChange}
             placeholder="0.00000000"
-            className="text-right pr-16 pl-16 h-[60px] text-xl"
+            className="text-right pr-12 pl-12 h-12 text-lg"
+            disabled={!accessToken || BUY_DISABLED}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-md pointer-events-none">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
             BTC
           </span>
         </div>
 
-        {/* Display user's BTC balance */}
         {accessToken && (
           <div className="flex justify-end mt-1">
             <span className="text-xs text-muted-foreground">
-              Balance:{" "}
+              Available Balance:{" "}
               {isBalanceLoading
                 ? "Loading..."
                 : btcBalance !== null && btcBalance !== undefined
@@ -553,19 +642,14 @@ export default function DepositForm({
           </div>
         )}
 
-        {/* Preset amounts */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-2 justify-end">
           {presetAmounts.map((presetAmount, index) => (
             <Button
               key={presetAmount}
               size="sm"
               variant={selectedPreset === presetAmount ? "default" : "outline"}
-              className={
-                selectedPreset === presetAmount
-                  ? "bg-orange-500 hover:bg-orange-600 text-black"
-                  : ""
-              }
               onClick={() => handlePresetClick(presetAmount)}
+              disabled={!accessToken || BUY_DISABLED}
             >
               {presetLabels[index]}
             </Button>
@@ -573,137 +657,111 @@ export default function DepositForm({
           <Button
             size="sm"
             variant={selectedPreset === "max" ? "default" : "outline"}
-            className={
-              selectedPreset === "max"
-                ? "bg-orange-500 hover:bg-orange-600 text-black"
-                : ""
-            }
             onClick={handleMaxClick}
-            disabled={btcBalance === null || btcBalance === undefined}
+            disabled={
+              !accessToken ||
+              BUY_DISABLED ||
+              btcBalance === null ||
+              btcBalance === undefined
+            }
           >
             MAX
           </Button>
         </div>
       </div>
 
-      {/* Fee Information Box */}
-      <Card className="border-border/30">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">
-              Estimated time
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {feeEstimates.medium.time}
+      <div className="mt-2">
+        <div className="flex justify-end items-center mb-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">
+              Your agent account will receive
             </span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-muted-foreground">Service fee</span>
-            <span className="text-xs text-muted-foreground">
-              {amount && Number.parseFloat(amount) > 0 && btcUsdPrice
-                ? formatUsdValue(
-                    Number.parseFloat(calculateFee(amount)) * btcUsdPrice
-                  )
-                : "$0.00"}{" "}
-              ~ {calculateFee(amount)} BTC
-            </span>
-          </div>
+        </div>
+        <div className="relative">
+          <Input
+            value={loadingQuote ? "Loading..." : buyQuote || "0.00"}
+            readOnly
+            className="text-right pr-32 pl-12 h-12 text-lg bg-muted/30"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
+            {daoName} Tokens
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground text-right mt-1">
+          Includes 4% slippage protection
+        </div>
+      </div>
 
-          {/* Add Pool Liquidity information */}
-          {poolStatus && (
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-xs text-muted-foreground">
-                Pool liquidity
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {formatUsdValue(
-                  (poolStatus.estimatedAvailable / 100000000) *
-                    (btcUsdPrice || 0)
-                )}{" "}
-                ~ {(poolStatus.estimatedAvailable / 100000000).toFixed(8)} BTC
-              </span>
-            </div>
-          )}
+      <Card className="border-border/30">
+        <CardContent className="p-3">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-muted-foreground">Your Deposit</span>
+            <span>{amount || "0.00"} BTC</span>
+          </div>
+          <div className="flex justify-between items-center text-xs mt-1">
+            <span className="text-muted-foreground">Service Fee</span>
+            <span>{calculateFee(amount)} BTC</span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-medium mt-2 pt-2 border-t border-border/30">
+            <span>Total</span>
+            <span>
+              {(Number(amount || 0) + Number(calculateFee(amount))).toFixed(8)}{" "}
+              BTC
+            </span>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Blaze Fast Subnet Option NOT SURE IF I SHOULD ADD IT BUT KEEPING IT FOR LATER JUST IN CASE */}
-      {/* <div
-        className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
-        onClick={() => setUseBlazeSubnet(!useBlazeSubnet)}
-      >
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <Switch
-              checked={useBlazeSubnet}
-              onCheckedChange={setUseBlazeSubnet}
-              className="data-[state=checked]:bg-orange-500"
-            />
-            {useBlazeSubnet && (
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" />
-            )}
-          </div>
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium cursor-pointer">
-              Use Blaze Fast Subnet
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Near-instant confirmations with high throughput
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Badge
-            variant="outline"
-            className="bg-orange-500 text-black font-bold"
-          >
-            BETA
-          </Badge>
-          {useBlazeSubnet && (
-            <div className="p-1 rounded bg-teal-500/10">
-              <Zap className="h-4 w-4 text-teal-500" />
-            </div>
-          )}
-        </div>
-      </div> */}
-
-      {/* Accordion with Additional Info */}
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="how-it-works" className="border-none">
-          <div className="flex justify-end">
-            <AccordionTrigger className="py-0 text-xs text-muted-foreground">
-              How it works
-            </AccordionTrigger>
-          </div>
-          <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
-            <p>
-              Your BTC deposit unlocks sBTC via Clarity&apos;s direct Bitcoin
-              state reading. No intermediaries or multi-signature scheme needed.
-              Trustless. Fast. Secure.
-            </p>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-      {/* Action Button */}
-      {!accessToken ? (
-        <div className="space-y-4">
-          <p className="text-center text-sm text-muted-foreground mb-2">
+      <>
+        {!accessToken && (
+          <p className="text-center text-sm text-muted-foreground mb-1">
             Connect your wallet to continue
           </p>
+        )}
+        {accessToken && !hasAgentAccount && (
+          <p className="text-center text-sm text-destructive mb-1">
+            You don't have an agent account. Please create one before
+            depositing.
+          </p>
+        )}
+        {hasAgentAccount && !isPermissionsLoading && !canDeposit && (
+          <p className="text-center text-sm text-destructive mb-1">
+            Your agent doesn't have deposit permission enabled.
+          </p>
+        )}
+        {!accessToken ? (
           <div className="flex justify-center">
-            <AuthButton redirectUrl="/deposit" />
+            <AuthButton />
           </div>
-        </div>
-      ) : (
-        <Button
-          size="lg"
-          className="h-[60px] text-xl bg-primary w-full"
-          onClick={handleDepositConfirm}
-        >
-          {getButtonText()}
-        </Button>
-      )}
+        ) : (
+          <Button
+            size="lg"
+            className="h-12 text-lg bg-primary w-full"
+            onClick={
+              BUY_DISABLED
+                ? () => {}
+                : !canDeposit && hasAgentAccount
+                  ? () => setShowPermissionModal(true)
+                  : handleDepositConfirm
+            }
+            disabled={
+              !hasAgentAccount ||
+              isPermissionsLoading ||
+              !accessToken ||
+              BUY_DISABLED
+            }
+          >
+            {getButtonText()}
+          </Button>
+        )}
+      </>
+
+      <DepositPermissionModal
+        open={showPermissionModal}
+        onClose={() => setShowPermissionModal(false)}
+        agentAddress={userAgentAddress}
+      />
     </div>
   );
 }

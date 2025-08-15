@@ -23,6 +23,7 @@ interface VoteWithRelations {
   proposals: {
     id: string;
     title: string;
+    content: string;
     vote_start: bigint | null;
     vote_end: bigint | null;
     exec_start: bigint | null;
@@ -70,6 +71,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       proposals ( 
         id, 
         title,
+        content,
         vote_start,
         vote_end,
         exec_start,
@@ -95,6 +97,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       answer: vote.answer,
       proposal_id: vote.proposal_id,
       proposal_title: vote.proposals?.title || "Unknown Proposal",
+      proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
       tx_id: vote.tx_id,
       address: vote.address,
@@ -152,6 +155,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       proposals ( 
         id, 
         title,
+        content,
         vote_start,
         vote_end,
         exec_start,
@@ -185,6 +189,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       answer: vote.answer,
       proposal_id: vote.proposal_id,
       proposal_title: vote.proposals?.title || "Current Proposal",
+      proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
       tx_id: vote.tx_id,
       address: vote.address,

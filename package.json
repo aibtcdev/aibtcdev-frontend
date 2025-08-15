@@ -15,9 +15,9 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aibtc/types": "^0.4.1",
-    "@faktoryfun/core-sdk": "^0.3.2",
-    "@faktoryfun/styx-sdk": "^1.1.8",
+    "@aibtc/types": "^0.11.0",
+    "@faktoryfun/core-sdk": "^0.3.5",
+    "@faktoryfun/styx-sdk": "^1.3.4",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-accordion": "^1.2.11",

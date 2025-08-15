@@ -20,7 +20,6 @@ import {
 } from "@/components/auth/StacksProvider";
 import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
-import { runAutoInit } from "@/lib/auto-init";
 import { getStacksAddress } from "@/lib/address";
 
 // Define proper interface for wallet user data
@@ -215,7 +214,6 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
             mainnetAddr,
             testnetAddr
           );
-          await runAutoInit(userId); // your existing auto-init
         }
 
         if (redirectUrl) {

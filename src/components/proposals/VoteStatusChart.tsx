@@ -203,7 +203,7 @@ const VoteStatusChart = ({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {/* Header with refresh controls - Always show refresh button */}
       <div className="flex items-center justify-between text-sm">
         <div className="text-muted-foreground"></div>

@@ -97,7 +97,7 @@ export default function MyHistory({
           <p className="text-center">
             Connect your wallet to view your deposit history
           </p>
-          <AuthButton redirectUrl="/deposit" />
+          <AuthButton />
         </Card>
       ) : isLoading ? (
         <div className="flex flex-col items-center justify-center py-8 space-y-4">

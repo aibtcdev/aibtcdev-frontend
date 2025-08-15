@@ -41,6 +41,33 @@ export const fetchAgentPromptsByDao = async (
 };
 
 /**
+ * Fetch the active agent prompt by DAO and Agent ID
+ *
+ * Query key: ['agentPrompts', 'active', 'dao', daoId, 'agent', agentId]
+ */
+export const fetchActiveAgentPromptByDaoAndAgent = async (
+  daoId: string,
+  agentId: string
+): Promise<AgentPrompt | null> => {
+  if (!daoId || !agentId) return null;
+
+  const { data, error } = await supabase
+    .from("prompts")
+    .select("*")
+    .eq("dao_id", daoId)
+    .eq("agent_id", agentId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching active agent prompt:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+/**
  * Fetch agent prompts by agent ID
  *
  * Query key: ['agentPrompts', 'agent', agentId]

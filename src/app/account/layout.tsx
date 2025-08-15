@@ -1,5 +1,5 @@
-import { Metadata, Viewport } from "next";
-import React from "react";
+import type { Metadata, Viewport } from "next";
+import type React from "react";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -18,5 +18,12 @@ export default function AccountLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <div className="">
+      <div className="md:pt-10 pt-2">
+        {/* Account for sticky header */}
+        {children}
+      </div>
+    </div>
+  );
 }

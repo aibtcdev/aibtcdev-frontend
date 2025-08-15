@@ -238,7 +238,7 @@ export const fetchTokenPrices = async (
 
   await Promise.all(
     daos.map(async (dao) => {
-      const extension = dao.extensions?.find((ext) => ext.type === "dex");
+      const extension = dao.extensions?.find((ext) => ext.subtype === "DEX");
       const token = tokens?.find((t) => t.dao_id === dao.id);
 
       if (extension?.contract_principal && token) {
@@ -308,7 +308,7 @@ export const fetchHolders = async (
 
   // Map holders with percentage calculations
   const holdersWithPercentage = data.map((holder) => ({
-    address: holder.wallet_id || "",
+    address: holder.address || "",
     balance: holder.amount || "0",
     percentage:
       totalSupply > 0 ? (Number(holder.amount || 0) / totalSupply) * 100 : 0,
@@ -489,5 +489,27 @@ export const fetchDAOByName = async (
     return null;
   }
   // console.log(data)
+  return data;
+};
+
+export const fetchDAOByNameWithExtensions = async (
+  encodedName: string
+): Promise<(DAO & { extensions: Extension[] }) | null> => {
+  const name = decodeURIComponent(encodedName);
+
+  const { data, error } = await supabase
+    .from("daos")
+    // select all dao fields plus the related extensions rows
+    .select(
+      `
+      *,
+      extensions:extensions(*)
+    `
+    )
+    .eq("name", name)
+    .eq("is_broadcasted", true)
+    .single();
+
+  if (error) throw error;
   return data;
 };

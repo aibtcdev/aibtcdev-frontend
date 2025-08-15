@@ -219,3 +219,10 @@ body {
     );
   }
 }
+
+.sticky-tabs {
+  position: sticky;
+  top: 0; /* 64px */
+  background-color: hsl(var(--background));
+  z-index: 10;
+}

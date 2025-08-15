@@ -3,6 +3,10 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export const updateSession = async (request: NextRequest) => {
   try {
+    // COMMENT IT OUT IF WE WANT TO SEE THE LANDING PAGE
+    if (request.nextUrl.pathname === "/") {
+      return NextResponse.redirect(new URL("/daos", request.url));
+    }
     // Create an unmodified response
     let response = NextResponse.next({
       request: {
@@ -77,16 +81,19 @@ export const updateSession = async (request: NextRequest) => {
       request.nextUrl.pathname.startsWith("/profile") &&
       (userError || !user)
     ) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/daos", request.url));
+    }
+
+    if (
+      request.nextUrl.pathname.startsWith("/account") &&
+      (userError || !user)
+    ) {
+      return NextResponse.redirect(new URL("/daos", request.url));
     }
 
     return response;
   } catch (error) {
     console.error(error);
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
+    return NextResponse.redirect(new URL("/daos", request.url));
   }
 };

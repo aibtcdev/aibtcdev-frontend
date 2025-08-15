@@ -5,15 +5,22 @@ import {
   ThumbsUp,
   ThumbsDown,
   Vote,
-  ChevronDown,
-  ChevronUp,
   Search,
   CheckCircle,
   Clock,
   Ban,
   FileText,
   XCircle,
+  ExternalLink,
+  Filter,
+  X,
+  Eye,
+  Settings,
+  Edit3,
+  Save,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -21,9 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import ReactMarkdown from "react-markdown";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
@@ -31,11 +35,15 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import Link from "next/link";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -43,7 +51,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/useToast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAgents } from "@/services/agent.service";
+import {
+  fetchActiveAgentPromptByDaoAndAgent,
+  updateAgentPrompt,
+  createAgentPrompt,
+} from "@/services/agent-prompt.service";
+import type { AgentPrompt } from "@/types";
 
 interface VotesViewProps {
   votes: VoteType[];
@@ -54,7 +70,18 @@ interface VoteCardProps {
   currentBitcoinHeight: number;
 }
 
+interface VoteAnalysisModalProps {
+  vote: VoteType;
+  currentBitcoinHeight: number;
+}
+
 type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
+
+interface EditingPromptData {
+  prompt_text: string;
+  model: string;
+  temperature: number;
+}
 
 // Helper function to format time in a compact way
 const formatRelativeTime = (dateStr: string): string => {
@@ -78,7 +105,6 @@ const formatRelativeTime = (dateStr: string): string => {
 // Helper function to safely convert bigint to number for comparison
 const safeNumberFromBigInt = (value: bigint | null): number => {
   if (value === null) return 0;
-  // Handle potential overflow for very large bigint values
   if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
     return Number.MAX_SAFE_INTEGER;
   }
@@ -110,28 +136,533 @@ const getVoteOutcome = (
   const execEnd = safeNumberFromBigInt(vote.exec_end);
   if (currentBitcoinHeight <= execEnd) return "pending";
 
-  // Determine if vote passed based on the answer
   return vote.answer ? "passed" : "failed";
 };
 
-function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+function VoteAnalysisModal({
+  vote,
+  currentBitcoinHeight,
+}: VoteAnalysisModalProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [editingData, setEditingData] = useState<EditingPromptData>({
+    prompt_text: "",
+    model: "gpt-4o",
+    temperature: 0.1,
+  });
+  const [currentAgentPrompt, setCurrentAgentPrompt] =
+    useState<AgentPrompt | null>(null);
+  const [daoManagerAgentId, setDaoManagerAgentId] = useState<string>("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence > 0.75) return "bg-green-500";
-    if (confidence > 0.5) return "bg-yellow-500";
-    return "bg-red-500";
+  // Fetch agents to get the DAO manager agent ID
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: fetchAgents,
+  });
+
+  // Set DAO manager agent ID
+  useEffect(() => {
+    if (agents.length > 0) {
+      setDaoManagerAgentId(agents[0].id);
+    }
+  }, [agents]);
+
+  // Fetch current agent prompt for this DAO
+  const { data: agentPrompt } = useQuery({
+    queryKey: [
+      "agentPrompts",
+      "active",
+      "dao",
+      vote.dao_id,
+      "agent",
+      daoManagerAgentId,
+    ],
+    queryFn: () =>
+      fetchActiveAgentPromptByDaoAndAgent(vote.dao_id, daoManagerAgentId),
+    enabled: !!vote.dao_id && !!daoManagerAgentId,
+  });
+
+  useEffect(() => {
+    if (agentPrompt) {
+      setCurrentAgentPrompt(agentPrompt);
+      setEditingData({
+        prompt_text: agentPrompt.prompt_text,
+        model: agentPrompt.model,
+        temperature: agentPrompt.temperature,
+      });
+      setIsCreating(false);
+    } else if (daoManagerAgentId && vote.dao_id) {
+      // No prompt exists, prepare for creation
+      setIsCreating(true);
+      setCurrentAgentPrompt(null);
+    }
+  }, [agentPrompt, daoManagerAgentId, vote.dao_id]);
+
+  // Create agent prompt mutation
+  const createPromptMutation = useMutation({
+    mutationFn: (
+      data: Omit<AgentPrompt, "id" | "created_at" | "updated_at">
+    ) => {
+      return createAgentPrompt(data);
+    },
+    onSuccess: (newPrompt) => {
+      toast({
+        title: "Success",
+        description: "Agent instructions created successfully",
+      });
+      setCurrentAgentPrompt(newPrompt);
+      setIsCreating(false);
+      queryClient.invalidateQueries({ queryKey: ["agentPrompts"] });
+      setIsEditingInstructions(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create agent instructions: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update agent prompt mutation
+  const updatePromptMutation = useMutation({
+    mutationFn: (data: Partial<AgentPrompt>) => {
+      if (!currentAgentPrompt?.id) {
+        throw new Error("No agent prompt found to update");
+      }
+      return updateAgentPrompt(currentAgentPrompt.id, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Agent instructions updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agentPrompts"] });
+      setIsEditingInstructions(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update agent instructions: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveInstructions = () => {
+    if (isCreating || !currentAgentPrompt) {
+      // Create new prompt
+      const newPromptData = {
+        dao_id: vote.dao_id,
+        agent_id: daoManagerAgentId,
+        profile_id: vote.profile_id || "",
+        prompt_text: editingData.prompt_text,
+        model: editingData.model,
+        temperature: editingData.temperature,
+        is_active: true,
+      };
+      createPromptMutation.mutate(newPromptData);
+    } else {
+      // Update existing prompt
+      updatePromptMutation.mutate(editingData);
+    }
   };
+
+  const handleCancelInstructions = () => {
+    if (currentAgentPrompt) {
+      setEditingData({
+        prompt_text: currentAgentPrompt.prompt_text,
+        model: currentAgentPrompt.model,
+        temperature: currentAgentPrompt.temperature,
+      });
+    }
+    setIsEditingInstructions(false);
+  };
+  // Parse contribution content and reference
+  const parseContributionContent = () => {
+    if (!vote.proposal_content) return { content: "", reference: null };
+
+    const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+    const match = vote.proposal_content.match(referenceRegex);
+    const referenceLink = match?.[1];
+    const cleanedContent = vote.proposal_content
+      .replace(referenceRegex, "")
+      .trim();
+
+    return { content: cleanedContent, reference: referenceLink };
+  };
+
+  const { content, reference } = parseContributionContent();
+
+  const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+
+  // Extract first sentence from reasoning for summary
+  const getReasoningPreview = (reasoning: string) => {
+    if (!reasoning) return "";
+
+    const sentences = reasoning
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 0);
+    return sentences[0]?.trim() + "." || "";
+  };
+
+  const reasoningPreview = vote.reasoning
+    ? getReasoningPreview(vote.reasoning)
+    : null;
+
+  return (
+    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="text-xl font-semibold pr-8">
+          Vote Analysis
+        </DialogTitle>
+      </DialogHeader>
+
+      <div className="space-y-6">
+        {/* SUMMARY PANEL - Critical Info at Top */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6 space-y-6">
+          {/* Title and DAO Info */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-foreground">
+                {vote.proposal_title}
+              </h3>
+            </div>
+            <div className="text-right">
+              <Badge
+                variant="secondary"
+                className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-1"
+              >
+                {vote.dao_name}
+              </Badge>
+              <div className="text-sm text-muted-foreground">
+                {formatRelativeTime(vote.created_at)}
+              </div>
+            </div>
+          </div>
+
+          {/* Agent Vote Decision */}
+          <div className="space-y-3">
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">
+                Your agent's vote on this contribution:{" "}
+              </span>
+              {vote.voted === false ? (
+                <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                  Pending
+                </span>
+              ) : (
+                <span
+                  className={`font-semibold ${
+                    vote.answer
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {vote.answer ? "Yes" : "No"}
+                </span>
+              )}
+            </div>
+
+            {vote.confidence !== null && (
+              <div>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Agent's confidence on voting:{" "}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {Math.round(vote.confidence * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Agent's Reasoning */}
+          {reasoningPreview && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-foreground">
+                  Your agent's reason to vote {vote.answer ? "yes" : "no"} in
+                  this proposal:
+                </h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
+                  className="text-xs"
+                >
+                  {isReasoningExpanded ? "Show Less" : "Show More"}
+                </Button>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                  {isReasoningExpanded ? vote.reasoning : reasoningPreview}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Veto Button */}
+          {vote.dao_id &&
+            vote.proposal_id &&
+            isInVetoWindow(vote, currentBitcoinHeight) && (
+              <div className="flex justify-end">
+                <DAOVetoProposal
+                  daoId={vote.dao_id}
+                  proposalId={vote.proposal_id}
+                  size="default"
+                  variant="destructive"
+                />
+              </div>
+            )}
+        </div>
+
+        {/* Agent Instructions */}
+        <div className="bg-muted/30 border rounded-xl p-6">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-muted-foreground p-1.5 rounded-lg">
+                  <Settings className="h-4 w-4 text-muted" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">
+                  Your instructions to Agent
+                </h4>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Customize how you want the agent to make decisions and vote on
+                this DAO and contributions submitted for this DAO.
+              </p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {isEditingInstructions ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelInstructions}
+                    disabled={
+                      updatePromptMutation.isPending ||
+                      createPromptMutation.isPending
+                    }
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveInstructions}
+                    disabled={
+                      updatePromptMutation.isPending ||
+                      createPromptMutation.isPending
+                    }
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {updatePromptMutation.isPending ||
+                    createPromptMutation.isPending
+                      ? isCreating
+                        ? "Creating..."
+                        : "Saving..."
+                      : isCreating
+                        ? "Create"
+                        : "Save"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingInstructions(true)}
+                >
+                  <Edit3 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            {isEditingInstructions ? (
+              <Textarea
+                value={editingData.prompt_text}
+                onChange={(e) =>
+                  setEditingData({
+                    ...editingData,
+                    prompt_text: e.target.value,
+                  })
+                }
+                placeholder="Enter your agent instructions..."
+                className="min-h-[120px] resize-none"
+              />
+            ) : (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {currentAgentPrompt?.prompt_text ||
+                    (isCreating
+                      ? "No instructions set. Click Edit to create."
+                      : "No instructions configured.")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {isEditingInstructions && (
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Model</label>
+                <Select
+                  value={editingData.model}
+                  onValueChange={(value) =>
+                    setEditingData({ ...editingData, model: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                    <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                    <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                    <SelectItem value="claude-3-5-sonnet-20241022">
+                      Claude 3.5 Sonnet
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Temperature
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={editingData.temperature}
+                  onChange={(e) =>
+                    setEditingData({
+                      ...editingData,
+                      temperature: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className=""
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Contribution Details */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+            <h4 className="text-lg font-semibold text-foreground">
+              Contribution Details
+            </h4>
+          </div>
+
+          <div className="bg-muted/30 rounded-xl p-4">
+            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
+              {content || "No contribution message available."}
+            </div>
+          </div>
+
+          {/* Reference Link as Preview Card */}
+          {reference && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-green-600 p-2 rounded-lg">
+                  <ExternalLink className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h5 className="text-sm font-semibold text-foreground mb-1">
+                    Reference Link
+                  </h5>
+                  <a
+                    href={reference}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors break-all block"
+                  >
+                    {reference}
+                  </a>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click to view external source
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Technical Details - Moved to Bottom */}
+        <div className="border-t pt-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-muted-foreground" />
+            <h4 className="text-sm font-semibold text-foreground">
+              Technical Details
+            </h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-muted/20 rounded-lg p-3 border border-muted">
+              <div className="text-xs text-muted-foreground mb-1">
+                Proposal ID
+              </div>
+              <div className="text-sm font-mono">{vote.proposal_id}</div>
+            </div>
+
+            {vote.vote_start && (
+              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Vote Start Block
+                </div>
+                <div className="text-sm font-mono">
+                  {safeNumberFromBigInt(vote.vote_start)}
+                </div>
+              </div>
+            )}
+
+            {vote.vote_end && (
+              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Vote End Block
+                </div>
+                <div className="text-sm font-mono">
+                  {safeNumberFromBigInt(vote.vote_end)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end pt-4 border-t">
+          <Link href={`/proposals/${vote.proposal_id}`}>
+            <Button variant="outline" className="gap-2">
+              <FileText className="h-4 w-4" />
+              View Full Contribution
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </DialogContent>
+  );
+}
+
+function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
+  // No agent display needed
 
   const getStatusBadge = () => {
     if (vote.voted === false) {
       return (
         <Badge
           variant="outline"
-          className="bg-primary/10 text-primary border-primary/20"
+          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
         >
-          <Search className="h-3 w-3 mr-1" />
-          Evaluating
+          <Clock className="h-3 w-3 mr-1" />
+          Awaiting Vote
         </Badge>
       );
     }
@@ -140,7 +671,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       return (
         <Badge
           variant="destructive"
-          className="bg-secondary/10 text-secondary border-secondary/20"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
         >
           <Ban className="h-3 w-3 mr-1" />
           Veto Period
@@ -153,7 +684,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       return (
         <Badge
           variant="outline"
-          className="bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
         >
           <CheckCircle className="h-3 w-3 mr-1" />
           Passed
@@ -163,7 +694,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       return (
         <Badge
           variant="outline"
-          className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
+          className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"
         >
           <XCircle className="h-3 w-3 mr-1" />
           Failed
@@ -174,10 +705,10 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     return (
       <Badge
         variant="outline"
-        className="bg-primary/10 text-primary border-primary/20"
+        className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800"
       >
         <Clock className="h-3 w-3 mr-1" />
-        In Progress
+        Voting
       </Badge>
     );
   };
@@ -185,195 +716,92 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const getVoteResult = () => {
     if (vote.voted === false) {
       return (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Search className="h-4 w-4" />
-          <span>AI Agent is evaluating...</span>
+        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+          <Clock className="h-4 w-4" />
+          <span className="font-medium text-sm">Awaiting Vote</span>
         </div>
       );
     }
 
+    const confidenceText =
+      vote.confidence !== null
+        ? ` (${Math.round(vote.confidence * 100)}% confidence)`
+        : "";
+
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger className="flex items-center gap-2 text-sm">
-            {vote.answer ? (
-              <div className="flex items-center gap-1.5 text-green-600">
-                <ThumbsUp className="h-4 w-4" />
-                <span className="font-medium">Voted Yes</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 text-red-600">
-                <ThumbsDown className="h-4 w-4" />
-                <span className="font-medium">Voted No</span>
-              </div>
-            )}
-          </TooltipTrigger>
-          <TooltipContent>
-            Your AI agent votes on your behalf based on predefined preferences.
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center gap-1.5 text-sm">
+        <span className="text-foreground font-medium">Your agent voted</span>
+        {vote.answer ? (
+          <>
+            <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-green-600 dark:text-green-400 font-medium">
+              Yes
+            </span>
+          </>
+        ) : (
+          <>
+            <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <span className="text-red-600 dark:text-red-400 font-medium">
+              No
+            </span>
+          </>
+        )}
+        {confidenceText && (
+          <span className="text-muted-foreground ml-1">{confidenceText}</span>
+        )}
+      </div>
     );
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-300 border-border/60 overflow-hidden">
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div className="flex-1 min-w-0">
-            <h3
-              className="text-base font-semibold text-foreground leading-snug mb-2"
-              title={vote.proposal_title}
-            >
+    <Card className="group hover:shadow-md transition-all duration-200">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Title */}
+            <h3 className="text-lg font-semibold text-foreground leading-tight line-clamp-2">
               {vote.proposal_title}
             </h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <p className="font-medium text-xs text-foreground truncate">
+
+            {/* DAO, Vote, Status */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="font-medium text-foreground text-sm">
                 {vote.dao_name}
-              </p>
-              {getStatusBadge()}
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {formatRelativeTime(vote.created_at)}
               </span>
+              {getVoteResult()}
+              {getStatusBadge()}
+            </div>
+
+            {/* Time */}
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              {formatRelativeTime(vote.created_at)}
             </div>
           </div>
-          <div className="flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 h-7 w-7"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+
+          {/* Action Button */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Eye className="h-4 w-4" />
+                View Details
+              </Button>
+            </DialogTrigger>
+            <VoteAnalysisModal
+              vote={vote}
+              currentBitcoinHeight={currentBitcoinHeight}
+            />
+          </Dialog>
         </div>
-
-        <div className="pt-2 mt-2 border-t border-border/30">
-          <div className="flex items-center justify-between">
-            {getVoteResult()}
-            <div className="flex items-center gap-2">
-              <Link href={`/proposals/${vote.proposal_id}`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                >
-                  <FileText className="h-3 w-3 mr-1" />
-                  View
-                </Button>
-              </Link>
-              {vote.dao_id &&
-                vote.proposal_id &&
-                isInVetoWindow(vote, currentBitcoinHeight) && (
-                  <DAOVetoProposal
-                    daoId={vote.dao_id}
-                    proposalId={vote.proposal_id}
-                    size="sm"
-                    variant="destructive"
-                  />
-                )}
-            </div>
-          </div>
-        </div>
-
-        {isExpanded && (
-          <div className="pt-3 mt-3 space-y-3 border-t border-border/30">
-            {/* Key Information Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <div className="bg-muted/50 rounded-lg p-2">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Proposal ID
-                </div>
-                <div className="text-sm font-medium">{vote.proposal_id}</div>
-              </div>
-
-              {vote.vote_start && (
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Vote Start Block
-                  </div>
-                  <div className="text-sm font-medium">
-                    {safeNumberFromBigInt(vote.vote_start)}
-                  </div>
-                </div>
-              )}
-
-              {vote.vote_end && (
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Vote End Block
-                  </div>
-                  <div className="text-sm font-medium">
-                    {safeNumberFromBigInt(vote.vote_end)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Reasoning - Compact Preview */}
-            {vote.reasoning && (
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">AI Agent Reasoning</h4>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-xs"
-                      >
-                        Read Full
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Vote Reasoning</DialogTitle>
-                      </DialogHeader>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown>{vote.reasoning}</ReactMarkdown>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <div className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                  {vote.reasoning}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
-
-      {vote.confidence !== null && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="w-full">
-              <Progress
-                value={vote.confidence * 100}
-                className="h-1 rounded-none bg-muted/50"
-                indicatorClassName={getConfidenceColor(vote.confidence)}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {Math.round(vote.confidence * 100)}% confidence in this vote.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
     </Card>
   );
 }
 
 export function VotesView({ votes }: VotesViewProps) {
   const [visibleCount, setVisibleCount] = useState(10);
+  const [selectedDao, setSelectedDao] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch current Bitcoin block height
   const { data: chainState } = useQuery({
@@ -430,17 +858,14 @@ export function VotesView({ votes }: VotesViewProps) {
     [votes, currentBitcoinHeight]
   );
 
-  // Determine default tab based on available votes using useCallback
+  // Determine default tab based on available votes
   const getDefaultTab = useCallback((): TabType => {
     if (getTabCount("veto") > 0) return "veto";
     if (getTabCount("voting") > 0) return "voting";
     if (getTabCount("evaluation") > 0) return "evaluation";
-
-    // If there are any passed votes, show them, otherwise show all.
     if (getTabCount("passed") > 0) return "passed";
     if (votes.length > 0) return "all";
-
-    return "evaluation"; // Default if no votes at all
+    return "evaluation";
   }, [getTabCount, votes.length]);
 
   const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
@@ -455,62 +880,59 @@ export function VotesView({ votes }: VotesViewProps) {
     setVisibleCount(10);
   }, [activeTab]);
 
-  // Filter votes based on tab with block height logic
+  // Filter votes based on tab and DAO filter
   const filteredVotes = useMemo(() => {
-    switch (activeTab) {
-      case "evaluation":
-        return votes.filter((vote) => vote.voted === false);
-
-      case "voting":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_start || !vote.vote_end) return false;
-
-          const voteStart = safeNumberFromBigInt(vote.vote_start);
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-
-          return (
-            currentBitcoinHeight >= voteStart && currentBitcoinHeight <= voteEnd
+    const byTab = (() => {
+      switch (activeTab) {
+        case "evaluation":
+          return votes.filter((vote) => vote.voted === false);
+        case "voting":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_start || !vote.vote_end) return false;
+            const voteStart = safeNumberFromBigInt(vote.vote_start);
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            return (
+              currentBitcoinHeight >= voteStart &&
+              currentBitcoinHeight <= voteEnd
+            );
+          });
+        case "veto":
+          return votes.filter((vote) => {
+            if (vote.voted !== true) return false;
+            if (!vote.vote_end || !vote.exec_start) return false;
+            const voteEnd = safeNumberFromBigInt(vote.vote_end);
+            const execStart = safeNumberFromBigInt(vote.exec_start);
+            return (
+              currentBitcoinHeight > voteEnd &&
+              currentBitcoinHeight <= execStart
+            );
+          });
+        case "passed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
           );
-        });
-
-      case "veto":
-        return votes.filter((vote) => {
-          if (vote.voted !== true) return false;
-          if (!vote.vote_end || !vote.exec_start) return false;
-
-          const voteEnd = safeNumberFromBigInt(vote.vote_end);
-          const execStart = safeNumberFromBigInt(vote.exec_start);
-
-          return (
-            currentBitcoinHeight > voteEnd && currentBitcoinHeight <= execStart
+        case "failed":
+          return votes.filter(
+            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
           );
-        });
+        case "all":
+        default:
+          return votes;
+      }
+    })();
 
-      case "passed":
-        return votes.filter((vote) => {
-          const outcome = getVoteOutcome(vote, currentBitcoinHeight);
-          return outcome === "passed";
-        });
-
-      case "failed":
-        return votes.filter((vote) => {
-          const outcome = getVoteOutcome(vote, currentBitcoinHeight);
-          return outcome === "failed";
-        });
-
-      case "all":
-      default:
-        return votes;
-    }
-  }, [votes, activeTab, currentBitcoinHeight]);
+    return selectedDao
+      ? byTab.filter((vote) => vote.dao_name === selectedDao)
+      : byTab;
+  }, [votes, activeTab, currentBitcoinHeight, selectedDao]);
 
   const paginatedVotes = filteredVotes.slice(0, visibleCount);
 
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
       case "evaluation":
-        return "Evaluation";
+        return "Awaiting Vote";
       case "voting":
         return "Active Voting";
       case "veto":
@@ -522,25 +944,6 @@ export function VotesView({ votes }: VotesViewProps) {
       case "all":
       default:
         return "All Votes";
-    }
-  };
-
-  const getTabTooltipContent = (tab: TabType): string => {
-    switch (tab) {
-      case "evaluation":
-        return "Proposals being assessed by AI agents for feasibility and alignment.";
-      case "voting":
-        return "Proposals currently open for voting by DAO members.";
-      case "veto":
-        return "A time window to challenge and potentially overturn a passed vote.";
-      case "passed":
-        return "Proposals that have been approved by voters.";
-      case "failed":
-        return "Proposals that have been rejected by voters.";
-      case "all":
-        return "View all proposals regardless of their status.";
-      default:
-        return "";
     }
   };
 
@@ -571,163 +974,286 @@ export function VotesView({ votes }: VotesViewProps) {
     "all",
   ];
 
-  const renderSidebar = (isMobile = false) => {
-    if (isMobile) {
-      return (
-        <div className="md:hidden mb-4">
-          <Select
-            onValueChange={(value: TabType) => setActiveTab(value)}
-            defaultValue={activeTab}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a view" />
-            </SelectTrigger>
-            <SelectContent>
-              {tabs.map((tab) => {
-                const tabCount = getTabCount(tab);
-                if (tab === "all" && votes.length === 0) return null;
-                return (
-                  <SelectItem key={tab} value={tab}>
-                    {getTabTitle(tab)} ({tabCount})
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+  // Get unique DAO names
+  const uniqueDaoNames = useMemo(() => {
+    const daoNamesSet = new Set(votes.map((v) => v.dao_name));
+    return Array.from(daoNamesSet);
+  }, [votes]);
+
+  const FilterContent = () => (
+    <div className="space-y-6">
+      {/* Status Filters */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-foreground">Status</h3>
+        <div className="space-y-1">
+          {tabs.map((tab) => {
+            const Icon = getTabIcon(tab);
+            const isActive = activeTab === tab;
+            const tabCount = getTabCount(tab);
+            const hasActionableItems =
+              (tab === "veto" || tab === "voting") && tabCount > 0;
+
+            if (tab === "all" && votes.length === 0) return null;
+
+            return (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setIsFilterOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
+                    : `hover:bg-muted/50 ${hasActionableItems ? "text-foreground" : "text-muted-foreground"}`
+                }`}
+              >
+                <Icon
+                  className={`h-4 w-4 ${
+                    tab === "veto" && tabCount > 0 && !isActive
+                      ? "animate-pulse text-red-500"
+                      : ""
+                  }`}
+                />
+                <span className="flex-1">{getTabTitle(tab)}</span>
+                {tabCount > 0 && (
+                  <Badge
+                    variant={isActive ? "default" : "secondary"}
+                    className="h-5 text-xs"
+                  >
+                    {tabCount}
+                  </Badge>
+                )}
+              </button>
+            );
+          })}
         </div>
-      );
-    }
+      </div>
 
-    return (
-      <aside className="hidden md:block sticky top-6 self-start">
-        <h2 className="text-lg font-semibold mb-4 pl-2">Filters</h2>
-        <TooltipProvider>
-          <nav className="flex flex-col space-y-1">
-            {tabs.map((tab) => {
-              const Icon = getTabIcon(tab);
-              const isActive = activeTab === tab;
-              const tabCount = getTabCount(tab);
-              const hasActionableItems =
-                (tab === "veto" || tab === "voting") && tabCount > 0;
+      <Separator />
 
-              if (tab === "all" && votes.length === 0) return null;
+      {/* DAO Filter */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 text-foreground">DAO</h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => {
+              setSelectedDao(null);
+              setIsFilterOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+              selectedDao === null
+                ? "bg-primary/10 text-primary font-medium"
+                : "hover:bg-muted/50 text-muted-foreground"
+            }`}
+          >
+            <div className="w-4 h-4 flex items-center justify-center">
+              <div
+                className={`w-2 h-2 rounded-full ${selectedDao === null ? "bg-primary" : "bg-muted-foreground/30"}`}
+              />
+            </div>
+            <span className="flex-1">All DAOs</span>
+            <Badge
+              variant={selectedDao === null ? "default" : "secondary"}
+              className="h-5 text-xs"
+            >
+              {votes.length}
+            </Badge>
+          </button>
 
-              return (
-                <Tooltip key={tab} delayDuration={100}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => setActiveTab(tab)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                        isActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : `hover:bg-muted/50 ${
-                              hasActionableItems
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground"
-                            }`
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 ${
-                          tab === "veto" && tabCount > 0 && !isActive
-                            ? "animate-pulse text-secondary"
-                            : ""
-                        }`}
-                      />
-                      <span className="flex-1 text-left">
-                        {getTabTitle(tab)}
-                      </span>
-                      {tabCount > 0 && (
-                        <Badge
-                          variant={isActive ? "default" : "secondary"}
-                          className="h-5"
-                        >
-                          {tabCount}
-                        </Badge>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{getTabTooltipContent(tab)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </nav>
-        </TooltipProvider>
-      </aside>
-    );
-  };
+          {uniqueDaoNames.map((daoName) => {
+            const daoVoteCount = votes.filter(
+              (vote) => vote.dao_name === daoName
+            ).length;
+            const isSelected = selectedDao === daoName;
+
+            return (
+              <button
+                key={daoName}
+                onClick={() => {
+                  setSelectedDao(daoName);
+                  setIsFilterOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+                  isSelected
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <div
+                    className={`w-2 h-2 rounded-full ${isSelected ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  />
+                </div>
+                <span className="flex-1 truncate" title={daoName}>
+                  {daoName}
+                </span>
+                <Badge
+                  variant={isSelected ? "default" : "secondary"}
+                  className="h-5 text-xs"
+                >
+                  {daoVoteCount}
+                </Badge>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[2400px] mx-auto px-2 sm:px-4">
-        <div className="md:grid md:grid-cols-[240px_1fr] lg:grid-cols-[280px_1fr] gap-8 mt-6">
-          {renderSidebar()}
-          <main>
-            {renderSidebar(true)}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="lg:grid lg:grid-cols-[280px_1fr] gap-8 py-6">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block sticky top-6 self-start">
+            <div className="bg-card rounded-lg p-4">
+              <h2 className="text-lg font-semibold mb-4 text-foreground">
+                Filters
+              </h2>
+              <FilterContent />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="space-y-6">
+            {/* Desktop heading (hidden on mobile) */}
+            <h1 className="hidden lg:block text-2xl font-semibold mb-4 text-foreground">
+              Your Agent&apos;s Votes Across All DAOs
+            </h1>
+
+            {/* Mobile Header */}
+            <div className="lg:hidden flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">
+                  {getTabTitle(activeTab)}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {filteredVotes.length}{" "}
+                  {filteredVotes.length === 1 ? "proposal" : "proposals"}
+                  {selectedDao && ` from ${selectedDao}`}
+                </p>
+              </div>
+
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 bg-transparent"
+                  >
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <FilterContent />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Active Filters */}
+            {(activeTab !== "all" || selectedDao) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-muted-foreground">
+                  Active filters:
+                </span>
+                {activeTab !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {getTabTitle(activeTab)}
+                    <button
+                      onClick={() => setActiveTab("all")}
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {selectedDao && (
+                  <Badge variant="secondary" className="gap-1">
+                    {selectedDao}
+                    <button
+                      onClick={() => setSelectedDao(null)}
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            )}
 
             {/* Content */}
-            <div className="space-y-4">
-              {filteredVotes.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="text-center py-12">
-                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                      {(() => {
-                        const Icon = getTabIcon(activeTab);
-                        return (
-                          <Icon className="h-6 w-6 text-muted-foreground" />
-                        );
-                      })()}
-                    </div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      No {getTabTitle(activeTab).toLowerCase()} found
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {activeTab === "evaluation" &&
-                        "All proposals have moved beyond evaluation."}
-                      {activeTab === "voting" &&
-                        "No proposals are currently open for voting."}
-                      {activeTab === "veto" &&
-                        "No proposals are in the veto window."}
-                      {activeTab === "passed" &&
-                        "No proposals have passed yet."}
-                      {activeTab === "failed" &&
-                        "No proposals have failed yet."}
-                    </p>
-                    <Link href="/proposals">
-                      <Button variant="outline" className="gap-2">
-                        <FileText className="h-4 w-4" />
-                        Browse Proposals
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    {paginatedVotes.map((vote) => (
-                      <VoteCard
-                        key={vote.id}
-                        vote={vote}
-                        currentBitcoinHeight={currentBitcoinHeight}
-                      />
-                    ))}
+            {filteredVotes.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="text-center py-16">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                    {(() => {
+                      const Icon = getTabIcon(activeTab);
+                      return <Icon className="h-8 w-8 text-muted-foreground" />;
+                    })()}
                   </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    No {getTabTitle(activeTab).toLowerCase()} found
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                    {activeTab === "evaluation" &&
+                      "Your agent has already voted on every proposal."}
+                    {activeTab === "voting" &&
+                      "No proposals are currently open for voting."}
+                    {activeTab === "veto" &&
+                      "No proposals are in the veto window."}
+                    {activeTab === "passed" && "No proposals have passed yet."}
+                    {activeTab === "failed" && "No proposals have failed yet."}
+                    {activeTab === "all" &&
+                      selectedDao &&
+                      `No proposals found for ${selectedDao}.`}
+                    {activeTab === "all" &&
+                      !selectedDao &&
+                      "No proposals available."}
+                  </p>
+                  <Link href="/proposals">
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                      <FileText className="h-4 w-4" />
+                      Browse All Proposals
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {paginatedVotes.map((vote) => (
+                    <VoteCard
+                      key={vote.id}
+                      vote={vote}
+                      currentBitcoinHeight={currentBitcoinHeight}
+                    />
+                  ))}
+                </div>
 
-                  {filteredVotes.length > visibleCount && (
-                    <div className="text-center pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => setVisibleCount((prev) => prev + 10)}
-                      >
-                        Show More
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                {filteredVotes.length > visibleCount && (
+                  <div className="text-center pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => setVisibleCount((prev) => prev + 10)}
+                      className="gap-2"
+                    >
+                      Load More Proposals
+                      <span className="text-xs text-muted-foreground">
+                        ({visibleCount} of {filteredVotes.length})
+                      </span>
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </main>
         </div>
       </div>

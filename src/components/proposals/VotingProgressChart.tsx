@@ -73,13 +73,17 @@ const VotingProgressChart = ({
   console.log("parsedVotes state:", parsedVotes);
 
   // Fetch live vote data with real-time updates using getProposalVotes
-  const proposalId = Number(proposal.id);
+  const proposalId = Number(proposal.proposal_id);
 
   const { data: proposalVoteData, isLoading: isLoadingVotes } = useQuery({
     queryKey: ["proposalVotes", proposalId, contractPrincipal],
     queryFn: async () => {
       if (proposalId && contractPrincipal) {
-        const result = await getProposalVotes(contractPrincipal, proposalId);
+        const result = await getProposalVotes(
+          contractPrincipal,
+          proposalId,
+          isActive
+        );
         console.log("getProposalVotes result:", result);
         return result;
       }
@@ -87,6 +91,7 @@ const VotingProgressChart = ({
     },
     enabled: !!proposalId && !!contractPrincipal,
     refetchOnWindowFocus: true,
+
     staleTime: 5000, // Consider data stale after 5 seconds
     refetchInterval: isActive ? 10000 : false, // Refetch every 10 seconds if voting is active
     retry: 3,
@@ -220,6 +225,9 @@ const VotingProgressChart = ({
     }
 
     if (isActive) {
+      if (met) {
+        return "Met";
+      }
       return percentage !== undefined
         ? `In Progress (${percentage.toFixed(1)}%)`
         : "In Progress";
@@ -238,7 +246,7 @@ const VotingProgressChart = ({
       return "text-gray-400";
     }
 
-    if (isActive) return "text-orange-400";
+    if (isActive) return met ? "text-green-400" : "text-orange-400";
     if (!isEnded) return "text-gray-400";
     return met ? "text-green-400" : "text-red-400";
   };
@@ -249,7 +257,12 @@ const VotingProgressChart = ({
       return <Clock className="h-4 w-4" />;
     }
 
-    if (isActive) return <Clock className="h-4 w-4" />;
+    if (isActive)
+      return met ? (
+        <CheckCircle2 className="h-4 w-4" />
+      ) : (
+        <Clock className="h-4 w-4" />
+      );
     if (!isEnded) return <Clock className="h-4 w-4" />;
     return met ? (
       <CheckCircle2 className="h-4 w-4" />
@@ -527,7 +540,9 @@ const VotingProgressChart = ({
           className={cn(
             "p-4 rounded-lg border transition-colors",
             isActive
-              ? "bg-orange-500/10 border-orange-500/30"
+              ? calculations.metQuorum
+                ? "bg-green-500/10 border-green-500/30"
+                : "bg-orange-500/10 border-orange-500/30"
               : !isEnded
                 ? "bg-gray-500/10 border-gray-500/30"
                 : calculations.metQuorum
@@ -583,7 +598,9 @@ const VotingProgressChart = ({
           className={cn(
             "p-4 rounded-lg border transition-colors",
             isActive
-              ? "bg-orange-500/10 border-orange-500/30"
+              ? calculations.metThreshold
+                ? "bg-green-500/10 border-green-500/30"
+                : "bg-orange-500/10 border-orange-500/30"
               : !isEnded
                 ? "bg-gray-500/10 border-gray-500/30"
                 : calculations.metThreshold

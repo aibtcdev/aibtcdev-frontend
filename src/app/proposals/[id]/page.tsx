@@ -6,8 +6,12 @@ import { Suspense } from "react";
 import { ProposalWithDAO } from "@/types";
 import { fetchProposalById } from "@/services/dao.service";
 import ProposalDetails from "@/components/proposals/ProposalDetails";
+import ProposalSidebar from "@/components/proposals/layout/ProposalSidebar";
+import FixedActionBar, {
+  FixedActionBarSpacer,
+} from "@/components/proposals/layout/FixedActionBar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Flag, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { safeString } from "@/utils/proposal";
 import { format } from "date-fns";
@@ -15,35 +19,30 @@ import Link from "next/link";
 import { getExplorerLink } from "@/utils/format";
 import { Loader } from "@/components/reusables/Loader";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalBadge";
-// import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 export const runtime = "edge";
 
 function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
   const router = useRouter();
 
-  // Use the unified status system - same as ProposalCard
-  // const { statusConfig, isActive, isEnded, isPassed } =
-  //   useProposalStatus(proposal);
-
   return (
-    <div className="mb-8">
+    <div className="mb-6">
       <Button
         variant="ghost"
         size="sm"
         onClick={() => router.back()}
-        className="mb-6 text-muted-foreground hover:text-foreground transition-colors duration-150"
+        className="mb-4 text-muted-foreground hover:text-foreground transition-colors duration-150"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back
       </Button>
 
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start justify-between gap-4 mb-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-12 h-12 rounded-full bg-muted flex-shrink-0" />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2 break-words">
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-muted flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2 break-words">
                 {proposal.title}
               </h1>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
@@ -78,14 +77,15 @@ function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Mobile status badge - hidden on desktop since it's in sidebar */}
+        <div className="flex items-center gap-3 flex-wrap lg:hidden">
           <ProposalStatusBadge proposal={proposal} size="lg" />
         </div>
       </div>
 
       {/* Category badge if available */}
       {proposal.type && (
-        <div className="mb-6">
+        <div className="mb-4">
           <Badge
             variant="outline"
             className="text-secondary border-secondary/50 bg-secondary/10 hover:bg-secondary/20 transition-colors duration-150"
@@ -145,24 +145,90 @@ export default function ProposalDetailsPage() {
     );
   }
 
+  // const handleVote = () => {
+  //   // TODO: Implement voting functionality
+  //   console.log("Vote clicked");
+  // };
+
+  // const handleShare = () => {
+  //   // TODO: Implement share functionality
+  //   if (navigator.share) {
+  //     navigator.share({
+  //       title: proposal.title,
+  //       url: window.location.href,
+  //     });
+  //   } else {
+  //     navigator.clipboard.writeText(window.location.href);
+  //     // TODO: Show toast notification
+  //   }
+  // };
+
+  const handleReport = () => {
+    // TODO: Implement report functionality
+    console.log("Report clicked");
+  };
+
+  const handleDiscuss = () => {
+    // TODO: Implement discussion functionality
+    console.log("Discuss clicked");
+  };
+
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
       <ProposalHeader proposal={proposal} />
 
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center min-h-[200px] w-full">
-            <div className="text-center space-y-4">
-              <Loader />
-              <p className="text-muted-foreground">
-                Loading proposal details...
-              </p>
-            </div>
-          </div>
-        }
-      >
-        <ProposalDetails proposal={proposal} />
-      </Suspense>
+      {/* Desktop Layout: Sidebar + Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Sidebar - Hidden on mobile, visible on desktop */}
+        <div className="hidden lg:block lg:col-span-3">
+          <ProposalSidebar
+            proposal={proposal}
+            // onVote={handleVote}
+            // onShare={handleShare}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-9">
+          <Suspense
+            fallback={
+              <div className="flex justify-center items-center min-h-[200px] w-full">
+                <div className="text-center space-y-4">
+                  <Loader />
+                  <p className="text-muted-foreground">
+                    Loading proposal details...
+                  </p>
+                </div>
+              </div>
+            }
+          >
+            <ProposalDetails proposal={proposal} />
+          </Suspense>
+
+          {/* Spacer to prevent content from being hidden behind fixed action bar */}
+          <FixedActionBarSpacer />
+        </div>
+      </div>
+
+      {/* Mobile Fixed Action Bar - One Primary Action */}
+      <FixedActionBar
+        // onPrimaryAction={handleVote}
+        // onSecondaryAction={handleShare}
+        primaryActionLabel="Vote"
+        secondaryActions={[
+          {
+            label: "Discuss",
+            icon: <MessageSquare className="h-4 w-4" />,
+            onClick: handleDiscuss,
+          },
+          {
+            label: "Report",
+            icon: <Flag className="h-4 w-4" />,
+            onClick: handleReport,
+            variant: "destructive",
+          },
+        ]}
+      />
     </div>
   );
 }

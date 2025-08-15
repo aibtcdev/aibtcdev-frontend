@@ -8,25 +8,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
 import MyHistory from "@/components/btc-deposit/MyHistory";
-import AllDeposits from "@/components/btc-deposit/AllDeposits";
-import { getStacksAddress, getBitcoinAddress } from "@/lib/address";
+import { getBitcoinAddress, getStacksAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
-import AuthButton from "@/components/home/AuthButton";
+// import AuthButton from "@/components/home/AuthButton";
 import { useFormattedBtcPrice } from "@/hooks/deposit/useSdkBtcPrice";
 import useSdkPoolStatus from "@/hooks/deposit/useSdkPoolStatus";
 import useSdkDepositHistory from "@/hooks/deposit/useSdkDepositHistory";
 import useSdkAllDepositsHistory from "@/hooks/deposit/useSdkAllDepositsHistory";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { ConfirmationData } from "@/components/btc-deposit/DepositForm";
 
-// Define the ConfirmationData type
-export type ConfirmationData = {
-  depositAmount: string;
-  depositAddress: string;
-  stxAddress: string;
-  opReturnHex: string;
-  isBlaze?: boolean;
-};
+interface BitcoinDepositProps {
+  dexId: number;
+  dexContract: string;
+  daoName: string;
+}
 
-export default function BitcoinDeposit() {
+export default function BitcoinDeposit({
+  dexContract,
+  daoName,
+  dexId,
+}: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
 
@@ -42,48 +44,34 @@ export default function BitcoinDeposit() {
   >(null);
   const [activeTab, setActiveTab] = useState<string>("deposit");
   const [isRefetching, setIsRefetching] = useState(false);
-  console.log(activeWalletProvider);
+
+  // Add state for the missing transaction parameters
+  const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
+  // const [poolId] = useState<string>("aibtc");
+  const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
+
   // Add this useEffect hook after the state declarations
   useEffect(() => {
     if (accessToken) {
-      // Detect wallet provider based on the structure of btcAddress
-      let detectedWalletProvider: "xverse" | "leather" | null = null;
-
-      // Get user data from localStorage
-      const blockstackSession = JSON.parse(
-        localStorage.getItem("blockstack-session") || "{}"
-      );
-      const userData = blockstackSession.userData;
-
-      if (userData?.profile) {
-        // Check structure of btcAddress to determine wallet type
-        if (typeof userData.profile.btcAddress === "string") {
-          // Xverse stores btcAddress as a direct string
-          detectedWalletProvider = "xverse";
-        } else if (
-          userData.profile.btcAddress?.p2wpkh?.mainnet ||
-          userData.profile.btcAddress?.p2tr?.mainnet
-        ) {
-          // Leather stores addresses in a structured object
-          detectedWalletProvider = "leather";
-        } else {
-          // If no BTC address in profile, check localStorage
-          const storedBtcAddress = localStorage.getItem("btcAddress");
-          if (storedBtcAddress) {
-            detectedWalletProvider = "leather"; // Assume Leather if using localStorage
-          }
-        }
-
-        // Update the wallet provider if detected
-        if (detectedWalletProvider !== activeWalletProvider) {
-          setActiveWalletProvider(detectedWalletProvider);
-        }
+      const storedProvider = localStorage.getItem("STX_PROVIDER");
+      const detectedWalletProvider: "xverse" | "leather" | null =
+        storedProvider === "XverseProviders.BitcoinProvider"
+          ? "xverse"
+          : storedProvider === "LeatherProvider"
+            ? "leather"
+            : null;
+      if (detectedWalletProvider !== activeWalletProvider) {
+        setActiveWalletProvider(detectedWalletProvider);
       }
     }
   }, [accessToken, activeWalletProvider]);
 
+  // ---------- HOOKS THAT MUST RUN EVERY RENDER ----------
   // Get addresses directly
-  const userAddress = accessToken ? getStacksAddress() : null;
+  const userAddress = getStacksAddress();
+  const { userAgentAddress } = useAgentAccount();
+  // const userAddress =
+  //   "SP16PP6EYRCB7NCTGWAC73DH5X0KXWAPEQ8RKWAKS.no-ai-account-2";
   const btcAddress = accessToken ? getBitcoinAddress() : null;
 
   // Data fetching hooks
@@ -104,65 +92,46 @@ export default function BitcoinDeposit() {
   } = useSdkDepositHistory(userAddress);
 
   // All network deposits - using the provided hook
-  const {
-    data: allDepositsHistory,
-    isLoading: isAllDepositsLoading,
-    isRefetching: isAllDepositsRefetching,
-    refetch: refetchAllDeposits,
-  } = useSdkAllDepositsHistory();
+  const { refetch: refetchAllDeposits } = useSdkAllDepositsHistory();
+  // ------------------------------------------------------
 
   // Determine if we're still loading critical data
   const isDataLoading =
     isBtcPriceLoading || isPoolStatusLoading || btcUsdPrice === undefined;
 
   // Render authentication prompt if not connected
-  if (!accessToken) {
-    return (
-      <div className="max-w-md mx-auto mt-8">
-        <div className="mb-6 text-center">
-          <h2 className="text-xl font-semibold">
-            Deposit BTC in just 1 Bitcoin block
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Fast, secure, and trustless
-          </p>
-        </div>
+  // if (!accessToken) {
+  //   return (
+  //     <div className="max-w-xl mx-auto">
+  //       <div className="mb-6 text-center">
+  //         <h2 className="text-xl font-semibold">
+  //           Deposit {daoName} into your agent account.
+  //         </h2>
+  //         <p className="text-sm text-muted-foreground">
+  //           Fast, secure, and trustless
+  //         </p>
+  //       </div>
 
-        <Card className="p-8 flex flex-col items-center justify-center space-y-6">
-          <p className="text-center">
-            Please connect your wallet to access the deposit feature
-          </p>
-          <AuthButton redirectUrl="/deposit" />
-        </Card>
-      </div>
-    );
-  }
+  //       <Card className="p-8 flex flex-col items-center justify-center space-y-6">
+  //         <p className="text-center">
+  //           Please connect your wallet to access the deposit feature
+  //         </p>
+  //         <AuthButton redirectUrl="/deposit" />
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <div className="mb-6 text-center">
-        <h2 className="text-xl font-semibold">
-          Deposit BTC in just 1 Bitcoin block
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Fast, secure, and trustless
-        </p>
-        {btcUsdPrice && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Current BTC price: ${btcUsdPrice.toLocaleString()}
-          </p>
-        )}
-      </div>
-
+    <div className="max-w-xl mx-auto">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="deposit">Deposit</TabsTrigger>
           <TabsTrigger value="history">My History</TabsTrigger>
-          <TabsTrigger value="all">All Deposits</TabsTrigger>
         </TabsList>
 
         <TabsContent value="deposit">
-          <Card className="bg-card border-border/30 p-4">
+          <Card className="bg-card border-border/30 p-4 h-full">
             {isDataLoading ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <Loader />
@@ -183,6 +152,10 @@ export default function BitcoinDeposit() {
                 setConfirmationData={setConfirmationData}
                 setShowConfirmation={setShowConfirmation}
                 activeWalletProvider={activeWalletProvider}
+                dexContract={dexContract}
+                daoName={daoName}
+                userAddress={userAddress}
+                dexId={dexId}
               />
             )}
           </Card>
@@ -194,26 +167,6 @@ export default function BitcoinDeposit() {
             isLoading={isHistoryLoading || isRefetching}
             btcUsdPrice={btcUsdPrice}
             isRefetching={isHistoryRefetching || isRefetching}
-          />
-        </TabsContent>
-
-        <TabsContent value="all">
-          <AllDeposits
-            allDepositsHistory={
-              allDepositsHistory
-                ? {
-                    aggregateData: {
-                      ...allDepositsHistory.aggregateData,
-                      totalVolume:
-                        allDepositsHistory.aggregateData.totalVolume.toString(),
-                    },
-                    recentDeposits: allDepositsHistory.recentDeposits,
-                  }
-                : undefined
-            }
-            isLoading={isAllDepositsLoading || isRefetching}
-            btcUsdPrice={btcUsdPrice}
-            isRefetching={isAllDepositsRefetching || isRefetching}
           />
         </TabsContent>
       </Tabs>
@@ -231,6 +184,11 @@ export default function BitcoinDeposit() {
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
+          aiAccountReceiver={userAgentAddress || ""}
+          minTokenOut={minTokenOut}
+          poolId="aibtc"
+          swapType={swapType}
+          dexId={dexId}
         />
       )}
     </div>

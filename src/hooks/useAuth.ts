@@ -59,7 +59,18 @@ export function useAuth(): UseAuthReturn {
   }, [session, isInitialized]);
 
   const signOut = async () => {
-    await clearSession();
+    try {
+      // Clear Supabase session
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Error signing out from Supabase:", err);
+    }
+
+    // Clear local storage
+    localStorage.clear();
+
+    // Clear app-specific session state
+    clearSession();
   };
 
   return {
