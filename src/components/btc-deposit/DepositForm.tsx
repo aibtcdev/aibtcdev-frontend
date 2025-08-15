@@ -98,9 +98,9 @@ export default function DepositForm({
   const userAddress = getStacksAddress();
 
   // Check agent permissions
-  const { data: permissions, isLoading: isPermissionsLoading } =
-    useAgentPermissions(userAgentAddress);
-  const canDeposit = permissions?.canDeposit ?? false;
+  // const { data: permissions, isLoading: isPermissionsLoading } =
+  //   useAgentPermissions(userAgentAddress);
+  // const canDeposit = permissions?.canDeposit ?? false;
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
 
@@ -286,10 +286,10 @@ export default function DepositForm({
     }
 
     // Check if user has deposit permission
-    if (!canDeposit) {
-      setShowPermissionModal(true);
-      return;
-    }
+    // if (!canDeposit) {
+    //   setShowPermissionModal(true);
+    //   return;
+    // }
 
     if (!accessToken || !userAddress) {
       toast({
@@ -529,7 +529,7 @@ export default function DepositForm({
     if (BUY_DISABLED) return "Buy Available Soon";
     if (!accessToken) return "Connect Wallet";
     if (!hasAgentAccount) return "No Agent Account";
-    if (!canDeposit) return "Enable Deposit";
+    // if (!canDeposit) return "Enable Deposit";
     return "Deposit";
   };
 
@@ -544,9 +544,9 @@ export default function DepositForm({
 
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
-      <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
+      {/* <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
         Testing
-      </div>
+      </div> */}
       <div className="text-center space-y-1">
         <h2 className="text-xl ">
           Deposit <span className="font-bold">{daoName}</span>
@@ -725,11 +725,11 @@ export default function DepositForm({
             depositing.
           </p>
         )}
-        {hasAgentAccount && !isPermissionsLoading && !canDeposit && (
+        {/* {hasAgentAccount && !isPermissionsLoading && !canDeposit && (
           <p className="text-center text-sm text-destructive mb-1">
             Your agent doesn't have deposit permission enabled.
           </p>
-        )}
+        )} */}
         {!accessToken ? (
           <div className="flex justify-center">
             <AuthButton />
@@ -741,13 +741,13 @@ export default function DepositForm({
             onClick={
               BUY_DISABLED
                 ? () => {}
-                : !canDeposit && hasAgentAccount
+                : hasAgentAccount
                   ? () => setShowPermissionModal(true)
                   : handleDepositConfirm
             }
             disabled={
               !hasAgentAccount ||
-              isPermissionsLoading ||
+              // isPermissionsLoading ||
               !accessToken ||
               BUY_DISABLED
             }
