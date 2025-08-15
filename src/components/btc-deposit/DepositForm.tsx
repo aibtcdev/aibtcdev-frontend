@@ -87,7 +87,7 @@ export default function DepositForm({
   });
   const [buyQuote, setBuyQuote] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  // const [showPermissionModal, setShowPermissionModal] = useState(false);
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
@@ -738,13 +738,7 @@ export default function DepositForm({
           <Button
             size="lg"
             className="h-12 text-lg bg-primary w-full"
-            onClick={
-              BUY_DISABLED
-                ? () => {}
-                : hasAgentAccount
-                  ? () => setShowPermissionModal(true)
-                  : handleDepositConfirm
-            }
+            onClick={handleDepositConfirm}
             disabled={
               !hasAgentAccount ||
               // isPermissionsLoading ||
