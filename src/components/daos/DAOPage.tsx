@@ -54,10 +54,10 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     if (!extensions)
       return { dex: undefined, treasuryAddress: undefined, dexContract: null };
     const dexExtension = extensions.find(
-      (ext) =>
-        ext.type === "dex" || ext.type === "TOKEN_DEX" || ext.type === "TOKEN"
+      (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
     );
     const dexPrincipal = dexExtension?.contract_principal;
+    console.log(dexPrincipal);
 
     // const dexPrincipal =
     //   "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM.beast2-faktory-dex";
