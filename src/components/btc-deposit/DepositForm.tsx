@@ -70,7 +70,8 @@ export default function DepositForm({
   daoName,
   dexId,
 }: DepositFormProps) {
-  const BUY_DISABLED = true;
+  // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
+  const BUY_DISABLED = false;
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -544,7 +545,7 @@ export default function DepositForm({
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
-        Buy Available Soon
+        Testing
       </div>
       <div className="text-center space-y-1">
         <h2 className="text-xl ">
