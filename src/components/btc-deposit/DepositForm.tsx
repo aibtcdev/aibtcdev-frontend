@@ -572,7 +572,7 @@ export default function DepositForm({
                 {userAddress && (
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-muted-foreground">
-                      Agent Address (STX)
+                      User's Address (STX)
                     </span>
                     <div className="font-mono bg-muted/50 p-2 rounded border break-all">
                       {userAddress}
@@ -596,6 +596,16 @@ export default function DepositForm({
                     </span>
                     <div className="font-mono bg-muted/50 p-2 rounded border break-all">
                       {dexContract}
+                    </div>
+                  </div>
+                )}
+                {userAgentAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Agent account
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {userAgentAddress}
                     </div>
                   </div>
                 )}
