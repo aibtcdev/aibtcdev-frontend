@@ -211,10 +211,10 @@ export default function AllDaos() {
   // Helper function to get dex principal and token contract
   const getTokenContract = useCallback((dao: DAO) => {
     const dexExtension = dao.extensions?.find(
-      (ext) => ext.type === "dex" || ext.type === "TOKEN_DEX"
+      (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
     );
     const dexPrincipal = dexExtension?.contract_principal;
-    return dexPrincipal ? dexPrincipal.replace(/-dex$/, "") : null;
+    return dexPrincipal;
   }, []);
 
   // Fetch token trades using useQueries for parallel fetching
