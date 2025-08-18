@@ -208,6 +208,7 @@ export default function AllDaos() {
     enabled: !!daos && !!tokens,
   });
 
+  console.log(tokenPrices);
   // Helper function to get dex principal and token contract
   const getTokenContract = useCallback((dao: DAO) => {
     const dexExtension = dao.extensions?.find(
