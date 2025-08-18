@@ -22,12 +22,14 @@ interface BitcoinDepositProps {
   dexId: number;
   dexContract: string;
   daoName: string;
+  tokenContract: string;
 }
 
 export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
+  tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
@@ -149,13 +151,17 @@ export default function BitcoinDeposit({
               <DepositForm
                 btcUsdPrice={btcUsdPrice ?? null}
                 poolStatus={poolStatus ?? null}
-                setConfirmationData={setConfirmationData}
+                setConfirmationData={(data) => {
+                  setConfirmationData(data);
+                  setShowConfirmation(true);
+                }}
                 setShowConfirmation={setShowConfirmation}
                 activeWalletProvider={activeWalletProvider}
                 dexContract={dexContract}
                 daoName={daoName}
                 userAddress={userAddress}
                 dexId={dexId}
+                tokenContract={tokenContract}
               />
             )}
           </Card>

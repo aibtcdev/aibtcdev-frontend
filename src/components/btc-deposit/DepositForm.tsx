@@ -27,9 +27,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
-import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
-// import { useAgentPermissions } from "@/hooks/useAgentPermissions";
-// import { DepositPermissionModal } from "@/components/btc-deposit/DepositPermissionModal";
+import {
+  cvToHex,
+  uintCV,
+  hexToCV,
+  cvToJSON,
+  Pc,
+  contractPrincipalCV,
+} from "@stacks/transactions";
+import { request } from "@stacks/connect";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -41,6 +49,9 @@ interface DepositFormProps {
   daoName: string;
   userAddress: string | null;
   dexId: number;
+  targetStx?: number; // New prop for target STX amount
+  tokenContract?: string; // New prop for token contract
+  currentSlippage?: number; // New prop for slippage percentage
 }
 
 interface HiroGetInResponse {
@@ -60,6 +71,13 @@ export interface ConfirmationData {
   dexId: number;
 }
 
+const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
+
+// Helper function to get token asset name - you may need to implement this based on your token structure
+const getTokenAssetName = (symbol: string): string => {
+  return symbol.toLowerCase(); // Simplified implementation
+};
+
 export default function DepositForm({
   btcUsdPrice,
   poolStatus,
@@ -69,6 +87,9 @@ export default function DepositForm({
   dexContract,
   daoName,
   dexId,
+  targetStx = 0,
+  tokenContract = "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY.fake-faktory", //REMOVE THE HARDCODED LATER IN PROD
+  currentSlippage = 4,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -86,8 +107,11 @@ export default function DepositForm({
     high: { rate: 5, fee: 0, time: "~10 min" },
   });
   const [buyQuote, setBuyQuote] = useState<string | null>(null);
+  const [rawBuyQuote, setRawBuyQuote] = useState<HiroGetInResponse | null>(
+    null
+  );
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
-  // const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(false);
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
@@ -97,12 +121,49 @@ export default function DepositForm({
   const hasAgentAccount = Boolean(userAgentAddress);
   const userAddress = getStacksAddress();
 
-  // Check agent permissions
-  // const { data: permissions, isLoading: isPermissionsLoading } =
-  //   useAgentPermissions(userAgentAddress);
-  // const canDeposit = permissions?.canDeposit ?? false;
-
   const btcAddress = userAddress ? getBitcoinAddress() : null;
+
+  // Fetch STX balance for transaction fees
+  const { data: stxBalance, isLoading: isStxBalanceLoading } = useQuery<
+    number | null
+  >({
+    queryKey: ["stxBalance", userAddress],
+    queryFn: async () => {
+      if (!userAddress) return null;
+      const response = await fetch(
+        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch STX balance");
+      }
+      const data = await response.json();
+      return parseInt(data.stx.balance) / 10 ** 6; // STX has 6 decimals
+    },
+    enabled: !!userAddress && buyWithSbtc,
+  });
+
+  const { data: sbtcBalance, isLoading: isSbtcBalanceLoading } = useQuery<
+    number | null
+  >({
+    queryKey: ["sbtcBalance", userAddress],
+    queryFn: async () => {
+      if (!userAddress) return null;
+      const response = await fetch(
+        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch sBTC balance");
+      }
+      const data = await response.json();
+      const sbtcAssetIdentifier = `${SBTC_CONTRACT}::sbtc-token`;
+      if (data.fungible_tokens && data.fungible_tokens[sbtcAssetIdentifier]) {
+        const balance = data.fungible_tokens[sbtcAssetIdentifier].balance;
+        return parseInt(balance) / 10 ** 8;
+      }
+      return 0;
+    },
+    enabled: !!userAddress && buyWithSbtc,
+  });
 
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
@@ -142,13 +203,15 @@ export default function DepositForm({
       if (amount && Number.parseFloat(amount) > 0) {
         setLoadingQuote(true);
         const quoteData = await getBuyQuote(amount);
+        setRawBuyQuote(quoteData);
+
         if (quoteData?.result) {
           try {
             const clarityValue = hexToCV(quoteData.result);
             const jsonValue = cvToJSON(clarityValue);
             if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
               const rawAmount = jsonValue.value.value["tokens-out"].value;
-              const slippageFactor = 1 - 4 / 100; // 4% slippage
+              const slippageFactor = 1 - currentSlippage / 100;
               const amountAfterSlippage = Math.floor(
                 Number(rawAmount) * slippageFactor
               );
@@ -171,6 +234,7 @@ export default function DepositForm({
         setLoadingQuote(false);
       } else {
         setBuyQuote(null);
+        setRawBuyQuote(null);
       }
     };
 
@@ -179,7 +243,7 @@ export default function DepositForm({
     }, 500); // 500ms debounce delay
 
     return () => clearTimeout(debounce);
-  }, [amount, getBuyQuote]);
+  }, [amount, getBuyQuote, currentSlippage]);
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -203,7 +267,7 @@ export default function DepositForm({
       );
       return totalSats / 100000000; // Convert satoshis to BTC
     },
-    enabled: !!btcAddress, // Only run query when btcAddress is available
+    enabled: !!btcAddress && !buyWithSbtc, // Only run query when btcAddress is available
     staleTime: 40 * 60 * 1000, // 40 minutes in milliseconds
     retry: 2,
     refetchOnWindowFocus: false,
@@ -226,6 +290,7 @@ export default function DepositForm({
   };
 
   const calculateFee = (btcAmount: string): string => {
+    if (buyWithSbtc) return "0.00";
     if (!btcAmount || Number.parseFloat(btcAmount) <= 0) return "0.00000000";
     const numAmount = Number.parseFloat(btcAmount);
     if (isNaN(numAmount)) return "0.00003000";
@@ -247,6 +312,21 @@ export default function DepositForm({
   };
 
   const handleMaxClick = async (): Promise<void> => {
+    if (buyWithSbtc) {
+      if (sbtcBalance !== null && sbtcBalance !== undefined) {
+        setAmount(sbtcBalance.toFixed(8));
+        setSelectedPreset("max");
+      } else {
+        toast({
+          title: "sBTC Balance not available",
+          description:
+            "Your sBTC balance is not available. Please try again later.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
     if (btcBalance !== null && btcBalance !== undefined) {
       try {
         const selectedRate = feeEstimates.medium.rate;
@@ -275,21 +355,165 @@ export default function DepositForm({
     }
   };
 
-  const handleDepositConfirm = async (): Promise<void> => {
-    if (!amount || parseFloat(amount) <= 0) {
+  const handleBuyWithSbtc = async () => {
+    if (!accessToken || !userAddress) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid deposit amount.",
+        title: "Not connected",
+        description: "Please connect your wallet first",
         variant: "destructive",
       });
       return;
     }
 
-    // Check if user has deposit permission
-    // if (!canDeposit) {
-    //   setShowPermissionModal(true);
-    //   return;
-    // }
+    // Check STX balance for transaction fees
+    if ((stxBalance || 0) < 0.01) {
+      toast({
+        title: "STX Required for Transaction Fees",
+        description: "You need at least 0.01 STX to pay for transaction fees.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const ustx = Math.floor(parseFloat(amount) * Math.pow(10, 8)); // 8 decimals for BTC
+
+    if (!rawBuyQuote?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get quote for buy order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Parse buyQuote result to get all necessary data
+    const clarityValue = hexToCV(rawBuyQuote.result);
+    const jsonValue = cvToJSON(clarityValue);
+    const quoteAmount = jsonValue.value?.value?.["tokens-out"]?.value;
+    const newStx = Number(jsonValue.value?.value?.["new-stx"]?.value || 0);
+    const tokenBalance = jsonValue.value?.value?.["ft-balance"]?.value;
+    const currentStxBalance = Number(
+      jsonValue.value?.value?.["total-stx"]?.value || 0
+    );
+
+    if (!quoteAmount || !newStx || !tokenBalance) {
+      toast({
+        title: "Error",
+        description: "Invalid quote response",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check target limit logic
+    if (targetStx > 0) {
+      const TARGET_STX = targetStx * Math.pow(10, 8); // 8 decimals for BTC
+      const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+      const bufferAmount = remainingToTarget * 1.15; // 15% buffer
+
+      if (ustx > bufferAmount) {
+        const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+        const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
+
+        toast({
+          title: "Amount exceeds target limit",
+          description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    const slippageFactor = 1 - currentSlippage / 100;
+    const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+    const [dexAddress, dexName] = dexContract.split(".");
+    const [tokenAddress, tokenName] = tokenContract.split(".");
+    const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+
+    const assetName = getTokenAssetName(daoName);
+
+    // Determine if this is the last buy
+    const TARGET_STX = targetStx * Math.pow(10, 8);
+    const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+
+    // Enhanced post conditions logic
+    const postConditions = isLastBuy
+      ? [
+          // Last buy conditions
+          // 1. User's sBTC out
+          Pc.principal(userAddress)
+            .willSendLte(ustx)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+          // 2. Contract's all tokens out
+          Pc.principal(`${dexAddress}.${dexName}`)
+            .willSendGte(tokenBalance)
+            .ft(`${tokenAddress}.${tokenName}`, assetName),
+          // 3. Contract's total sBTC out
+          Pc.principal(`${dexAddress}.${dexName}`)
+            .willSendGte(TARGET_STX)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        ]
+      : [
+          // Normal buy conditions
+          Pc.principal(userAddress)
+            .willSendLte(ustx)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+          Pc.principal(`${dexAddress}.${dexName}`)
+            .willSendGte(minTokensOut)
+            .ft(`${tokenAddress}.${tokenName}`, assetName),
+        ];
+
+    try {
+      const params = {
+        contract: `${dexAddress}.${dexName}` as `${string}.${string}`,
+        functionName: "buy",
+        functionArgs: [
+          contractPrincipalCV(tokenAddress, tokenName),
+          uintCV(ustx),
+        ],
+        postConditions,
+        onFinish: (data: any) => {
+          toast({
+            title: "Transaction Submitted",
+            description: `Your transaction to buy ${daoName} tokens has been submitted. TxID: ${data.txId}`,
+          });
+          // You may want to add additional success handling here
+        },
+        onCancel: () => {
+          toast({
+            title: "Transaction Canceled",
+            description: "You have canceled the transaction.",
+            variant: "destructive",
+          });
+        },
+      };
+
+      await request("stx_callContract", params);
+    } catch (error) {
+      console.error("Error during sBTC contract call:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit sBTC buy order.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDepositConfirm = async (): Promise<void> => {
+    if (buyWithSbtc) {
+      await handleBuyWithSbtc();
+      return;
+    }
 
     if (!accessToken || !userAddress) {
       toast({
@@ -303,20 +527,11 @@ export default function DepositForm({
       toast({
         title: "No Agent Account",
         description:
-          "You don’t have an agent account yet. Please create one before depositing.",
+          "You don't have an agent account yet. Please create one before depositing.",
         variant: "destructive",
       });
       return;
     }
-    // Manual address type check before preparing transaction
-    // if (btcAddress && !btcAddress.startsWith("bc1")) {
-    //   console.log("nonsegwitaddrsss");
-    //   handleAddressTypeError(
-    //     new Error("Non-SegWit address detected"),
-    //     activeWalletProvider
-    //   );
-    //   return;
-    // }
 
     try {
       if (!btcAddress) {
@@ -523,14 +738,17 @@ export default function DepositForm({
   }
 
   const presetAmounts: string[] = ["0.0001", "0.0002"];
-  const presetLabels: string[] = ["0.0001 BTC", "0.0002 BTC"];
+  const presetLabels: string[] = [
+    `0.0001 ${buyWithSbtc ? "sBTC" : "BTC"}`,
+    `0.0002 ${buyWithSbtc ? "sBTC" : "BTC"}`,
+  ];
 
   const getButtonText = () => {
     if (BUY_DISABLED) return "Buy Available Soon";
     if (!accessToken) return "Connect Wallet";
     if (!hasAgentAccount) return "No Agent Account";
-    // if (!canDeposit) return "Enable Deposit";
-    return "Deposit";
+    if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
+    return buyWithSbtc ? "Buy with sBTC" : "Deposit with BTC";
   };
 
   if (isLoading) {
@@ -544,9 +762,6 @@ export default function DepositForm({
 
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
-      {/* <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 text-sm rounded">
-        Testing
-      </div> */}
       <div className="text-center space-y-1">
         <h2 className="text-xl ">
           Deposit <span className="font-bold">{daoName}</span>
@@ -615,6 +830,16 @@ export default function DepositForm({
         )}
       </div>
 
+      <div className="flex items-center space-x-2 justify-end">
+        <Label htmlFor="sbtc-switch">Buy with sBTC</Label>
+        <Switch
+          id="sbtc-switch"
+          checked={buyWithSbtc}
+          onCheckedChange={setBuyWithSbtc}
+          disabled={!accessToken}
+        />
+      </div>
+
       <div>
         <div className="flex justify-end items-center mb-1">
           <span className="font-medium text-sm ">
@@ -627,11 +852,11 @@ export default function DepositForm({
             value={amount}
             onChange={handleAmountChange}
             placeholder="0.00000000"
-            className="text-right pr-12 pl-12 h-12 text-lg"
+            className="text-right pr-16 pl-12 h-12 text-lg"
             disabled={!accessToken || BUY_DISABLED}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
-            BTC
+            {buyWithSbtc ? "sBTC" : "BTC"}
           </span>
         </div>
 
@@ -639,14 +864,33 @@ export default function DepositForm({
           <div className="flex justify-end mt-1">
             <span className="text-xs text-muted-foreground">
               Available Balance:{" "}
-              {isBalanceLoading
+              {buyWithSbtc
+                ? isSbtcBalanceLoading
+                  ? "Loading..."
+                  : sbtcBalance !== null && sbtcBalance !== undefined
+                    ? `${sbtcBalance.toFixed(8)} sBTC`
+                    : "Unable to load balance"
+                : isBalanceLoading
+                  ? "Loading..."
+                  : btcBalance !== null && btcBalance !== undefined
+                    ? `${btcBalance.toFixed(8)} BTC${
+                        btcUsdPrice
+                          ? ` (${formatUsdValue(btcBalance * (btcUsdPrice || 0))})`
+                          : ""
+                      }`
+                    : "Unable to load balance"}
+            </span>
+          </div>
+        )}
+
+        {buyWithSbtc && accessToken && (
+          <div className="flex justify-end mt-1">
+            <span className="text-xs text-muted-foreground">
+              STX Balance:{" "}
+              {isStxBalanceLoading
                 ? "Loading..."
-                : btcBalance !== null && btcBalance !== undefined
-                  ? `${btcBalance.toFixed(8)} BTC${
-                      btcUsdPrice
-                        ? ` (${formatUsdValue(btcBalance * (btcUsdPrice || 0))})`
-                        : ""
-                    }`
+                : stxBalance !== null && stxBalance !== undefined
+                  ? `${stxBalance.toFixed(6)} STX`
                   : "Unable to load balance"}
             </span>
           </div>
@@ -671,8 +915,9 @@ export default function DepositForm({
             disabled={
               !accessToken ||
               BUY_DISABLED ||
-              btcBalance === null ||
-              btcBalance === undefined
+              (buyWithSbtc
+                ? sbtcBalance === null || sbtcBalance === undefined
+                : btcBalance === null || btcBalance === undefined)
             }
           >
             MAX
@@ -699,7 +944,7 @@ export default function DepositForm({
           </span>
         </div>
         <div className="text-xs text-muted-foreground text-right mt-1">
-          Includes 4% slippage protection
+          Includes {currentSlippage}% slippage protection
         </div>
       </div>
 
@@ -707,17 +952,21 @@ export default function DepositForm({
         <CardContent className="p-3">
           <div className="flex justify-between items-center text-xs">
             <span className="text-muted-foreground">Your Deposit</span>
-            <span>{amount || "0.00"} BTC</span>
+            <span>
+              {amount || "0.00"} {buyWithSbtc ? "sBTC" : "BTC"}
+            </span>
           </div>
           <div className="flex justify-between items-center text-xs mt-1">
             <span className="text-muted-foreground">Service Fee</span>
-            <span>{calculateFee(amount)} BTC</span>
+            <span>
+              {calculateFee(amount)} {buyWithSbtc ? "sBTC" : "BTC"}
+            </span>
           </div>
           <div className="flex justify-between items-center text-sm font-medium mt-2 pt-2 border-t border-border/30">
             <span>Total</span>
             <span>
               {(Number(amount || 0) + Number(calculateFee(amount))).toFixed(8)}{" "}
-              BTC
+              {buyWithSbtc ? "sBTC" : "BTC"}
             </span>
           </div>
         </CardContent>
@@ -735,11 +984,11 @@ export default function DepositForm({
             depositing.
           </p>
         )}
-        {/* {hasAgentAccount && !isPermissionsLoading && !canDeposit && (
+        {buyWithSbtc && accessToken && (stxBalance || 0) < 0.01 && (
           <p className="text-center text-sm text-destructive mb-1">
-            Your agent doesn't have deposit permission enabled.
+            You need at least 0.01 STX for transaction fees.
           </p>
-        )} */}
+        )}
         {!accessToken ? (
           <div className="flex justify-center">
             <AuthButton />
@@ -751,21 +1000,15 @@ export default function DepositForm({
             onClick={handleDepositConfirm}
             disabled={
               !hasAgentAccount ||
-              // isPermissionsLoading ||
               !accessToken ||
-              BUY_DISABLED
+              BUY_DISABLED ||
+              (buyWithSbtc && (stxBalance || 0) < 0.01)
             }
           >
             {getButtonText()}
           </Button>
         )}
       </>
-
-      {/* <DepositPermissionModal
-        open={showPermissionModal}
-        onClose={() => setShowPermissionModal(false)}
-        agentAddress={userAgentAddress}
-      /> */}
     </div>
   );
 }

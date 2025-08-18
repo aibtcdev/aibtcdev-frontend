@@ -261,6 +261,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
               {dexContract && (
                 <BitcoinDeposit
                   dexContract={dexContract}
+                  tokenContract={dexContract}
                   daoName={dao.name}
                   dexId={1}
                 />
