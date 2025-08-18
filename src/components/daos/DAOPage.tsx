@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
 import { extractMission } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
+import { formatNumber } from "@/utils/format";
 
 export function DAOPage({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -163,9 +164,6 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       maximumFractionDigits: 2,
     }).format(value);
 
-  const formatNumber = (value: number) =>
-    new Intl.NumberFormat("en-US").format(value);
-
   const navItems = [
     {
       href: `/daos/${encodedName}`,
@@ -236,7 +234,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                       Price
                     </span>
                     <span className="text-lg font-bold text-white">
-                      {formatCurrency(enhancedMarketStats.price)}
+                      ${enhancedMarketStats.price}
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 py-2 px-4">
@@ -244,7 +242,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                       Market Cap
                     </span>
                     <span className="text-lg font-bold text-white">
-                      {formatCurrency(enhancedMarketStats.marketCap)}
+                      ${formatNumber(enhancedMarketStats.marketCap)}
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 py-2 px-4">
