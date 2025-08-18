@@ -235,7 +235,7 @@ export const DAOCard = ({
                       {isFetchingPrice ? (
                         <Loader />
                       ) : tokenPrice?.price ? (
-                        `$${formatNumber(tokenPrice.price)}`
+                        `$${tokenPrice.price}`
                       ) : (
                         "—"
                       )}
@@ -474,7 +474,7 @@ export const CompactDAOCard = ({
                   {isFetchingPrice ? (
                     <Loader />
                   ) : tokenPrice?.price ? (
-                    `$${formatNumber(tokenPrice.price)}`
+                    `$${tokenPrice.price}`
                   ) : (
                     "—"
                   )}
