@@ -482,6 +482,7 @@ export default function DepositForm({
           uintCV(ustx),
         ],
         postConditions,
+        // eslint-disable-next-line
         onFinish: (data: any) => {
           toast({
             title: "Transaction Submitted",
