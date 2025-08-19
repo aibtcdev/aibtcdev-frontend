@@ -52,9 +52,6 @@ export function Footer() {
 
         {/* Footer Bottom with Enhanced Typography */}
         <div className="text-center space-y-2">
-          <p className="text-sm font-medium text-muted-foreground tracking-wide">
-            Built with passion for the future of decentralized governance
-          </p>
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/80">
             <span>© {new Date().getFullYear()} AIBTC</span>
             <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
