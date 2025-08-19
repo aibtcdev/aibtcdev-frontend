@@ -410,14 +410,14 @@ export default function DepositForm({
       return;
     }
 
-    if ((stxBalance || 0) < 0.01) {
-      toast({
-        title: "STX Required for Transaction Fees",
-        description: "You need at least 0.01 STX to pay for transaction fees.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if ((stxBalance || 0) < 0.01) {
+    //   toast({
+    //     title: "STX Required for Transaction Fees",
+    //     description: "You need at least 0.01 STX to pay for transaction fees.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     if (parseFloat(amount) <= 0) {
       toast({
@@ -569,14 +569,14 @@ export default function DepositForm({
       return;
     }
 
-    if ((stxBalance || 0) < 0.01) {
-      toast({
-        title: "STX Required for Transaction Fees",
-        description: "You need at least 0.01 STX to pay for transaction fees.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if ((stxBalance || 0) < 0.01) {
+    //   toast({
+    //     title: "STX Required for Transaction Fees",
+    //     description: "You need at least 0.01 STX to pay for transaction fees.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     if (parseFloat(amount) <= 0) {
       toast({
