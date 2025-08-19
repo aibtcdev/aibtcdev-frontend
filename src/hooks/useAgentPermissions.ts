@@ -22,6 +22,7 @@ export function useAgentPermissions(agentAddress: string | null) {
         body: JSON.stringify({
           sender: contractAddress,
           arguments: [],
+          network: process.env.NEXT_PUBLIC_STACKS_NETWORK,
           cacheControl: {
             bustCache: true,
             ttl: 0,
