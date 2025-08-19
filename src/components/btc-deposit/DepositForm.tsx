@@ -52,6 +52,9 @@ interface DepositFormProps {
   targetStx?: number; // New prop for target STX amount
   tokenContract?: string; // New prop for token contract
   currentSlippage?: number; // New prop for slippage percentage
+  swapType: "aibtc" | "sbtc";
+  poolId: string;
+  aiAccountReceiver: string;
 }
 
 interface HiroGetInResponse {
@@ -69,6 +72,8 @@ export interface ConfirmationData {
   stxAddress: string;
   opReturnHex: string;
   dexId: number;
+  minTokenOut: number;
+  swapType: string;
 }
 
 const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
@@ -90,6 +95,9 @@ export default function DepositForm({
   targetStx = 0,
   tokenContract = "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY.fake-faktory", //REMOVE THE HARDCODED LATER IN PROD
   currentSlippage = 4,
+  swapType,
+  poolId,
+  aiAccountReceiver,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -97,7 +105,7 @@ export default function DepositForm({
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const { toast } = useToast();
-  const [feeEstimates] = useState<{
+  const [feeEstimates, setFeeEstimates] = useState<{
     low: { rate: number; fee: number; time: string };
     medium: { rate: number; fee: number; time: string };
     high: { rate: number; fee: number; time: string };
@@ -112,6 +120,37 @@ export default function DepositForm({
   );
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
   const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(false);
+  const [minTokenOut, setMinTokenOut] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add fee rate fetching function
+  const fetchMempoolFeeEstimates = async () => {
+    try {
+      const response = await fetch(
+        `https://mempool.space/api/v1/fees/recommended`
+      );
+      const data = await response.json();
+
+      // Map to the correct fee estimate fields
+      const lowRate = data.hourFee || 1;
+      const mediumRate = data.halfHourFee || 3;
+      const highRate = data.fastestFee || 5;
+
+      return {
+        low: lowRate,
+        medium: mediumRate,
+        high: highRate,
+      };
+    } catch (error) {
+      console.error("Error fetching fee estimates:", error);
+      // Fallback to default values
+      return {
+        low: 1,
+        medium: 3,
+        high: 5,
+      };
+    }
+  };
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
@@ -122,6 +161,12 @@ export default function DepositForm({
   const userAddress = getStacksAddress();
 
   const btcAddress = userAddress ? getBitcoinAddress() : null;
+
+  useEffect(() => {
+    if (btcAddress) {
+      console.log(`Querying BTC balance for address: ${btcAddress}`);
+    }
+  }, [btcAddress]);
 
   // Fetch STX balance for transaction fees
   const { data: stxBalance, isLoading: isStxBalanceLoading } = useQuery<
@@ -170,7 +215,7 @@ export default function DepositForm({
       if (!dexContract || !userAddress) return null;
       const [contractAddress, contractName] = dexContract.split(".");
       try {
-        const btcAmount = Math.floor(parseFloat(amount) * Math.pow(10, 8));
+        const btcAmount = parseFloat(amount) * Math.pow(10, 8);
         const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
@@ -215,6 +260,7 @@ export default function DepositForm({
               const amountAfterSlippage = Math.floor(
                 Number(rawAmount) * slippageFactor
               );
+              setMinTokenOut(amountAfterSlippage);
               setBuyQuote(
                 (amountAfterSlippage / 10 ** 6).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
@@ -223,18 +269,22 @@ export default function DepositForm({
               );
             } else {
               setBuyQuote(null);
+              setMinTokenOut(0);
             }
           } catch (error) {
             console.error("Error parsing quote result:", error);
             setBuyQuote(null);
+            setMinTokenOut(0);
           }
         } else {
           setBuyQuote(null);
+          setMinTokenOut(0);
         }
         setLoadingQuote(false);
       } else {
         setBuyQuote(null);
         setRawBuyQuote(null);
+        setMinTokenOut(0);
       }
     };
 
@@ -290,7 +340,7 @@ export default function DepositForm({
   };
 
   const calculateFee = (btcAmount: string): string => {
-    if (buyWithSbtc) return "0.00";
+    if (buyWithSbtc) return "0.00000000";
     if (!btcAmount || Number.parseFloat(btcAmount) <= 0) return "0.00000000";
     const numAmount = Number.parseFloat(btcAmount);
     if (isNaN(numAmount)) return "0.00003000";
@@ -358,14 +408,13 @@ export default function DepositForm({
   const handleBuyWithSbtc = async () => {
     if (!accessToken || !userAddress) {
       toast({
-        title: "Not connected",
-        description: "Please connect your wallet first",
+        title: "Wallet not connected",
+        description: "Please connect your wallet to continue.",
         variant: "destructive",
       });
       return;
     }
 
-    // Check STX balance for transaction fees
     if ((stxBalance || 0) < 0.01) {
       toast({
         title: "STX Required for Transaction Fees",
@@ -384,7 +433,7 @@ export default function DepositForm({
       return;
     }
 
-    const ustx = Math.floor(parseFloat(amount) * Math.pow(10, 8)); // 8 decimals for BTC
+    const ustx = parseFloat(amount) * Math.pow(10, 8);
 
     if (!rawBuyQuote?.result) {
       toast({
@@ -395,111 +444,111 @@ export default function DepositForm({
       return;
     }
 
-    // Parse buyQuote result to get all necessary data
-    const clarityValue = hexToCV(rawBuyQuote.result);
-    const jsonValue = cvToJSON(clarityValue);
-    const quoteAmount = jsonValue.value?.value?.["tokens-out"]?.value;
-    const newStx = Number(jsonValue.value?.value?.["new-stx"]?.value || 0);
-    const tokenBalance = jsonValue.value?.value?.["ft-balance"]?.value;
-    const currentStxBalance = Number(
-      jsonValue.value?.value?.["total-stx"]?.value || 0
-    );
+    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
 
-    if (!quoteAmount || !newStx || !tokenBalance) {
+    if (ustx > sbtcBalanceInSats) {
       toast({
-        title: "Error",
-        description: "Invalid quote response",
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          ustx / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          (sbtcBalanceInSats || 0) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
         variant: "destructive",
       });
       return;
     }
 
-    // Check target limit logic
-    if (targetStx > 0) {
-      const TARGET_STX = targetStx * Math.pow(10, 8); // 8 decimals for BTC
-      const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
-      const bufferAmount = remainingToTarget * 1.15; // 15% buffer
+    try {
+      const clarityValue = hexToCV(rawBuyQuote.result);
+      const jsonValue = cvToJSON(clarityValue);
 
-      if (ustx > bufferAmount) {
-        const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
-        const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
+      const quoteAmount = jsonValue.value.value["tokens-out"].value;
+      const newStx = Number(jsonValue.value.value["new-stx"].value);
+      const tokenBalance = jsonValue.value.value["ft-balance"]?.value;
+      const currentStxBalance = Number(
+        jsonValue.value.value["total-stx"]?.value || 0
+      );
 
+      if (!quoteAmount || !newStx || !tokenBalance) {
         toast({
-          title: "Amount exceeds target limit",
-          description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
+          title: "Error",
+          description: "Invalid quote response",
           variant: "destructive",
         });
         return;
       }
-    }
 
-    const slippageFactor = 1 - currentSlippage / 100;
-    const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+      // Check target limit logic (only if targetStx is provided)
+      if (targetStx > 0) {
+        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+        const bufferAmount = remainingToTarget * 1.15;
 
-    const [dexAddress, dexName] = dexContract.split(".");
-    const [tokenAddress, tokenName] = tokenContract.split(".");
-    const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+        if (ustx > bufferAmount) {
+          const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+          const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
 
-    const assetName = getTokenAssetName(daoName);
+          toast({
+            title: "Amount exceeds target limit",
+            description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
 
-    // Determine if this is the last buy
-    const TARGET_STX = targetStx * Math.pow(10, 8);
-    const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
-    // Enhanced post conditions logic
-    const postConditions = isLastBuy
-      ? [
-          // Last buy conditions
-          // 1. User's sBTC out
-          Pc.principal(userAddress)
-            .willSendLte(ustx)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-          // 2. Contract's all tokens out
-          Pc.principal(`${dexAddress}.${dexName}`)
-            .willSendGte(tokenBalance)
-            .ft(`${tokenAddress}.${tokenName}`, assetName),
-          // 3. Contract's total sBTC out
-          Pc.principal(`${dexAddress}.${dexName}`)
-            .willSendGte(TARGET_STX)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        ]
-      : [
-          // Normal buy conditions
-          Pc.principal(userAddress)
-            .willSendLte(ustx)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-          Pc.principal(`${dexAddress}.${dexName}`)
-            .willSendGte(minTokensOut)
-            .ft(`${tokenAddress}.${tokenName}`, assetName),
-        ];
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+      const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
 
-    try {
+      const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
+      const assetName = getTokenAssetName(daoName);
+
+      const TARGET_STX = targetStx * Math.pow(10, 8);
+      const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+
+      const postConditions = isLastBuy
+        ? [
+            Pc.principal(userAddress)
+              .willSendLte(ustx)
+              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+            Pc.principal(`${dexAddress}.${dexName}`)
+              .willSendGte(tokenBalance)
+              .ft(`${tokenAddress}.${tokenName}`, assetName),
+            Pc.principal(`${dexAddress}.${dexName}`)
+              .willSendGte(TARGET_STX)
+              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+          ]
+        : [
+            Pc.principal(userAddress)
+              .willSendLte(ustx)
+              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+            Pc.principal(`${dexAddress}.${dexName}`)
+              .willSendGte(minTokensOut)
+              .ft(`${tokenAddress}.${tokenName}`, assetName),
+          ];
+
       const params = {
         contract: `${dexAddress}.${dexName}` as `${string}.${string}`,
         functionName: "buy",
-        functionArgs: [
-          contractPrincipalCV(tokenAddress, tokenName),
-          uintCV(ustx),
-        ],
+        functionArgs: args,
         postConditions,
-        // eslint-disable-next-line
-        onFinish: (data: any) => {
-          toast({
-            title: "Transaction Submitted",
-            description: `Your transaction to buy ${daoName} tokens has been submitted. TxID: ${data.txId}`,
-          });
-          // You may want to add additional success handling here
-        },
-        onCancel: () => {
-          toast({
-            title: "Transaction Canceled",
-            description: "You have canceled the transaction.",
-            variant: "destructive",
-          });
-        },
       };
 
-      await request("stx_callContract", params);
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        toast({
+          title: "Transaction Submitted",
+          description: `Your sBTC transaction to buy ${daoName} tokens has been submitted. TxID: ${response.txid}`,
+        });
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
     } catch (error) {
       console.error("Error during sBTC contract call:", error);
       toast({
@@ -518,163 +567,139 @@ export default function DepositForm({
 
     if (!accessToken || !userAddress) {
       toast({
-        title: "Not connected",
-        description: "Please connect your wallet first",
+        title: "Wallet not connected",
+        description: "Please connect your wallet to continue.",
         variant: "destructive",
       });
       return;
     }
-    if (!hasAgentAccount) {
+
+    if ((stxBalance || 0) < 0.01) {
       toast({
-        title: "No Agent Account",
-        description:
-          "You don't have an agent account yet. Please create one before depositing.",
+        title: "STX Required for Transaction Fees",
+        description: "You need at least 0.01 STX to pay for transaction fees.",
         variant: "destructive",
       });
       return;
     }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid BTC amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!btcAddress) {
+      toast({
+        title: "No Bitcoin address",
+        description: "No Bitcoin address found in your wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountInSats = Math.round(parseFloat(amount) * 100000000);
+
+    if (amountInSats < MIN_DEPOSIT_SATS) {
+      toast({
+        title: "Minimum deposit required",
+        description: `Please deposit at least ${
+          MIN_DEPOSIT_SATS / 100000000
+        } BTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (amountInSats > MAX_DEPOSIT_SATS) {
+      toast({
+        title: "Beta limitation",
+        description: `During beta, the maximum deposit amount is ${
+          MAX_DEPOSIT_SATS / 100000000
+        } BTC. Thank you for your understanding.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const userInputAmount = parseFloat(amount);
+    const serviceFee = parseFloat(calculateFee(amount));
+    const totalAmount = (userInputAmount + serviceFee).toFixed(8);
+
+    const networkFeeInBTC = 0.000006; // 600 sats as network fee
+    const totalRequiredBTC = parseFloat(totalAmount) + networkFeeInBTC;
+
+    if ((btcBalance || 0) < totalRequiredBTC) {
+      const shortfallBTC = totalRequiredBTC - (btcBalance || 0);
+      toast({
+        title: "Insufficient funds",
+        description: `You need ${shortfallBTC.toFixed(
+          8
+        )} BTC more to complete this transaction.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      if (!btcAddress) {
-        throw new Error("No Bitcoin address found in your wallet");
-      }
-
-      const userInputAmount = Number.parseFloat(amount);
-      const serviceFee = Number.parseFloat(calculateFee(amount));
-      const totalAmount = (userInputAmount + serviceFee).toFixed(8);
-
+      const feeRates = await fetchMempoolFeeEstimates();
       const currentFeeRates: FeeEstimates = {
-        low: feeEstimates.low.rate,
-        medium: feeEstimates.medium.rate,
-        high: feeEstimates.high.rate,
+        low: feeRates.low,
+        medium: feeRates.medium,
+        high: feeRates.high,
       };
 
-      const amountInSats = Math.round(Number.parseFloat(amount) * 100000000);
+      const transactionData = await styxSDK.prepareTransaction({
+        amount: totalAmount,
+        userAddress,
+        btcAddress,
+        feePriority: "medium" as TransactionPriority,
+        walletProvider: activeWalletProvider,
+        feeRates: currentFeeRates,
+        minTokenOut: minTokenOut,
+        swapType: swapType,
+        poolId: poolId,
+        dexId: dexId,
+        aiAccountReceiver: aiAccountReceiver,
+      } as TransactionPrepareParams);
 
-      if (amountInSats < MIN_DEPOSIT_SATS) {
-        toast({
-          title: "Minimum deposit required",
-          description: `Please deposit at least ${
-            MIN_DEPOSIT_SATS / 100000000
-          } BTC`,
-          variant: "destructive",
-        });
-        return;
-      }
+      setConfirmationData({
+        depositAmount: totalAmount,
+        userInputAmount: amount,
+        depositAddress: transactionData.depositAddress,
+        stxAddress: userAddress,
+        opReturnHex: transactionData.opReturnData,
+        dexId: dexId,
+        minTokenOut: minTokenOut,
+        swapType: swapType,
+      });
 
-      if (amountInSats > MAX_DEPOSIT_SATS) {
-        toast({
-          title: "Beta limitation",
-          description: `During beta, the maximum deposit amount is ${
-            MAX_DEPOSIT_SATS / 100000000
-          } BTC. Thank you for your understanding.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (poolStatus && amountInSats > poolStatus.estimatedAvailable) {
-        toast({
-          title: "Insufficient liquidity",
-          description: `The pool currently has ${
-            poolStatus.estimatedAvailable / 100000000
-          } BTC available. Please try a smaller amount.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const amountInBTC = Number.parseFloat(amount);
-      const networkFeeInBTC = 0.000006;
-      const totalRequiredBTC = amountInBTC + networkFeeInBTC;
-
-      const currentBalance = btcBalance ?? 0;
-      if (currentBalance < totalRequiredBTC) {
-        const shortfallBTC = totalRequiredBTC - currentBalance;
-        throw new Error(
-          `Insufficient funds. You need ${shortfallBTC.toFixed(
-            8
-          )} BTC more to complete this transaction.`
-        );
-      }
-
-      if (!dexContract) {
-        toast({
-          title: "DEX Contract Missing",
-          description: "DEX contract has not been specified.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      try {
-        console.log("preparing transaction...");
-        const transactionData = await styxSDK.prepareTransaction({
-          amount: totalAmount,
-          userAddress,
-          btcAddress,
-          feePriority: "medium" as TransactionPriority,
-          walletProvider: activeWalletProvider,
-          feeRates: currentFeeRates,
-          dexContract: dexContract,
-        } as TransactionPrepareParams);
-
-        setConfirmationData({
-          depositAmount: totalAmount,
-          userInputAmount: amount,
-          depositAddress: transactionData.depositAddress,
-          stxAddress: userAddress,
-          opReturnHex: transactionData.opReturnData,
-          dexId: dexId,
-        });
-
-        setShowConfirmation(true);
-      } catch (err) {
-        console.error("Error preparing transaction:", err);
-
-        if (err instanceof Error) {
-          if (isInscriptionError(err)) {
-            handleInscriptionError(err);
-          } else if (isUtxoCountError(err)) {
-            handleUtxoCountError(err);
-          } else if (isAddressTypeError(err)) {
-            handleAddressTypeError(err, activeWalletProvider);
-          } else {
-            toast({
-              title: "Error",
-              description:
-                err.message ||
-                "Failed to prepare transaction. Please try again.",
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: "Error",
-            description: "Failed to prepare transaction. Please try again.",
-            variant: "destructive",
-          });
-        }
-      }
+      setShowConfirmation(true);
     } catch (err) {
-      console.error("Error preparing Bitcoin transaction:", err);
+      const error = err as Error;
+      console.error("Error preparing transaction:", error);
 
-      if (err instanceof Error) {
-        toast({
-          title: "Error",
-          description:
-            err.message ||
-            "Failed to prepare Bitcoin transaction. Please try again.",
-          variant: "destructive",
-        });
+      if (isInscriptionError(error)) {
+        handleInscriptionError(error);
+      } else if (isUtxoCountError(error)) {
+        handleUtxoCountError(error);
+      } else if (isAddressTypeError(error)) {
+        handleAddressTypeError(error, activeWalletProvider);
       } else {
         toast({
           title: "Error",
           description:
-            "Failed to prepare Bitcoin transaction. Please try again.",
+            error.message || "Failed to prepare transaction. Please try again.",
           variant: "destructive",
         });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1003,10 +1028,11 @@ export default function DepositForm({
               !hasAgentAccount ||
               !accessToken ||
               BUY_DISABLED ||
-              (buyWithSbtc && (stxBalance || 0) < 0.01)
+              (buyWithSbtc && (stxBalance || 0) < 0.01) ||
+              isSubmitting
             }
           >
-            {getButtonText()}
+            {isSubmitting ? "Preparing..." : getButtonText()}
           </Button>
         )}
       </>

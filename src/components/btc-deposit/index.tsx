@@ -162,6 +162,9 @@ export default function BitcoinDeposit({
                 userAddress={userAddress}
                 dexId={dexId}
                 tokenContract={tokenContract}
+                swapType="aibtc"
+                poolId="aibtc"
+                aiAccountReceiver={userAgentAddress || ""}
               />
             )}
           </Card>
@@ -195,6 +198,7 @@ export default function BitcoinDeposit({
           poolId="aibtc"
           swapType={swapType}
           dexId={dexId}
+          dexContract={dexContract}
         />
       )}
     </div>
