@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { extractMission, formatNumber } from "@/utils/format";
+import { extractMission, formatNumber, formatTokenPrice } from "@/utils/format";
 
 interface DAOCardProps {
   dao: DAO;
@@ -235,7 +235,7 @@ export const DAOCard = ({
                       {isFetchingPrice ? (
                         <Loader />
                       ) : tokenPrice?.price ? (
-                        `$${tokenPrice.price}`
+                        formatTokenPrice(tokenPrice.price)
                       ) : (
                         "—"
                       )}
@@ -359,7 +359,7 @@ export const DAOListItem = ({
         {isFetchingPrice ? (
           <Loader />
         ) : tokenPrice?.price ? (
-          `$${formatNumber(tokenPrice.price)}`
+          formatTokenPrice(tokenPrice.price)
         ) : (
           "—"
         )}
@@ -474,7 +474,7 @@ export const CompactDAOCard = ({
                   {isFetchingPrice ? (
                     <Loader />
                   ) : tokenPrice?.price ? (
-                    `$${tokenPrice.price}`
+                    formatTokenPrice(tokenPrice.price)
                   ) : (
                     "—"
                   )}

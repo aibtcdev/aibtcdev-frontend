@@ -30,10 +30,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+
 import type { ConfirmationData } from "./DepositForm";
 import type {
-  TransactionPrepareParams,
-  PreparedTransactionData,
   DepositStatus,
   DepositHistoryResponse,
   Deposit,
@@ -100,6 +99,7 @@ interface TransactionConfirmationProps {
   poolId?: string;
   swapType?: "sbtc" | "usda" | "pepe" | "aibtc";
   dexId?: number;
+  dexContract: string;
   aiAccountReceiver?: string;
 }
 
@@ -131,6 +131,7 @@ export default function TransactionConfirmation({
   poolId,
   swapType,
   dexId,
+  dexContract,
   aiAccountReceiver,
 }: TransactionConfirmationProps) {
   const { toast } = useToast();
@@ -164,10 +165,6 @@ export default function TransactionConfirmation({
     return address.startsWith("3");
   };
 
-  const calculateFeeEstimate = (rate: number, txSize = 148): number => {
-    return Math.round(txSize * rate);
-  };
-
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       try {
@@ -176,14 +173,12 @@ export default function TransactionConfirmation({
           `Calling getBuyQuote for ${swapType} with ${amount} BTC (${btcAmount} sats)`
         );
 
-        // This will need to be updated based on the actual quote endpoint for different swap types
-        // For now, keeping the existing logic but noting it may need changes
-        if (!aiAccountReceiver) {
-          console.warn("No aiAccountReceiver provided for quote");
+        if (!dexContract) {
+          console.warn("No dexContract provided for quote");
           return null;
         }
 
-        const [contractAddress, contractName] = aiAccountReceiver.split(".");
+        const [contractAddress, contractName] = dexContract.split(".");
 
         const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
@@ -210,8 +205,48 @@ export default function TransactionConfirmation({
         return null;
       }
     },
-    [userAddress, swapType, aiAccountReceiver]
+    [userAddress, swapType, dexContract]
   );
+
+  const fetchMempoolFeeEstimates = async () => {
+    try {
+      const response = await fetch(
+        `https://mempool.space/api/v1/fees/recommended`
+      );
+      const data = await response.json();
+
+      // Map to the correct fee estimate fields
+      const lowRate = data.hourFee || 1;
+      const mediumRate = data.halfHourFee || 3;
+      const highRate = data.fastestFee || 5;
+
+      return {
+        low: {
+          rate: lowRate,
+          fee: Math.round(lowRate * 148),
+          time: "~1 hour",
+        },
+        medium: {
+          rate: mediumRate,
+          fee: Math.round(mediumRate * 148),
+          time: "~30 min",
+        },
+        high: {
+          rate: highRate,
+          fee: Math.round(highRate * 148),
+          time: "~10 min",
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching fee estimates:", error);
+      // Fallback to default values
+      return {
+        low: { rate: 1, fee: 148, time: "30 min" },
+        medium: { rate: 3, fee: 444, time: "~20 min" },
+        high: { rate: 5, fee: 740, time: "~10 min" },
+      };
+    }
+  };
 
   // Fetch fee rates as soon as the modal opens
   useEffect(() => {
@@ -220,33 +255,9 @@ export default function TransactionConfirmation({
         setLoadingFees(true);
         try {
           // Get fee rate estimates from SDK or API
-          const feeRates = await styxSDK.getFeeEstimates();
+          const feeRates = await fetchMempoolFeeEstimates();
 
-          // Ensure proper separation between tiers
-          const lowRate = feeRates.low || 1;
-          const mediumRate = Math.max(lowRate + 1, feeRates.medium || 2);
-          const highRate = Math.max(mediumRate + 1, feeRates.high || 5);
-
-          // Calculate fees for a standard transaction (~148 vBytes)
-          const txSize = 148;
-
-          setFeeEstimates({
-            low: {
-              rate: lowRate,
-              fee: calculateFeeEstimate(lowRate, txSize),
-              time: "30 min",
-            },
-            medium: {
-              rate: mediumRate,
-              fee: calculateFeeEstimate(mediumRate, txSize),
-              time: "~20 min",
-            },
-            high: {
-              rate: highRate,
-              fee: calculateFeeEstimate(highRate, txSize),
-              time: "~10 min",
-            },
-          });
+          setFeeEstimates(feeRates);
         } catch (error) {
           console.error("Error fetching fee estimates:", error);
           // Fallback to default estimates with proper separation
@@ -348,12 +359,6 @@ export default function TransactionConfirmation({
       return;
     }
 
-    const feeRates = await styxSDK.getFeeEstimates();
-    const selectedFeeRate = feeRates[feePriority];
-    console.log(
-      `Using ${feePriority} priority fee rate: ${selectedFeeRate} sat/vB`
-    );
-
     if (!confirmationData) {
       toast({
         title: "Error",
@@ -367,6 +372,27 @@ export default function TransactionConfirmation({
     setBtcTxStatus("pending");
 
     try {
+      // Always fetch fee estimates directly from mempool.space before transaction
+      let currentFeeRates;
+      try {
+        console.log(
+          "Fetching fresh fee estimates before transaction preparation"
+        );
+        const estimatesResult = await fetchMempoolFeeEstimates();
+        currentFeeRates = {
+          low: estimatesResult.low.rate,
+          medium: estimatesResult.medium.rate,
+          high: estimatesResult.high.rate,
+        };
+
+        // Update the UI fee display
+        setFeeEstimates(estimatesResult);
+        console.log("Using fee rates:", currentFeeRates);
+      } catch (error) {
+        console.warn("Error fetching fee estimates, using defaults:", error);
+        currentFeeRates = { low: 1, medium: 3, high: 5 };
+      }
+
       // Create deposit record with new structure
       console.log(`Creating ${swapType} deposit with data:`, {
         btcAmount: parseFloat(confirmationData.depositAmount),
@@ -386,7 +412,7 @@ export default function TransactionConfirmation({
         btcSender: btcAddress || "",
         isBlaze: false,
         swapType: swapType,
-        minTokenOut: computedMinTokenOut,
+        minTokenOut: confirmationData.minTokenOut,
         poolId: poolId,
         dexId: dexId,
         aiAccountReceiver: aiAccountReceiver,
@@ -423,47 +449,22 @@ export default function TransactionConfirmation({
         const senderBtcAddress = btcAddress;
         console.log("Using BTC address from context:", senderBtcAddress);
 
-        // Get a transaction prepared for signing with new structure
-        console.log(`Getting prepared ${swapType} transaction from SDK...`);
+        // First prepare the transaction with current fee rates and user parameters
         const preparedTransaction = await styxSDK.prepareTransaction({
           amount: confirmationData.depositAmount,
-          userAddress: userAddress,
-          btcAddress: senderBtcAddress,
+          userAddress,
+          btcAddress,
           feePriority,
           walletProvider: activeWalletProvider,
-          minTokenOut: computedMinTokenOut || 0,
+          feeRates: currentFeeRates,
+          minTokenOut: computedMinTokenOut || confirmationData.minTokenOut,
           swapType: swapType,
           poolId: poolId,
           dexId: dexId,
           aiAccountReceiver: aiAccountReceiver,
-        } as TransactionPrepareParams);
-
-        // Here, update fee estimates from the prepared transaction
-        setFeeEstimates({
-          low: {
-            rate: preparedTransaction.feeRate,
-            fee: preparedTransaction.fee,
-            time: "30 min",
-          },
-          medium: {
-            rate: preparedTransaction.feeRate,
-            fee: preparedTransaction.fee,
-            time: "~20 min",
-          },
-          high: {
-            rate: preparedTransaction.feeRate,
-            fee: preparedTransaction.fee,
-            time: "~10 min",
-          },
         });
 
-        console.log(
-          `PREPARED ${swapType?.toUpperCase()} TRANSACTION: `,
-          preparedTransaction
-        );
-
-        // Execute transaction with prepared data
-        console.log(`Creating ${swapType} transaction with SDK...`);
+        // Now execute transaction with the properly prepared data
         const transactionData = await styxSDK.executeTransaction({
           depositId,
           preparedData: {
@@ -477,7 +478,7 @@ export default function TransactionConfirmation({
             inputCount: preparedTransaction.inputCount,
             outputCount: preparedTransaction.outputCount,
             inscriptionCount: preparedTransaction.inscriptionCount,
-          } as PreparedTransactionData,
+          },
           walletProvider: activeWalletProvider,
           btcAddress: senderBtcAddress,
         });
@@ -616,7 +617,7 @@ export default function TransactionConfirmation({
 
         console.log("Wallet-specific flow for:", activeWalletProvider);
 
-        if (activeWalletProvider === "leather") {
+        if (activeWalletProvider === "leather" && window.LeatherProvider) {
           // Leather wallet flow
           const requestParams = {
             hex: finalTxPsbtHex,
@@ -672,7 +673,7 @@ export default function TransactionConfirmation({
           }
 
           txid = await broadcastResponse.text();
-        } else if (activeWalletProvider === "xverse") {
+        } else if (window.XverseProviders) {
           console.log("Executing Xverse transaction flow");
           console.log("xverseRequest function type:", typeof xverseRequest);
           // Xverse wallet flow
@@ -692,7 +693,7 @@ export default function TransactionConfirmation({
               finalTxPsbtBase64.substring(0, 100) + "..."
             );
 
-            // Prepare request params
+            // Prepare request params matching demo.tsx exactly
             const xverseParams = {
               psbt: finalTxPsbtBase64,
               signInputs: inputAddresses,
@@ -701,8 +702,7 @@ export default function TransactionConfirmation({
                 btc.SigHash.ALL,
                 btc.SigHash.NONE,
                 btc.SigHash.SINGLE,
-                btc.SigHash.DEFAULT_ANYONECANPAY,
-              ], // More complete set of sighash options
+              ],
               options: {
                 allowUnknownInputs: true,
                 allowUnknownOutputs: true,
@@ -764,6 +764,17 @@ export default function TransactionConfirmation({
             throw err;
           }
         } else {
+          console.log("=== WALLET DETECTION DEBUG ===");
+          console.log("activeWalletProvider:", activeWalletProvider);
+          console.log(
+            "window.LeatherProvider exists:",
+            !!window.LeatherProvider
+          );
+          console.log(
+            "window.XverseProviders exists:",
+            !!window.XverseProviders
+          );
+          console.log("typeof window:", typeof window);
           throw new Error("No compatible wallet provider detected");
         }
 
