@@ -786,21 +786,111 @@ export default function DepositForm({
         <h2 className="text-xl font-semibold">
           Buy <span className="font-bold">{daoName}</span> Tokens
         </h2>
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p>
-            Trade {buyWithSbtc ? "sBTC" : "BTC"} for {daoName} tokens
-          </p>
-          <div className="flex items-center justify-center gap-2 text-xs">
-            <span className="px-2 py-1 bg-muted rounded">
-              {buyWithSbtc ? "sBTC" : "BTC"}
-            </span>
-            <span>→</span>
-            <span className="px-2 py-1 bg-muted rounded">{daoName} Tokens</span>
-            <span>→</span>
-            <span className="px-2 py-1 bg-muted rounded">Agent Account</span>
-          </div>
-        </div>
       </div>
+      {accessToken && (userAddress || btcAddress) && (
+        <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="link"
+              className="text-xs text-muted-foreground h-auto p-0 -mt-1"
+            >
+              View Process Details
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Trading Process Details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h4 className="font-medium text-sm mb-2">How it works:</h4>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
+                      1
+                    </span>
+                    <span>
+                      You spend {buyWithSbtc ? "sBTC" : "BTC"} from your
+                      connected wallet
+                    </span>
+                  </div>
+                  {!buyWithSbtc && (
+                    <div className="flex items-start gap-2">
+                      <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
+                        2
+                      </span>
+                      <span>
+                        BTC is swapped for sBTC through deposit process
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
+                      {buyWithSbtc ? "2" : "3"}
+                    </span>
+                    <span>sBTC is traded at DEX for {daoName} tokens</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
+                      {buyWithSbtc ? "3" : "4"}
+                    </span>
+                    <span>
+                      {daoName} tokens are deposited into your Agent Account
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                <h4 className="font-medium text-sm mb-2 text-amber-800 dark:text-amber-200">
+                  Slippage Protection:
+                </h4>
+                <div className="space-y-1 text-sm text-amber-700 dark:text-amber-300">
+                  <p>
+                    • If quote &lt; minimum receive: sBTC sent to Agent Account
+                    instead
+                  </p>
+                  <p>• If quote ≥ minimum receive: Trade continues normally</p>
+                  <p>• Current protection: {currentSlippage}%</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 text-xs">
+                {userAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      User's Address (STX)
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {userAddress}
+                    </div>
+                  </div>
+                )}
+                {btcAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Bitcoin Address
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {btcAddress}
+                    </div>
+                  </div>
+                )}
+                {userAgentAddress && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">
+                      Agent Account
+                    </span>
+                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
+                      {userAgentAddress}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <div className="flex items-center space-x-2 justify-end">
         <Label htmlFor="sbtc-switch">Buy with sBTC</Label>
@@ -949,111 +1039,6 @@ export default function DepositForm({
           </div>
         )} */}
       </div>
-
-      {accessToken && (userAddress || btcAddress) && (
-        <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="link"
-              className="text-xs text-muted-foreground h-auto p-0 -mt-1"
-            >
-              View Process Details
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Trading Process Details</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <div className="bg-muted/30 p-3 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">How it works:</h4>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-start gap-2">
-                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
-                      1
-                    </span>
-                    <span>
-                      You spend {buyWithSbtc ? "sBTC" : "BTC"} from your
-                      connected wallet
-                    </span>
-                  </div>
-                  {!buyWithSbtc && (
-                    <div className="flex items-start gap-2">
-                      <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
-                        2
-                      </span>
-                      <span>
-                        BTC is swapped for sBTC through deposit process
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-start gap-2">
-                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
-                      {buyWithSbtc ? "2" : "3"}
-                    </span>
-                    <span>sBTC is traded at DEX for {daoName} tokens</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="font-mono bg-primary/10 px-1 rounded text-xs mt-0.5">
-                      {buyWithSbtc ? "3" : "4"}
-                    </span>
-                    <span>
-                      {daoName} tokens are deposited into your Agent Account
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
-                <h4 className="font-medium text-sm mb-2 text-amber-800 dark:text-amber-200">
-                  Slippage Protection:
-                </h4>
-                <div className="space-y-1 text-sm text-amber-700 dark:text-amber-300">
-                  <p>
-                    • If quote &lt; minimum receive: sBTC sent to Agent Account
-                    instead
-                  </p>
-                  <p>• If quote ≥ minimum receive: Trade continues normally</p>
-                  <p>• Current protection: {currentSlippage}%</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 pt-2 text-xs">
-                {userAddress && (
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-muted-foreground">
-                      User's Address (STX)
-                    </span>
-                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
-                      {userAddress}
-                    </div>
-                  </div>
-                )}
-                {btcAddress && (
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-muted-foreground">
-                      Bitcoin Address
-                    </span>
-                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
-                      {btcAddress}
-                    </div>
-                  </div>
-                )}
-                {userAgentAddress && (
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-muted-foreground">
-                      Agent Account
-                    </span>
-                    <div className="font-mono bg-muted/50 p-2 rounded border break-all">
-                      {userAgentAddress}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
 
       <Card className="border-border/30">
         <CardContent className="p-3">
