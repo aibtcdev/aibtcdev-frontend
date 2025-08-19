@@ -29,7 +29,9 @@ export function getStacksAddress(): string | null {
     const stxList = data.addresses.stx as AddressObject[];
     const isTestnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet";
     const preferred = stxList.find((addr) =>
-      isTestnet ? addr.address.startsWith("ST") : addr.address.startsWith("SP")
+      isTestnet
+        ? addr.address.startsWith("ST")
+        : addr.address.startsWith("SP") || addr.address.startsWith("SM")
     );
     return preferred?.address || stxList[0]?.address || null;
   } catch (error) {
