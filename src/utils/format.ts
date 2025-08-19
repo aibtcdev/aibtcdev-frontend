@@ -175,6 +175,24 @@ export function getExplorerLink(
   return `${baseUrl}${path}?chain=${chainParam}`;
 }
 
+/**
+ * Formats a token price to a string with appropriate decimal places.
+ * @param value - The price as a number or string
+ * @returns Formatted price string (e.g., "$0.00000978")
+ */
+export function formatTokenPrice(value: number | string): string {
+  if (!value || Number(value) === 0) return "$0.00";
+  const num = Number(value);
+  if (isNaN(num) || num === 0) return "$0.00";
+  if (num < 0.01) {
+    return `$${num.toFixed(8)}`;
+  }
+  if (num < 1) {
+    return `$${num.toFixed(4)}`;
+  }
+  return `$${num.toFixed(2)}`;
+}
+
 export function extractMission(markdown: string): string {
   if (!markdown) return "";
 

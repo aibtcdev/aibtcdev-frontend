@@ -20,7 +20,7 @@ import { Loader } from "@/components/reusables/Loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
-import { extractMission } from "@/utils/format";
+import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
 
@@ -226,7 +226,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                       Price
                     </span>
                     <span className="text-lg font-bold text-white">
-                      ${enhancedMarketStats.price}
+                      {formatTokenPrice(enhancedMarketStats.price)}
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-2 py-2 px-4">
