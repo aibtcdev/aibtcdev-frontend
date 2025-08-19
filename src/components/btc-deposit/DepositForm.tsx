@@ -919,7 +919,7 @@ export default function DepositForm({
           Includes {currentSlippage}% slippage protection
         </div>
 
-        {poolStatus && (
+        {/* {poolStatus && (
           <div className="mt-4 p-3 bg-muted/30 rounded-lg border">
             <h4 className="font-medium text-sm mb-3 text-muted-foreground">
               Pool Status
@@ -947,7 +947,7 @@ export default function DepositForm({
               </div>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {accessToken && (userAddress || btcAddress) && (
