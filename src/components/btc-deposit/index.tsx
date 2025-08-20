@@ -48,7 +48,7 @@ export default function BitcoinDeposit({
   const [isRefetching, setIsRefetching] = useState(false);
 
   // Add state for the missing transaction parameters
-  const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
+  // const [minTokenOut] = useState<number>(50); // You can make this dynamic based on user input
   // const [poolId] = useState<string>("aibtc");
   const [swapType] = useState<"sbtc" | "usda" | "pepe" | "aibtc">("aibtc");
 
@@ -161,7 +161,7 @@ export default function BitcoinDeposit({
                 daoName={daoName}
                 userAddress={userAddress}
                 dexId={dexId}
-                tokenContract={tokenContract}
+                // tokenContract={tokenContract}
                 swapType="aibtc"
                 poolId="aibtc"
                 aiAccountReceiver={userAgentAddress || ""}
@@ -194,7 +194,7 @@ export default function BitcoinDeposit({
           refetchAllDeposits={refetchAllDeposits}
           setIsRefetching={setIsRefetching}
           aiAccountReceiver={userAgentAddress || ""}
-          minTokenOut={minTokenOut}
+          // minTokenOut={minTokenOut}
           poolId="aibtc"
           swapType={swapType}
           dexId={dexId}

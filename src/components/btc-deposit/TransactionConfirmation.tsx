@@ -698,11 +698,6 @@ export default function TransactionConfirmation({
               psbt: finalTxPsbtBase64,
               signInputs: inputAddresses,
               broadcast: true, // Let Xverse handle broadcasting
-              allowedSighash: [
-                btc.SigHash.ALL,
-                btc.SigHash.NONE,
-                btc.SigHash.SINGLE,
-              ],
               options: {
                 allowUnknownInputs: true,
                 allowUnknownOutputs: true,

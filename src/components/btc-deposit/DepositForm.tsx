@@ -502,6 +502,7 @@ export default function DepositForm({
 
       const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
       const assetName = getTokenAssetName(daoName);
+      console.log(assetName);
 
       const TARGET_STX = targetStx * Math.pow(10, 8);
       const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
@@ -685,6 +686,13 @@ export default function DepositForm({
         handleUtxoCountError(error);
       } else if (isAddressTypeError(error)) {
         handleAddressTypeError(error, activeWalletProvider);
+      } else if (error.message.includes("HTTP error! status: 500")) {
+        toast({
+          title: "Insufficient funds",
+          description:
+            "Not enough Bitcoin to cover deposit amount plus fees. Try a smaller amount or add more funds.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Error",
