@@ -29,7 +29,7 @@ export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
-  tokenContract,
+  // tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
