@@ -1059,6 +1059,16 @@ export default function TransactionConfirmation({
           </div>
 
           {/* Fee selection */}
+          <div className="border-t border-border pt-4">
+            {activeWalletProvider === "xverse" && (
+              <p className="text-xs text-primary text-right mt-1">
+                Note: For Xverse wallet, we recommend medium (3v/sat) or higher
+                as lower fees might fail.
+              </p>
+            )}
+          </div>
+
+          {/* Fee details */}
           <div className="bg-zinc-900 p-4 rounded-md">
             <p className="text-sm mb-3 font-medium">Select priority</p>
 
@@ -1066,7 +1076,9 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "low" ? "bg-primary/20" : "bg-zinc-900"
+                  feePriority === TransactionPriority.Low
+                    ? "bg-primary/20"
+                    : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.Low)}
               >
@@ -1085,7 +1097,9 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "medium" ? "bg-primary/20" : "bg-zinc-900"
+                  feePriority === TransactionPriority.Medium
+                    ? "bg-primary/20"
+                    : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.Medium)}
               >
@@ -1108,7 +1122,9 @@ export default function TransactionConfirmation({
               <Card
                 className={cn(
                   "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === "high" ? "bg-primary/20" : "bg-zinc-900"
+                  feePriority === TransactionPriority.High
+                    ? "bg-primary/20"
+                    : "bg-zinc-900"
                 )}
                 onClick={() => setFeePriority(TransactionPriority.High)}
               >
