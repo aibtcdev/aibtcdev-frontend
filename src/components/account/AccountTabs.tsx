@@ -21,7 +21,6 @@ interface AccountTabsProps {
 
 export function AccountTabs({
   userAgentAddress,
-  userAgentContractBalance,
   initialTab = "profile",
   onTabChange,
 }: AccountTabsProps) {

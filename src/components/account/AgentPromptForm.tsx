@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 
 import { fetchDAOs } from "@/services/dao.service";
 import { fetchAgents } from "@/services/agent.service";

@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Check, X, Pencil, Trash2 } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import type { AgentPrompt } from "./AgentPrompt";

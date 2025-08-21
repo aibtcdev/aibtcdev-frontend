@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWalletStore } from "@/store/wallet";
+import { useWalletStore, WalletBalance } from "@/store/wallet";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
 import { getStacksAddress } from "@/lib/address";
@@ -85,7 +85,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     return (num / 1000000).toFixed(6);
   };
 
-  const getAllBalances = (walletBalance: any) => {
+  const getAllBalances = (walletBalance: WalletBalance | null) => {
     if (!walletBalance) return undefined;
 
     const metadata: Record<string, string> = {};
@@ -102,7 +102,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           const [, tokenSymbol] = tokenId.split("::");
           const isBtc = tokenId.includes("sbtc-token");
           const displaySymbol = isBtc ? "sBTC" : tokenSymbol || "Token";
-          const balance = (token as any).balance;
+          const balance = token.balance;
 
           if (balance && parseFloat(balance) > 0) {
             metadata[`${displaySymbol} `] =
@@ -118,7 +118,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         ([tokenId, token]) => {
           const [, tokenSymbol] = tokenId.split("::");
           const displaySymbol = tokenSymbol || "NFT";
-          const count = (token as any).count;
+          const count = token.count;
 
           if (count > 0) {
             metadata[`${displaySymbol} NFTs`] = `${count} ${displaySymbol}`;
@@ -130,7 +130,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const getLimitedBalances = (walletBalance: any) => {
+  const getLimitedBalances = (walletBalance: WalletBalance | null) => {
     if (!walletBalance) return undefined;
 
     const metadata: Record<string, string> = {};
@@ -155,7 +155,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
           if (isBtc || isFakeToken) {
             const displaySymbol = isBtc ? "sBTC" : tokenSymbol || "Token";
-            const balance = (token as any).balance;
+            const balance = token.balance;
 
             if (balance && parseFloat(balance) > 0) {
               metadata[displaySymbol] =
