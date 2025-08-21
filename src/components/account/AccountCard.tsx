@@ -96,7 +96,7 @@ export function AccountCard({
                   <div className="flex-1 flex flex-col items-start gap-1 min-w-0">
                     <span className="text-sm font-medium text-muted-foreground w-full truncate">
                       {isPrimary
-                        ? "Primary browser wallet"
+                        ? "Connected wallet through the browser"
                         : "Agent account address"}
                     </span>
 

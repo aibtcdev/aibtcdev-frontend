@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Check, X, Pencil, Trash2 } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import type { AgentPrompt } from "./AgentPrompt";
@@ -175,46 +174,6 @@ export function MobileConfigCard({
               <span className="text-muted-foreground font-semibold text-sm">
                 {prompt?.model || "gpt-4.1"}
               </span>
-            </div>
-          )}
-        </div>
-
-        {/* Creativity Level */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            Creativity Level
-          </label>
-          {isEditing ? (
-            <div className="space-y-1">
-              <Input
-                name="temperature"
-                type="number"
-                min="0"
-                max="1"
-                step="0.1"
-                value={editingData.temperature}
-                onChange={onInputChange}
-                className="h-9 w-full bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-lg text-center text-sm"
-              />
-              {errors.temperature && (
-                <p className="text-xs text-destructive font-medium">
-                  {errors.temperature}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="p-2 bg-muted/20 rounded-lg border border-border/20">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-                    style={{ width: `${(prompt?.temperature || 0.1) * 100}%` }}
-                  />
-                </div>
-                <span className="text-muted-foreground font-semibold text-xs w-6 text-right">
-                  {prompt?.temperature || 0.1}
-                </span>
-              </div>
             </div>
           )}
         </div>

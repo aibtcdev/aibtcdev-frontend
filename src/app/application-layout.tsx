@@ -8,13 +8,11 @@ import {
   Boxes,
   Menu,
   X,
-  // FileText,
   Vote,
   ChevronDown,
   LogOut,
   User,
-  Wallet,
-  FlaskConical,
+  Bot,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -170,26 +168,6 @@ export default function ApplicationLayout({
                 >
                   <User className="h-4 w-4" />
                   <span className="group-hover:text-white">Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    handleNavigation("/account?tab=wallet", e);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                >
-                  <Wallet className="h-4 w-4" />
-                  <span className="group-hover:text-white">Wallet</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    handleNavigation("/account?tab=instructions", e);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                >
-                  <FlaskConical className="h-4 w-4" />
-                  <span className="group-hover:text-white">Instructions</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -355,23 +333,13 @@ export default function ApplicationLayout({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account?tab=wallet", e);
+                    handleNavigation("/account?tab=agent-settings", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
-                  <Wallet className="h-4 w-4" />
-                  <span className="group-hover:text-white">Wallet</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    handleNavigation("/account?tab=instructions", e);
-                    setDesktopMenuOpen(false);
-                  }}
-                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                >
-                  <FlaskConical className="h-4 w-4" />
-                  <span className="group-hover:text-white">Instructions</span>
+                  <Bot className="h-4 w-4" />
+                  <span className="group-hover:text-white">Agent Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">

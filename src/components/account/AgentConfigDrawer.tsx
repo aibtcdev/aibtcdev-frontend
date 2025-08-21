@@ -18,9 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Bot, Zap, Brain, Save, X } from "lucide-react";
+import { Bot, Save, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createAgentPrompt,
@@ -31,7 +30,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
 import type { AgentPrompt } from "./AgentPrompt";
-import TemperatureSlider from "../evaluation/TemperatureSlider";
 
 interface AgentConfigDrawerProps {
   isOpen: boolean;
@@ -103,7 +101,7 @@ export function AgentConfigDrawer({
           dao_id: existingPrompt.dao_id,
           prompt_text: existingPrompt.prompt_text,
           model: existingPrompt.model,
-          temperature: existingPrompt.temperature,
+          temperature: existingPrompt.temperature || 0.1,
         });
       } else if (daoId) {
         setFormData({
@@ -188,10 +186,6 @@ export function AgentConfigDrawer({
       newErrors.model = "Please select an AI model";
     }
 
-    if (formData.temperature < 0 || formData.temperature > 1) {
-      newErrors.temperature = "Temperature must be between 0 and 1";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -222,7 +216,7 @@ export function AgentConfigDrawer({
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | number) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData({ ...formData, [field]: value });
     if (errors[field]) {
       setErrors({ ...errors, [field]: "" });
@@ -310,7 +304,6 @@ export function AgentConfigDrawer({
                 </Select>
                 {selectedModel && (
                   <div className="flex items-center gap-2 p-3 bg-muted/10 rounded-lg">
-                    <Brain className="h-4 w-4 text-primary flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">
                         {selectedModel.label}
@@ -323,45 +316,6 @@ export function AgentConfigDrawer({
                 )}
                 {errors.model && (
                   <p className="text-sm text-destructive">{errors.model}</p>
-                )}
-              </div>
-
-              {/* Creativity Level */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">Creativity Level</span>
-                  </Label>
-                  <Badge variant="outline" className="font-mono flex-shrink-0">
-                    {formData.temperature}
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  <TemperatureSlider
-                    value={formData.temperature}
-                    onChange={(value) =>
-                      handleInputChange("temperature", value)
-                    }
-                    className="w-full"
-                    min={0}
-                    max={1}
-                    step={0.1}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span className="truncate">Conservative (0.0)</span>
-                    <span className="truncate">Balanced (0.5)</span>
-                    <span className="truncate">Creative (1.0)</span>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Lower values make responses more focused and deterministic.
-                  Higher values increase creativity and variability.
-                </p>
-                {errors.temperature && (
-                  <p className="text-sm text-destructive">
-                    {errors.temperature}
-                  </p>
                 )}
               </div>
 

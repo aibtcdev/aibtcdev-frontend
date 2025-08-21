@@ -106,7 +106,7 @@ export function AgentPermissions({ agentAddress }: Props) {
   return (
     <div className="space-y-2 md:space-y-2 w-full">
       <p className="text-sm font-semibold text-muted-foreground text-center md:text-left">
-        Agent Permissions
+        Adjust which actions your agent has permission to execute
       </p>
 
       <div className="space-y-2">
