@@ -129,7 +129,7 @@ export function ChainSection({
                       href={getExplorerLink("tx", proposal.tx_id)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80"
+                      className="text-primary hover:text-primary/80 flex items-center gap-2"
                     >
                       Tx id <ExternalLink className="h-3 w-3" />
                     </a>
