@@ -41,6 +41,10 @@ export async function getProposalVotes(
             value: proposalId.toString(),
           },
         ],
+        network:
+          process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
+            ? "mainnet"
+            : "testnet",
         // Add cache control in the request body
         cacheControl: bustCache
           ? {
