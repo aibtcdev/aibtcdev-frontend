@@ -17,6 +17,7 @@ function AccountPageContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
   // Get the tab parameter from URL, default to "profile"
   const initialTab = searchParams.get("tab") || "profile";
@@ -76,13 +77,30 @@ function AccountPageContent() {
     ? balances[userAgentAddress]
     : null;
 
+  const getTabInfo = (tab: string) => {
+    switch (tab) {
+      case "agent-settings":
+        return {
+          title: "Agent Settings",
+          description:
+            "Configure your AI agent permissions and voting instructions for DAO operations.",
+        };
+      default:
+        return {
+          title: "Wallets",
+          description:
+            "View your connected wallet, agent account, and agent wallet information.",
+        };
+    }
+  };
+
+  const tabInfo = getTabInfo(activeTab);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Agent Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your profile and agent account.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{tabInfo.title}</h1>
+        <p className="text-muted-foreground">{tabInfo.description}</p>
       </div>
       <AccountTabs
         isClient={isClient}
@@ -93,6 +111,7 @@ function AccountPageContent() {
         userId={userId}
         fetchWallets={fetchWallets}
         initialTab={initialTab}
+        onTabChange={setActiveTab}
       />
     </div>
   );
@@ -104,11 +123,10 @@ export default function AccountPage() {
       fallback={
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight">
-              Agent Settings
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Wallets</h1>
             <p className="text-muted-foreground">
-              Manage your profile and agent account.
+              View your connected wallet, agent account, and agent wallet
+              information.
             </p>
           </div>
           <div className="flex justify-center items-center py-8">

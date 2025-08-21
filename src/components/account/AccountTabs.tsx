@@ -2,10 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Bot, Wallet } from "lucide-react";
+import { LayoutDashboard, Settings } from "lucide-react";
 import { ProfileTab } from "./tabs/ProfileTab";
-import { WalletTab } from "./tabs/WalletTab";
-import { InstructionsTab } from "./tabs/InstructionsTab";
+import { AgentSettingsTab } from "./tabs/AgentSettingsTab";
 import { WalletBalance } from "@/store/wallet";
 
 interface AccountTabsProps {
@@ -17,12 +16,14 @@ interface AccountTabsProps {
   userId: string | null;
   fetchWallets: (userId: string) => Promise<void>;
   initialTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 export function AccountTabs({
   userAgentAddress,
   userAgentContractBalance,
   initialTab = "profile",
+  onTabChange,
 }: AccountTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,11 +32,13 @@ export function AccountTabs({
   // Update active tab when initialTab changes (from URL navigation)
   useEffect(() => {
     setActiveTab(initialTab);
-  }, [initialTab]);
+    onTabChange?.(initialTab);
+  }, [initialTab, onTabChange]);
 
   // Handle tab change and update URL
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    onTabChange?.(value);
 
     // Create new URLSearchParams to preserve other query parameters
     const newSearchParams = new URLSearchParams(searchParams.toString());
@@ -48,7 +51,7 @@ export function AccountTabs({
   return (
     <div className="max-w-7xl mx-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="">
-        <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
+        <TabsList className="grid w-full grid-cols-2 sticky-tabs border rounded-lg p-1">
           <TabsTrigger
             value="profile"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -58,19 +61,11 @@ export function AccountTabs({
           </TabsTrigger>
 
           <TabsTrigger
-            value="wallet"
+            value="agent-settings"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
-            <Wallet className="h-4 w-4" />
-            <span className=" sm:inline">Wallet</span>
-          </TabsTrigger>
-
-          <TabsTrigger
-            value="instructions"
-            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            <Bot className="h-4 w-4" />
-            <span className=" sm:inline">Instructions</span>
+            <Settings className="h-4 w-4" />
+            <span className=" sm:inline">Agent Settings</span>
           </TabsTrigger>
         </TabsList>
 
@@ -78,15 +73,8 @@ export function AccountTabs({
           <ProfileTab agentAddress={userAgentAddress} />
         </TabsContent>
 
-        <TabsContent value="wallet" className="py-6">
-          <WalletTab
-            userAgentContractBalance={userAgentContractBalance}
-            agentAddress={userAgentAddress}
-          />
-        </TabsContent>
-
-        <TabsContent value="instructions" className="py-6">
-          <InstructionsTab />
+        <TabsContent value="agent-settings" className="py-6">
+          <AgentSettingsTab />
         </TabsContent>
       </Tabs>
     </div>

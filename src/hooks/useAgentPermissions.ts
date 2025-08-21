@@ -33,15 +33,16 @@ export function useAgentPermissions(agentAddress: string | null) {
 
     if (!res.ok) throw new Error("Failed to fetch permissions");
 
-    const data = await res.json();
-    return (
-      data?.data || {
-        canUseProposals: true,
-        canApproveRevokeContracts: true,
-        canBuySell: false,
-        canDeposit: true,
-      }
-    );
+    const response = await res.json();
+    const apiData = response?.data;
+
+    // Map API response to expected interface
+    return {
+      canUseProposals: apiData?.canUseProposals ?? true,
+      canApproveRevokeContracts: apiData?.canApproveRevokeContracts ?? true,
+      canBuySell: apiData?.canBuySell ?? false,
+      canDeposit: apiData?.canManageAssets ?? true, // Map canManageAssets to canDeposit
+    };
   };
 
   return useQuery({
