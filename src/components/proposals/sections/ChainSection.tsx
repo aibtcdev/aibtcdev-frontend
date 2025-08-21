@@ -126,11 +126,16 @@ export function ChainSection({
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                      Status
+                      Tx_id
                     </p>
-                    <Badge variant="secondary" className="text-xs">
-                      On-chain
-                    </Badge>
+                    <a
+                      href={getExplorerLink("tx", proposal.tx_id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </div>
                 </div>
               </div>
