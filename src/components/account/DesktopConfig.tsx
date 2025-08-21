@@ -97,7 +97,7 @@ export function DesktopConfigTable({
           <TableHeader>
             <TableRow className="border-border/40 bg-gradient-to-r from-muted/40 via-muted/30 to-muted/20 backdrop-blur-sm">
               <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[150px]">
-                DAO Organization
+                DAO
               </TableHead>
               <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[100px]">
                 Status

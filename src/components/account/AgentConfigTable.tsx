@@ -80,9 +80,7 @@ export function AgentConfigTable({
         <Table className="min-w-full table-fixed">
           <TableHeader>
             <TableRow>
-              <TableHead className="sm:min-w-[160px]">
-                DAO Organization
-              </TableHead>
+              <TableHead className="sm:min-w-[160px]">DAO</TableHead>
               <TableHead className="sm:min-w-[80px]">Mode</TableHead>
               <TableHead className="sm:min-w-[100px] hidden sm:table-cell">
                 AI Model
