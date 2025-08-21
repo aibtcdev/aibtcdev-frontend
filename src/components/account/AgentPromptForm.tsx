@@ -58,7 +58,6 @@ interface EditingData {
   id: string;
   prompt_text: string;
   model: string;
-  temperature: number;
 }
 
 // Define types for mutations
@@ -213,46 +212,6 @@ function MobileConfigCard({
               <span className="text-muted-foreground font-semibold text-sm">
                 {prompt?.model || "gpt-4.1"}
               </span>
-            </div>
-          )}
-        </div>
-
-        {/* Creativity Level */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            Creativity Level
-          </label>
-          {isEditing ? (
-            <div className="space-y-1">
-              <Input
-                name="temperature"
-                type="number"
-                min="0"
-                max="1"
-                step="0.1"
-                value={editingData.temperature}
-                onChange={onInputChange}
-                className="h-9 w-full bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-lg text-center text-sm"
-              />
-              {errors.temperature && (
-                <p className="text-xs text-destructive font-medium">
-                  {errors.temperature}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="p-2 bg-muted/20 rounded-lg border border-border/20">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-                    style={{ width: `${(prompt?.temperature || 0.1) * 100}%` }}
-                  />
-                </div>
-                <span className="text-muted-foreground font-semibold text-xs w-6 text-right">
-                  {prompt?.temperature || 0.1}
-                </span>
-              </div>
             </div>
           )}
         </div>
@@ -486,7 +445,6 @@ export function AgentPromptForm() {
     id: "",
     prompt_text: "",
     model: "gpt-4.1",
-    temperature: 0.1,
   });
 
   // Form errors
@@ -502,7 +460,6 @@ export function AgentPromptForm() {
         id: existingPrompt.id,
         prompt_text: existingPrompt.prompt_text,
         model: existingPrompt.model || "gpt-4.1",
-        temperature: existingPrompt.temperature || 0.1,
       });
     } else {
       // Creating new prompt
@@ -510,7 +467,6 @@ export function AgentPromptForm() {
         id: "",
         prompt_text: "",
         model: "gpt-4.1",
-        temperature: 0.1,
       });
     }
 
@@ -529,12 +485,7 @@ export function AgentPromptForm() {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "temperature") {
-      const numValue = parseFloat(value);
-      setEditingData({ ...editingData, temperature: numValue });
-    } else {
-      setEditingData({ ...editingData, [name]: value });
-    }
+    setEditingData({ ...editingData, [name]: value });
 
     // Clear error for this field
     if (errors[name]) {
@@ -562,14 +513,6 @@ export function AgentPromptForm() {
       newErrors.prompt_text = "Instructions must be less than 2000 characters";
     }
 
-    if (
-      editingData.temperature < 0 ||
-      editingData.temperature > 1 ||
-      isNaN(editingData.temperature)
-    ) {
-      newErrors.temperature = "Temperature must be between 0 and 1";
-    }
-
     if (!editingData.model) {
       newErrors.model = "Model selection is required";
     }
@@ -588,7 +531,7 @@ export function AgentPromptForm() {
         data: {
           prompt_text: editingData.prompt_text,
           model: editingData.model,
-          temperature: editingData.temperature,
+          temperature: 0.1,
           is_active: true,
         },
       });
@@ -600,7 +543,7 @@ export function AgentPromptForm() {
         profile_id: userId || "",
         prompt_text: editingData.prompt_text,
         model: editingData.model,
-        temperature: editingData.temperature,
+        temperature: 0.1,
         is_active: true,
       });
     }
@@ -725,9 +668,6 @@ export function AgentPromptForm() {
                   <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[120px]">
                     AI Model
                   </TableHead>
-                  <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[100px]">
-                    Creativity
-                  </TableHead>
                   <TableHead className="text-foreground font-bold px-4 py-3 text-sm min-w-[250px]">
                     Instructions
                   </TableHead>
@@ -739,7 +679,7 @@ export function AgentPromptForm() {
               <TableBody>
                 {isLoading && uniqueDaoIds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
+                    <TableCell colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="relative">
                           <Loader />
@@ -757,7 +697,7 @@ export function AgentPromptForm() {
                   </TableRow>
                 ) : uniqueDaoIds.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12">
+                    <TableCell colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center space-y-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
                           <Settings className="h-6 w-6 text-muted-foreground/60" />
@@ -877,44 +817,7 @@ export function AgentPromptForm() {
                           )}
                         </TableCell>
 
-                        {/* Temperature */}
-                        <TableCell className="px-4 py-3 w-[100px]">
-                          {isEditing ? (
-                            <div className="space-y-1">
-                              <Input
-                                name="temperature"
-                                type="number"
-                                min="0"
-                                max="1"
-                                step="0.1"
-                                value={editingData.temperature}
-                                onChange={handleInputChange}
-                                className="h-8 w-16 bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-lg text-center text-sm"
-                              />
-                              {errors.temperature && (
-                                <p className="text-xs text-destructive font-medium">
-                                  {errors.temperature}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-                                  style={{
-                                    width: `${(prompt?.temperature || 0.1) * 100}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="text-muted-foreground font-semibold text-xs w-6 text-right">
-                                {prompt?.temperature || 0.1}
-                              </span>
-                            </div>
-                          )}
-                        </TableCell>
-
-                        {/* Prompt Text */}
+                        {/* Instructions */}
                         <TableCell className="px-4 py-3 min-w-[250px]">
                           {isEditing ? (
                             <div className="space-y-1">

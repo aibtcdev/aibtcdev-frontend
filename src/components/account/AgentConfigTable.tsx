@@ -85,11 +85,8 @@ export function AgentConfigTable({
               <TableHead className="sm:min-w-[100px] hidden sm:table-cell">
                 AI Model
               </TableHead>
-              <TableHead className="md:min-w-[100px] hidden md:table-cell">
-                Creativity
-              </TableHead>
               <TableHead className="lg:min-w-[200px] hidden lg:table-cell">
-                Configuration
+                Your Instruction
               </TableHead>
               <TableHead className="sm:min-w-[120px] text-right">
                 Actions
@@ -133,26 +130,6 @@ export function AgentConfigTable({
                         <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                         <span className="text-sm font-medium truncate">
                           {prompt.model}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-
-                  <TableCell className="md:min-w-[100px] hidden md:table-cell">
-                    {isConfigured ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-12 bg-muted/30 rounded-full h-1.5 overflow-hidden flex-shrink-0">
-                          <div
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{
-                              width: `${(prompt.temperature || 0) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium w-8 text-right flex-shrink-0">
-                          {prompt.temperature}
                         </span>
                       </div>
                     ) : (

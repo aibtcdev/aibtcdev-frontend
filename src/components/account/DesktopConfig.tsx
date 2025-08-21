@@ -105,9 +105,6 @@ export function DesktopConfigTable({
               <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[120px]">
                 AI Model
               </TableHead>
-              <TableHead className="text-foreground font-bold px-4 py-3 text-sm w-[100px]">
-                Creativity
-              </TableHead>
               <TableHead className="text-foreground font-bold px-4 py-3 text-sm min-w-[250px]">
                 Instructions
               </TableHead>
@@ -119,7 +116,7 @@ export function DesktopConfigTable({
           <TableBody>
             {isLoading && uniqueDaoIds.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={5} className="text-center py-12">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
                       <Loader />
@@ -137,7 +134,7 @@ export function DesktopConfigTable({
               </TableRow>
             ) : uniqueDaoIds.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={5} className="text-center py-12">
                   <div className="flex flex-col items-center space-y-4">
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
                       <Settings className="h-6 w-6 text-muted-foreground/60" />
@@ -252,43 +249,6 @@ export function DesktopConfigTable({
                           <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
                           <span className="text-muted-foreground font-semibold text-xs truncate">
                             {prompt?.model || "gpt-4.1"}
-                          </span>
-                        </div>
-                      )}
-                    </TableCell>
-
-                    {/* Temperature */}
-                    <TableCell className="px-4 py-3 w-[100px]">
-                      {isEditing ? (
-                        <div className="space-y-1">
-                          <Input
-                            name="temperature"
-                            type="number"
-                            min="0"
-                            max="1"
-                            step="0.1"
-                            value={editingData.temperature}
-                            onChange={handleInputChange}
-                            className="h-8 w-16 bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-lg text-center text-sm"
-                          />
-                          {errors.temperature && (
-                            <p className="text-xs text-destructive font-medium">
-                              {errors.temperature}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-muted/30 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500"
-                              style={{
-                                width: `${(prompt?.temperature || 0.1) * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-muted-foreground font-semibold text-xs w-6 text-right">
-                            {prompt?.temperature || 0.1}
                           </span>
                         </div>
                       )}
