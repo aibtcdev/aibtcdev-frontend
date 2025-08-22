@@ -16,6 +16,33 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
+  let num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0";
+
+  if (type === "stx") {
+    num = num / 1e6;
+  } else if (type === "btc" || type === "token") {
+    num = num / 1e8;
+  }
+
+  let decimals = 6;
+  if (type === "btc" || type === "token") {
+    decimals = 8;
+  }
+
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(2) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(2) + "K";
+  } else if (num < 1) {
+    // Trim decimals properly for < 1
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  } else {
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  }
+}
+
 interface ProfileTabProps {
   agentAddress: string | null;
 }
@@ -80,11 +107,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
   const connectedWalletBalance = stacksAddress ? balances[stacksAddress] : null;
   const agentAccountBalance = agentAddress ? balances[agentAddress] : null;
 
-  const formatBalance = (balance: string) => {
-    const num = parseFloat(balance);
-    return (num / 1000000).toFixed(6);
-  };
-
   const getAllBalances = (walletBalance: WalletBalance | null) => {
     if (!walletBalance) return undefined;
 
@@ -92,7 +114,8 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
     // Add STX balance
     if (walletBalance.stx?.balance) {
-      metadata["STX"] = `${formatBalance(walletBalance.stx.balance)} STX`;
+      metadata["STX"] =
+        formatBalance(walletBalance.stx.balance, "stx") + " STX";
     }
 
     // Add all fungible tokens
@@ -105,8 +128,13 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           const balance = token.balance;
 
           if (balance && parseFloat(balance) > 0) {
-            metadata[`${displaySymbol} `] =
-              `${formatBalance(balance)} ${displaySymbol}`;
+            if (isBtc) {
+              metadata[`${displaySymbol} `] =
+                `${formatBalance(balance, "btc")} ${displaySymbol}`;
+            } else {
+              metadata[`${displaySymbol} `] =
+                `${formatBalance(balance, "token")} ${displaySymbol}`;
+            }
           }
         }
       );
@@ -137,7 +165,8 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
     // Add STX balance
     if (walletBalance.stx?.balance) {
-      metadata["STX"] = `${formatBalance(walletBalance.stx.balance)} STX`;
+      metadata["STX"] =
+        formatBalance(walletBalance.stx.balance, "stx") + " STX";
     }
 
     // Add only sBTC and fake tokens (limit to 3 total including STX)
@@ -158,8 +187,13 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
             const balance = token.balance;
 
             if (balance && parseFloat(balance) > 0) {
-              metadata[displaySymbol] =
-                `${formatBalance(balance)} ${displaySymbol}`;
+              if (isBtc) {
+                metadata[displaySymbol] =
+                  `${formatBalance(balance, "btc")} ${displaySymbol}`;
+              } else {
+                metadata[displaySymbol] =
+                  `${formatBalance(balance, "token")} ${displaySymbol}`;
+              }
               tokenCount++;
             }
           }
@@ -210,9 +244,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
                             className="flex justify-between items-center py-2 border-b"
                           >
                             <span className="font-medium">{key}</span>
-                            <span className="text-muted-foreground">
-                              {value}
-                            </span>
+                            <div className="text-muted-foreground">{value}</div>
                           </div>
                         ))}
                     </div>
