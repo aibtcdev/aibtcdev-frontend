@@ -18,7 +18,7 @@ import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+// import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -170,9 +170,7 @@ export default function DepositForm({
   }, [btcAddress]);
 
   // Fetch STX balance for transaction fees
-  const { data: stxBalance, isLoading: isStxBalanceLoading } = useQuery<
-    number | null
-  >({
+  const { data: stxBalance } = useQuery<number | null>({
     queryKey: ["stxBalance", userAddress],
     queryFn: async () => {
       if (!userAddress) return null;
@@ -772,12 +770,12 @@ export default function DepositForm({
     });
   }
 
-  const getButtonText = () => {
-    if (!accessToken) return "Connect Wallet";
-    if (!hasAgentAccount) return "No Agent Account";
-    if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
-    return buyWithSbtc ? "Trade sBTC for Tokens" : "Trade BTC for Tokens";
-  };
+  // const getButtonText = () => {
+  //   if (!accessToken) return "Connect Wallet";
+  //   if (!hasAgentAccount) return "No Agent Account";
+  //   if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
+  //   return buyWithSbtc ? "Trade sBTC for Tokens" : "Trade BTC for Tokens";
+  // };
 
   if (isLoading) {
     return (
