@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useWalletStore, WalletBalance } from "@/store/wallet";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { fetchDAOsWithExtension } from "@/services/dao.service";
 import { getStacksAddress } from "@/lib/address";
 import { AccountCard } from "@/components/account/AccountCard";
+import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { Wallet, Bot, Building2 } from "lucide-react";
 import {
   Dialog,
@@ -16,6 +18,33 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
+  let num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0";
+
+  if (type === "stx") {
+    num = num / 1e6;
+  } else if (type === "btc" || type === "token") {
+    num = num / 1e8;
+  }
+
+  let decimals = 6;
+  if (type === "btc" || type === "token") {
+    decimals = 8;
+  }
+
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(2) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(2) + "K";
+  } else if (num < 1) {
+    // Trim decimals properly for < 1
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  } else {
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  }
+}
+
 interface ProfileTabProps {
   agentAddress: string | null;
 }
@@ -23,6 +52,19 @@ interface ProfileTabProps {
 export function ProfileTab({ agentAddress }: ProfileTabProps) {
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTokenForDeposit, setSelectedTokenForDeposit] = useState<{
+    tokenId: string;
+    tokenSymbol: string;
+    daoName: string;
+    contractPrincipal: string;
+    balance: string;
+    decimals: number;
+  } | null>(null);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [depositRecipient, setDepositRecipient] = useState<string | null>(null);
+  const [depositType, setDepositType] = useState<"agent" | "wallet" | null>(
+    null
+  );
   const { agentWallets, balances, fetchSingleBalance, fetchContractBalance } =
     useWalletStore();
 
@@ -33,6 +75,11 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
   const userAgent = agents[0] || null;
   const userAgentId = userAgent?.id || "";
+
+  const { data: daos = [] } = useQuery({
+    queryKey: ["daosWithExtensions"],
+    queryFn: fetchDAOsWithExtension,
+  });
 
   useEffect(() => {
     setStacksAddress(getStacksAddress());
@@ -80,11 +127,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
   const connectedWalletBalance = stacksAddress ? balances[stacksAddress] : null;
   const agentAccountBalance = agentAddress ? balances[agentAddress] : null;
 
-  const formatBalance = (balance: string) => {
-    const num = parseFloat(balance);
-    return (num / 1000000).toFixed(6);
-  };
-
   const getAllBalances = (walletBalance: WalletBalance | null) => {
     if (!walletBalance) return undefined;
 
@@ -92,7 +134,8 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
     // Add STX balance
     if (walletBalance.stx?.balance) {
-      metadata["STX"] = `${formatBalance(walletBalance.stx.balance)} STX`;
+      metadata["STX"] =
+        formatBalance(walletBalance.stx.balance, "stx") + " STX";
     }
 
     // Add all fungible tokens
@@ -105,8 +148,13 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           const balance = token.balance;
 
           if (balance && parseFloat(balance) > 0) {
-            metadata[`${displaySymbol} `] =
-              `${formatBalance(balance)} ${displaySymbol}`;
+            if (isBtc) {
+              metadata[`${displaySymbol} `] =
+                `${formatBalance(balance, "btc")} ${displaySymbol}`;
+            } else {
+              metadata[`${displaySymbol} `] =
+                `${formatBalance(balance, "token")} ${displaySymbol}`;
+            }
           }
         }
       );
@@ -137,7 +185,8 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
     // Add STX balance
     if (walletBalance.stx?.balance) {
-      metadata["STX"] = `${formatBalance(walletBalance.stx.balance)} STX`;
+      metadata["STX"] =
+        formatBalance(walletBalance.stx.balance, "stx") + " STX";
     }
 
     // Add only sBTC and fake tokens (limit to 3 total including STX)
@@ -158,8 +207,13 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
             const balance = token.balance;
 
             if (balance && parseFloat(balance) > 0) {
-              metadata[displaySymbol] =
-                `${formatBalance(balance)} ${displaySymbol}`;
+              if (isBtc) {
+                metadata[displaySymbol] =
+                  `${formatBalance(balance, "btc")} ${displaySymbol}`;
+              } else {
+                metadata[displaySymbol] =
+                  `${formatBalance(balance, "token")} ${displaySymbol}`;
+              }
               tokenCount++;
             }
           }
@@ -168,6 +222,61 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     }
 
     return Object.keys(metadata).length > 0 ? metadata : undefined;
+  };
+
+  const getDAOTokens = () => {
+    if (!connectedWalletBalance?.fungible_tokens) return [];
+
+    const daoTokens: Array<{
+      tokenId: string;
+      tokenSymbol: string;
+      daoName: string;
+      contractPrincipal: string;
+      balance: string;
+      decimals: number;
+    }> = [];
+
+    daos.forEach((dao) => {
+      const tokenExtension = dao.extensions?.find(
+        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+      );
+
+      if (tokenExtension?.contract_principal) {
+        // Find matching token in user's wallet
+        const userTokenEntry = Object.entries(
+          connectedWalletBalance.fungible_tokens
+        ).find(([tokenId]) =>
+          tokenId.startsWith(tokenExtension.contract_principal!)
+        );
+
+        if (userTokenEntry && parseFloat(userTokenEntry[1].balance) > 0) {
+          const [tokenId] = userTokenEntry;
+          const [, tokenSymbol] = tokenId.split("::");
+
+          daoTokens.push({
+            tokenId,
+            tokenSymbol: tokenSymbol || dao.name,
+            daoName: dao.name,
+            contractPrincipal: tokenExtension.contract_principal,
+            balance: userTokenEntry[1].balance,
+            decimals: 8,
+          });
+        }
+      }
+    });
+
+    return daoTokens;
+  };
+
+  const handleDepositClick = (
+    daoToken: ReturnType<typeof getDAOTokens>[0],
+    recipient: string,
+    type: "agent" | "wallet"
+  ) => {
+    setSelectedTokenForDeposit(daoToken);
+    setDepositRecipient(recipient);
+    setDepositType(type);
+    setDepositModalOpen(true);
   };
 
   return (
@@ -210,9 +319,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
                             className="flex justify-between items-center py-2 border-b"
                           >
                             <span className="font-medium">{key}</span>
-                            <span className="text-muted-foreground">
-                              {value}
-                            </span>
+                            <div className="text-muted-foreground">{value}</div>
                           </div>
                         ))}
                     </div>
@@ -226,7 +333,24 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         {/* Agent Voting Account Section */}
         {agentAddress && (
           <div className="mb-6 border-t pt-4">
-            <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Agent Voting Account</h3>
+              <div className="flex space-x-2">
+                {getDAOTokens().map((daoToken) => (
+                  <Button
+                    key={daoToken.tokenId}
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      handleDepositClick(daoToken, agentAddress, "agent")
+                    }
+                    className="text-xs"
+                  >
+                    Deposit {daoToken.daoName}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <AccountCard
               title="Agent Account"
               subtitle="Smart contract between you and the agent"
@@ -242,7 +366,28 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         {/* Agent Wallet Section */}
         {userAgentWalletAddress && (
           <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold mb-4">Agent Wallet</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Agent Wallet</h3>
+              <div className="flex space-x-2">
+                {getDAOTokens().map((daoToken) => (
+                  <Button
+                    key={daoToken.tokenId}
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      handleDepositClick(
+                        daoToken,
+                        userAgentWalletAddress,
+                        "wallet"
+                      )
+                    }
+                    className="text-xs"
+                  >
+                    Deposit {daoToken.daoName}
+                  </Button>
+                ))}
+              </div>
+            </div>
             <AccountCard
               title="Agent Wallet"
               subtitle="Agent wallet used for autonomous operations"
@@ -255,6 +400,22 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
               metadata={getAllBalances(agentWalletBalance)}
             />
           </div>
+        )}
+
+        {/* Token Deposit Modal */}
+        {depositRecipient && depositType && selectedTokenForDeposit && (
+          <TokenDepositModal
+            isOpen={depositModalOpen}
+            onClose={() => {
+              setDepositModalOpen(false);
+              setSelectedTokenForDeposit(null);
+              setDepositRecipient(null);
+              setDepositType(null);
+            }}
+            recipientAddress={depositRecipient}
+            recipientType={depositType}
+            tokenData={selectedTokenForDeposit}
+          />
         )}
       </div>
     </div>
