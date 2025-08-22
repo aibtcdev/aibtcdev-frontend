@@ -18,7 +18,7 @@ import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+// import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -36,8 +36,14 @@ import {
   contractPrincipalCV,
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Info } from "lucide-react";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -164,9 +170,7 @@ export default function DepositForm({
   }, [btcAddress]);
 
   // Fetch STX balance for transaction fees
-  const { data: stxBalance, isLoading: isStxBalanceLoading } = useQuery<
-    number | null
-  >({
+  const { data: stxBalance } = useQuery<number | null>({
     queryKey: ["stxBalance", userAddress],
     queryFn: async () => {
       if (!userAddress) return null;
@@ -257,7 +261,7 @@ export default function DepositForm({
               );
               setMinTokenOut(amountAfterSlippage);
               setBuyQuote(
-                (amountAfterSlippage / 10 ** 6).toLocaleString(undefined, {
+                (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })
@@ -766,18 +770,12 @@ export default function DepositForm({
     });
   }
 
-  const presetAmounts: string[] = ["0.0001", "0.0002"];
-  const presetLabels: string[] = [
-    `0.0001 ${buyWithSbtc ? "sBTC" : "BTC"}`,
-    `0.0002 ${buyWithSbtc ? "sBTC" : "BTC"}`,
-  ];
-
-  const getButtonText = () => {
-    if (!accessToken) return "Connect Wallet";
-    if (!hasAgentAccount) return "No Agent Account";
-    if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
-    return buyWithSbtc ? "Trade sBTC for Tokens" : "Trade BTC for Tokens";
-  };
+  // const getButtonText = () => {
+  //   if (!accessToken) return "Connect Wallet";
+  //   if (!hasAgentAccount) return "No Agent Account";
+  //   if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
+  //   return buyWithSbtc ? "Trade sBTC for Tokens" : "Trade BTC for Tokens";
+  // };
 
   if (isLoading) {
     return (
@@ -791,9 +789,10 @@ export default function DepositForm({
   return (
     <div className="flex flex-col space-y-4 w-full max-w-lg mx-auto">
       <div className="text-center space-y-2">
-        <h2 className="text-xl font-semibold">
-          Buy <span className="font-bold">{daoName}</span> Tokens
-        </h2>
+        <div className="flex items-center justify-center gap-2">
+          <h2 className="text-2xl font-semibold text-white">Buy $FACES</h2>
+          <Info className="h-5 w-5 text-muted-foreground cursor-pointer" />
+        </div>
       </div>
       {accessToken && (userAddress || btcAddress) && (
         <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
@@ -899,217 +898,158 @@ export default function DepositForm({
           </DialogContent>
         </Dialog>
       )}
-
-      <div className="flex items-center space-x-2 justify-end">
-        <Label htmlFor="sbtc-switch">Buy with sBTC</Label>
-        <Switch
-          id="sbtc-switch"
-          checked={buyWithSbtc}
-          onCheckedChange={setBuyWithSbtc}
-          disabled={!accessToken}
-        />
-      </div>
-
-      <div>
-        <div className="flex justify-end items-center mb-1">
-          <span className="font-medium text-sm ">
-            You will spend {formatUsdValue(calculateUsdValue(amount))}
-          </span>
-        </div>
-
-        <div className="relative">
-          <Input
-            value={amount}
-            onChange={handleAmountChange}
-            placeholder="0.00000000"
-            className="text-right pr-16 pl-12 h-12 text-lg"
-            disabled={!accessToken || BUY_DISABLED}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
-            {buyWithSbtc ? "sBTC" : "BTC"}
-          </span>
-        </div>
-
-        {accessToken && (
-          <div className="flex justify-end mt-1">
-            <span className="text-xs text-muted-foreground">
-              Available Balance:{" "}
-              {buyWithSbtc
-                ? isSbtcBalanceLoading
-                  ? "Loading..."
-                  : sbtcBalance !== null && sbtcBalance !== undefined
-                    ? `${sbtcBalance.toFixed(8)} sBTC`
-                    : "Unable to load balance"
-                : isBalanceLoading
-                  ? "Loading..."
-                  : btcBalance !== null && btcBalance !== undefined
-                    ? `${btcBalance.toFixed(8)} BTC${
-                        btcUsdPrice
-                          ? ` (${formatUsdValue(btcBalance * (btcUsdPrice || 0))})`
-                          : ""
-                      }`
-                    : "Unable to load balance"}
-            </span>
-          </div>
-        )}
-
-        {buyWithSbtc && accessToken && (
-          <div className="flex justify-end mt-1">
-            <span className="text-xs text-muted-foreground">
-              STX Balance:{" "}
-              {isStxBalanceLoading
-                ? "Loading..."
-                : stxBalance !== null && stxBalance !== undefined
-                  ? `${stxBalance.toFixed(6)} STX`
-                  : "Unable to load balance"}
-            </span>
-          </div>
-        )}
-
-        <div className="flex gap-2 mt-2 justify-end">
-          {presetAmounts.map((presetAmount, index) => (
-            <Button
-              key={presetAmount}
-              size="sm"
-              variant={selectedPreset === presetAmount ? "default" : "outline"}
-              onClick={() => handlePresetClick(presetAmount)}
+      {/* Main amount input with integrated currency selector */}
+      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              value={amount}
+              onChange={handleAmountChange}
+              placeholder="0.0006"
+              className="text-4xl font-light bg-transparent border-0 p-0 h-auto text-white placeholder:text-zinc-500 focus-visible:ring-0"
               disabled={!accessToken || BUY_DISABLED}
-            >
-              {presetLabels[index]}
-            </Button>
-          ))}
+            />
+            <div className="text-sm text-zinc-400 mt-1">
+              {formatUsdValue(calculateUsdValue(amount))} ~
+            </div>
+          </div>
+
+          {/* Currency selector */}
+          <Select
+            value={buyWithSbtc ? "sbtc" : "btc"}
+            onValueChange={(value) => setBuyWithSbtc(value === "sbtc")}
+            disabled={!accessToken}
+          >
+            <SelectTrigger className="w-auto bg-orange-500 hover:bg-orange-600 border-0 text-white font-medium">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">₿</span>
+                </div>
+                <SelectValue />
+              </div>
+              {/* <ChevronDown className="h-4 w-4 ml-2" /> */}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="btc">BTC</SelectItem>
+              <SelectItem value="sbtc">sBTC</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {/* Preset amount buttons */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
           <Button
+            variant={selectedPreset === "0.0001" ? "default" : "secondary"}
             size="sm"
-            variant={selectedPreset === "max" ? "default" : "outline"}
-            onClick={handleMaxClick}
-            disabled={
-              !accessToken ||
-              BUY_DISABLED ||
-              (buyWithSbtc
-                ? sbtcBalance === null || sbtcBalance === undefined
-                : btcBalance === null || btcBalance === undefined)
-            }
+            onClick={() => handlePresetClick("0.0001")}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
+            disabled={!accessToken || BUY_DISABLED}
+          >
+            0.0001 {buyWithSbtc ? "sBTC" : "BTC"}
+          </Button>
+          <Button
+            variant={selectedPreset === "0.0002" ? "default" : "secondary"}
+            size="sm"
+            onClick={() => handlePresetClick("0.0002")}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
+            disabled={!accessToken || BUY_DISABLED}
+          >
+            0.0002 {buyWithSbtc ? "sBTC" : "BTC"}
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={selectedPreset === "max" ? "default" : "secondary"}
+            size="sm"
+            onClick={async () => {
+              await handleMaxClick();
+              setSelectedPreset("max");
+            }}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
+            disabled={!accessToken || BUY_DISABLED}
           >
             MAX
           </Button>
         </div>
       </div>
-
-      <div className="mt-2">
-        <div className="flex justify-end items-center mb-1">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm ">
-              Tokens deposited to agent account
-            </span>
-          </div>
-        </div>
-        <div className="relative">
-          <Input
-            value={loadingQuote ? "Loading..." : buyQuote || "0.00"}
-            readOnly
-            className="text-right pr-32 pl-12 h-12 text-lg bg-muted/30"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
-            {daoName} Tokens
-          </span>
-        </div>
-        <div className="text-xs text-muted-foreground text-right mt-1">
-          Includes {currentSlippage}% slippage protection
-        </div>
-
-        {/* {poolStatus && (
-          <div className="mt-4 p-3 bg-muted/30 rounded-lg border">
-            <h4 className="font-medium text-sm mb-3 text-muted-foreground">
-              Pool Status
-            </h4>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Real Available:</span>
-                <span className="font-mono font-medium">
-                  {poolStatus.realAvailable.toLocaleString()} sats
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">
-                  Estimated Available:
-                </span>
-                <span className="font-mono font-medium">
-                  {poolStatus.estimatedAvailable.toLocaleString()} sats
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Last Updated:</span>
-                <span className="font-mono font-medium text-xs">
-                  {new Date(poolStatus.lastUpdated * 1000).toLocaleString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        )} */}
-      </div>
-
-      <Card className="border-border/30">
-        <CardContent className="p-3">
-          <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">Your Trade</span>
-            <span>
-              {amount || "0.00"} {buyWithSbtc ? "sBTC" : "BTC"}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-xs mt-1">
-            <span className="text-muted-foreground">Service Fee</span>
-            <span>
-              {calculateFee(amount)} {buyWithSbtc ? "sBTC" : "BTC"}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm font-medium mt-2 pt-2 border-t border-border/30">
-            <span>Total</span>
-            <span>
-              {(Number(amount || 0) + Number(calculateFee(amount))).toFixed(8)}{" "}
-              {buyWithSbtc ? "sBTC" : "BTC"}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <>
-        {!accessToken && (
-          <p className="text-center text-sm text-muted-foreground mb-1">
-            Connect your wallet to continue
-          </p>
-        )}
-        {accessToken && !hasAgentAccount && (
-          <p className="text-center text-sm text-destructive mb-1">
-            You don't have an agent account. Please create one before
-            depositing.
-          </p>
-        )}
-        {buyWithSbtc && accessToken && (stxBalance || 0) < 0.01 && (
-          <p className="text-center text-sm text-destructive mb-1">
-            You need at least 0.01 STX for transaction fees.
-          </p>
-        )}
-        {!accessToken ? (
-          <div className="flex justify-center">
-            <AuthButton />
-          </div>
-        ) : (
-          <Button
-            size="lg"
-            className="h-12 text-lg bg-primary w-full"
-            onClick={handleDepositConfirm}
+      {/* Available Balance */}
+      {accessToken && (
+        <div className="text-sm text-zinc-400">
+          Available Balance:{" "}
+          <button
+            onClick={() => {
+              const balance = buyWithSbtc ? sbtcBalance : btcBalance;
+              if (balance !== null && balance !== undefined) {
+                setAmount(balance.toFixed(8));
+                setSelectedPreset(null);
+              }
+            }}
+            className="text-orange-500"
             disabled={
-              !hasAgentAccount ||
-              !accessToken ||
-              BUY_DISABLED ||
-              (buyWithSbtc && (stxBalance || 0) < 0.01) ||
-              isSubmitting
+              buyWithSbtc
+                ? isSbtcBalanceLoading ||
+                  sbtcBalance === null ||
+                  sbtcBalance === undefined
+                : isBalanceLoading ||
+                  btcBalance === null ||
+                  btcBalance === undefined
             }
           >
-            {isSubmitting ? "Preparing..." : getButtonText()}
-          </Button>
+            {buyWithSbtc
+              ? isSbtcBalanceLoading
+                ? "Loading..."
+                : sbtcBalance !== null && sbtcBalance !== undefined
+                  ? `${sbtcBalance.toFixed(8)} sBTC`
+                  : "Unable to load balance"
+              : isBalanceLoading
+                ? "Loading..."
+                : btcBalance !== null && btcBalance !== undefined
+                  ? `${btcBalance.toFixed(8)} BTC`
+                  : "Unable to load balance"}
+          </button>
+        </div>
+      )}
+      {/* Quote display */}
+      {buyQuote && (
+        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 text-center">
+          <div className="text-2xl font-semibold text-white">
+            {buyQuote} $FACES
+          </div>
+          {loadingQuote && (
+            <div className="flex items-center justify-center mt-2">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+            </div>
+          )}
+        </div>
+      )}
+      {/* Place Order Button */}
+      <Button
+        onClick={handleDepositConfirm}
+        disabled={
+          !accessToken ||
+          !hasAgentAccount ||
+          parseFloat(amount) <= 0 ||
+          isSubmitting ||
+          BUY_DISABLED ||
+          (buyWithSbtc && (stxBalance || 0) < 0.01)
+        }
+        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 text-lg"
+      >
+        {isSubmitting ? (
+          <div className="flex items-center space-x-2">
+            <Loader />
+            <span>Processing...</span>
+          </div>
+        ) : (
+          "Place Order"
         )}
-      </>
+      </Button>
+      {!accessToken && (
+        <div className="text-center">
+          <AuthButton />
+        </div>
+      )}
     </div>
   );
 }

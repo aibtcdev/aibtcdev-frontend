@@ -139,6 +139,8 @@ export default function TransactionConfirmation({
     "idle" | "pending" | "success" | "error"
   >("idle");
   const { copiedText, copyToClipboard } = useClipboard();
+  const [successTxId, setSuccessTxId] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
@@ -825,15 +827,8 @@ export default function TransactionConfirmation({
 
         // Update state with success
         setBtcTxStatus("success");
-
-        // Show success message
-        toast({
-          title: `${swapType?.toUpperCase()} Deposit Initiated`,
-          description: `Your Bitcoin transaction has been sent successfully with txid: ${txid.substring(
-            0,
-            10
-          )}...`,
-        });
+        setSuccessTxId(txid);
+        setShowSuccessModal(true);
 
         // Close confirmation dialog
         onClose();
@@ -900,272 +895,355 @@ export default function TransactionConfirmation({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="mr-2 h-8 w-8 text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <DialogTitle>Confirm Transaction Data</DialogTitle>
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="mr-2 h-8 w-8 text-white"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <DialogTitle>Confirm Transaction Data</DialogTitle>
+            </div>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Authentication status */}
-          {!accessToken && (
-            <Alert variant="destructive" className="border-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Authentication required. Please sign in before proceeding with
-                the transaction.
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="space-y-4">
+            {/* Authentication status */}
+            {!accessToken && (
+              <Alert variant="destructive" className="border-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Authentication required. Please sign in before proceeding with
+                  the transaction.
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* Wallet connection status */}
-          {!activeWalletProvider && (
-            <Alert variant="destructive" className="border-destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                No wallet connected. Please connect a wallet before proceeding
-                with the transaction.
-              </AlertDescription>
-            </Alert>
-          )}
+            {/* Wallet connection status */}
+            {!activeWalletProvider && (
+              <Alert variant="destructive" className="border-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  No wallet connected. Please connect a wallet before proceeding
+                  with the transaction.
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* Transaction details */}
-          <div className="bg-zinc-900 p-4 rounded-md">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-3">
-              <div className="text-xs font-medium text-zinc-300">Amount:</div>
-              <div className="col-span-2 relative">
-                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                  {confirmationData.depositAmount} BTC
+            {/* Transaction details */}
+            <div className="bg-zinc-900 p-4 rounded-md">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-3">
+                <div className="text-xs font-medium text-zinc-300">Amount:</div>
+                <div className="col-span-2 relative">
+                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                    {confirmationData.depositAmount} BTC
+                  </div>
+                </div>
+
+                <div className="text-xs font-medium text-zinc-300">
+                  STX Address:
+                </div>
+                <div className="col-span-2 relative">
+                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                    {confirmationData.stxAddress}
+                  </div>
+                </div>
+
+                {aiAccountReceiver && (
+                  <>
+                    <div className="text-xs font-medium text-zinc-300">
+                      AI Account:
+                    </div>
+                    <div className="col-span-2 relative">
+                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                        {aiAccountReceiver}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {poolId && (
+                  <>
+                    <div className="text-xs font-medium text-zinc-300">
+                      Pool ID:
+                    </div>
+                    <div className="col-span-2 relative">
+                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                        {poolId}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {dexId !== undefined && (
+                  <>
+                    <div className="text-xs font-medium text-zinc-300">
+                      DEX ID:
+                    </div>
+                    <div className="col-span-2 relative">
+                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                        {dexId}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="text-xs font-medium text-zinc-300 self-start">
+                  OP_RETURN:
+                </div>
+                <div className="col-span-2 relative">
+                  <div className="bg-zinc-800 p-2 rounded-md max-h-[60px] overflow-y-auto overflow-x-hidden font-mono text-xs break-all whitespace-normal leading-tight">
+                    {confirmationData.opReturnHex}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 bg-primary"
+                    onClick={() =>
+                      copyToClipboard(confirmationData.opReturnHex)
+                    }
+                  >
+                    {copiedText === confirmationData.opReturnHex ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Buy Quote */}
+                <div className="text-xs font-medium text-zinc-300">
+                  Buy Quote:
+                </div>
+                <div className="col-span-2 relative">
+                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                    {loadingQuote ? (
+                      <Loader />
+                    ) : computedMinTokenOut !== undefined ? (
+                      `${computedMinTokenOut} ${swapType?.toUpperCase() || "tokens"}`
+                    ) : (
+                      "N/A"
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-xs font-medium text-zinc-300">
+                  Swap Type:
+                </div>
+                <div className="col-span-2 relative">
+                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                    {swapType?.toUpperCase()}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="text-xs font-medium text-zinc-300">
-                STX Address:
-              </div>
-              <div className="col-span-2 relative">
-                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                  {confirmationData.stxAddress}
+            {/* Wallet provider info */}
+            <div className="bg-zinc-900 p-4 rounded-md">
+              <p className="text-sm mb-2 font-medium">Wallet Provider</p>
+              <div className="flex items-center">
+                <div className="px-3 py-1 bg-zinc-800 rounded-md text-sm">
+                  {activeWalletProvider
+                    ? activeWalletProvider.charAt(0).toUpperCase() +
+                      activeWalletProvider.slice(1)
+                    : "Not Connected"}
                 </div>
               </div>
+            </div>
 
-              {aiAccountReceiver && (
-                <>
-                  <div className="text-xs font-medium text-zinc-300">
-                    AI Account:
-                  </div>
-                  <div className="col-span-2 relative">
-                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                      {aiAccountReceiver}
-                    </div>
-                  </div>
-                </>
+            {/* Fee selection */}
+            <div className="border-t border-border pt-4">
+              {activeWalletProvider === "xverse" && (
+                <p className="text-xs text-primary text-right mt-1">
+                  Note: For Xverse wallet, we recommend medium (3v/sat) or
+                  higher as lower fees might fail.
+                </p>
               )}
+            </div>
 
-              {poolId && (
-                <>
-                  <div className="text-xs font-medium text-zinc-300">
-                    Pool ID:
-                  </div>
-                  <div className="col-span-2 relative">
-                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                      {poolId}
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* Fee details */}
+            <div className="bg-zinc-900 p-4 rounded-md">
+              <p className="text-sm mb-3 font-medium">Select priority</p>
 
-              {dexId !== undefined && (
-                <>
-                  <div className="text-xs font-medium text-zinc-300">
-                    DEX ID:
-                  </div>
-                  <div className="col-span-2 relative">
-                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                      {dexId}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="text-xs font-medium text-zinc-300 self-start">
-                OP_RETURN:
-              </div>
-              <div className="col-span-2 relative">
-                <div className="bg-zinc-800 p-2 rounded-md max-h-[60px] overflow-y-auto overflow-x-hidden font-mono text-xs break-all whitespace-normal leading-tight">
-                  {confirmationData.opReturnHex}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 bg-primary"
-                  onClick={() => copyToClipboard(confirmationData.opReturnHex)}
-                >
-                  {copiedText === confirmationData.opReturnHex ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <Card
+                  className={cn(
+                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    feePriority === TransactionPriority.Low
+                      ? "bg-primary/20"
+                      : "bg-zinc-900"
                   )}
+                  onClick={() => setFeePriority(TransactionPriority.Low)}
+                >
+                  <CardContent className="p-3 text-center">
+                    <p className="text-white text-sm font-medium mb-1">Low</p>
+                    <p className="text-zinc-300 text-xs">
+                      {loadingFees ? (
+                        <Loader />
+                      ) : (
+                        `${feeEstimates.low.fee} sats`
+                      )}
+                    </p>
+                    <p className="text-zinc-400 text-xs">
+                      ({feeEstimates.low.rate} sat/vB)
+                    </p>
+                    <p className="text-zinc-400 text-xs">30 min</p>
+                  </CardContent>
+                </Card>
+
+                <Card
+                  className={cn(
+                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    feePriority === TransactionPriority.Medium
+                      ? "bg-primary/20"
+                      : "bg-zinc-900"
+                  )}
+                  onClick={() => setFeePriority(TransactionPriority.Medium)}
+                >
+                  <CardContent className="p-3 text-center">
+                    <p className="text-white text-sm font-medium mb-1">
+                      Medium
+                    </p>
+                    <p className="text-zinc-300 text-xs">
+                      {loadingFees ? (
+                        <Loader />
+                      ) : (
+                        `${feeEstimates.medium.fee} sats`
+                      )}
+                    </p>
+                    <p className="text-zinc-400 text-xs">
+                      ({feeEstimates.medium.rate} sat/vB)
+                    </p>
+                    <p className="text-zinc-400 text-xs">~20 min</p>
+                  </CardContent>
+                </Card>
+
+                <Card
+                  className={cn(
+                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    feePriority === TransactionPriority.High
+                      ? "bg-primary/20"
+                      : "bg-zinc-900"
+                  )}
+                  onClick={() => setFeePriority(TransactionPriority.High)}
+                >
+                  <CardContent className="p-3 text-center">
+                    <p className="text-white text-sm font-medium mb-1">High</p>
+                    <p className="text-zinc-300 text-xs">
+                      {loadingFees ? (
+                        <Loader />
+                      ) : (
+                        `${feeEstimates.high.fee} sats`
+                      )}
+                    </p>
+                    <p className="text-zinc-400 text-xs">
+                      ({feeEstimates.high.rate} sat/vB)
+                    </p>
+                    <p className="text-zinc-400 text-xs">~10 min</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <p className="text-xs text-zinc-300 mt-4 text-left">
+                Fees are estimated based on current network conditions.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-zinc-700 text-white hover:bg-zinc-800 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={executeBitcoinTransaction}
+              disabled={
+                btcTxStatus === "pending" ||
+                !activeWalletProvider ||
+                !accessToken
+              }
+            >
+              {btcTxStatus === "pending"
+                ? "Processing..."
+                : "Proceed to Wallet"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {showSuccessModal && (
+        <Dialog open onOpenChange={() => setShowSuccessModal(false)}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Transaction Successful</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="bg-zinc-900 p-4 rounded-md">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-3">
+                  <div className="text-xs font-medium text-zinc-300">
+                    Transaction ID:
+                  </div>
+                  <div className="col-span-2 relative">
+                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight flex items-center justify-between">
+                      <span>{successTxId}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          successTxId && copyToClipboard(successTxId)
+                        }
+                        className="h-6 w-6 p-0 ml-2"
+                      >
+                        {copiedText === successTxId ? (
+                          <Check className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    successTxId &&
+                    window.open(
+                      `https://mempool.space/tx/${successTxId}`,
+                      "_blank"
+                    )
+                  }
+                  className="w-full"
+                >
+                  View on Mempool.space
                 </Button>
               </div>
-
-              {/* Buy Quote */}
-              <div className="text-xs font-medium text-zinc-300">
-                Buy Quote:
-              </div>
-              <div className="col-span-2 relative">
-                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                  {loadingQuote ? (
-                    <Loader />
-                  ) : computedMinTokenOut !== undefined ? (
-                    `${computedMinTokenOut} ${swapType?.toUpperCase() || "tokens"}`
-                  ) : (
-                    "N/A"
-                  )}
-                </div>
-              </div>
-
-              <div className="text-xs font-medium text-zinc-300">
-                Swap Type:
-              </div>
-              <div className="col-span-2 relative">
-                <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
-                  {swapType?.toUpperCase()}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Wallet provider info */}
-          <div className="bg-zinc-900 p-4 rounded-md">
-            <p className="text-sm mb-2 font-medium">Wallet Provider</p>
-            <div className="flex items-center">
-              <div className="px-3 py-1 bg-zinc-800 rounded-md text-sm">
-                {activeWalletProvider
-                  ? activeWalletProvider.charAt(0).toUpperCase() +
-                    activeWalletProvider.slice(1)
-                  : "Not Connected"}
-              </div>
-            </div>
-          </div>
-
-          {/* Fee selection */}
-          <div className="border-t border-border pt-4">
-            {activeWalletProvider === "xverse" && (
-              <p className="text-xs text-primary text-right mt-1">
-                Note: For Xverse wallet, we recommend medium (3v/sat) or higher
-                as lower fees might fail.
-              </p>
-            )}
-          </div>
-
-          {/* Fee details */}
-          <div className="bg-zinc-900 p-4 rounded-md">
-            <p className="text-sm mb-3 font-medium">Select priority</p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <Card
-                className={cn(
-                  "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === TransactionPriority.Low
-                    ? "bg-primary/20"
-                    : "bg-zinc-900"
-                )}
-                onClick={() => setFeePriority(TransactionPriority.Low)}
-              >
-                <CardContent className="p-3 text-center">
-                  <p className="text-white text-sm font-medium mb-1">Low</p>
-                  <p className="text-zinc-300 text-xs">
-                    {loadingFees ? <Loader /> : `${feeEstimates.low.fee} sats`}
-                  </p>
-                  <p className="text-zinc-400 text-xs">
-                    ({feeEstimates.low.rate} sat/vB)
-                  </p>
-                  <p className="text-zinc-400 text-xs">30 min</p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={cn(
-                  "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === TransactionPriority.Medium
-                    ? "bg-primary/20"
-                    : "bg-zinc-900"
-                )}
-                onClick={() => setFeePriority(TransactionPriority.Medium)}
-              >
-                <CardContent className="p-3 text-center">
-                  <p className="text-white text-sm font-medium mb-1">Medium</p>
-                  <p className="text-zinc-300 text-xs">
-                    {loadingFees ? (
-                      <Loader />
-                    ) : (
-                      `${feeEstimates.medium.fee} sats`
-                    )}
-                  </p>
-                  <p className="text-zinc-400 text-xs">
-                    ({feeEstimates.medium.rate} sat/vB)
-                  </p>
-                  <p className="text-zinc-400 text-xs">~20 min</p>
-                </CardContent>
-              </Card>
-
-              <Card
-                className={cn(
-                  "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
-                  feePriority === TransactionPriority.High
-                    ? "bg-primary/20"
-                    : "bg-zinc-900"
-                )}
-                onClick={() => setFeePriority(TransactionPriority.High)}
-              >
-                <CardContent className="p-3 text-center">
-                  <p className="text-white text-sm font-medium mb-1">High</p>
-                  <p className="text-zinc-300 text-xs">
-                    {loadingFees ? <Loader /> : `${feeEstimates.high.fee} sats`}
-                  </p>
-                  <p className="text-zinc-400 text-xs">
-                    ({feeEstimates.high.rate} sat/vB)
-                  </p>
-                  <p className="text-zinc-400 text-xs">~10 min</p>
-                </CardContent>
-              </Card>
             </div>
 
-            <p className="text-xs text-zinc-300 mt-4 text-left">
-              Fees are estimated based on current network conditions.
-            </p>
-          </div>
-        </div>
-
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="border-zinc-700 text-white hover:bg-zinc-800 hover:text-white"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={executeBitcoinTransaction}
-            disabled={
-              btcTxStatus === "pending" || !activeWalletProvider || !accessToken
-            }
-          >
-            {btcTxStatus === "pending" ? "Processing..." : "Proceed to Wallet"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="primary"
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
