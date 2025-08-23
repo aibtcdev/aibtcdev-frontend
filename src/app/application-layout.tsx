@@ -161,13 +161,13 @@ export default function ApplicationLayout({
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account?tab=profile", e);
+                    handleNavigation("/account?tab=wallet", e);
                     setMobileMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <User className="h-4 w-4" />
-                  <span className="group-hover:text-white">Profile</span>
+                  <span className="group-hover:text-white">Wallet</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -323,13 +323,13 @@ export default function ApplicationLayout({
                 <DropdownMenuSeparator className="my-1" />
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account?tab=profile", e);
+                    handleNavigation("/account?tab=wallet", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <User className="h-4 w-4" />
-                  <span className="group-hover:text-white">Profile</span>
+                  <span className="group-hover:text-white">Wallet</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {

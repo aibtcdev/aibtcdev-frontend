@@ -8,6 +8,8 @@ import { fetchDAOsWithExtension } from "@/services/dao.service";
 import { getStacksAddress } from "@/lib/address";
 import { AccountCard } from "@/components/account/AccountCard";
 import { TokenDepositModal } from "@/components/account/TokenDepositModal";
+import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
+import { AgentTokensTable } from "@/components/account/AgentTokensTable";
 import { Wallet, Bot, Building2 } from "lucide-react";
 import {
   Dialog,
@@ -65,6 +67,15 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
   const [depositType, setDepositType] = useState<"agent" | "wallet" | null>(
     null
   );
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [selectedTokenForWithdraw, setSelectedTokenForWithdraw] = useState<{
+    tokenId: string;
+    tokenSymbol: string;
+    daoName: string;
+    contractPrincipal: string;
+    balance: string;
+    decimals: number;
+  } | null>(null);
   const { agentWallets, balances, fetchSingleBalance, fetchContractBalance } =
     useWalletStore();
 
@@ -224,61 +235,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const getDAOTokens = () => {
-    if (!connectedWalletBalance?.fungible_tokens) return [];
-
-    const daoTokens: Array<{
-      tokenId: string;
-      tokenSymbol: string;
-      daoName: string;
-      contractPrincipal: string;
-      balance: string;
-      decimals: number;
-    }> = [];
-
-    daos.forEach((dao) => {
-      const tokenExtension = dao.extensions?.find(
-        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
-      );
-
-      if (tokenExtension?.contract_principal) {
-        // Find matching token in user's wallet
-        const userTokenEntry = Object.entries(
-          connectedWalletBalance.fungible_tokens
-        ).find(([tokenId]) =>
-          tokenId.startsWith(tokenExtension.contract_principal!)
-        );
-
-        if (userTokenEntry && parseFloat(userTokenEntry[1].balance) > 0) {
-          const [tokenId] = userTokenEntry;
-          const [, tokenSymbol] = tokenId.split("::");
-
-          daoTokens.push({
-            tokenId,
-            tokenSymbol: tokenSymbol || dao.name,
-            daoName: dao.name,
-            contractPrincipal: tokenExtension.contract_principal,
-            balance: userTokenEntry[1].balance,
-            decimals: 8,
-          });
-        }
-      }
-    });
-
-    return daoTokens;
-  };
-
-  const handleDepositClick = (
-    daoToken: ReturnType<typeof getDAOTokens>[0],
-    recipient: string,
-    type: "agent" | "wallet"
-  ) => {
-    setSelectedTokenForDeposit(daoToken);
-    setDepositRecipient(recipient);
-    setDepositType(type);
-    setDepositModalOpen(true);
-  };
-
   return (
     <div className="flex flex-col items-center">
       <div className="w-full">
@@ -335,21 +291,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           <div className="mb-6 border-t pt-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Agent Voting Account</h3>
-              <div className="flex space-x-2">
-                {getDAOTokens().map((daoToken) => (
-                  <Button
-                    key={daoToken.tokenId}
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      handleDepositClick(daoToken, agentAddress, "agent")
-                    }
-                    className="text-xs"
-                  >
-                    Deposit {daoToken.daoName}
-                  </Button>
-                ))}
-              </div>
             </div>
             <AccountCard
               title="Agent Account"
@@ -358,8 +299,19 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
               icon={Building2}
               isPrimary={false}
               network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
-              metadata={getAllBalances(agentAccountBalance)}
+              // metadata={getAllBalances(agentAccountBalance)}
             />
+
+            {/* DAO Tokens Management Table */}
+            <div className="mt-6">
+              <AgentTokensTable
+                daos={daos}
+                agentAddress={agentAddress}
+                agentAccountBalance={agentAccountBalance}
+                connectedWalletBalance={connectedWalletBalance}
+                userAgentWalletAddress={userAgentWalletAddress}
+              />
+            </div>
           </div>
         )}
 
@@ -368,25 +320,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           <div className="border-t pt-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Agent Wallet</h3>
-              <div className="flex space-x-2">
-                {getDAOTokens().map((daoToken) => (
-                  <Button
-                    key={daoToken.tokenId}
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      handleDepositClick(
-                        daoToken,
-                        userAgentWalletAddress,
-                        "wallet"
-                      )
-                    }
-                    className="text-xs"
-                  >
-                    Deposit {daoToken.daoName}
-                  </Button>
-                ))}
-              </div>
             </div>
             <AccountCard
               title="Agent Wallet"
@@ -415,6 +348,19 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
             recipientAddress={depositRecipient}
             recipientType={depositType}
             tokenData={selectedTokenForDeposit}
+          />
+        )}
+
+        {/* Token Withdraw Modal */}
+        {agentAddress && selectedTokenForWithdraw && (
+          <TokenWithdrawModal
+            isOpen={withdrawModalOpen}
+            onClose={() => {
+              setWithdrawModalOpen(false);
+              setSelectedTokenForWithdraw(null);
+            }}
+            agentAddress={agentAddress}
+            tokenData={selectedTokenForWithdraw}
           />
         )}
       </div>
