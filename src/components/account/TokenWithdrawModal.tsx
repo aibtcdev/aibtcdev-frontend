@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { request } from "@stacks/connect";
-import { uintCV, principalCV, noneCV, Pc } from "@stacks/transactions";
+import { uintCV, principalCV, noneCV, Pc, Cl } from "@stacks/transactions";
 import { useWalletStore } from "@/store/wallet";
 import { getStacksAddress } from "@/lib/address";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/useToast";
+import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 
 interface TokenData {
   tokenId: string;
@@ -63,8 +67,16 @@ export function TokenWithdrawModal({
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [currentTxId, setCurrentTxId] = useState<string | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [updatingApproval, setUpdatingApproval] = useState(false);
+  const [currentApprovalTxId, setCurrentApprovalTxId] = useState<string | null>(
+    null
+  );
+  const [showApprovalStatusModal, setShowApprovalStatusModal] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<string | null>(null);
 
   const { balances } = useWalletStore();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const {
     transactionMessage,
     transactionStatus,
@@ -72,6 +84,30 @@ export function TokenWithdrawModal({
     stopMonitoring,
     reset: resetVerification,
   } = useTransactionVerification();
+
+  // Separate transaction verification for approval operations
+  const {
+    transactionMessage: approvalTransactionMessage,
+    transactionStatus: approvalTransactionStatus,
+    startMonitoring: startApprovalMonitoring,
+    stopMonitoring: stopApprovalMonitoring,
+    reset: resetApprovalVerification,
+  } = useTransactionVerification();
+
+  // Check if token contract is approved
+  const contractIds = tokenData?.contractPrincipal
+    ? [tokenData.contractPrincipal]
+    : [];
+
+  const tokenApprovals = useBatchContractApprovals(
+    agentAddress,
+    contractIds,
+    AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN
+  );
+
+  const isTokenApproved = tokenData
+    ? tokenApprovals.data?.[tokenData.contractPrincipal] || false
+    : false;
 
   useEffect(() => {
     setStacksAddress(getStacksAddress());
@@ -83,10 +119,21 @@ export function TokenWithdrawModal({
       setAmount("");
       setCurrentTxId(null);
       setShowStatusModal(false);
+      setCurrentApprovalTxId(null);
+      setShowApprovalStatusModal(false);
       stopMonitoring();
+      stopApprovalMonitoring();
       resetVerification();
+      resetApprovalVerification();
     }
-  }, [isOpen, tokenData, stopMonitoring, resetVerification]);
+  }, [
+    isOpen,
+    tokenData,
+    stopMonitoring,
+    stopApprovalMonitoring,
+    resetVerification,
+    resetApprovalVerification,
+  ]);
 
   // Handle transaction status changes
   useEffect(() => {
@@ -100,6 +147,78 @@ export function TokenWithdrawModal({
       // Keep status modal open to show failure
     }
   }, [transactionStatus]);
+
+  // Handle approval transaction status changes
+  useEffect(() => {
+    if (approvalTransactionStatus === "success") {
+      setUpdatingApproval(false);
+      // Refresh approval data after successful approval/revoke
+      queryClient.invalidateQueries({
+        queryKey: [
+          "batch-approvals",
+          agentAddress,
+          contractIds,
+          AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
+        ],
+      });
+    } else if (approvalTransactionStatus === "failed") {
+      setUpdatingApproval(false);
+    }
+  }, [approvalTransactionStatus, queryClient, agentAddress, contractIds]);
+
+  // Approval toggle mutation
+  const updateApprovalMutation = useMutation({
+    mutationFn: async ({ enabled }: { enabled: boolean }) => {
+      if (!tokenData || !agentAddress) throw new Error("Missing data");
+      setUpdatingApproval(true);
+      setApprovalAction(enabled ? "approve" : "revoke");
+
+      const functionName = enabled ? "approve-contract" : "revoke-contract";
+
+      const response = await request("stx_callContract", {
+        contract: agentAddress as `${string}.${string}`,
+        functionName,
+        functionArgs: [
+          Cl.principal(tokenData.contractPrincipal),
+          Cl.uint(AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN), // Use numeric value directly
+        ],
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+          | "mainnet"
+          | "testnet",
+      });
+
+      return { txid: response.txid, enabled };
+    },
+    onSuccess: async (data) => {
+      setUpdatingApproval(false);
+      await queryClient.invalidateQueries({
+        queryKey: [
+          "batch-approvals",
+          agentAddress,
+          [tokenData?.contractPrincipal],
+          AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
+        ],
+      });
+      toast({
+        title: "Transaction Submitted",
+        description: `Contract ${data.enabled ? "approval" : "revocation"} submitted. TXID: ${data.txid}`,
+      });
+
+      if (data.txid) {
+        setCurrentApprovalTxId(data.txid);
+        setShowApprovalStatusModal(true);
+        startApprovalMonitoring(data.txid);
+      }
+    },
+    onError: (error) => {
+      setUpdatingApproval(false);
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleWithdraw = async () => {
     if (!tokenData || !amount || !stacksAddress || !agentAddress) return;
@@ -140,13 +259,11 @@ export function TokenWithdrawModal({
         tokenData.contractPrincipal.split(".");
 
       const txResponse = await request("stx_callContract", {
-        contract: `${contractAddress}.${contractName}`,
+        contract: agentAddress as `${string}.${string}`,
         functionName: "withdraw-ft",
         functionArgs: [
-          uintCV(amountInMicroTokens), // amount
-          principalCV(agentAddress), // from: agent account
-          principalCV(stacksAddress), // to: your wallet
-          noneCV(), // memo
+          Cl.contractPrincipal(contractAddress, contractName), // FT contract principal
+          Cl.uint(amountInMicroTokens), // amount in base units
         ],
         network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
           | "mainnet"
@@ -255,6 +372,10 @@ export function TokenWithdrawModal({
     // Keep the main modal open for retry
   };
 
+  const handleApprovalStatusModalClose = () => {
+    setShowApprovalStatusModal(false);
+  };
+
   if (!tokenData) {
     return null;
   }
@@ -283,6 +404,51 @@ export function TokenWithdrawModal({
                 </span>
               </div>
             </div>
+
+            {/* Token Approval Section */}
+            {tokenData && (
+              <div className="bg-muted p-3 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Token Contract Approval
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {tokenApprovals.isLoading || updatingApproval ? (
+                      <RotateCcw className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <button
+                        onClick={() =>
+                          updateApprovalMutation.mutate({
+                            enabled: !isTokenApproved,
+                          })
+                        }
+                        disabled={updatingApproval}
+                        className={`
+                          relative inline-flex h-4 w-7 items-center rounded-full transition-colors cursor-pointer
+                          ${isTokenApproved ? "bg-primary" : "bg-muted"}
+                          ${updatingApproval ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"}
+                        `}
+                      >
+                        <span
+                          className={`
+                            inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+                            ${isTokenApproved ? "translate-x-3.5" : "translate-x-0.5"}
+                          `}
+                        />
+                      </button>
+                    )}
+                    <Badge variant={isTokenApproved ? "default" : "secondary"}>
+                      {isTokenApproved ? "Approved" : "Not Approved"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {isTokenApproved
+                    ? "Token contract is approved for withdrawals"
+                    : "Approve token contract to enable withdrawals"}
+                </div>
+              </div>
+            )}
 
             {/* Amount Input */}
             <div className="space-y-2">
@@ -323,7 +489,7 @@ export function TokenWithdrawModal({
             {/* Withdraw Button */}
             <Button
               onClick={handleWithdraw}
-              disabled={!isValidAmount() || isWithdrawing}
+              disabled={!isValidAmount() || isWithdrawing || !isTokenApproved}
               className="w-full"
             >
               {isWithdrawing ? (
@@ -331,6 +497,8 @@ export function TokenWithdrawModal({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Withdrawing...
                 </>
+              ) : !isTokenApproved ? (
+                "Approve Contract First"
               ) : (
                 `Withdraw ${amount || "0"} ${tokenData.tokenSymbol}`
               )}
@@ -353,6 +521,27 @@ export function TokenWithdrawModal({
         failureDescription="The token withdrawal could not be completed. Please try again."
         pendingDescription="Your token withdrawal is being processed on the blockchain. This may take a few minutes."
         onRetry={handleRetry}
+        showRetryButton={true}
+      />
+
+      {/* Approval Status Modal */}
+      <TransactionStatusModal
+        isOpen={showApprovalStatusModal}
+        onClose={handleApprovalStatusModalClose}
+        txId={currentApprovalTxId || undefined}
+        transactionStatus={approvalTransactionStatus}
+        transactionMessage={approvalTransactionMessage}
+        title={`Token Contract ${approvalAction === "approve" ? "Approval" : "Revocation"} Status`}
+        successTitle={`${approvalAction === "approve" ? "Approval" : "Revocation"} Confirmed`}
+        failureTitle={`${approvalAction === "approve" ? "Approval" : "Revocation"} Failed`}
+        successDescription={`The token contract has been successfully ${approvalAction}d for withdrawals.`}
+        failureDescription={`The token contract ${approvalAction} could not be completed. Please try again.`}
+        pendingDescription={`The token contract ${approvalAction} is being processed on the blockchain. This may take a few minutes.`}
+        onRetry={() => {
+          setShowApprovalStatusModal(false);
+          resetApprovalVerification();
+          setCurrentApprovalTxId(null);
+        }}
         showRetryButton={true}
       />
     </>
