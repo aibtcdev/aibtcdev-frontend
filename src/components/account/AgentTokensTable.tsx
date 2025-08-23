@@ -66,7 +66,6 @@ export function AgentTokensTable({
   agentAddress,
   agentAccountBalance,
   connectedWalletBalance,
-  userAgentWalletAddress,
 }: AgentTokensTableProps) {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { request } from "@stacks/connect";
-import { uintCV, principalCV, noneCV, Pc, Cl } from "@stacks/transactions";
+import { Pc, Cl } from "@stacks/transactions";
 import { useWalletStore } from "@/store/wallet";
 import { getStacksAddress } from "@/lib/address";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
@@ -95,9 +95,10 @@ export function TokenWithdrawModal({
   } = useTransactionVerification();
 
   // Check if token contract is approved
-  const contractIds = tokenData?.contractPrincipal
-    ? [tokenData.contractPrincipal]
-    : [];
+  const contractIds = useMemo(
+    () => (tokenData?.contractPrincipal ? [tokenData.contractPrincipal] : []),
+    [tokenData?.contractPrincipal]
+  );
 
   const tokenApprovals = useBatchContractApprovals(
     agentAddress,

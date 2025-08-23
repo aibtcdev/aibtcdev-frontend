@@ -235,61 +235,6 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const getDAOTokens = () => {
-    if (!connectedWalletBalance?.fungible_tokens) return [];
-
-    const daoTokens: Array<{
-      tokenId: string;
-      tokenSymbol: string;
-      daoName: string;
-      contractPrincipal: string;
-      balance: string;
-      decimals: number;
-    }> = [];
-
-    daos.forEach((dao) => {
-      const tokenExtension = dao.extensions?.find(
-        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
-      );
-
-      if (tokenExtension?.contract_principal) {
-        // Find matching token in user's wallet
-        const userTokenEntry = Object.entries(
-          connectedWalletBalance.fungible_tokens
-        ).find(([tokenId]) =>
-          tokenId.startsWith(tokenExtension.contract_principal!)
-        );
-
-        if (userTokenEntry && parseFloat(userTokenEntry[1].balance) > 0) {
-          const [tokenId] = userTokenEntry;
-          const [, tokenSymbol] = tokenId.split("::");
-
-          daoTokens.push({
-            tokenId,
-            tokenSymbol: tokenSymbol || dao.name,
-            daoName: dao.name,
-            contractPrincipal: tokenExtension.contract_principal,
-            balance: userTokenEntry[1].balance,
-            decimals: 8,
-          });
-        }
-      }
-    });
-
-    return daoTokens;
-  };
-
-  const handleDepositClick = (
-    daoToken: ReturnType<typeof getDAOTokens>[0],
-    recipient: string,
-    type: "agent" | "wallet"
-  ) => {
-    setSelectedTokenForDeposit(daoToken);
-    setDepositRecipient(recipient);
-    setDepositType(type);
-    setDepositModalOpen(true);
-  };
-
   return (
     <div className="flex flex-col items-center">
       <div className="w-full">
