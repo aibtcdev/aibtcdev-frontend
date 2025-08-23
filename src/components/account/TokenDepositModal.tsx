@@ -5,6 +5,8 @@ import { request } from "@stacks/connect";
 import { uintCV, principalCV, noneCV, Pc } from "@stacks/transactions";
 import { useWalletStore } from "@/store/wallet";
 import { getStacksAddress } from "@/lib/address";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import {
   Dialog,
   DialogContent,
@@ -61,8 +63,17 @@ export function TokenDepositModal({
   const [amount, setAmount] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
+  const [currentTxId, setCurrentTxId] = useState<string | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const { balances } = useWalletStore();
+  const {
+    transactionMessage,
+    transactionStatus,
+    startMonitoring,
+    stopMonitoring,
+    reset: resetVerification,
+  } = useTransactionVerification();
 
   useEffect(() => {
     setStacksAddress(getStacksAddress());
@@ -72,8 +83,25 @@ export function TokenDepositModal({
   useEffect(() => {
     if (!isOpen) {
       setAmount("");
+      setCurrentTxId(null);
+      setShowStatusModal(false);
+      stopMonitoring();
+      resetVerification();
     }
-  }, [isOpen, tokenData]);
+  }, [isOpen, tokenData, stopMonitoring, resetVerification]);
+
+  // Handle transaction status changes
+  useEffect(() => {
+    if (transactionStatus === "success") {
+      // Clear form and close deposit modal on success
+      setAmount("");
+      setIsTransferring(false);
+      // Keep status modal open to show success
+    } else if (transactionStatus === "failed") {
+      setIsTransferring(false);
+      // Keep status modal open to show failure
+    }
+  }, [transactionStatus]);
 
   const handleTransfer = async () => {
     if (!tokenData || !amount || !stacksAddress) return;
@@ -102,7 +130,7 @@ export function TokenDepositModal({
       const [contractAddress, contractName] =
         tokenData.contractPrincipal.split(".");
 
-      await request("stx_callContract", {
+      const txResponse = await request("stx_callContract", {
         contract: `${contractAddress}.${contractName}`,
         functionName: "transfer",
         functionArgs: [
@@ -118,12 +146,19 @@ export function TokenDepositModal({
         postConditionMode: "deny",
       });
 
-      console.log("Token deposit initiated successfully");
-      onClose();
-      setAmount("");
+      console.log("Token deposit initiated successfully", txResponse);
+
+      // Extract transaction ID from response
+      const txId = txResponse.txid || null;
+      setCurrentTxId(txId);
+      setShowStatusModal(true);
+
+      // Start monitoring the transaction
+      if (txId) {
+        await startMonitoring(txId);
+      }
     } catch (error) {
       console.error("Error initiating token deposit:", error);
-    } finally {
       setIsTransferring(false);
     }
   };
@@ -144,84 +179,124 @@ export function TokenDepositModal({
     return amountNum > 0 && amountNum <= maxAmount;
   };
 
+  const handleStatusModalClose = () => {
+    setShowStatusModal(false);
+    if (transactionStatus === "success") {
+      // Close the main modal on success
+      onClose();
+    }
+  };
+
+  const handleRetry = () => {
+    setShowStatusModal(false);
+    resetVerification();
+    setCurrentTxId(null);
+    // Keep the main modal open for retry
+  };
+
   if (!tokenData) {
     return null;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            Deposit {tokenData.daoName} to{" "}
-            {recipientType === "agent" ? "Agent Account" : "Agent Wallet"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Deposit {tokenData.daoName} to{" "}
+              {recipientType === "agent" ? "Agent Account" : "Agent Wallet"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Token Info */}
-          <div className="bg-muted p-3 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="text-xs">
-                  {tokenData.daoName}
-                </Badge>
+          <div className="space-y-4">
+            {/* Token Info */}
+            <div className="bg-muted p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="text-xs">
+                    {tokenData.daoName}
+                  </Badge>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  Available:{" "}
+                  {formatBalance(tokenData.balance, tokenData.decimals)}
+                </span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                Available:{" "}
-                {formatBalance(tokenData.balance, tokenData.decimals)}
-              </span>
             </div>
-          </div>
 
-          {/* Amount Input */}
-          <div className="space-y-2">
-            <Label>Amount</Label>
+            {/* Amount Input */}
             <div className="space-y-2">
-              <div className="flex space-x-2">
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  step="any"
-                  min="0"
-                  max={
-                    parseFloat(tokenData.balance) /
-                    Math.pow(10, tokenData.decimals)
-                  }
-                />
-                <Button variant="outline" onClick={handleMaxAmount} size="sm">
-                  MAX
-                </Button>
+              <Label>Amount</Label>
+              <div className="space-y-2">
+                <div className="flex space-x-2">
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    step="any"
+                    min="0"
+                    max={
+                      parseFloat(tokenData.balance) /
+                      Math.pow(10, tokenData.decimals)
+                    }
+                    disabled={isTransferring}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={handleMaxAmount}
+                    size="sm"
+                    disabled={isTransferring}
+                  >
+                    MAX
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Recipient Info */}
-          <div className="bg-muted p-3 rounded-lg space-y-2">
-            <div className="flex items-center space-x-2 text-sm">
-              <span className="font-mono text-xs">{recipientAddress}</span>
+            {/* Recipient Info */}
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="font-mono text-xs">{recipientAddress}</span>
+              </div>
             </div>
-          </div>
 
-          {/* Transfer Button */}
-          <Button
-            onClick={handleTransfer}
-            disabled={!isValidAmount() || isTransferring}
-            className="w-full"
-          >
-            {isTransferring ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Depositing...
-              </>
-            ) : (
-              `Deposit ${amount || "0"} ${tokenData.tokenSymbol}`
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            {/* Transfer Button */}
+            <Button
+              onClick={handleTransfer}
+              disabled={!isValidAmount() || isTransferring}
+              className="w-full"
+            >
+              {isTransferring ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Depositing...
+                </>
+              ) : (
+                `Deposit ${amount || "0"} ${tokenData.tokenSymbol}`
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transaction Status Modal */}
+      <TransactionStatusModal
+        isOpen={showStatusModal}
+        onClose={handleStatusModalClose}
+        txId={currentTxId || undefined}
+        transactionStatus={transactionStatus}
+        transactionMessage={transactionMessage}
+        title="Token Deposit Status"
+        successTitle="Deposit Confirmed"
+        failureTitle="Deposit Failed"
+        successDescription={`Your ${tokenData?.daoName} tokens have been successfully deposited to the ${recipientType === "agent" ? "agent account" : "agent wallet"}.`}
+        failureDescription="The token deposit could not be completed. Please try again."
+        pendingDescription="Your token deposit is being processed on the blockchain. This may take a few minutes."
+        onRetry={handleRetry}
+        showRetryButton={true}
+      />
+    </>
   );
 }
