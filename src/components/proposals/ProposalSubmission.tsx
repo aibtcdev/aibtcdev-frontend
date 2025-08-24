@@ -667,7 +667,7 @@ export function ProposalSubmission({
                   ? "Describe what you contributed. What did you create or share? Why does it matter?"
                   : "Connect your wallet to create a contribution"
               }
-              className="w-full min-h-[120px] p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
+              className="w-full  p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
               disabled={
                 !hasAccessToken ||
                 isSubmitting ||
@@ -885,12 +885,12 @@ export function ProposalSubmission({
             </div>
           )}
 
-          {hasAccessToken && !twitterUrl.trim() && (
+          {/* {hasAccessToken && !twitterUrl.trim() && (
             <div className="text-sm rounded-lg p-3">
               <strong>Twitter URL Required:</strong> Please provide a reference
               X.com (Twitter) post URL.
             </div>
-          )}
+          )} */}
 
           {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
             <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
