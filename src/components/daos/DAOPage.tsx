@@ -194,31 +194,29 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-screen w-full">
       <main className="flex-1 overflow-y-auto">
         <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 max-w-screen-xl mx-auto">
+          <div className="flex items-center gap-4 mb-6">
+            <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
+              <AvatarImage
+                src={
+                  token?.image_url ||
+                  "/placeholder.svg?height=64&width=64&query=DAO logo"
+                }
+                alt={dao.name}
+              />
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 font-bold text-foreground text-2xl rounded-lg">
+                {dao.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{dao.name}</h1>
+              <p className="text-muted-foreground mt-2">
+                {extractMission(dao.mission)}
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0 rounded-none">
-                  <AvatarImage
-                    src={
-                      token?.image_url ||
-                      "/placeholder.svg?height=64&width=64&query=DAO logo"
-                    }
-                    alt={dao.name}
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 font-bold text-foreground text-2xl rounded-none">
-                    {dao.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">
-                    {dao.name}
-                  </h1>
-                  <p className="text-muted-foreground mt-2">
-                    {extractMission(dao.mission)}
-                  </p>
-                </div>
-              </div>
-
               <div className="w-full bg-muted rounded-lg">
                 <div className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
                   <div className="flex items-center justify-center gap-2 py-2 px-4">
@@ -257,7 +255,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
               </div>
               <ProposalSubmission daoId={dao.id} />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 ">
               {dexContract && (
                 <BitcoinDeposit
                   dexContract={dexContract}
