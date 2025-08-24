@@ -38,7 +38,7 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="divide-y divide-border/50 overflow-hidden">
+      <div className="divide-y ">
         {deployedProposals.map((proposal) => (
           <ProposalCard
             key={proposal.id}
