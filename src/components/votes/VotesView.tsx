@@ -11,21 +11,15 @@ import {
   Ban,
   FileText,
   XCircle,
-  AlertTriangle,
   ExternalLink,
   X,
   Eye,
-  BookOpen,
-  MoreVertical,
   ChevronDown,
-  ChevronUp,
   Shield,
-  Maximize2,
   Link as LinkIcon,
   Image,
   MessageSquare,
   Settings,
-  MoreHorizontal,
   Edit3,
 } from "lucide-react";
 
@@ -41,20 +35,13 @@ interface EvaluationData {
   }>;
   explanation: string;
   final_score: number;
-  token_usage?: any;
+  token_usage?: string;
   images_processed?: number;
 }
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import type { Extension, Vote as VoteType } from "@/types";
+import type { Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -86,10 +73,8 @@ import {
 import { fetchDAOsWithExtension, fetchDAOs } from "@/services/dao.service";
 import type { AgentPrompt, DAO } from "@/types";
 import { getProposalVotes } from "@/lib/vote-utils";
-import { getExplorerLink } from "@/utils/format";
 import { EvaluationModal } from "./EvaluationModal";
 import { checkAgentVetoStatus } from "@/services/veto.service";
-import type { Veto } from "@/types/veto";
 
 // Utility function to format vote balances
 function formatBalance(value: string | number, decimals: number = 8) {
@@ -116,12 +101,6 @@ interface VotesViewProps {
 interface VoteCardProps {
   vote: VoteType;
   currentBitcoinHeight: number;
-}
-
-interface VoteAnalysisModalProps {
-  vote: VoteType;
-  currentBitcoinHeight: number;
-  existingVeto?: Veto | null;
 }
 
 type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
@@ -188,359 +167,8 @@ const getVoteOutcome = (
   return vote.answer ? "passed" : "failed";
 };
 
-function VoteAnalysisModal({
-  vote,
-  currentBitcoinHeight,
-  existingVeto,
-}: VoteAnalysisModalProps) {
-  // Parse contribution content and reference
-  const parseContributionContent = () => {
-    if (!vote.proposal_content) return { content: "", reference: null };
-
-    const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
-    const match = vote.proposal_content.match(referenceRegex);
-    const referenceLink = match?.[1];
-    const cleanedContent = vote.proposal_content
-      .replace(referenceRegex, "")
-      .trim();
-
-    return { content: cleanedContent, reference: referenceLink };
-  };
-
-  const { content, reference } = parseContributionContent();
-
-  const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
-  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
-
-  // Parse evaluation data and extract summary
-  const parseEvaluation = (evaluation: string | object) => {
-    try {
-      // If it's already an object, return it directly
-      if (typeof evaluation === "object") {
-        return evaluation as EvaluationData;
-      }
-      // If it's a string, try to parse it as JSON
-      if (
-        typeof evaluation === "string" &&
-        evaluation.trim().startsWith("{") &&
-        evaluation.trim().endsWith("}")
-      ) {
-        return JSON.parse(evaluation);
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  };
-
-  const evaluationData = vote.evaluation
-    ? parseEvaluation(vote.evaluation)
-    : null;
-  const reasoningPreview =
-    evaluationData?.summary ||
-    (typeof vote.evaluation === "string"
-      ? vote.evaluation.split(".")[0] + "."
-      : null) ||
-    null;
-
-  // Debug logging
-  console.log("Vote evaluation:", vote.evaluation);
-  console.log("Parsed evaluation data:", evaluationData);
-
-  return (
-    <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="text-xl font-semibold pr-8">
-          Vote Analysis
-        </DialogTitle>
-      </DialogHeader>
-
-      <div className="space-y-6">
-        {/* SUMMARY PANEL - Critical Info at Top */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-6 space-y-6">
-          {/* Title and DAO Info */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-foreground">
-                {vote.proposal_title}
-              </h3>
-            </div>
-            <div className="text-right">
-              <Badge
-                variant="secondary"
-                className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-1"
-              >
-                {vote.dao_name}
-              </Badge>
-              <div className="text-sm text-muted-foreground">
-                {formatRelativeTime(vote.created_at)}
-              </div>
-            </div>
-          </div>
-
-          {/* Agent Vote Decision */}
-          <div className="space-y-3">
-            <div>
-              <span className="text-sm font-medium text-muted-foreground">
-                Your agent's vote on this contribution:{" "}
-              </span>
-              {vote.voted === false ? (
-                <span className="text-amber-600 dark:text-amber-400 font-semibold">
-                  Pending
-                </span>
-              ) : (
-                <span
-                  className={`font-semibold ${
-                    vote.answer
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {vote.answer ? "Yes" : "No"}
-                </span>
-              )}
-            </div>
-
-            {vote.confidence !== null && (
-              <div>
-                <span className="text-sm font-medium text-muted-foreground">
-                  Agent's confidence on voting:{" "}
-                </span>
-                <span className="font-semibold text-foreground">
-                  {Math.round(vote.confidence * 100)}%
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Agent's Evaluation */}
-          {/* Evaluation Preview */}
-          {(evaluationData || reasoningPreview) && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">
-                  Agent's Evaluation
-                </span>
-                <div className="flex items-center gap-1"></div>
-              </div>
-
-              {evaluationData ? (
-                <div className="space-y-3">
-                  {/* Decision and Score */}
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          evaluationData.decision ? "default" : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {evaluationData.decision ? "✓ Approved" : "✗ Rejected"}
-                      </Badge>
-                      <Badge
-                        variant={
-                          evaluationData.final_score >= 80
-                            ? "default"
-                            : evaluationData.final_score >= 60
-                              ? "secondary"
-                              : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {evaluationData.final_score}/100
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {evaluationData.summary}
-                    </p>
-                  </div>
-
-                  {/* Flags (compact) */}
-                  {evaluationData.flags && evaluationData.flags.length > 0 && (
-                    <div className="space-y-1">
-                      <h6 className="text-xs font-medium text-muted-foreground">
-                        Flags ({evaluationData.flags.length})
-                      </h6>
-                      {evaluationData.flags
-                        .slice(0, 1)
-                        .map((flag: string, index: number) => (
-                          <div
-                            key={index}
-                            className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-2"
-                          >
-                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-                              {flag}
-                            </p>
-                          </div>
-                        ))}
-                      {evaluationData.flags.length > 1 && (
-                        <p className="text-xs text-muted-foreground">
-                          +{evaluationData.flags.length - 1} more
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                    {isReasoningExpanded
-                      ? evaluationData?.explanation ||
-                        JSON.stringify(vote.evaluation, null, 2)
-                      : reasoningPreview}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Veto Button or Vetoed Status */}
-          {vote.dao_id &&
-            vote.proposal_id &&
-            isInVetoWindow(vote, currentBitcoinHeight) && (
-              <div className="flex justify-end">
-                {existingVeto ? (
-                  <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 w-full">
-                    <div className="flex items-center gap-3 text-sm text-purple-800 dark:text-purple-200">
-                      <Shield className="h-4 w-4 text-purple-600" />
-                      <span className="font-medium">Vetoed</span>
-                      <span>{formatBalance(existingVeto.amount || "0")}</span>
-                      <a
-                        href={`https://explorer.stacks.co/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
-                      >
-                        {existingVeto.tx_id?.slice(0, 8)}...
-                        {existingVeto.tx_id?.slice(-8)}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                    {existingVeto.created_at && (
-                      <div>
-                        Vetoed: {formatRelativeTime(existingVeto.created_at)}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <DAOVetoProposal
-                    daoId={vote.dao_id}
-                    proposalId={vote.proposal_id}
-                    size="default"
-                    variant="destructive"
-                  />
-                )}
-              </div>
-            )}
-        </div>
-
-        {/* Contribution Details */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-            <h4 className="text-lg font-semibold text-foreground">
-              Contribution Details
-            </h4>
-          </div>
-
-          <div className="bg-muted/30 rounded-xl p-4">
-            <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap break-words">
-              {content || "No contribution message available."}
-            </div>
-          </div>
-
-          {/* Reference Link as Preview Card */}
-          {reference && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-green-600 p-2 rounded-lg">
-                  <ExternalLink className="h-4 w-4 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h5 className="text-sm font-semibold text-foreground mb-1">
-                    Reference Link
-                  </h5>
-                  <a
-                    href={reference}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors break-all block"
-                  >
-                    {reference}
-                  </a>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Click to view external source
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Technical Details - Moved to Bottom */}
-        <div className="border-t pt-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-            <h4 className="text-sm font-semibold text-foreground">
-              Technical Details
-            </h4>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-muted/20 rounded-lg p-3 border border-muted">
-              <div className="text-xs text-muted-foreground mb-1">
-                Proposal ID
-              </div>
-              <div className="text-sm font-mono">{vote.proposal_id}</div>
-            </div>
-
-            {vote.vote_start && (
-              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Vote Start Block
-                </div>
-                <div className="text-sm font-mono">
-                  {safeNumberFromBigInt(vote.vote_start)}
-                </div>
-              </div>
-            )}
-
-            {vote.vote_end && (
-              <div className="bg-muted/20 rounded-lg p-3 border border-muted">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Vote End Block
-                </div>
-                <div className="text-sm font-mono">
-                  {safeNumberFromBigInt(vote.vote_end)}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end pt-4 border-t">
-          <Link href={`/proposals/${vote.proposal_id}`}>
-            <Button variant="outline" className="gap-2">
-              <FileText className="h-4 w-4" />
-              View Full Contribution
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Evaluation Modal */}
-      <EvaluationModal
-        isOpen={isEvaluationModalOpen}
-        onClose={() => setIsEvaluationModalOpen(false)}
-        evaluation={vote.evaluation}
-        proposalTitle={vote.proposal_title}
-      />
-    </DialogContent>
-  );
-}
-
 function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
-  const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+  // const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editingData, setEditingData] = useState<EditingPromptData>({
@@ -948,6 +576,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
               <Avatar className="h-10 w-10">
                 <AvatarImage
                   src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vote.dao_name}`}
+                  alt={vote.dao_name}
                 />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                   {vote.dao_name.slice(0, 2).toUpperCase()}

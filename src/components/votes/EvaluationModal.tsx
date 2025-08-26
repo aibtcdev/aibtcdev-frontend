@@ -8,12 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  ExternalLink,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 interface EvaluationData {
   flags: string[];
@@ -27,7 +22,7 @@ interface EvaluationData {
   }>;
   explanation: string;
   final_score: number;
-  token_usage?: any;
+  token_usage?: string;
   images_processed?: number;
 }
 
@@ -61,7 +56,7 @@ export function EvaluationModal({
         return JSON.parse(evaluation);
       }
       return null;
-    } catch (error) {
+    } catch {
       // Silently return null for non-JSON strings
       return null;
     }
@@ -83,12 +78,6 @@ export function EvaluationModal({
       </Dialog>
     );
   }
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600 dark:text-green-400";
-    if (score >= 60) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
-  };
 
   const getScoreBadgeVariant = (score: number) => {
     if (score >= 80) return "default";
