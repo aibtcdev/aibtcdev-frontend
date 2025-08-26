@@ -10,6 +10,7 @@ export interface Vote {
   proposal_title: string;
   proposal_content: string | null;
   reasoning: string | null;
+  evaluation: string | null;
   tx_id: string | null;
   address: string | null;
   amount: string | null;

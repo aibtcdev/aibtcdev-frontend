@@ -11,22 +11,40 @@ import {
   Ban,
   FileText,
   XCircle,
+  AlertTriangle,
   ExternalLink,
-  Filter,
   X,
   Eye,
-  Settings,
-  Edit3,
-  Save,
-  ChevronDown,
-  MoreHorizontal,
-  Building2,
-  User,
-  MessageSquare,
-  Image,
-  Link as LinkIcon,
   BookOpen,
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  Maximize2,
+  Link as LinkIcon,
+  Image,
+  MessageSquare,
+  Settings,
+  MoreHorizontal,
+  Edit3,
 } from "lucide-react";
+
+interface EvaluationData {
+  flags: string[];
+  summary: string;
+  decision: boolean;
+  categories: Array<{
+    score: number;
+    weight: number;
+    category: string;
+    reasoning: string[];
+  }>;
+  explanation: string;
+  final_score: number;
+  token_usage?: any;
+  images_processed?: number;
+}
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,22 +54,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import type { Vote as VoteType } from "@/types";
+import type { Extension, Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import Link from "next/link";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -65,7 +74,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/useToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -78,6 +86,10 @@ import {
 import { fetchDAOsWithExtension, fetchDAOs } from "@/services/dao.service";
 import type { AgentPrompt, DAO } from "@/types";
 import { getProposalVotes } from "@/lib/vote-utils";
+import { getExplorerLink } from "@/utils/format";
+import { EvaluationModal } from "./EvaluationModal";
+import { checkAgentVetoStatus } from "@/services/veto.service";
+import type { Veto } from "@/types/veto";
 
 // Utility function to format vote balances
 function formatBalance(value: string | number, decimals: number = 8) {
@@ -109,6 +121,7 @@ interface VoteCardProps {
 interface VoteAnalysisModalProps {
   vote: VoteType;
   currentBitcoinHeight: number;
+  existingVeto?: Veto | null;
 }
 
 type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
@@ -178,6 +191,7 @@ const getVoteOutcome = (
 function VoteAnalysisModal({
   vote,
   currentBitcoinHeight,
+  existingVeto,
 }: VoteAnalysisModalProps) {
   // Parse contribution content and reference
   const parseContributionContent = () => {
@@ -196,20 +210,42 @@ function VoteAnalysisModal({
   const { content, reference } = parseContributionContent();
 
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
 
-  // Extract first sentence from reasoning for summary
-  const getReasoningPreview = (reasoning: string) => {
-    if (!reasoning) return "";
-
-    const sentences = reasoning
-      .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
-    return sentences[0]?.trim() + "." || "";
+  // Parse evaluation data and extract summary
+  const parseEvaluation = (evaluation: string | object) => {
+    try {
+      // If it's already an object, return it directly
+      if (typeof evaluation === "object") {
+        return evaluation as EvaluationData;
+      }
+      // If it's a string, try to parse it as JSON
+      if (
+        typeof evaluation === "string" &&
+        evaluation.trim().startsWith("{") &&
+        evaluation.trim().endsWith("}")
+      ) {
+        return JSON.parse(evaluation);
+      }
+      return null;
+    } catch {
+      return null;
+    }
   };
 
-  const reasoningPreview = vote.reasoning
-    ? getReasoningPreview(vote.reasoning)
+  const evaluationData = vote.evaluation
+    ? parseEvaluation(vote.evaluation)
     : null;
+  const reasoningPreview =
+    evaluationData?.summary ||
+    (typeof vote.evaluation === "string"
+      ? vote.evaluation.split(".")[0] + "."
+      : null) ||
+    null;
+
+  // Debug logging
+  console.log("Vote evaluation:", vote.evaluation);
+  console.log("Parsed evaluation data:", evaluationData);
 
   return (
     <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -277,42 +313,123 @@ function VoteAnalysisModal({
             )}
           </div>
 
-          {/* Agent's Reasoning */}
-          {reasoningPreview && (
-            <div className="space-y-3">
+          {/* Agent's Evaluation */}
+          {/* Evaluation Preview */}
+          {(evaluationData || reasoningPreview) && (
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Your agent's reason to vote {vote.answer ? "yes" : "no"} in
-                  this proposal:
-                </h4>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
-                  className="text-xs"
-                >
-                  {isReasoningExpanded ? "Show Less" : "Show More"}
-                </Button>
+                <span className="text-sm font-medium text-foreground">
+                  Agent's Evaluation
+                </span>
+                <div className="flex items-center gap-1"></div>
               </div>
-              <div className="bg-muted/30 rounded-lg p-4">
-                <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {isReasoningExpanded ? vote.reasoning : reasoningPreview}
+
+              {evaluationData ? (
+                <div className="space-y-3">
+                  {/* Decision and Score */}
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          evaluationData.decision ? "default" : "destructive"
+                        }
+                        className="text-xs"
+                      >
+                        {evaluationData.decision ? "✓ Approved" : "✗ Rejected"}
+                      </Badge>
+                      <Badge
+                        variant={
+                          evaluationData.final_score >= 80
+                            ? "default"
+                            : evaluationData.final_score >= 60
+                              ? "secondary"
+                              : "destructive"
+                        }
+                        className="text-xs"
+                      >
+                        {evaluationData.final_score}/100
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {evaluationData.summary}
+                    </p>
+                  </div>
+
+                  {/* Flags (compact) */}
+                  {evaluationData.flags && evaluationData.flags.length > 0 && (
+                    <div className="space-y-1">
+                      <h6 className="text-xs font-medium text-muted-foreground">
+                        Flags ({evaluationData.flags.length})
+                      </h6>
+                      {evaluationData.flags
+                        .slice(0, 1)
+                        .map((flag: string, index: number) => (
+                          <div
+                            key={index}
+                            className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-2"
+                          >
+                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                              {flag}
+                            </p>
+                          </div>
+                        ))}
+                      {evaluationData.flags.length > 1 && (
+                        <p className="text-xs text-muted-foreground">
+                          +{evaluationData.flags.length - 1} more
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                    {isReasoningExpanded
+                      ? evaluationData?.explanation ||
+                        JSON.stringify(vote.evaluation, null, 2)
+                      : reasoningPreview}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Veto Button */}
+          {/* Veto Button or Vetoed Status */}
           {vote.dao_id &&
             vote.proposal_id &&
             isInVetoWindow(vote, currentBitcoinHeight) && (
               <div className="flex justify-end">
-                <DAOVetoProposal
-                  daoId={vote.dao_id}
-                  proposalId={vote.proposal_id}
-                  size="default"
-                  variant="destructive"
-                />
+                {existingVeto ? (
+                  <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-4 w-full">
+                    <div className="flex items-center gap-3 text-sm text-purple-800 dark:text-purple-200">
+                      <Shield className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium">Vetoed</span>
+                      <span>{formatBalance(existingVeto.amount || "0")}</span>
+                      <a
+                        href={`https://explorer.stacks.co/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
+                      >
+                        {existingVeto.tx_id?.slice(0, 8)}...
+                        {existingVeto.tx_id?.slice(-8)}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                    {existingVeto.created_at && (
+                      <div>
+                        Vetoed: {formatRelativeTime(existingVeto.created_at)}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <DAOVetoProposal
+                    daoId={vote.dao_id}
+                    proposalId={vote.proposal_id}
+                    size="default"
+                    variant="destructive"
+                  />
+                )}
               </div>
             )}
         </div>
@@ -410,12 +527,21 @@ function VoteAnalysisModal({
           </Link>
         </div>
       </div>
+
+      {/* Evaluation Modal */}
+      <EvaluationModal
+        isOpen={isEvaluationModalOpen}
+        onClose={() => setIsEvaluationModalOpen(false)}
+        evaluation={vote.evaluation}
+        proposalTitle={vote.proposal_title}
+      />
     </DialogContent>
   );
 }
 
 function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editingData, setEditingData] = useState<EditingPromptData>({
     prompt_text: "",
@@ -433,6 +559,27 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
     queryFn: fetchAgents,
+  });
+
+  // Get agent account address for veto checking
+  const agentAccountAddress = useMemo(() => {
+    if (!agents.length) return null;
+    const agent = agents[0];
+    return agent.account_contract || null;
+  }, [agents]);
+
+  // Check if agent has already vetoed this proposal
+  const { data: existingVeto } = useQuery({
+    queryKey: ["agentVeto", vote.proposal_id, agentAccountAddress],
+    queryFn: () => {
+      if (!vote.proposal_id || !agentAccountAddress) return null;
+      return checkAgentVetoStatus(vote.proposal_id, agentAccountAddress);
+    },
+    enabled:
+      !!vote.proposal_id &&
+      !!agentAccountAddress &&
+      isInVetoWindow(vote, currentBitcoinHeight),
+    staleTime: 30 * 1000, // 30 seconds
   });
 
   // Set DAO manager agent ID
@@ -566,6 +713,16 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       );
     }
 
+    // Check if agent has vetoed this proposal
+    if (existingVeto && isInVetoWindow(vote, currentBitcoinHeight)) {
+      const formattedAmount = formatBalance(existingVeto.amount || "0", 8);
+      return (
+        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+          Vetoed ({formattedAmount} )
+        </Badge>
+      );
+    }
+
     if (isInVetoWindow(vote, currentBitcoinHeight)) {
       return (
         <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
@@ -646,20 +803,45 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     return { content: cleanedContent, reference: referenceLink };
   };
 
-  const { content, reference } = parseContributionContent();
+  const {
+    // content,
+    reference,
+  } = parseContributionContent();
 
-  // Extract first sentence from reasoning for preview
-  const getReasoningPreview = (reasoning: string) => {
-    if (!reasoning) return "";
-    const sentences = reasoning
-      .split(/[.!?]+/)
-      .filter((s) => s.trim().length > 0);
-    return sentences[0]?.trim() + "." || "";
+  // Parse evaluation data and extract summary
+  const parseEvaluation = (evaluation: string | object) => {
+    try {
+      // If it's already an object, return it directly
+      if (typeof evaluation === "object") {
+        return evaluation as EvaluationData;
+      }
+      // If it's a string, try to parse it as JSON
+      if (
+        typeof evaluation === "string" &&
+        evaluation.trim().startsWith("{") &&
+        evaluation.trim().endsWith("}")
+      ) {
+        return JSON.parse(evaluation);
+      }
+      return null;
+    } catch {
+      return null;
+    }
   };
 
-  const reasoningPreview = vote.reasoning
-    ? getReasoningPreview(vote.reasoning)
+  const evaluationData = vote.evaluation
+    ? parseEvaluation(vote.evaluation)
     : null;
+  const reasoningPreview =
+    evaluationData?.summary ||
+    (typeof vote.evaluation === "string"
+      ? vote.evaluation.split(".")[0] + "."
+      : null) ||
+    null;
+
+  // Debug logging
+  console.log("VoteCard - Vote evaluation:", vote.evaluation);
+  console.log("VoteCard - Parsed evaluation data:", evaluationData);
 
   // Try both DAO fetching methods to find the correct one
   const { data: daosWithExtensions } = useQuery({
@@ -711,8 +893,8 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   // Fetch real vote data for this proposal
   const {
     data: voteData,
-    isLoading: isLoadingVoteData,
-    error: voteDataError,
+    // isLoading: isLoadingVoteData,
+    // error: voteDataError,
   } = useQuery({
     queryKey: [
       "proposalVotes",
@@ -838,61 +1020,136 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
             </div>
 
             {/* Reasoning Preview */}
-            {reasoningPreview && (
+            {(evaluationData || reasoningPreview) && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">
-                    Reasoning
+                    Agent Evaluation
                   </span>
                   <div className="flex items-center gap-2">
+                    <Link href={`/proposals/${vote.proposal_id}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-6 px-2"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View Proposal
+                      </Button>
+                    </Link>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        setIsReasoningExpanded(!isReasoningExpanded)
-                      }
+                      onClick={() => setIsEvaluationModalOpen(true)}
                       className="text-xs h-6 px-2"
                     >
-                      {isReasoningExpanded ? "Show Less" : "Expand"}
+                      <Eye className="h-3 w-3 mr-1" />
+                      Expand
                     </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                        >
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <BookOpen className="h-4 w-4 mr-2" />
-                          Evaluation Scores
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {isReasoningExpanded ? vote.reasoning : reasoningPreview}
-                  </p>
-                </div>
+
+                {evaluationData ? (
+                  <div className="space-y-3">
+                    {/* Decision and Score */}
+                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            evaluationData.decision ? "default" : "destructive"
+                          }
+                          className="text-xs"
+                        >
+                          {evaluationData.decision
+                            ? "✓ Approved"
+                            : "✗ Rejected"}
+                        </Badge>
+                        <Badge
+                          variant={
+                            evaluationData.final_score >= 80
+                              ? "default"
+                              : evaluationData.final_score >= 60
+                                ? "secondary"
+                                : "destructive"
+                          }
+                          className="text-xs"
+                        >
+                          {evaluationData.final_score}/100
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {evaluationData.summary}
+                      </p>
+                    </div>
+
+                    {/* Flags (compact) */}
+                    {evaluationData.flags &&
+                      evaluationData.flags.length > 0 && (
+                        <div className="space-y-1">
+                          <h6 className="text-xs font-medium text-muted-foreground">
+                            Flags ({evaluationData.flags.length})
+                          </h6>
+                          {evaluationData.flags
+                            .slice(0, 1)
+                            .map((flag: string, index: number) => (
+                              <div
+                                key={index}
+                                className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-2"
+                              >
+                                <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                                  {flag}
+                                </p>
+                              </div>
+                            ))}
+                          {evaluationData.flags.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{evaluationData.flags.length - 1} more
+                            </p>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                ) : (
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {reasoningPreview}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Inline Veto Button */}
+            {/* Inline Veto Button or Vetoed Status */}
             {vote.dao_id &&
               vote.proposal_id &&
               isInVetoWindow(vote, currentBitcoinHeight) && (
                 <div className="pt-2">
-                  <DAOVetoProposal
-                    daoId={vote.dao_id}
-                    proposalId={vote.proposal_id}
-                    size="sm"
-                    variant="destructive"
-                  />
+                  {existingVeto ? (
+                    <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                      <div className="flex items-center gap-3 text-sm text-purple-800 dark:text-purple-200">
+                        <Shield className="h-4 w-4 text-purple-600" />
+                        <span className="font-medium">Vetoed</span>
+                        <span>{formatBalance(existingVeto.amount || "0")}</span>
+                        <a
+                          href={`https://explorer.stacks.co/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
+                        >
+                          {existingVeto.tx_id?.slice(0, 8)}...
+                          {existingVeto.tx_id?.slice(-8)}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <DAOVetoProposal
+                      daoId={vote.dao_id}
+                      proposalId={vote.proposal_id}
+                      size="sm"
+                      variant="destructive"
+                    />
+                  )}
                 </div>
               )}
           </div>
@@ -1055,23 +1312,17 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                 )}
               </div>
             </div>
-
-            {/* View Details */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" className="w-full text-xs">
-                  <Eye className="h-3 w-3 mr-1" />
-                  View Full Details
-                </Button>
-              </DialogTrigger>
-              <VoteAnalysisModal
-                vote={vote}
-                currentBitcoinHeight={currentBitcoinHeight}
-              />
-            </Dialog>
           </div>
         </div>
       </CardContent>
+
+      {/* Evaluation Modal */}
+      <EvaluationModal
+        isOpen={isEvaluationModalOpen}
+        onClose={() => setIsEvaluationModalOpen(false)}
+        evaluation={vote.evaluation}
+        proposalTitle={vote.proposal_title}
+      />
     </Card>
   );
 }
@@ -1079,7 +1330,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
 export function VotesView({ votes }: VotesViewProps) {
   const [visibleCount, setVisibleCount] = useState(10);
   const [selectedDao, setSelectedDao] = useState<string | null>(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch current Bitcoin block height
   const { data: chainState } = useQuery({
@@ -1136,22 +1387,31 @@ export function VotesView({ votes }: VotesViewProps) {
     [votes, currentBitcoinHeight]
   );
 
-  // Determine default tab based on available votes
+  // Determine default tab based on available votes - prioritize actionable items
   const getDefaultTab = useCallback((): TabType => {
+    // First priority: Items requiring immediate action
     if (getTabCount("veto") > 0) return "veto";
-    if (getTabCount("voting") > 0) return "voting";
     if (getTabCount("evaluation") > 0) return "evaluation";
+    if (getTabCount("voting") > 0) return "voting";
+
+    // Second priority: Recent outcomes
     if (getTabCount("passed") > 0) return "passed";
-    if (votes.length > 0) return "all";
-    return "evaluation";
+    if (getTabCount("failed") > 0) return "failed";
+
+    // Fallback: Show all if any votes exist, otherwise evaluation
+    return votes.length > 0 ? "all" : "evaluation";
   }, [getTabCount, votes.length]);
 
-  const [activeTab, setActiveTab] = useState<TabType>(getDefaultTab());
+  const [activeTab, setActiveTab] = useState<TabType>("evaluation");
+  const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Update activeTab when votes or currentBitcoinHeight changes
+  // Initialize activeTab only once when data is first loaded
   useEffect(() => {
-    setActiveTab(getDefaultTab());
-  }, [getDefaultTab]);
+    if (!hasInitialized && votes.length > 0 && currentBitcoinHeight > 0) {
+      setActiveTab(getDefaultTab());
+      setHasInitialized(true);
+    }
+  }, [getDefaultTab, votes.length, currentBitcoinHeight, hasInitialized]);
 
   // Reset pagination when tab changes
   useEffect(() => {
@@ -1289,8 +1549,8 @@ export function VotesView({ votes }: VotesViewProps) {
                 {tabs.map((tab) => {
                   const Icon = getTabIcon(tab);
                   const tabCount = getTabCount(tab);
-                  const hasActionableItems =
-                    (tab === "veto" || tab === "voting") && tabCount > 0;
+                  // const hasActionableItems =
+                  //   (tab === "veto" || tab === "voting") && tabCount > 0;
 
                   if (tab === "all" && votes.length === 0) return null;
 

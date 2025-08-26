@@ -13,6 +13,7 @@ interface VoteWithRelations {
   answer: boolean;
   proposal_id: string;
   reasoning: string | null;
+  evaluation: string | null;
   tx_id: string | null;
   address: string | null;
   amount: string | null;
@@ -62,6 +63,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       answer,
       proposal_id,
       reasoning,
+      evaluation,
       tx_id,
       address,
       amount,
@@ -88,7 +90,8 @@ export async function fetchVotes(): Promise<Vote[]> {
 
   if (error) throw error;
   if (!data || data.length === 0) return [];
-  console.log("data", data);
+  console.log("Raw vote data:", data);
+  console.log("First vote reasoning:", data[0]?.reasoning);
   // Transform data into the Vote interface
   const transformedVotes: Vote[] = (data as unknown as VoteWithRelations[]).map(
     (vote) => ({
@@ -103,6 +106,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       proposal_title: vote.proposals?.title || "Unknown Proposal",
       proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
+      evaluation: vote.evaluation,
       tx_id: vote.tx_id,
       address: vote.address,
       amount: vote.amount,
@@ -144,6 +148,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       answer,
       proposal_id,
       reasoning,
+      evaluation,
       tx_id,
       address,
       amount,
@@ -193,6 +198,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       proposal_title: vote.proposals?.title || "Current Proposal",
       proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
+      evaluation: vote.evaluation,
       tx_id: vote.tx_id,
       address: vote.address,
       amount: vote.amount,
