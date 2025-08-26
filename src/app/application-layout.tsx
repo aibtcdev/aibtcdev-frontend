@@ -117,7 +117,7 @@ export default function ApplicationLayout({
               alt="AIBTCDEV"
               width={28}
               height={28}
-              className="rounded-lg flex-shrink-0 shadow-lg shadow-primary/20"
+              className="flex-shrink-0 shadow-lg shadow-primary/20"
             />
             <Image
               src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
@@ -213,9 +213,9 @@ export default function ApplicationLayout({
                   alt="AIBTCDEV"
                   width={28}
                   height={28}
-                  className="lg:w-8 lg:h-8 rounded-xl shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
+                  className="lg:w-8 lg:h-8 shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
                 />
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
               <Image
                 src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
@@ -394,7 +394,7 @@ export default function ApplicationLayout({
                   alt="AIBTC"
                   width={24}
                   height={24}
-                  className="rounded-lg shadow-lg shadow-primary/20"
+                  className="shadow-lg shadow-primary/20"
                 />
                 <span className="text-lg font-bold text-foreground">Menu</span>
               </div>
