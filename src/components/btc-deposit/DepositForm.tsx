@@ -43,11 +43,7 @@ import {
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import {
-  useTransactionVerification,
-  type TransactionStatus,
-  type WebSocketTransactionMessage,
-} from "@/hooks/useTransactionVerification";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
