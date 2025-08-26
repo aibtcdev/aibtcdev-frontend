@@ -18,7 +18,6 @@ import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +42,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -54,9 +55,9 @@ interface DepositFormProps {
   daoName: string;
   userAddress: string | null;
   dexId: number;
-  targetStx?: number; // New prop for target STX amount
-  tokenContract?: string; // New prop for token contract
-  currentSlippage?: number; // New prop for slippage percentage
+  targetStx?: number;
+  tokenContract?: string;
+  currentSlippage?: number;
   swapType: "aibtc" | "sbtc";
   poolId: string;
   aiAccountReceiver: string;
@@ -83,9 +84,9 @@ export interface ConfirmationData {
 
 const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
 
-// Helper function to get token asset name - you may need to implement this based on your token structure
+// Helper function to get token asset name
 const getTokenAssetName = (symbol: string): string => {
-  return symbol.toLowerCase(); // Simplified implementation
+  return symbol.toLowerCase();
 };
 
 export default function DepositForm({
@@ -98,7 +99,7 @@ export default function DepositForm({
   daoName,
   dexId,
   targetStx = 0,
-  tokenContract = "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY.fake-faktory", //REMOVE THE HARDCODED LATER IN PROD
+  tokenContract = "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY.fake-faktory",
   currentSlippage = 4,
   swapType,
   poolId,
@@ -122,6 +123,19 @@ export default function DepositForm({
   const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(false);
   const [minTokenOut, setMinTokenOut] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTxId, setActiveTxId] = useState<string | null>(null);
+
+  const { transactionStatus, transactionMessage, reset, startMonitoring } =
+    useTransactionVerification();
+
+  // Start monitoring when modal opens with transaction ID
+  useEffect(() => {
+    if (isModalOpen && activeTxId) {
+      console.log("Starting transaction monitoring for:", activeTxId);
+      startMonitoring(activeTxId).catch(console.error);
+    }
+  }, [isModalOpen, activeTxId, startMonitoring]);
 
   // Add fee rate fetching function
   const fetchMempoolFeeEstimates = async () => {
@@ -131,7 +145,6 @@ export default function DepositForm({
       );
       const data = await response.json();
 
-      // Map to the correct fee estimate fields
       const lowRate = data.hourFee || 1;
       const mediumRate = data.halfHourFee || 3;
       const highRate = data.fastestFee || 5;
@@ -143,7 +156,6 @@ export default function DepositForm({
       };
     } catch (error) {
       console.error("Error fetching fee estimates:", error);
-      // Fallback to default values
       return {
         low: 1,
         medium: 3,
@@ -180,7 +192,7 @@ export default function DepositForm({
         throw new Error("Failed to fetch STX balance");
       }
       const data = await response.json();
-      return parseInt(data.stx.balance) / 10 ** 6; // STX has 6 decimals
+      return parseInt(data.stx.balance) / 10 ** 6;
     },
     enabled: !!userAddress && buyWithSbtc,
   });
@@ -288,7 +300,7 @@ export default function DepositForm({
 
     const debounce = setTimeout(() => {
       fetchQuote();
-    }, 500); // 500ms debounce delay
+    }, 500);
 
     return () => clearTimeout(debounce);
   }, [amount, getBuyQuote, currentSlippage]);
@@ -313,10 +325,10 @@ export default function DepositForm({
         (sum: number, utxo: UTXO) => sum + utxo.value,
         0
       );
-      return totalSats / 100000000; // Convert satoshis to BTC
+      return totalSats / 100000000;
     },
-    enabled: !!btcAddress && !buyWithSbtc, // Only run query when btcAddress is available
-    staleTime: 40 * 60 * 1000, // 40 minutes in milliseconds
+    enabled: !!btcAddress && !buyWithSbtc,
+    staleTime: 40 * 60 * 1000,
     retry: 2,
     refetchOnWindowFocus: false,
   });
@@ -413,15 +425,6 @@ export default function DepositForm({
       return;
     }
 
-    // if ((stxBalance || 0) < 0.01) {
-    //   toast({
-    //     title: "STX Required for Transaction Fees",
-    //     description: "You need at least 0.01 STX to pay for transaction fees.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-
     if (parseFloat(amount) <= 0) {
       toast({
         title: "Invalid amount",
@@ -456,6 +459,8 @@ export default function DepositForm({
       });
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const clarityValue = hexToCV(rawBuyQuote.result);
@@ -505,7 +510,6 @@ export default function DepositForm({
 
       const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
       const assetName = getTokenAssetName(daoName);
-      console.log(assetName);
 
       const TARGET_STX = targetStx * Math.pow(10, 8);
       const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
@@ -541,10 +545,43 @@ export default function DepositForm({
       const response = await request("stx_callContract", params);
 
       if (response && response.txid) {
-        toast({
-          title: "Transaction Submitted",
-          description: `Your sBTC transaction to buy ${daoName} tokens has been submitted. TxID: ${response.txid}`,
-        });
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                // Force status update if API shows different status
+                if (txData.tx_status === "success") {
+                  // Transaction is actually confirmed but WebSocket missed it
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
       } else {
         throw new Error("Transaction failed or was rejected.");
       }
@@ -555,6 +592,8 @@ export default function DepositForm({
         description: "Failed to submit sBTC buy order.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -572,15 +611,6 @@ export default function DepositForm({
       });
       return;
     }
-
-    // if ((stxBalance || 0) < 0.01) {
-    //   toast({
-    //     title: "STX Required for Transaction Fees",
-    //     description: "You need at least 0.01 STX to pay for transaction fees.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
 
     if (parseFloat(amount) <= 0) {
       toast({
@@ -628,7 +658,7 @@ export default function DepositForm({
     const serviceFee = parseFloat(calculateFee(amount));
     const totalAmount = (userInputAmount + serviceFee).toFixed(8);
 
-    const networkFeeInBTC = 0.000006; // 600 sats as network fee
+    const networkFeeInBTC = 0.000006;
     const totalRequiredBTC = parseFloat(totalAmount) + networkFeeInBTC;
 
     if ((btcBalance || 0) < totalRequiredBTC) {
@@ -769,13 +799,6 @@ export default function DepositForm({
     });
   }
 
-  // const getButtonText = () => {
-  //   if (!accessToken) return "Connect Wallet";
-  //   if (!hasAgentAccount) return "No Agent Account";
-  //   if (buyWithSbtc && (stxBalance || 0) < 0.01) return "Need STX for Fees";
-  //   return buyWithSbtc ? "Trade sBTC for Tokens" : "Trade BTC for Tokens";
-  // };
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4 py-8">
@@ -796,6 +819,7 @@ export default function DepositForm({
           />
         </div>
       </div>
+
       {accessToken && (userAddress || btcAddress) && (
         <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
           <DialogContent className="max-w-2xl">
@@ -892,6 +916,7 @@ export default function DepositForm({
           </DialogContent>
         </Dialog>
       )}
+
       {/* Main amount input with integrated currency selector */}
       <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
         <div className="flex items-center gap-4">
@@ -921,7 +946,6 @@ export default function DepositForm({
                 </div>
                 <SelectValue />
               </div>
-              {/* <ChevronDown className="h-4 w-4 ml-2" /> */}
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="btc">BTC</SelectItem>
@@ -930,6 +954,7 @@ export default function DepositForm({
           </Select>
         </div>
       </div>
+
       {/* Preset amount buttons */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
@@ -967,6 +992,7 @@ export default function DepositForm({
           </Button>
         </div>
       </div>
+
       {/* Available Balance */}
       {accessToken && (
         <div className="text-sm text-zinc-400">
@@ -1004,6 +1030,7 @@ export default function DepositForm({
           </button>
         </div>
       )}
+
       {/* Quote display */}
       {buyQuote && (
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 text-center">
@@ -1017,6 +1044,7 @@ export default function DepositForm({
           )}
         </div>
       )}
+
       {/* Place Order Button */}
       <Button
         onClick={handleDepositConfirm}
@@ -1039,10 +1067,32 @@ export default function DepositForm({
           "Place Order"
         )}
       </Button>
+
       {!accessToken && (
         <div className="text-center">
           <AuthButton />
         </div>
+      )}
+
+      {buyWithSbtc && (
+        <TransactionStatusModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            reset();
+            setActiveTxId(null);
+          }}
+          txId={activeTxId ?? undefined}
+          transactionStatus={transactionStatus}
+          transactionMessage={transactionMessage}
+          title="sBTC Transaction"
+          successTitle="Buy Order Confirmed"
+          failureTitle="Buy Order Failed"
+          successDescription={`Your transaction to buy ${daoName} tokens has been successfully confirmed.`}
+          failureDescription="The transaction could not be completed. Please check your balance and try again."
+          pendingDescription="Your transaction is being processed. This may take a few minutes."
+          onRetry={handleBuyWithSbtc}
+        />
       )}
     </div>
   );
