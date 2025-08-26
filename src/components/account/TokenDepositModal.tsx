@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { request } from "@stacks/connect";
-import { uintCV, principalCV, noneCV, Pc } from "@stacks/transactions";
+import { uintCV, principalCV, noneCV, Pc, Cl } from "@stacks/transactions";
 import { useWalletStore } from "@/store/wallet";
 import { getStacksAddress } from "@/lib/address";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
@@ -131,13 +131,11 @@ export function TokenDepositModal({
         tokenData.contractPrincipal.split(".");
 
       const txResponse = await request("stx_callContract", {
-        contract: `${contractAddress}.${contractName}`,
-        functionName: "transfer",
+        contract: recipientAddress as `${string}.${string}`,
+        functionName: "deposit-ft",
         functionArgs: [
-          uintCV(amountInMicroTokens),
-          principalCV(stacksAddress),
-          principalCV(recipientAddress),
-          noneCV(),
+          Cl.contractPrincipal(contractAddress, contractName),
+          Cl.uint(amountInMicroTokens), // amount in base units
         ],
         network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
           | "mainnet"
