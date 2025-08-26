@@ -17,7 +17,7 @@ import {
   ChevronDown,
   Shield,
   Link as LinkIcon,
-  Image,
+  // Image,
   MessageSquare,
   Settings,
   Edit3,
@@ -511,7 +511,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     }
 
     const votingExtension = daoData.extensions.find(
-      (ext: any) =>
+      (ext: { type: string; subtype?: string; contract_principal?: string }) =>
         ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
     );
 
@@ -805,10 +805,10 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <Image className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Media Preview</span>
-                </div>
+                </div> */}
                 <div className="bg-background rounded-lg p-3 border border-dashed">
                   <p className="text-xs text-muted-foreground text-center">
                     No media attached
