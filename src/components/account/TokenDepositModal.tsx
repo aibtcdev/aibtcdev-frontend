@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { request } from "@stacks/connect";
-import { uintCV, principalCV, noneCV, Pc, Cl } from "@stacks/transactions";
+import { Pc, Cl } from "@stacks/transactions";
 import { useWalletStore } from "@/store/wallet";
 import { getStacksAddress } from "@/lib/address";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
