@@ -23,4 +23,6 @@ export interface Vote {
   vote_end: bigint | null;
   exec_start: bigint | null;
   exec_end: bigint | null;
+  // Blockchain proposal ID from proposals table (integer used for API queries)
+  blockchain_proposal_id: bigint | null;
 }

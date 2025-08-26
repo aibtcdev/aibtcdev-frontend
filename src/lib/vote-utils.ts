@@ -17,7 +17,6 @@ export async function getProposalVotes(
   proposalId: number,
   bustCache = false
 ) {
-  console.log(url);
   // Parse the contract principal to extract address and name
   const [contractAddress, contractName] = contractPrincipal.split(".");
 
@@ -33,7 +32,6 @@ export async function getProposalVotes(
       headers: {
         "Content-Type": "application/json",
       },
-      // Use the required format for the request body
       body: JSON.stringify({
         functionArgs: [
           {
@@ -65,6 +63,16 @@ export async function getProposalVotes(
 
   // Check if the data is nested inside a data property
   const voteData = responseData.data || responseData;
+
+  if (!voteData) {
+    return {
+      ...responseData,
+      votesFor: "0",
+      votesAgainst: "0",
+      formattedVotesFor: "0",
+      formattedVotesAgainst: "0",
+    };
+  }
 
   // Parse the vote values to remove the "n" suffix and ensure they're valid numbers
   let votesFor = "0";

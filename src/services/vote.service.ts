@@ -1,7 +1,9 @@
 import { supabase } from "./supabase";
 import type { Vote } from "@/types";
 
-// Internal interface for Supabase query transformation - keep here since it's service-specific
+/**
+ * Raw vote data from Supabase with joined DAO and proposal information
+ */
 interface VoteWithRelations {
   id: string;
   created_at: string;
@@ -22,6 +24,7 @@ interface VoteWithRelations {
   daos: { id: string; name: string } | null;
   proposals: {
     id: string;
+    proposal_id: bigint;
     title: string;
     content: string;
     vote_start: bigint | null;
@@ -70,6 +73,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       daos ( id, name ),
       proposals ( 
         id, 
+        proposal_id,
         title,
         content,
         vote_start,
@@ -111,20 +115,17 @@ export async function fetchVotes(): Promise<Vote[]> {
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,
       exec_end: vote.proposals?.exec_end || null,
+      blockchain_proposal_id: vote.proposals?.proposal_id || null,
     })
   );
 
-  console.log("transformedVotes", transformedVotes);
   return transformedVotes;
 }
 
 /**
- * CORRECTED & REFACTORED VERSION: Fetches votes for a specific proposal ALONG WITH
- * related agent and DAO names using a single efficient Supabase query.
- *
- * Query key: ['proposalVotes', proposalId]
- * @param proposalId The ID of the proposal to fetch votes for
- * @returns An array of Vote objects for the specified proposal
+ * Fetches votes for a specific proposal with enriched DAO and proposal data
+ * @param proposalId - The UUID of the proposal to fetch votes for
+ * @returns Promise<Vote[]> Array of votes with blockchain proposal IDs for the specified proposal
  */
 export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
   if (!proposalId) {
@@ -154,6 +155,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       daos ( id, name ),
       proposals ( 
         id, 
+        proposal_id,
         title,
         content,
         vote_start,
@@ -203,6 +205,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,
       exec_end: vote.proposals?.exec_end || null,
+      blockchain_proposal_id: vote.proposals?.proposal_id || null,
     })
   );
 
