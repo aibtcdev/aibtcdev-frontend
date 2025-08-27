@@ -28,7 +28,6 @@ export function WalletTab({
             </h3>
             <AccountCard
               title="Agent Account"
-              subtitle="Smart contract for automated governance"
               address={agentAddress}
               icon={Bot}
               isPrimary={false}

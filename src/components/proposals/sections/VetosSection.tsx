@@ -12,22 +12,21 @@ interface VetosSectionProps {
   defaultOpen?: boolean;
 }
 
-// Utility function to format veto amounts
-function formatVetoAmount(amount: string | null | undefined): string {
-  if (!amount) return "0";
+function formatBalance(value: string | number, decimals: number = 8) {
+  let num = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(num)) return "0";
 
-  const numAmount = parseFloat(amount);
-  if (isNaN(numAmount) || numAmount === 0) return "0";
+  num = num / Math.pow(10, decimals);
 
-  if (numAmount >= 1000000) {
-    return `${(numAmount / 1000000).toFixed(1)}M`;
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(2) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(2) + "K";
+  } else if (num < 1) {
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  } else {
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
   }
-
-  if (numAmount >= 1000) {
-    return `${(numAmount / 1000).toFixed(1)}K`;
-  }
-
-  return numAmount.toString();
 }
 
 function VetosContent({ proposalId }: { proposalId: string }) {
@@ -90,7 +89,7 @@ function VetosContent({ proposalId }: { proposalId: string }) {
               </div>
               <div className="min-w-0 flex-1">
                 <span className="text-sm font-mono truncate block">
-                  {veto.address?.slice(0, 8)}...{veto.address?.slice(-6)}
+                  {veto.address?.slice(0, 5)}...{veto.address?.slice(-5)}
                 </span>
                 {veto.reasoning && (
                   <p className="text-xs text-muted-foreground truncate">
@@ -101,7 +100,7 @@ function VetosContent({ proposalId }: { proposalId: string }) {
             </div>
             {veto.amount && (
               <Badge variant="destructive" className="text-xs">
-                {formatVetoAmount(veto.amount)}
+                {formatBalance(veto.amount)}
               </Badge>
             )}
           </div>

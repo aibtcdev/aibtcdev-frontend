@@ -83,7 +83,7 @@ export function formatNumber(num: number): string {
  * @returns The amount in BTC as string with 8 decimal places
  */
 export function satoshiToBTC(satoshis: string): string {
-  if (!satoshis || isNaN(Number(satoshis))) return "0.00000000";
+  if (!satoshis || isNaN(Number(satoshis))) return "0";
   return (Number(satoshis) / 100000000).toFixed(8);
 }
 

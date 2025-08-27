@@ -253,7 +253,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
               </div>
-              <ProposalSubmission daoId={dao.id} />
+              <ProposalSubmission daoId={dao.id} daoName={dao.name} />
             </div>
             <div className="lg:col-span-1 ">
               {dexContract && (
