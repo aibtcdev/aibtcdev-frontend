@@ -240,16 +240,25 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
       <div className="w-full">
         {/* Connected Wallet Section */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Connected Wallet</h3>
-          <AccountCard
-            title="Connected Wallet"
-            subtitle="Connected wallet through the browser"
-            address={stacksAddress}
-            icon={Wallet}
-            isPrimary={true}
-            network={stacksAddress?.startsWith("SP") ? "mainnet" : "testnet"}
-            metadata={getLimitedBalances(connectedWalletBalance)}
-          />
+          <h3 className="text-lg font-semibold mb-1">Connected Wallet</h3>
+          <p className="text-sm text-muted-foreground">
+            Your login and primary funding source.
+          </p>
+          <div className="mt-4">
+            <AccountCard
+              title="Connected Wallet"
+              address={stacksAddress}
+              icon={Wallet}
+              isPrimary={true}
+              network={
+                stacksAddress?.startsWith("SP") ||
+                stacksAddress?.startsWith("SM")
+                  ? "mainnet"
+                  : "testnet"
+              }
+              metadata={getLimitedBalances(connectedWalletBalance)}
+            />
+          </div>
 
           {/* View All Assets Button */}
           {connectedWalletBalance && (
@@ -288,19 +297,21 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
         {/* Agent Voting Account Section */}
         {agentAddress && (
-          <div className="mb-6 border-t pt-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Agent Voting Account</h3>
+          <div className="mb-6 border-t pt-6">
+            <h3 className="text-lg font-semibold">Agent Voting Account</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Where your agent holds AI DAO tokens to power voting.
+            </p>
+            <div className="mt-4">
+              <AccountCard
+                title="Agent Account"
+                address={agentAddress}
+                icon={Building2}
+                isPrimary={false}
+                network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
+                // metadata={getAllBalances(agentAccountBalance)}
+              />
             </div>
-            <AccountCard
-              title="Agent Account"
-              subtitle="Smart contract between you and the agent"
-              address={agentAddress}
-              icon={Building2}
-              isPrimary={false}
-              network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
-              // metadata={getAllBalances(agentAccountBalance)}
-            />
 
             {/* DAO Tokens Management Table */}
             <div className="mt-6">
@@ -318,20 +329,24 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         {/* Agent Wallet Section */}
         {userAgentWalletAddress && (
           <div className="border-t pt-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Agent Wallet</h3>
+            <h3 className="text-lg font-semibold">Agent Gas Wallet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Where your agent stores STX to cover gas fees for voting.
+            </p>
+            <div className="mt-4">
+              <AccountCard
+                title="Agent Wallet"
+                address={userAgentWalletAddress}
+                icon={Bot}
+                isPrimary={false}
+                network={
+                  userAgentWalletAddress?.startsWith("SP")
+                    ? "mainnet"
+                    : "testnet"
+                }
+                metadata={getAllBalances(agentWalletBalance)}
+              />
             </div>
-            <AccountCard
-              title="Agent Wallet"
-              subtitle="Agent wallet used for autonomous operations"
-              address={userAgentWalletAddress}
-              icon={Bot}
-              isPrimary={false}
-              network={
-                userAgentWalletAddress?.startsWith("SP") ? "mainnet" : "testnet"
-              }
-              metadata={getAllBalances(agentWalletBalance)}
-            />
           </div>
         )}
 

@@ -16,7 +16,6 @@ import { getExplorerLink } from "@/utils/format";
 
 interface AccountCardProps {
   title: string;
-  subtitle: string;
   address: string | null;
   icon: React.ElementType;
   isPrimary?: boolean;
@@ -32,7 +31,6 @@ const truncateAddress = (address: string, startLength = 6, endLength = 4) => {
 
 export function AccountCard({
   title,
-  subtitle,
   address,
   icon: Icon,
   isPrimary = false,
@@ -53,9 +51,6 @@ export function AccountCard({
               <h3 className="text-base font-semibold text-muted-foreground truncate">
                 {title}
               </h3>
-              <p className="text-sm text-muted-foreground truncate">
-                {subtitle}
-              </p>
             </div>
             <Badge variant="outline" className="text-muted-foreground">
               Not Connected
@@ -94,12 +89,6 @@ export function AccountCard({
 
                   {/* Center: Address and Network - Mobile Stack */}
                   <div className="flex-1 flex flex-col items-start gap-1 min-w-0">
-                    <span className="text-sm font-medium text-muted-foreground w-full truncate">
-                      {isPrimary
-                        ? "Connected wallet through the browser"
-                        : "Agent account address"}
-                    </span>
-
                     {/* Address with responsive truncation */}
                     <button
                       onClick={() => copyToClipboard(address)}
@@ -187,7 +176,6 @@ export function AccountCard({
           className="z-50 space-y-1 p-2 max-w-xs"
         >
           <p className="font-semibold">{title}</p>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
           {address && <p className="text-xs font-mono break-all">{address}</p>}
         </TooltipContent>
       </Tooltip>
