@@ -153,7 +153,7 @@ export function getExplorerLink(
   type: "tx" | "address" | "contract",
   identifier: string
 ): string {
-  const baseUrl = "https://explorer.stacks.co";
+  const baseUrl = "https://explorer.hiro.so";
   const network = process.env.NEXT_PUBLIC_STACKS_NETWORK;
   const chainParam = network === "testnet" ? "testnet" : "mainnet";
 

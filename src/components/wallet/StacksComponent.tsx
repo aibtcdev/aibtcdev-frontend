@@ -45,7 +45,7 @@ export default function StacksComponents({
             : "testnet",
       });
 
-      const explorerUrl = `https://explorer.stacks.co/txid/${response.txid}`;
+      const explorerUrl = `https://explorer.hiro.so/txid/${response.txid}`;
       onToast(
         "Success",
         "Transfer sent to agent, funds will arrive soon.",

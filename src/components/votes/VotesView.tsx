@@ -760,7 +760,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                         <span className="font-medium">Vetoed</span>
                         <span>{formatBalance(existingVeto.amount || "0")}</span>
                         <a
-                          href={`https://explorer.stacks.co/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                          href={`https://explorer.hiro.so/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
