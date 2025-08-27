@@ -812,7 +812,7 @@ export default function DepositForm({
     <div className="flex flex-col space-y-9 w-full max-w-lg mx-auto">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
-          <h2 className="text-2xl font-semibold text-white">Buy $FACES</h2>
+          <h2 className="text-2xl font-semibold text-white">Buy {daoName}</h2>
           <Info
             className="h-5 w-5 text-muted-foreground cursor-pointer"
             onClick={() => setIsAgentDetailsOpen(true)}

@@ -47,18 +47,35 @@ interface FormData {
 }
 
 const AI_MODELS = [
-  { value: "gpt-4.1", label: "GPT-4.1", description: "Most capable model" },
-  { value: "gpt-4o", label: "GPT-4o", description: "Optimized for speed" },
   {
-    value: "gpt-4o-mini",
-    label: "GPT-4o Mini",
-    description: "Fast and efficient",
+    value: "openai/gpt-5-nano",
+    label: "GPT-5 Nano",
+    description: "Ultra lightweight, experimental",
   },
-  { value: "gpt-4.1-nano", label: "GPT-4.1 Nano", description: "Lightweight" },
   {
-    value: "gpt-4.1-mini",
-    label: "GPT-4.1 Mini",
-    description: "Balanced performance",
+    value: "openai/gpt-5-mini",
+    label: "GPT-5 Mini",
+    description: "Compact and fast",
+  },
+  {
+    value: "openai/gpt-5",
+    label: "GPT-5",
+    description: "Latest generation, highly capable",
+  },
+  {
+    value: "google/gemini-2.5-pro",
+    label: "Gemini 2.5 Pro",
+    description: "Google's advanced multimodal model",
+  },
+  {
+    value: "x-ai/grok-4",
+    label: "Grok",
+    description: "xAI’s large-scale reasoning model",
+  },
+  {
+    value: "anthropic/claude-sonnet-4",
+    label: "Claude Sonnet",
+    description: "Anthropic’s balanced performance model",
   },
 ];
 
@@ -83,7 +100,7 @@ export function AgentConfigDrawer({
   const [formData, setFormData] = useState<FormData>({
     dao_id: "",
     prompt_text: "",
-    model: "gpt-4.1",
+    model: "openai/gpt-5",
     temperature: 0.1,
   });
 
@@ -107,14 +124,14 @@ export function AgentConfigDrawer({
         setFormData({
           dao_id: daoId,
           prompt_text: "",
-          model: "gpt-4.1",
+          model: "GPT-5",
           temperature: 0.1,
         });
       } else {
         setFormData({
           dao_id: "",
           prompt_text: "",
-          model: "gpt-4.1",
+          model: "GPT-5",
           temperature: 0.1,
         });
       }

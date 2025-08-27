@@ -157,36 +157,21 @@ export function EvaluationModal({
 
             <Separator />
 
-            {/* Categories Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Evaluation Categories</h3>
-              <div className="grid gap-4">
-                {evaluationData.categories.map((category, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{category.category}</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          Weight: {(category.weight * 100).toFixed(1)}%
-                        </span>
-                        <Badge variant={getScoreBadgeVariant(category.score)}>
-                          {category.score}/100
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {category.reasoning.map((reason, reasonIndex) => (
-                        <div
-                          key={reasonIndex}
-                          className="bg-muted/20 rounded p-3"
-                        >
-                          <p className="text-sm leading-relaxed">{reason}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Categories Section (Simplified, one line per category) */}
+            <div className="space-y-2">
+              {evaluationData.categories.map((category, index) => {
+                const reasons = (category.reasoning || [])
+                  .filter(Boolean)
+                  .join("; ");
+                return (
+                  <p key={index} className="text-sm leading-relaxed">
+                    <span className="font-bold text-md">
+                      {category.category} ({category.score})
+                    </span>
+                    : {reasons || "—"}
+                  </p>
+                );
+              })}
             </div>
 
             <Separator />
