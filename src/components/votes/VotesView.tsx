@@ -40,6 +40,7 @@ interface EvaluationData {
 }
 
 import { Badge } from "@/components/ui/badge";
+import { AI_MODELS } from "@/lib/constant";
 import { Button } from "@/components/ui/button";
 import type { Vote as VoteType } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
@@ -869,16 +870,11 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                            <SelectItem value="gpt-4o-mini">
-                              GPT-4o Mini
-                            </SelectItem>
-                            <SelectItem value="gpt-4-turbo">
-                              GPT-4 Turbo
-                            </SelectItem>
-                            <SelectItem value="claude-3-5-sonnet-20241022">
-                              Claude 3.5 Sonnet
-                            </SelectItem>
+                            {AI_MODELS.map((model) => (
+                              <SelectItem key={model.value} value={model.value}>
+                                {model.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>

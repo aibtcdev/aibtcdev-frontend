@@ -15,6 +15,7 @@ import { Check, X, Pencil, Trash2 } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import type { AgentPrompt } from "./AgentPrompt";
 import type { UseMutationResult } from "@tanstack/react-query";
+import { AI_MODELS } from "@/lib/constant";
 
 interface EditingData {
   id: string;
@@ -121,58 +122,31 @@ export function MobileConfigCard({
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent className="bg-card/95 backdrop-blur-xl border-border/40 rounded-lg">
-                <SelectItem
-                  value="gpt-4.1"
-                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-secondary" />
-                    GPT-4.1
-                  </div>
-                </SelectItem>
-                <SelectItem
-                  value="gpt-4o"
-                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    GPT-4o
-                  </div>
-                </SelectItem>
-                <SelectItem
-                  value="gpt-4o-mini"
-                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    GPT-4o Mini
-                  </div>
-                </SelectItem>
-                <SelectItem
-                  value="gpt-4.1-nano"
-                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                    GPT-4.1 Nano
-                  </div>
-                </SelectItem>
-                <SelectItem
-                  value="gpt-4.1-mini"
-                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                    GPT-4.1 Mini
-                  </div>
-                </SelectItem>
+                {AI_MODELS.map(
+                  (model: {
+                    value: string;
+                    label: string;
+                    description: string;
+                  }) => (
+                    <SelectItem
+                      key={model.value}
+                      value={model.value}
+                      className="text-foreground hover:bg-primary/10 rounded-md text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        {model.label}
+                      </div>
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           ) : (
             <div className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg border border-border/20">
               <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
               <span className="text-muted-foreground font-semibold text-sm">
-                {prompt?.model || "gpt-4.1"}
+                {prompt?.model || "openai/gpt-5"}
               </span>
             </div>
           )}

@@ -144,7 +144,7 @@ export function AgentPromptForm() {
   const [editingData, setEditingData] = useState<EditingData>({
     id: "",
     prompt_text: "",
-    model: "gpt-4.1",
+    model: "",
     temperature: 0.1,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -156,14 +156,14 @@ export function AgentPromptForm() {
       setEditingData({
         id: existingPrompt.id,
         prompt_text: existingPrompt.prompt_text,
-        model: existingPrompt.model || "gpt-4.1",
+        model: existingPrompt.model || "openai/gpt-5",
         temperature: existingPrompt.temperature || 0.1,
       });
     } else {
       setEditingData({
         id: "",
         prompt_text: "",
-        model: "gpt-4.1",
+        model: "openai/gpt-5",
         temperature: 0.1,
       });
     }
