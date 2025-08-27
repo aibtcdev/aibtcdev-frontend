@@ -1,7 +1,9 @@
 import { supabase } from "./supabase";
 import type { Vote } from "@/types";
 
-// Internal interface for Supabase query transformation - keep here since it's service-specific
+/**
+ * Raw vote data from Supabase with joined DAO and proposal information
+ */
 interface VoteWithRelations {
   id: string;
   created_at: string;
@@ -11,6 +13,7 @@ interface VoteWithRelations {
   answer: boolean;
   proposal_id: string;
   reasoning: string | null;
+  evaluation: string | null;
   tx_id: string | null;
   address: string | null;
   amount: string | null;
@@ -22,6 +25,7 @@ interface VoteWithRelations {
   daos: { id: string; name: string } | null;
   proposals: {
     id: string;
+    proposal_id: bigint;
     title: string;
     content: string;
     vote_start: bigint | null;
@@ -59,6 +63,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       answer,
       proposal_id,
       reasoning,
+      evaluation,
       tx_id,
       address,
       amount,
@@ -70,6 +75,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       daos ( id, name ),
       proposals ( 
         id, 
+        proposal_id,
         title,
         content,
         vote_start,
@@ -84,7 +90,8 @@ export async function fetchVotes(): Promise<Vote[]> {
 
   if (error) throw error;
   if (!data || data.length === 0) return [];
-  console.log("data", data);
+  console.log("Raw vote data:", data);
+  console.log("First vote reasoning:", data[0]?.reasoning);
   // Transform data into the Vote interface
   const transformedVotes: Vote[] = (data as unknown as VoteWithRelations[]).map(
     (vote) => ({
@@ -99,6 +106,7 @@ export async function fetchVotes(): Promise<Vote[]> {
       proposal_title: vote.proposals?.title || "Unknown Proposal",
       proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
+      evaluation: vote.evaluation,
       tx_id: vote.tx_id,
       address: vote.address,
       amount: vote.amount,
@@ -111,20 +119,17 @@ export async function fetchVotes(): Promise<Vote[]> {
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,
       exec_end: vote.proposals?.exec_end || null,
+      blockchain_proposal_id: vote.proposals?.proposal_id || null,
     })
   );
 
-  console.log("transformedVotes", transformedVotes);
   return transformedVotes;
 }
 
 /**
- * CORRECTED & REFACTORED VERSION: Fetches votes for a specific proposal ALONG WITH
- * related agent and DAO names using a single efficient Supabase query.
- *
- * Query key: ['proposalVotes', proposalId]
- * @param proposalId The ID of the proposal to fetch votes for
- * @returns An array of Vote objects for the specified proposal
+ * Fetches votes for a specific proposal with enriched DAO and proposal data
+ * @param proposalId - The UUID of the proposal to fetch votes for
+ * @returns Promise<Vote[]> Array of votes with blockchain proposal IDs for the specified proposal
  */
 export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
   if (!proposalId) {
@@ -143,6 +148,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       answer,
       proposal_id,
       reasoning,
+      evaluation,
       tx_id,
       address,
       amount,
@@ -154,6 +160,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       daos ( id, name ),
       proposals ( 
         id, 
+        proposal_id,
         title,
         content,
         vote_start,
@@ -191,6 +198,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       proposal_title: vote.proposals?.title || "Current Proposal",
       proposal_content: vote.proposals?.content || "",
       reasoning: vote.reasoning,
+      evaluation: vote.evaluation,
       tx_id: vote.tx_id,
       address: vote.address,
       amount: vote.amount,
@@ -203,6 +211,7 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,
       exec_end: vote.proposals?.exec_end || null,
+      blockchain_proposal_id: vote.proposals?.proposal_id || null,
     })
   );
 

@@ -9,80 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Brain } from "lucide-react";
-
-const OPENROUTER_MODELS = [
-  // Google Models
-  {
-    value: "google/gemini-2.5-flash-preview-05-20",
-    label: "Gemini 2.5 Flash Preview 05-20",
-    provider: "Google",
-  },
-  {
-    value: "google/gemini-2.5-pro-preview",
-    label: "Gemini 2.5 Pro Preview 06-05",
-    provider: "Google",
-  },
-
-  // DeepSeek Models
-  {
-    value: "deepseek/deepseek-chat-v3-0324",
-    label: "DeepSeek V3 0324",
-    provider: "DeepSeek",
-  },
-  {
-    value: "deepseek/deepseek-r1-0528",
-    label: "R1 0528",
-    provider: "DeepSeek",
-  },
-
-  // OpenAI Models
-  { value: "openai/gpt-4o-mini", label: "GPT-4o-mini", provider: "OpenAI" },
-  { value: "openai/gpt-4.1", label: "GPT-4.1", provider: "OpenAI" },
-  { value: "openai/gpt-4.1-mini", label: "GPT-4.1 Mini", provider: "OpenAI" },
-
-  // Meta Models
-  {
-    value: "meta-llama/llama-3.3-70b-instruct",
-    label: "Llama 3.3 70B Instruct",
-    provider: "Meta",
-  },
-  {
-    value: "meta-llama/llama-4-maverick",
-    label: "Llama 4 Maverick",
-    provider: "Meta",
-  },
-
-  // Mistral Models
-  {
-    value: "mistralai/mistral-nemo",
-    label: "Mistral Nemo",
-    provider: "Mistral AI",
-  },
-
-  // x-ai Models
-  {
-    value: "x-ai/grok-4",
-    label: "Grok 4",
-    provider: "x-ai",
-  },
-  {
-    value: "x-ai/grok-3",
-    label: "Grok 3",
-    provider: "x-ai",
-  },
-];
+import { AI_MODELS } from "@/lib/constant";
 
 // Group models by provider for better organization
-const groupedModels = OPENROUTER_MODELS.reduce(
-  (acc, model) => {
-    if (!acc[model.provider]) {
-      acc[model.provider] = [];
-    }
-    acc[model.provider].push(model);
-    return acc;
-  },
-  {} as Record<string, typeof OPENROUTER_MODELS>
-);
+const groupedModels = { Default: AI_MODELS };
 
 interface ModelSelectorProps {
   value: string;
