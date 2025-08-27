@@ -35,7 +35,6 @@ export function ConnectedWallet() {
       </div>
       <AccountCard
         title="Primary Wallet"
-        subtitle="Your main browser wallet"
         address={stacksAddress}
         icon={Wallet}
         isPrimary={true}
