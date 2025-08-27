@@ -28,6 +28,8 @@ interface VoteWithRelations {
     proposal_id: bigint;
     title: string;
     content: string;
+    status: string;
+    passed: boolean | null;
     vote_start: bigint | null;
     vote_end: bigint | null;
     exec_start: bigint | null;
@@ -78,6 +80,8 @@ export async function fetchVotes(): Promise<Vote[]> {
         proposal_id,
         title,
         content,
+        status,
+        passed,
         vote_start,
         vote_end,
         exec_start,
@@ -115,6 +119,8 @@ export async function fetchVotes(): Promise<Vote[]> {
       voted: vote.voted,
       evaluation_score: vote.evaluation_score ?? null,
       flags: vote.flags ?? null,
+      proposal_status: vote.proposals?.status || null,
+      proposal_passed: vote.proposals?.passed ?? null,
       vote_start: vote.proposals?.vote_start || null,
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,
@@ -163,6 +169,8 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
         proposal_id,
         title,
         content,
+        status,
+        passed,
         vote_start,
         vote_end,
         exec_start,
@@ -207,6 +215,8 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
       voted: vote.voted,
       evaluation_score: vote.evaluation_score ?? null,
       flags: vote.flags ?? null,
+      proposal_status: vote.proposals?.status || null,
+      proposal_passed: vote.proposals?.passed ?? null,
       vote_start: vote.proposals?.vote_start || null,
       vote_end: vote.proposals?.vote_end || null,
       exec_start: vote.proposals?.exec_start || null,

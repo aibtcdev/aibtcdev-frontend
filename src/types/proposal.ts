@@ -25,7 +25,6 @@ export interface Proposal {
   contract_caller: string;
   created_btc: bigint;
   created_stx: bigint;
-  creator_user_id: bigint;
   exec_end: bigint;
   exec_start: bigint;
   memo: string;
