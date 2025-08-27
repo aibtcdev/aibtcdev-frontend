@@ -809,7 +809,7 @@ export default function DepositForm({
   }
 
   return (
-    <div className="flex flex-col space-y-9 w-full max-w-lg mx-auto">
+    <div className="flex flex-col space-y-8 md:space-y-10 w-full max-w-lg mx-auto">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <h2 className="text-2xl font-semibold text-white">Buy ${daoName}</h2>
@@ -918,7 +918,7 @@ export default function DepositForm({
       )}
 
       {/* Main amount input with integrated currency selector */}
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6">
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Input
@@ -1033,7 +1033,7 @@ export default function DepositForm({
 
       {/* Quote display */}
       {buyQuote && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 text-center">
+        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center">
           <div className="text-2xl font-semibold text-white">
             {buyQuote} ${daoName}
           </div>

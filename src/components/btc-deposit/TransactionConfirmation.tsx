@@ -10,7 +10,13 @@ import {
   request as xverseRequest,
 } from "sats-connect";
 import { useToast } from "@/hooks/useToast";
-import { ArrowLeft, Copy, Check, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Check,
+  AlertTriangle,
+  ExternalLink,
+} from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { useClipboard } from "@/hooks/useClipboard";
@@ -94,7 +100,6 @@ interface TransactionConfirmationProps {
   refetchAllDeposits: (
     options?: RefetchOptions
   ) => Promise<QueryObserverResult<DepositHistoryResponse, Error>>;
-  setIsRefetching: (isRefetching: boolean) => void;
   minTokenOut?: number;
   poolId?: string;
   swapType?: "sbtc" | "usda" | "pepe" | "aibtc";
@@ -126,7 +131,6 @@ export default function TransactionConfirmation({
   activeWalletProvider,
   refetchDepositHistory,
   refetchAllDeposits,
-  setIsRefetching,
   minTokenOut,
   poolId,
   swapType,
@@ -606,7 +610,7 @@ export default function TransactionConfirmation({
 
         // Extract transaction details from response
         const { transactionDetails } = transactionData;
-        console.log("AIBTC transaction summary:", transactionDetails);
+        console.log("Transaction summary:", transactionDetails);
 
         // Generate PSBT and request signing
         const txPsbt = tx.toPSBT();
@@ -775,14 +779,11 @@ export default function TransactionConfirmation({
           throw new Error("No compatible wallet provider detected");
         }
 
-        console.log(
-          "AIBTC transaction successfully broadcast with txid:",
-          txid
-        );
+        console.log("Transaction successfully broadcast with txid:", txid);
 
         // Update the deposit record with the transaction ID
         console.log(
-          "Attempting to update aibtc deposit with ID:",
+          "Attempting to update deposit with ID:",
           depositId,
           "Type:",
           typeof depositId
@@ -790,7 +791,7 @@ export default function TransactionConfirmation({
 
         try {
           console.log(
-            "About to update aibtc deposit with ID:",
+            "About to update deposit with ID:",
             depositId,
             "and txid:",
             txid
@@ -825,19 +826,16 @@ export default function TransactionConfirmation({
           }
         }
 
-        // Update state with success
+        // Update state with success - Debug log the values
+        console.log("Setting success state with txid:", txid);
         setBtcTxStatus("success");
         setSuccessTxId(txid);
         setShowSuccessModal(true);
+        console.log("Success modal state should now be true");
 
-        // Close confirmation dialog
-        onClose();
-
-        // Trigger data refetch with loading indicator
-        setIsRefetching(true);
+        // Trigger data refetch
         Promise.all([refetchDepositHistory(), refetchAllDeposits()]).finally(
           () => {
-            setIsRefetching(false);
             // Optionally show a toast to confirm refresh
             toast({
               title: "Data Refreshed",
@@ -1180,42 +1178,93 @@ export default function TransactionConfirmation({
         </DialogContent>
       </Dialog>
 
-      {showSuccessModal && (
-        <Dialog open onOpenChange={() => setShowSuccessModal(false)}>
+      {/* Enhanced Success Modal */}
+      {showSuccessModal && successTxId && (
+        <Dialog
+          open
+          onOpenChange={() => {
+            setShowSuccessModal(false);
+            onClose();
+          }}
+        >
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Transaction Successful</DialogTitle>
+              <DialogTitle className="text-center">
+                Transaction Successful!
+              </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-4">
-              <div className="bg-zinc-900 p-4 rounded-md">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-3">
-                  <div className="text-xs font-medium text-zinc-300">
-                    Transaction ID:
+            <div className="space-y-6">
+              {/* Success message */}
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="h-8 w-8 text-green-600" />
+                </div>
+                <p className="text-sm text-zinc-400">
+                  Your {swapType?.toUpperCase()} transaction has been
+                  successfully broadcast to the Bitcoin network.
+                </p>
+              </div>
+
+              {/* Transaction details */}
+              <div className="bg-zinc-900 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-medium text-zinc-300">
+                    Amount:
+                  </span>
+                  <span className="text-sm font-mono">
+                    {confirmationData.depositAmount} BTC
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-start">
+                  <span className="text-xs font-medium text-zinc-300">
+                    Type:
+                  </span>
+                  <span className="text-sm font-mono">
+                    {swapType?.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="pt-3 border-t border-zinc-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-medium text-zinc-300">
+                      Transaction ID:
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        successTxId && copyToClipboard(successTxId)
+                      }
+                      className="h-6 w-6 p-0"
+                    >
+                      {copiedText === successTxId ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
                   </div>
-                  <div className="col-span-2 relative">
-                    <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight flex items-center justify-between">
-                      <span>{successTxId}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          successTxId && copyToClipboard(successTxId)
-                        }
-                        className="h-6 w-6 p-0 ml-2"
-                      >
-                        {copiedText === successTxId ? (
-                          <Check className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Copy className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+
+                  {/* Make the transaction ID clickable */}
+                  <button
+                    onClick={() =>
+                      successTxId &&
+                      window.open(
+                        `https://mempool.space/tx/${successTxId}`,
+                        "_blank"
+                      )
+                    }
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 transition-colors p-3 rounded-md font-mono text-xs break-all text-left text-blue-400 hover:text-blue-300 underline decoration-dotted"
+                  >
+                    {successTxId}
+                  </button>
                 </div>
               </div>
 
-              <div className="text-center">
+              {/* Action buttons */}
+              <div className="space-y-3">
                 <Button
                   variant="outline"
                   onClick={() =>
@@ -1225,22 +1274,24 @@ export default function TransactionConfirmation({
                       "_blank"
                     )
                   }
+                  className="w-full border-zinc-600 hover:border-zinc-500"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View on Mempool.space
+                </Button>
+
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    onClose();
+                  }}
                   className="w-full"
                 >
-                  View on Mempool.space
+                  Continue
                 </Button>
               </div>
             </div>
-
-            <DialogFooter className="flex flex-col sm:flex-row gap-2">
-              <Button
-                variant="primary"
-                onClick={() => setShowSuccessModal(false)}
-                className="w-full"
-              >
-                Close
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
