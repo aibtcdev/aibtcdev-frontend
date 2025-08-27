@@ -119,6 +119,12 @@ interface EditingPromptData {
   temperature: number;
 }
 
+interface VetoEntry {
+  address: string | null;
+  amount: string;
+  tx_id: string | null;
+}
+
 // Helper function to format time in a compact way
 const formatRelativeTime = (dateStr: string): string => {
   const date = new Date(dateStr);
@@ -596,25 +602,42 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     };
   }, [voteData]);
 
-  // Normalize vetoes (supports future array or single existingVeto)
-  const vetoes = useMemo(() => {
-    const fromVote = (vote as any)?.vetoes;
-    if (Array.isArray(fromVote) && fromVote.length) {
-      return fromVote.map((v: any) => ({
-        address: v.address || v.vetoer || v.account || null,
-        amount: v.amount || "0",
-        tx_id: v.tx_id || v.txId || v.txid || null,
-      }));
+  // Normalize vetoes (supports future array or single existingVeto) without using `any`
+  const vetoes = useMemo<VetoEntry[]>(() => {
+    // Narrow type for a possible vetoes field on vote without changing VoteType
+    type MaybeVoteWithVetoes = {
+      vetoes?: Array<
+        Partial<VetoEntry> & {
+          vetoer?: string;
+          account?: string;
+          txId?: string;
+          txid?: string;
+        }
+      >;
+    };
+    const maybe: MaybeVoteWithVetoes = vote as unknown as MaybeVoteWithVetoes;
+    const fromVote = Array.isArray(maybe.vetoes) ? maybe.vetoes : undefined;
+
+    if (fromVote && fromVote.length) {
+      return fromVote.map(
+        (v): VetoEntry => ({
+          address: v.address ?? null,
+          amount: v.amount ?? "0",
+          tx_id: v.tx_id ?? null,
+        })
+      );
     }
+
     if (existingVeto) {
       return [
         {
-          address: agentAccountAddress,
+          address: agentAccountAddress ?? null,
           amount: existingVeto.amount || "0",
           tx_id: existingVeto.tx_id || null,
         },
       ];
     }
+
     return [];
   }, [existingVeto, agentAccountAddress, vote]);
 
