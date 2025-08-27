@@ -74,30 +74,9 @@ export async function getProposalVotes(
     };
   }
 
-  // Parse the vote values to remove the "n" suffix and ensure they're valid numbers
-  let votesFor = "0";
-  let votesAgainst = "0";
-
-  if (voteData.votesFor && typeof voteData.votesFor === "string") {
-    votesFor = voteData.votesFor.replace(/n$/, "");
-  }
-
-  if (voteData.votesAgainst && typeof voteData.votesAgainst === "string") {
-    votesAgainst = voteData.votesAgainst.replace(/n$/, "");
-  }
-
-  // Convert to numbers for calculations, defaulting to 0 if invalid
-  const votesForNum = !isNaN(Number(votesFor)) ? Number(votesFor) : 0;
-  const votesAgainstNum = !isNaN(Number(votesAgainst))
-    ? Number(votesAgainst)
-    : 0;
-
-  // Create a result object with all the data and the formatted votes
   return {
     ...responseData,
-    votesFor,
-    votesAgainst,
-    formattedVotesFor: (votesForNum / 1e8).toString(),
-    formattedVotesAgainst: (votesAgainstNum / 1e8).toString(),
+    votesFor: voteData.votesFor,
+    votesAgainst: voteData.votesAgainst,
   };
 }

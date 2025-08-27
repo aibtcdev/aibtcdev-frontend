@@ -19,6 +19,9 @@ export interface Vote {
   voted: boolean | null;
   evaluation_score: Record<string, number> | null;
   flags: string[] | null;
+  // Proposal fields from proposals table
+  proposal_status: string | null;
+  proposal_passed: boolean | null;
   // Proposal timing fields for block height filtering
   vote_start: bigint | null;
   vote_end: bigint | null;

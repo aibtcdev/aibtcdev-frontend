@@ -1035,7 +1035,7 @@ export default function DepositForm({
       {buyQuote && (
         <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-4 text-center">
           <div className="text-2xl font-semibold text-white">
-            {buyQuote} $FACES
+            {buyQuote} ${daoName}
           </div>
           {loadingQuote && (
             <div className="flex items-center justify-center mt-2">
@@ -1071,6 +1071,15 @@ export default function DepositForm({
       {!accessToken && (
         <div className="text-center">
           <AuthButton />
+        </div>
+      )}
+
+      {accessToken && !hasAgentAccount && (
+        <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-800 text-sm">
+            Your agent account is being deployed. Please check back in a few
+            minutes.
+          </p>
         </div>
       )}
 
