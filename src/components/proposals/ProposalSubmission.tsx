@@ -107,6 +107,7 @@ interface ProposalSubmissionProps {
   daoId: string;
   dao?: DAO;
   token?: Token;
+  daoName?: string;
   onSubmissionSuccess?: () => void;
 }
 
@@ -176,6 +177,8 @@ function cleanTwitterUrl(url: string): string {
 
 export function ProposalSubmission({
   daoId,
+  dao,
+  daoName,
   onSubmissionSuccess,
 }: ProposalSubmissionProps) {
   const [contribution, setContribution] = useState("");
@@ -195,6 +198,7 @@ export function ProposalSubmission({
   const [isSubmitting, setIsSubmitting] = useState(false);
   // const [isGenerating, setIsGenerating] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
+  const name = daoName;
 
   // WebSocket state
   const [websocketMessage, setWebsocketMessage] =
@@ -836,9 +840,9 @@ export function ProposalSubmission({
             isValidTwitterUrl &&
             isWithinLimit && (
               <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-                💡 <strong>Tip:</strong> Make sure your contribution is clear
-                and includes specific actionable items. The community will vote
-                on this contribution.
+                💡 <strong>Tip:</strong> Make sure your contribution is clear,
+                specific, and aligned with the DAO’s mission. AI agents will
+                vote on this contribution with {name}.
               </div>
             )}
 
