@@ -103,7 +103,11 @@ import {
   updateAgentPrompt,
   createAgentPrompt,
 } from "@/services/agent-prompt.service";
-import { fetchDAOsWithExtension, fetchDAOs } from "@/services/dao.service";
+import {
+  fetchDAOsWithExtension,
+  fetchDAOs,
+  fetchToken,
+} from "@/services/dao.service";
 import type { AgentPrompt, DAO } from "@/types";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { EvaluationModal } from "./EvaluationModal";
@@ -387,6 +391,30 @@ function VoteCard({ vote }: VoteCardProps) {
     );
   };
 
+  const renderAgentVoteBadge = (confidenceText: string) => {
+    return (
+      <Badge
+        className={
+          vote.answer
+            ? "bg-primary/10 text-primary border-primary/20 hover:bg-muted"
+            : "bg-muted text-muted-foreground border-muted hover:bg-muted"
+        }
+      >
+        {vote.answer ? (
+          <>
+            <ThumbsUp className="h-3 w-3 mr-1" />
+            Agent Voted Yes{confidenceText}
+          </>
+        ) : (
+          <>
+            <ThumbsDown className="h-3 w-3 mr-1" />
+            Agent Voted No{confidenceText}
+          </>
+        )}
+      </Badge>
+    );
+  };
+
   const getAgentVotingBadge = () => {
     // For pending contributions, don't show voting status
     if (proposalStatus === "PENDING") {
@@ -397,7 +425,7 @@ function VoteCard({ vote }: VoteCardProps) {
     if (proposalStatus === "ACTIVE") {
       if (vote.voted === false) {
         return (
-          <Badge className="bg-red-100 text-red-800 border-red-200">
+          <Badge className="bg-muted/30">
             <Clock className="h-3 w-3 mr-1" />
             Awaiting Agent Vote
           </Badge>
@@ -407,28 +435,7 @@ function VoteCard({ vote }: VoteCardProps) {
           vote.confidence !== null
             ? ` (${Math.round(vote.confidence * 100)}%)`
             : "";
-
-        return (
-          <Badge
-            className={
-              vote.answer
-                ? "bg-green-100 text-green-800 border-green-200"
-                : "bg-red-100 text-red-800 border-red-200"
-            }
-          >
-            {vote.answer ? (
-              <>
-                <ThumbsUp className="h-3 w-3 mr-1" />
-                Agent Voted Yes{confidenceText}
-              </>
-            ) : (
-              <>
-                <ThumbsDown className="h-3 w-3 mr-1" />
-                Agent Voted No{confidenceText}
-              </>
-            )}
-          </Badge>
-        );
+        return renderAgentVoteBadge(confidenceText);
       }
     }
 
@@ -438,28 +445,7 @@ function VoteCard({ vote }: VoteCardProps) {
         vote.confidence !== null
           ? ` (${Math.round(vote.confidence * 100)}%)`
           : "";
-
-      return (
-        <Badge
-          className={
-            vote.answer
-              ? "bg-green-100 text-green-800 border-green-200"
-              : "bg-red-100 text-red-800 border-red-200"
-          }
-        >
-          {vote.answer ? (
-            <>
-              <ThumbsUp className="h-3 w-3 mr-1" />
-              Voted Yes{confidenceText}
-            </>
-          ) : (
-            <>
-              <ThumbsDown className="h-3 w-3 mr-1" />
-              Voted No{confidenceText}
-            </>
-          )}
-        </Badge>
-      );
+      return renderAgentVoteBadge(confidenceText);
     }
 
     return (
@@ -557,6 +543,14 @@ function VoteCard({ vote }: VoteCardProps) {
   const daoData = useMemo(() => {
     return daos?.find((dao: DAO) => dao.id === vote.dao_id);
   }, [daos, vote.dao_id]);
+
+  // Fetch token data for the DAO to get image_url
+  const { data: tokenData } = useQuery({
+    queryKey: ["token", vote.dao_id],
+    queryFn: () => fetchToken(vote.dao_id),
+    enabled: !!vote.dao_id,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   const votingContractPrincipal = useMemo(() => {
     if (!daoData?.extensions) {
@@ -674,10 +668,7 @@ function VoteCard({ vote }: VoteCardProps) {
             {/* Contribution Header */}
             <div className="flex items-start gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vote.dao_name}`}
-                  alt={vote.dao_name}
-                />
+                <AvatarImage src={tokenData?.image_url} alt={vote.dao_name} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                   {vote.dao_name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -856,7 +847,7 @@ function VoteCard({ vote }: VoteCardProps) {
                 <div className="pt-2">
                   {/* Show vetoes if they exist */}
                   {hasVetos && (
-                    <div className="bg-primary text-primary-foreground rounded-lg p-3 mb-3">
+                    <div className="bg-muted/30 text-foreground rounded-lg p-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-sm">
                           <Shield className="h-4 w-4" />
@@ -873,7 +864,7 @@ function VoteCard({ vote }: VoteCardProps) {
                             className="text-xs flex flex-wrap items-center gap-2 justify-between"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 Veto cast by
                               </span>
                               <a
@@ -885,19 +876,19 @@ function VoteCard({ vote }: VoteCardProps) {
                               >
                                 {maskAddress(v.address)}
                               </a>
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 holding
                               </span>
                               <span className="font-medium">
                                 {formatBalance(v.amount || "0")}
                               </span>
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 {vote.dao_name}.
                               </span>
                             </div>
                             {v.tx_id && (
                               <div className="flex items-center gap-1">
-                                <span className="text-primary-foreground/80">
+                                <span className="text-muted-foreground">
                                   txid:
                                 </span>
                                 <a
