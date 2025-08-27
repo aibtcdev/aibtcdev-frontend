@@ -177,7 +177,6 @@ function cleanTwitterUrl(url: string): string {
 
 export function ProposalSubmission({
   daoId,
-  dao,
   daoName,
   onSubmissionSuccess,
 }: ProposalSubmissionProps) {
