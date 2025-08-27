@@ -5,7 +5,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Vote,
-  Search,
+  // Search,
   CheckCircle,
   Clock,
   Ban,
@@ -42,7 +42,7 @@ interface EvaluationData {
 import { Badge } from "@/components/ui/badge";
 import { AI_MODELS } from "@/lib/constant";
 import { Button } from "@/components/ui/button";
-import type { Vote as VoteType } from "@/types";
+import type { Vote as VoteType, Proposal } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -66,21 +66,73 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/useToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { getProposalStatus } from "@/utils/proposal";
+import { useProposalStatus } from "@/hooks/useProposalStatus";
+
+// Helper function to convert Vote to Proposal-like object for useProposalStatus hook
+const voteToProposal = (vote: VoteType): Proposal => ({
+  id: vote.proposal_id,
+  proposal_id: vote.blockchain_proposal_id || BigInt(0),
+  title: vote.proposal_title,
+  content: vote.proposal_content || "",
+  status: vote.proposal_status || "PENDING",
+  passed: vote.proposal_passed ?? false,
+  vote_start: vote.vote_start || BigInt(0),
+  vote_end: vote.vote_end || BigInt(0),
+  exec_start: vote.exec_start || BigInt(0),
+  exec_end: vote.exec_end || BigInt(0),
+  created_at: vote.created_at,
+  dao_id: vote.dao_id,
+  evaluation_score: vote.evaluation_score || {},
+  flags: vote.flags || [],
+  // Required fields from Proposal interface with default values
+  summary: vote.proposal_content || "",
+  contract_principal: "",
+  tx_id: vote.tx_id || "",
+  action: "",
+  caller: "",
+  creator: "",
+  liquid_tokens: "0",
+  concluded_by: "",
+  executed: false,
+  met_quorum: false,
+  met_threshold: false,
+  votes_against: "0",
+  votes_for: "0",
+  bond: "0",
+  type: "",
+  contract_caller: "",
+  created_btc: BigInt(0),
+  created_stx: BigInt(0),
+  memo: "",
+  tx_sender: "",
+  voting_delay: BigInt(0),
+  voting_period: BigInt(0),
+  voting_quorum: BigInt(0),
+  voting_reward: "0",
+  voting_threshold: BigInt(0),
+});
+
 import {
   fetchActiveAgentPromptByDaoAndAgent,
   updateAgentPrompt,
   createAgentPrompt,
 } from "@/services/agent-prompt.service";
-import { fetchDAOsWithExtension, fetchDAOs } from "@/services/dao.service";
+import {
+  fetchDAOsWithExtension,
+  fetchDAOs,
+  fetchToken,
+} from "@/services/dao.service";
 import type { AgentPrompt, DAO } from "@/types";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { EvaluationModal } from "./EvaluationModal";
 import { checkAgentVetoStatus } from "@/services/veto.service";
+import { useProposalHasVetos } from "@/hooks/useVetos";
 
 // Utility function to format vote balances
 function formatBalance(value: string | number, decimals: number = 8) {
   let num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
+  if (isNaN(num)) return "";
 
   num = num / Math.pow(10, decimals);
 
@@ -111,7 +163,7 @@ interface VoteCardProps {
   currentBitcoinHeight: number;
 }
 
-type TabType = "evaluation" | "voting" | "veto" | "passed" | "failed" | "all";
+type TabType = "pending" | "active" | "veto" | "passed" | "failed" | "all";
 
 interface EditingPromptData {
   prompt_text: string;
@@ -145,49 +197,21 @@ const formatRelativeTime = (dateStr: string): string => {
 };
 
 // Helper function to safely convert bigint to number for comparison
-const safeNumberFromBigInt = (value: bigint | null): number => {
-  if (value === null) return 0;
-  if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-  return Number(value);
-};
+// const safeNumberFromBigInt = (value: bigint | null): number => {
+//   if (value === null) return 0;
+//   if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+//     return Number.MAX_SAFE_INTEGER;
+//   }
+//   return Number(value);
+// };
 
-// Helper function to check if a vote is in the veto window
-const isInVetoWindow = (
-  vote: VoteType,
-  currentBitcoinHeight: number
-): boolean => {
-  if (vote.voted === false) return false;
-  if (!vote.vote_end || !vote.exec_start) return false;
-
-  const voteEnd = safeNumberFromBigInt(vote.vote_end);
-  const execStart = safeNumberFromBigInt(vote.exec_start);
-
-  return currentBitcoinHeight > voteEnd && currentBitcoinHeight <= execStart;
-};
-
-// Helper function to check if a vote has passed or failed
-const getVoteOutcome = (
-  vote: VoteType,
-  currentBitcoinHeight: number
-): "passed" | "failed" | "pending" => {
-  if (vote.voted !== true) return "pending";
-  if (!vote.exec_end) return "pending";
-
-  const execEnd = safeNumberFromBigInt(vote.exec_end);
-  if (currentBitcoinHeight <= execEnd) return "pending";
-
-  return vote.answer ? "passed" : "failed";
-};
-
-function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
+function VoteCard({ vote }: VoteCardProps) {
   // const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editingData, setEditingData] = useState<EditingPromptData>({
     prompt_text: "",
-    model: "gpt-4o",
+    model: "openai/gpt-5",
     temperature: 0.1,
   });
   const [currentAgentPrompt, setCurrentAgentPrompt] =
@@ -196,6 +220,11 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Convert vote to proposal-like structure and use the same status logic as ProposalCard
+  const proposalLike = useMemo(() => voteToProposal(vote), [vote]);
+  const { status: proposalStatus, statusConfig } =
+    useProposalStatus(proposalLike);
 
   // Fetch agents to get the DAO manager agent ID
   const { data: agents = [] } = useQuery({
@@ -210,7 +239,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     return agent.account_contract || null;
   }, [agents]);
 
-  // Check if agent has already vetoed this proposal
+  // Check if current user (agent) has already vetoed this proposal
   const { data: existingVeto } = useQuery({
     queryKey: ["agentVeto", vote.proposal_id, agentAccountAddress],
     queryFn: () => {
@@ -218,8 +247,15 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       return checkAgentVetoStatus(vote.proposal_id, agentAccountAddress);
     },
     enabled: !!vote.proposal_id && !!agentAccountAddress,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Fetch all vetos for this proposal
+  const {
+    hasVetos,
+    vetoCount,
+    vetos: allVetos,
+  } = useProposalHasVetos(vote.proposal_id || "");
 
   // Set DAO manager agent ID
   useEffect(() => {
@@ -343,113 +379,80 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     setIsEditingInstructions(false);
   };
 
-  const getStatusBadge = () => {
-    if (vote.voted === false) {
-      return (
-        <Badge className="bg-muted/30 text-muted-foreground">
-          Awaiting Agent Vote
-        </Badge>
-      );
-    }
-
-    const outcome = getVoteOutcome(vote, currentBitcoinHeight);
-    const inVetoWindow = isInVetoWindow(vote, currentBitcoinHeight);
-
-    if (existingVeto) {
-      const formattedAmount = formatBalance(existingVeto.amount || "0", 8);
-
-      if (inVetoWindow) {
-        return (
-          <Badge className="bg-primary text-primary-foreground">
-            Vetoed ({formattedAmount})
-          </Badge>
-        );
-      }
-
-      if (outcome === "passed") {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge className="bg-primary text-primary-foreground">
-              Proposal Passed
-            </Badge>
-            <Badge className="bg-primary text-primary-foreground">
-              Vetoed ({formattedAmount})
-            </Badge>
-          </div>
-        );
-      } else if (outcome === "failed") {
-        return (
-          <div className="flex items-center gap-2">
-            <Badge className="bg-muted/30 text-muted-foreground">
-              Proposal Failed
-            </Badge>
-            <Badge className="bg-primary text-primary-foreground">
-              Vetoed ({formattedAmount})
-            </Badge>
-          </div>
-        );
-      }
-    }
-
-    if (inVetoWindow) {
-      return (
-        <Badge className="bg-muted/30 text-muted-foreground">
-          Veto Period Active
-        </Badge>
-      );
-    }
-
-    if (outcome === "passed") {
-      return (
-        <Badge className="bg-primary text-primary-foreground">
-          Proposal Passed
-        </Badge>
-      );
-    } else if (outcome === "failed") {
-      return (
-        <Badge className="bg-muted/30 text-muted-foreground">
-          Proposal Failed
-        </Badge>
-      );
-    }
-
+  const getContributionStatusBadge = () => {
+    const StatusIcon = statusConfig.icon;
     return (
-      <Badge className="bg-muted/30 text-muted-foreground">Voting Active</Badge>
+      <Badge
+        variant={statusConfig.variant}
+        className={`${statusConfig.bg} ${statusConfig.color}`}
+      >
+        <StatusIcon className="h-3 w-3 mr-1" />
+        {statusConfig.label}
+      </Badge>
     );
   };
 
-  const getVoteChip = () => {
-    if (vote.voted === false) {
-      return (
-        <Badge className="bg-muted/30 text-muted-foreground">
-          <Clock className="h-3 w-3 mr-1" />
-          Pending Vote
-        </Badge>
-      );
-    }
-
-    const confidenceText =
-      vote.confidence !== null ? ` ${Math.round(vote.confidence * 100)}%` : "";
-
+  const renderAgentVoteBadge = (confidenceText: string) => {
     return (
       <Badge
         className={
           vote.answer
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted/30 text-muted-foreground"
+            ? "bg-primary/10 text-primary border-primary/20 hover:bg-muted"
+            : "bg-muted text-muted-foreground border-muted hover:bg-muted"
         }
       >
         {vote.answer ? (
           <>
             <ThumbsUp className="h-3 w-3 mr-1" />
-            Voted Yes{confidenceText}
+            Agent Voted Yes{confidenceText}
           </>
         ) : (
           <>
             <ThumbsDown className="h-3 w-3 mr-1" />
-            Voted No{confidenceText}
+            Agent Voted No{confidenceText}
           </>
         )}
+      </Badge>
+    );
+  };
+
+  const getAgentVotingBadge = () => {
+    // For pending contributions, don't show voting status
+    if (proposalStatus === "PENDING") {
+      return null;
+    }
+
+    // If contribution is in active voting, show voting state
+    if (proposalStatus === "ACTIVE") {
+      if (vote.voted === false) {
+        return (
+          <Badge className="bg-muted/30">
+            <Clock className="h-3 w-3 mr-1" />
+            Awaiting Agent Vote
+          </Badge>
+        );
+      } else {
+        const confidenceText =
+          vote.confidence !== null
+            ? ` (${Math.round(vote.confidence * 100)}%)`
+            : "";
+        return renderAgentVoteBadge(confidenceText);
+      }
+    }
+
+    // For other statuses (VETO_PERIOD, EXECUTION_WINDOW, PASSED, FAILED), show final vote if available
+    if (vote.voted === true) {
+      const confidenceText =
+        vote.confidence !== null
+          ? ` (${Math.round(vote.confidence * 100)}%)`
+          : "";
+      return renderAgentVoteBadge(confidenceText);
+    }
+
+    return (
+      <Badge className="bg-muted/30 text-muted-foreground">
+        <Clock className="h-3 w-3 mr-1" />
+        No Vote Cast
       </Badge>
     );
   };
@@ -505,8 +508,8 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     null;
 
   // Debug logging
-  console.log("VoteCard - Vote evaluation:", vote.evaluation);
-  console.log("VoteCard - Parsed evaluation data:", evaluationData);
+  // console.log("VoteCard - Vote evaluation:", vote.evaluation);
+  // console.log("VoteCard - Parsed evaluation data:", evaluationData);
 
   // Try both DAO fetching methods to find the correct one
   const { data: daosWithExtensions } = useQuery({
@@ -542,6 +545,14 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     return daos?.find((dao: DAO) => dao.id === vote.dao_id);
   }, [daos, vote.dao_id]);
 
+  // Fetch token data for the DAO to get image_url
+  const { data: tokenData } = useQuery({
+    queryKey: ["token", vote.dao_id],
+    queryFn: () => fetchToken(vote.dao_id),
+    enabled: !!vote.dao_id,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
   const votingContractPrincipal = useMemo(() => {
     if (!daoData?.extensions) {
       return null;
@@ -558,88 +569,85 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   // Fetch real vote data for this proposal
   const {
     data: voteData,
-    // isLoading: isLoadingVoteData,
+    isLoading: isLoadingVoteData,
     // error: voteDataError,
   } = useQuery({
     queryKey: [
       "proposalVotes",
       votingContractPrincipal,
       vote.blockchain_proposal_id,
+      proposalStatus === "ACTIVE" ? "bustCache" : "cached", // Add cache busting key for active proposals
     ],
     queryFn: () => {
       if (!vote.blockchain_proposal_id) {
         return null;
       }
       const proposalIdNum = Number(vote.blockchain_proposal_id);
-      return getProposalVotes(votingContractPrincipal!, proposalIdNum);
+      // Bust cache if proposal is in active voting to get real-time vote counts
+      const shouldBustCache = proposalStatus === "ACTIVE";
+      return getProposalVotes(
+        votingContractPrincipal!,
+        proposalIdNum,
+        shouldBustCache
+      );
     },
     enabled: !!votingContractPrincipal && !!vote.blockchain_proposal_id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: proposalStatus === "ACTIVE" ? 30 * 1000 : 5 * 60 * 1000, // 30 seconds for active, 5 minutes for others
+    refetchInterval: proposalStatus === "ACTIVE" ? 30 * 1000 : undefined, // Auto-refetch every 30 seconds for active proposals
   });
 
-  // Calculate vote progress percentages
-  const voteProgress = useMemo(() => {
-    if (!voteData) {
-      return { yes: 0, no: 0, abstain: 0 };
-    }
+  // Extract and format vote data
+  const voteDisplayData = useMemo(() => {
+    if (!voteData) return null;
 
-    const votesFor = parseFloat(voteData.formattedVotesFor) || 0;
-    const votesAgainst = parseFloat(voteData.formattedVotesAgainst) || 0;
-    const totalVotes = votesFor + votesAgainst;
+    const rawFor = voteData.votesFor || voteData.data?.votesFor;
+    const rawAgainst = voteData.votesAgainst || voteData.data?.votesAgainst;
+    const rawLiquidTokens =
+      voteData.liquidTokens || voteData.data?.liquidTokens;
 
-    if (totalVotes === 0) {
-      return { yes: 0, no: 0, abstain: 0 };
-    }
-
-    const yesPercent = Math.round((votesFor / totalVotes) * 100);
-    const noPercent = Math.round((votesAgainst / totalVotes) * 100);
-    const abstainPercent = Math.max(0, 100 - yesPercent - noPercent); // Handle rounding
+    if (!rawFor || !rawAgainst || !rawLiquidTokens) return null;
 
     return {
-      yes: yesPercent,
-      no: noPercent,
-      abstain: abstainPercent,
+      votesFor: formatBalance(rawFor),
+      votesAgainst: formatBalance(rawAgainst),
+      liquidTokens: formatBalance(rawLiquidTokens),
+      rawVotesFor: rawFor,
+      rawVotesAgainst: rawAgainst,
+      rawLiquidTokens: rawLiquidTokens,
     };
   }, [voteData]);
 
-  // Normalize vetoes (supports future array or single existingVeto) without using `any`
+  // Normalize vetoes - use all vetos from the hook, plus agent's veto if it exists
   const vetoes = useMemo<VetoEntry[]>(() => {
-    // Narrow type for a possible vetoes field on vote without changing VoteType
-    type MaybeVoteWithVetoes = {
-      vetoes?: Array<
-        Partial<VetoEntry> & {
-          vetoer?: string;
-          account?: string;
-          txId?: string;
-          txid?: string;
-        }
-      >;
-    };
-    const maybe: MaybeVoteWithVetoes = vote as unknown as MaybeVoteWithVetoes;
-    const fromVote = Array.isArray(maybe.vetoes) ? maybe.vetoes : undefined;
+    const vetoList: VetoEntry[] = [];
 
-    if (fromVote && fromVote.length) {
-      return fromVote.map(
-        (v): VetoEntry => ({
-          address: v.address ?? null,
-          amount: v.amount ?? "0",
-          tx_id: v.tx_id ?? null,
-        })
-      );
+    // Add all vetos from the database
+    if (allVetos && Array.isArray(allVetos)) {
+      allVetos.forEach((veto) => {
+        vetoList.push({
+          address: veto.address || null,
+          amount: veto.amount || "0",
+          tx_id: veto.tx_id || null,
+        });
+      });
     }
 
-    if (existingVeto) {
-      return [
-        {
-          address: agentAccountAddress ?? null,
+    // If agent has vetoed but it's not in the allVetos list, add it
+    if (existingVeto && agentAccountAddress) {
+      const agentVetoExists = vetoList.some(
+        (v) => v.address === agentAccountAddress
+      );
+      if (!agentVetoExists) {
+        vetoList.push({
+          address: agentAccountAddress,
           amount: existingVeto.amount || "0",
           tx_id: existingVeto.tx_id || null,
-        },
-      ];
+        });
+      }
     }
 
-    return [];
-  }, [existingVeto, agentAccountAddress, vote]);
+    return vetoList;
+  }, [allVetos, existingVeto, agentAccountAddress]);
 
   return (
     <Card className="group hover:shadow-md transition-all duration-200">
@@ -650,10 +658,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
             {/* Contribution Header */}
             <div className="flex items-start gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src={`https://api.dicebear.com/7.x/shapes/svg?seed=${vote.dao_name}`}
-                  alt={vote.dao_name}
-                />
+                <AvatarImage src={tokenData?.image_url} alt={vote.dao_name} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                   {vote.dao_name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -669,7 +674,8 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {getStatusBadge()}
+                  {getContributionStatusBadge()}
+                  {getAgentVotingBadge()}
                   <span className="text-xs text-muted-foreground">
                     Submitted: {formatRelativeTime(vote.created_at)}
                   </span>
@@ -682,46 +688,145 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
               {vote.proposal_title}
             </h3>
 
-            {/* Vote Progress Bar */}
+            {/* Vote Counts */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Vote Progress</span>
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="text-green-600">
-                    Yes: {formatBalance(voteData?.votesFor || "0")} (
-                    {voteProgress.yes}%)
+                <span className="text-muted-foreground">Vote Counts</span>
+                {isLoadingVoteData && (
+                  <span className="text-xs text-muted-foreground animate-pulse">
+                    Loading votes...
                   </span>
-                  <span className="text-red-600">
-                    No: {formatBalance(voteData?.votesAgainst || "0")} (
-                    {voteProgress.no}%)
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-xs mb-3">
+                <div className="space-y-1">
+                  <span className="text-green-600 font-medium">For</span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.votesFor || "—"
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-red-600 font-medium">Against</span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.votesAgainst || "—"
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-blue-600 font-medium">
+                    Liquid Tokens
                   </span>
-                  <span className="text-gray-500">
-                    Abstain: {voteProgress.abstain}%
-                  </span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.liquidTokens || "—"
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex h-2 rounded-full overflow-hidden bg-muted">
-                <div
-                  className="bg-green-500"
-                  style={{ width: `${voteProgress.yes}%` }}
-                />
-                <div
-                  className="bg-red-500"
-                  style={{ width: `${voteProgress.no}%` }}
-                />
-                <div
-                  className="bg-gray-400"
-                  style={{ width: `${voteProgress.abstain}%` }}
-                />
-              </div>
-            </div>
 
-            {/* Your Agent Voted */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {/* Your Agent Voted: */}
-              </span>
-              {getVoteChip()}
+              {/* Progress Bar */}
+              {voteDisplayData && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    {/* Background bar */}
+                    <div className="h-6 bg-muted rounded-lg overflow-hidden">
+                      {/* Votes for (green) */}
+                      <div
+                        className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
+                          voteDisplayData.rawVotesFor &&
+                          Number(voteDisplayData.rawVotesFor) > 0
+                            ? "rounded-l-lg"
+                            : ""
+                        } ${
+                          (!voteDisplayData.rawVotesAgainst ||
+                            Number(voteDisplayData.rawVotesAgainst) === 0) &&
+                          voteDisplayData.rawVotesFor &&
+                          Number(voteDisplayData.rawVotesFor) > 0
+                            ? "rounded-r-lg"
+                            : ""
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesFor) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                        }}
+                      />
+                      {/* Votes against (red) */}
+                      <div
+                        className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
+                          voteDisplayData.rawVotesAgainst &&
+                          Number(voteDisplayData.rawVotesAgainst) > 0 &&
+                          (!voteDisplayData.rawVotesFor ||
+                            Number(voteDisplayData.rawVotesFor) === 0)
+                            ? "rounded-l-lg"
+                            : ""
+                        } ${
+                          voteDisplayData.rawVotesAgainst &&
+                          Number(voteDisplayData.rawVotesAgainst) > 0
+                            ? "rounded-r-lg"
+                            : ""
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesAgainst) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                          left: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesFor) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vote breakdown */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>For: {voteDisplayData.votesFor}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Against: {voteDisplayData.votesAgainst}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                      <span>Total: {voteDisplayData.liquidTokens}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Reasoning Preview */}
@@ -823,21 +928,30 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                 )}
               </div>
             )}
-
+            {/* Show veto button only if current user hasn't vetoed yet */}
+            {proposalStatus === "VETO_PERIOD" && !existingVeto && (
+              <DAOVetoProposal
+                daoId={vote.dao_id}
+                proposalId={vote.proposal_id}
+                size="sm"
+                variant="destructive"
+              />
+            )}
             {/* Inline Veto Button or Vetoed Status */}
             {vote.dao_id &&
               vote.proposal_id &&
-              (existingVeto || isInVetoWindow(vote, currentBitcoinHeight)) && (
+              (hasVetos || proposalStatus === "VETO_PERIOD") && (
                 <div className="pt-2">
-                  {existingVeto ? (
-                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                  {/* Show vetoes if they exist */}
+                  {hasVetos && (
+                    <div className="bg-muted/30 text-foreground rounded-lg p-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-sm">
                           <Shield className="h-4 w-4" />
                           <span className="font-medium">Vetoes</span>
                         </div>
                         <Badge className="bg-muted/30 text-muted-foreground">
-                          {vetoes.length}
+                          {vetoCount}
                         </Badge>
                       </div>
                       <div className="mt-2 space-y-2">
@@ -847,7 +961,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                             className="text-xs flex flex-wrap items-center gap-2 justify-between"
                           >
                             <div className="flex items-center gap-2">
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 Veto cast by
                               </span>
                               <a
@@ -859,19 +973,19 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                               >
                                 {maskAddress(v.address)}
                               </a>
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 holding
                               </span>
                               <span className="font-medium">
                                 {formatBalance(v.amount || "0")}
                               </span>
-                              <span className="text-primary-foreground/80">
+                              <span className="text-muted-foreground">
                                 {vote.dao_name}.
                               </span>
                             </div>
                             {v.tx_id && (
                               <div className="flex items-center gap-1">
-                                <span className="text-primary-foreground/80">
+                                <span className="text-muted-foreground">
                                   txid:
                                 </span>
                                 <a
@@ -889,13 +1003,6 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                         ))}
                       </div>
                     </div>
-                  ) : (
-                    <DAOVetoProposal
-                      daoId={vote.dao_id}
-                      proposalId={vote.proposal_id}
-                      size="sm"
-                      variant="destructive"
-                    />
                   )}
                 </div>
               )}
@@ -1089,38 +1196,56 @@ export function VotesView({ votes }: VotesViewProps) {
   const getTabCount = useCallback(
     (tab: TabType): number => {
       switch (tab) {
-        case "evaluation":
-          return votes.filter((vote) => vote.voted === false).length;
-        case "voting":
+        case "pending":
+          // Count contributions that are pending
           return votes.filter((vote) => {
-            if (vote.voted !== true) return false;
-            if (!vote.vote_start || !vote.vote_end) return false;
-            const voteStart = safeNumberFromBigInt(vote.vote_start);
-            const voteEnd = safeNumberFromBigInt(vote.vote_end);
-            return (
-              currentBitcoinHeight >= voteStart &&
-              currentBitcoinHeight <= voteEnd
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
             );
+            return status === "PENDING";
+          }).length;
+        case "active":
+          // Count contributions in active voting status
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "ACTIVE";
           }).length;
         case "veto":
+          // Count contributions in veto period
           return votes.filter((vote) => {
-            if (vote.voted !== true) return false;
-            if (!vote.vote_end || !vote.exec_start) return false;
-            const voteEnd = safeNumberFromBigInt(vote.vote_end);
-            const execStart = safeNumberFromBigInt(vote.exec_start);
-            return (
-              currentBitcoinHeight > voteEnd &&
-              currentBitcoinHeight <= execStart
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
             );
+            return status === "VETO_PERIOD";
           }).length;
         case "passed":
-          return votes.filter(
-            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
-          ).length;
+          // Count contributions that have passed
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "PASSED";
+          }).length;
         case "failed":
-          return votes.filter(
-            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
-          ).length;
+          // Count contributions that have failed
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "FAILED";
+          }).length;
         case "all":
         default:
           return votes.length;
@@ -1133,24 +1258,25 @@ export function VotesView({ votes }: VotesViewProps) {
   const getDefaultTab = useCallback((): TabType => {
     // First priority: Items requiring immediate action
     if (getTabCount("veto") > 0) return "veto";
-    if (getTabCount("evaluation") > 0) return "evaluation";
-    if (getTabCount("voting") > 0) return "voting";
+    if (getTabCount("pending") > 0) return "pending";
+    if (getTabCount("active") > 0) return "active";
 
     // Second priority: Recent outcomes
     if (getTabCount("passed") > 0) return "passed";
     if (getTabCount("failed") > 0) return "failed";
 
-    // Fallback: Show all if any votes exist, otherwise evaluation
-    return votes.length > 0 ? "all" : "evaluation";
+    // Fallback: Show all if any votes exist, otherwise pending
+    return votes.length > 0 ? "all" : "pending";
   }, [getTabCount, votes.length]);
 
-  const [activeTab, setActiveTab] = useState<TabType>("evaluation");
+  const [activeTab, setActiveTab] = useState<TabType | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   // Initialize activeTab only once when data is first loaded
   useEffect(() => {
     if (!hasInitialized && votes.length > 0 && currentBitcoinHeight > 0) {
-      setActiveTab(getDefaultTab());
+      const defaultTab = getDefaultTab();
+      setActiveTab(defaultTab);
       setHasInitialized(true);
     }
   }, [getDefaultTab, votes.length, currentBitcoinHeight, hasInitialized]);
@@ -1160,42 +1286,64 @@ export function VotesView({ votes }: VotesViewProps) {
     setVisibleCount(10);
   }, [activeTab]);
 
-  // Filter votes based on tab and DAO filter
+  // Filter votes based on tab and DAO filter using the same logic as useProposalStatus
   const filteredVotes = useMemo(() => {
+    // Don't filter until activeTab is initialized
+    if (activeTab === null) return [];
+
     const byTab = (() => {
       switch (activeTab) {
-        case "evaluation":
-          return votes.filter((vote) => vote.voted === false);
-        case "voting":
+        case "pending":
+          // Show contributions that are pending using getProposalStatus logic
           return votes.filter((vote) => {
-            if (vote.voted !== true) return false;
-            if (!vote.vote_start || !vote.vote_end) return false;
-            const voteStart = safeNumberFromBigInt(vote.vote_start);
-            const voteEnd = safeNumberFromBigInt(vote.vote_end);
-            return (
-              currentBitcoinHeight >= voteStart &&
-              currentBitcoinHeight <= voteEnd
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
             );
+            // console.log('Vote:', vote.proposal_title, 'Status:', status, 'DB Status:', vote.proposal_status, 'Vote Start:', vote.vote_start);
+            return status === "PENDING";
+          });
+        case "active":
+          // Show contributions in active voting status
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "ACTIVE";
           });
         case "veto":
+          // Show contributions in veto period
           return votes.filter((vote) => {
-            if (vote.voted !== true) return false;
-            if (!vote.vote_end || !vote.exec_start) return false;
-            const voteEnd = safeNumberFromBigInt(vote.vote_end);
-            const execStart = safeNumberFromBigInt(vote.exec_start);
-            return (
-              currentBitcoinHeight > voteEnd &&
-              currentBitcoinHeight <= execStart
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
             );
+            return status === "VETO_PERIOD";
           });
         case "passed":
-          return votes.filter(
-            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "passed"
-          );
+          // Show contributions that have passed
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "PASSED";
+          });
         case "failed":
-          return votes.filter(
-            (vote) => getVoteOutcome(vote, currentBitcoinHeight) === "failed"
-          );
+          // Show contributions that have failed
+          return votes.filter((vote) => {
+            const proposalLike = voteToProposal(vote);
+            const status = getProposalStatus(
+              proposalLike,
+              currentBitcoinHeight
+            );
+            return status === "FAILED";
+          });
         case "all":
         default:
           return votes;
@@ -1211,28 +1359,28 @@ export function VotesView({ votes }: VotesViewProps) {
 
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
-      case "evaluation":
-        return "Awaiting Agent Vote";
-      case "voting":
-        return "Community Voting";
+      case "pending":
+        return "Pending Contributions";
+      case "active":
+        return "Active Voting";
       case "veto":
         return "Veto Period";
       case "passed":
-        return "Proposals Passed";
+        return "Passed Contributions";
       case "failed":
-        return "Proposals Failed";
+        return "Failed Contributions";
       case "all":
       default:
-        return "All Proposals";
+        return "All Contributions";
     }
   };
 
   const getTabIcon = (tab: TabType) => {
     switch (tab) {
-      case "evaluation":
-        return Search;
-      case "voting":
+      case "pending":
         return Clock;
+      case "active":
+        return Vote;
       case "veto":
         return Ban;
       case "passed":
@@ -1241,13 +1389,13 @@ export function VotesView({ votes }: VotesViewProps) {
         return XCircle;
       case "all":
       default:
-        return Vote;
+        return FileText;
     }
   };
 
   const tabs: TabType[] = [
-    "evaluation",
-    "voting",
+    "pending",
+    "active",
     "veto",
     "passed",
     "failed",
@@ -1270,7 +1418,7 @@ export function VotesView({ votes }: VotesViewProps) {
           </h1>
           <p className="text-muted-foreground">
             {filteredVotes.length}{" "}
-            {filteredVotes.length === 1 ? "proposal" : "proposals"}
+            {filteredVotes.length === 1 ? "contribution" : "contributions"}
             {selectedDao && ` from ${selectedDao}`}
           </p>
         </div>
@@ -1283,7 +1431,7 @@ export function VotesView({ votes }: VotesViewProps) {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
-                  {getTabTitle(activeTab)}
+                  {activeTab ? getTabTitle(activeTab) : "Loading..."}
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1304,13 +1452,7 @@ export function VotesView({ votes }: VotesViewProps) {
                         activeTab === tab ? "bg-accent" : ""
                       }`}
                     >
-                      <Icon
-                        className={`h-4 w-4 ${
-                          tab === "veto" && tabCount > 0 && activeTab !== tab
-                            ? "animate-pulse text-red-500"
-                            : ""
-                        }`}
-                      />
+                      <Icon className="h-4 w-4" />
                       <span className="flex-1">{getTabTitle(tab)}</span>
                       {tabCount > 0 && (
                         <Badge
@@ -1344,15 +1486,14 @@ export function VotesView({ votes }: VotesViewProps) {
                     selectedDao === null ? "bg-accent" : ""
                   }`}
                 >
-                  <div className="w-4 h-4 flex items-center justify-center">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        selectedDao === null
-                          ? "bg-primary"
-                          : "bg-muted-foreground/30"
-                      }`}
-                    />
-                  </div>
+                  <div
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeTab === "all"
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setActiveTab("all" as TabType)}
+                  />
                   <span className="flex-1">All DAOs</span>
                   <Badge variant="secondary" className="h-5 text-xs ml-auto">
                     {votes.length}
@@ -1418,32 +1559,35 @@ export function VotesView({ votes }: VotesViewProps) {
             <CardContent className="text-center py-16">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
                 {(() => {
-                  const Icon = getTabIcon(activeTab);
-                  return <Icon className="h-8 w-8 text-muted-foreground" />;
+                  const IconComponent = getTabIcon(activeTab!);
+                  return (
+                    <IconComponent className="h-8 w-8 text-muted-foreground" />
+                  );
                 })()}
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                No {getTabTitle(activeTab).toLowerCase()} found
+                No {activeTab ? getTabTitle(activeTab).toLowerCase() : "items"}{" "}
+                found
               </h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-                {activeTab === "evaluation" &&
-                  "Your agent has voted on all available proposals."}
-                {activeTab === "voting" &&
-                  "No proposals are currently open for community voting."}
-                {activeTab === "veto" && "No proposals are in the veto window."}
-                {activeTab === "passed" && "No proposals have passed yet."}
-                {activeTab === "failed" && "No proposals have failed yet."}
+                {activeTab === "pending" && "No pending contributions found."}
+                {activeTab === "active" &&
+                  "No contributions are currently in active voting."}
+                {activeTab === "veto" &&
+                  "No contributions are in the veto window."}
+                {activeTab === "passed" && "No contributions have passed yet."}
+                {activeTab === "failed" && "No contributions have failed yet."}
                 {activeTab === "all" &&
                   selectedDao &&
-                  `No proposals found for ${selectedDao}.`}
+                  `No contributions found for ${selectedDao}.`}
                 {activeTab === "all" &&
                   !selectedDao &&
-                  "No proposals available."}
+                  "No contributions available."}
               </p>
               <Link href="/proposals">
                 <Button variant="outline" className="gap-2 bg-transparent">
                   <FileText className="h-4 w-4" />
-                  Browse All Proposals
+                  Browse All Contributions
                 </Button>
               </Link>
             </CardContent>
@@ -1467,7 +1611,7 @@ export function VotesView({ votes }: VotesViewProps) {
                   onClick={() => setVisibleCount((prev) => prev + 10)}
                   className="gap-2"
                 >
-                  Load More Proposals
+                  Load More Contributions
                   <span className="text-xs text-muted-foreground">
                     ({visibleCount} of {filteredVotes.length})
                   </span>
