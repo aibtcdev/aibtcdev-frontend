@@ -100,7 +100,6 @@ interface TransactionConfirmationProps {
   refetchAllDeposits: (
     options?: RefetchOptions
   ) => Promise<QueryObserverResult<DepositHistoryResponse, Error>>;
-  setIsRefetching: (isRefetching: boolean) => void;
   minTokenOut?: number;
   poolId?: string;
   swapType?: "sbtc" | "usda" | "pepe" | "aibtc";
@@ -132,7 +131,6 @@ export default function TransactionConfirmation({
   activeWalletProvider,
   refetchDepositHistory,
   refetchAllDeposits,
-  setIsRefetching,
   minTokenOut,
   poolId,
   swapType,
@@ -835,11 +833,9 @@ export default function TransactionConfirmation({
         setShowSuccessModal(true);
         console.log("Success modal state should now be true");
 
-        // Trigger data refetch with loading indicator
-        setIsRefetching(true);
+        // Trigger data refetch
         Promise.all([refetchDepositHistory(), refetchAllDeposits()]).finally(
           () => {
-            setIsRefetching(false);
             // Optionally show a toast to confirm refresh
             toast({
               title: "Data Refreshed",
