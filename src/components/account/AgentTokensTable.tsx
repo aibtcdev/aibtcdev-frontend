@@ -96,7 +96,7 @@ export function AgentTokensTable({
     transactionMessage: approvalTransactionMessage,
     transactionStatus: approvalTransactionStatus,
     startMonitoring: startApprovalMonitoring,
-    stopMonitoring: stopApprovalMonitoring,
+    // stopMonitoring: stopApprovalMonitoring,
     reset: resetApprovalVerification,
   } = useTransactionVerification();
 

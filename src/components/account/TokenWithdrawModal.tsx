@@ -8,8 +8,6 @@ import { getStacksAddress } from "@/lib/address";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/useToast";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import {
   Dialog,
@@ -67,31 +65,15 @@ export function TokenWithdrawModal({
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [currentTxId, setCurrentTxId] = useState<string | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [updatingApproval, setUpdatingApproval] = useState(false);
-  const [currentApprovalTxId, setCurrentApprovalTxId] = useState<string | null>(
-    null
-  );
-  const [showApprovalStatusModal, setShowApprovalStatusModal] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<string | null>(null);
 
   const { balances } = useWalletStore();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+
   const {
     transactionMessage,
     transactionStatus,
     startMonitoring,
     stopMonitoring,
     reset: resetVerification,
-  } = useTransactionVerification();
-
-  // Separate transaction verification for approval operations
-  const {
-    transactionMessage: approvalTransactionMessage,
-    transactionStatus: approvalTransactionStatus,
-    startMonitoring: startApprovalMonitoring,
-    stopMonitoring: stopApprovalMonitoring,
-    reset: resetApprovalVerification,
   } = useTransactionVerification();
 
   // Check if token contract is approved
@@ -120,21 +102,10 @@ export function TokenWithdrawModal({
       setAmount("");
       setCurrentTxId(null);
       setShowStatusModal(false);
-      setCurrentApprovalTxId(null);
-      setShowApprovalStatusModal(false);
       stopMonitoring();
-      stopApprovalMonitoring();
       resetVerification();
-      resetApprovalVerification();
     }
-  }, [
-    isOpen,
-    tokenData,
-    stopMonitoring,
-    stopApprovalMonitoring,
-    resetVerification,
-    resetApprovalVerification,
-  ]);
+  }, [isOpen, tokenData, stopMonitoring, resetVerification]);
 
   // Handle transaction status changes
   useEffect(() => {
@@ -148,84 +119,6 @@ export function TokenWithdrawModal({
       // Keep status modal open to show failure
     }
   }, [transactionStatus]);
-
-  // Handle approval transaction status changes
-  useEffect(() => {
-    if (approvalTransactionStatus === "success") {
-      setUpdatingApproval(false);
-      // Refresh approval data after successful approval/revoke
-      queryClient.invalidateQueries({
-        queryKey: [
-          "batch-approvals",
-          agentAddress,
-          contractIds,
-          AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
-        ],
-      });
-    } else if (approvalTransactionStatus === "failed") {
-      setUpdatingApproval(false);
-    }
-  }, [approvalTransactionStatus, queryClient, agentAddress, contractIds]);
-
-  // Approval toggle mutation
-  const updateApprovalMutation = useMutation({
-    mutationFn: async ({
-      enabled,
-      type,
-    }: {
-      enabled: boolean;
-      type: keyof typeof AGENT_ACCOUNT_APPROVAL_TYPES;
-    }) => {
-      if (!tokenData || !agentAddress) throw new Error("Missing data");
-      setUpdatingApproval(true);
-      setApprovalAction(enabled ? "approve" : "revoke");
-
-      const functionName = enabled ? "approve-contract" : "revoke-contract";
-
-      const response = await request("stx_callContract", {
-        contract: agentAddress as `${string}.${string}`,
-        functionName,
-        functionArgs: [
-          Cl.principal(tokenData.contractPrincipal),
-          Cl.uint(AGENT_ACCOUNT_APPROVAL_TYPES[type]), // Use the specific approval type
-        ],
-        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
-          | "mainnet"
-          | "testnet",
-      });
-
-      return { txid: response.txid, enabled, type };
-    },
-    onSuccess: async (data) => {
-      setUpdatingApproval(false);
-      await queryClient.invalidateQueries({
-        queryKey: [
-          "batch-approvals",
-          agentAddress,
-          [tokenData?.contractPrincipal],
-          AGENT_ACCOUNT_APPROVAL_TYPES.TOKEN,
-        ],
-      });
-      toast({
-        title: "Transaction Submitted",
-        description: `${data.type} contract ${data.enabled ? "approval" : "revocation"} submitted. TXID: ${data.txid}`,
-      });
-
-      if (data.txid) {
-        setCurrentApprovalTxId(data.txid);
-        setShowApprovalStatusModal(true);
-        startApprovalMonitoring(data.txid);
-      }
-    },
-    onError: (error) => {
-      setUpdatingApproval(false);
-      toast({
-        title: "Error",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleWithdraw = async () => {
     if (!tokenData || !amount || !stacksAddress || !agentAddress) return;
@@ -377,10 +270,6 @@ export function TokenWithdrawModal({
     resetVerification();
     setCurrentTxId(null);
     // Keep the main modal open for retry
-  };
-
-  const handleApprovalStatusModalClose = () => {
-    setShowApprovalStatusModal(false);
   };
 
   if (!tokenData) {

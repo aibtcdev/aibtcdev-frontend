@@ -46,7 +46,7 @@ export function ApproveContractButton({
     transactionMessage,
     transactionStatus,
     startMonitoring,
-    stopMonitoring,
+    // stopMonitoring,
     reset: resetVerification,
   } = useTransactionVerification();
 
