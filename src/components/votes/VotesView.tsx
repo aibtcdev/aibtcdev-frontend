@@ -947,8 +947,8 @@ function VoteCard({ vote }: VoteCardProps) {
                     <div className="bg-muted/30 text-foreground rounded-lg p-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 text-sm">
-                          <Shield className="h-4 w-4" />
-                          <span className="font-medium">Vetoes</span>
+                          <Shield className="h-4 w-4 text-red-500" />
+                          <span className="font-medium">Veto Applied</span>
                         </div>
                         <Badge className="bg-muted/30 text-muted-foreground">
                           {vetoCount}
@@ -958,31 +958,24 @@ function VoteCard({ vote }: VoteCardProps) {
                         {vetoes.map((v, idx) => (
                           <div
                             key={idx}
-                            className="text-xs flex flex-wrap items-center gap-2 justify-between"
+                            className="text-xs flex flex-wrap items-center gap-2"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-muted-foreground">
-                                Veto cast by
-                              </span>
-                              <a
-                                href={`https://explorer.hiro.so/address/${v.address}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium underline"
-                                aria-label={`Open ${v.address} in explorer`}
-                              >
-                                {maskAddress(v.address)}
-                              </a>
-                              <span className="text-muted-foreground">
-                                holding
-                              </span>
-                              <span className="font-medium">
-                                {formatBalance(v.amount || "0")}
-                              </span>
-                              <span className="text-muted-foreground">
-                                {vote.dao_name}.
-                              </span>
-                            </div>
+                            <span className="text-muted-foreground">Veto:</span>
+                            <span className="font-medium">
+                              {formatBalance(v.amount || "0")}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {vote.dao_name} by
+                            </span>
+                            <a
+                              href={`https://explorer.hiro.so/address/${v.address}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-medium underline"
+                              aria-label={`Open ${v.address} in explorer`}
+                            >
+                              {maskAddress(v.address)}
+                            </a>
                             {v.tx_id && (
                               <div className="flex items-center gap-1">
                                 <span className="text-muted-foreground">
