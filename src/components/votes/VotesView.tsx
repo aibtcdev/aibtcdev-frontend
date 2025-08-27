@@ -95,6 +95,13 @@ function formatBalance(value: string | number, decimals: number = 8) {
   }
 }
 
+// Helper function to mask addresses
+const maskAddress = (addr?: string | null) => {
+  if (!addr) return "";
+  if (addr.length <= 10) return addr;
+  return `${addr.slice(0, 5)}...${addr.slice(-5)}`;
+};
+
 interface VotesViewProps {
   votes: VoteType[];
 }
@@ -204,10 +211,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
       if (!vote.proposal_id || !agentAccountAddress) return null;
       return checkAgentVetoStatus(vote.proposal_id, agentAccountAddress);
     },
-    enabled:
-      !!vote.proposal_id &&
-      !!agentAccountAddress &&
-      isInVetoWindow(vote, currentBitcoinHeight),
+    enabled: !!vote.proposal_id && !!agentAccountAddress,
     staleTime: 30 * 1000, // 30 seconds
   });
 
@@ -336,58 +340,84 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
   const getStatusBadge = () => {
     if (vote.voted === false) {
       return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-          Approval Pending
-        </Badge>
-      );
-    }
-
-    // Check if agent has vetoed this proposal
-    if (existingVeto && isInVetoWindow(vote, currentBitcoinHeight)) {
-      const formattedAmount = formatBalance(existingVeto.amount || "0", 8);
-      return (
-        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-          Vetoed ({formattedAmount} )
-        </Badge>
-      );
-    }
-
-    if (isInVetoWindow(vote, currentBitcoinHeight)) {
-      return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-          Veto Period Active
+        <Badge className="bg-muted/30 text-muted-foreground">
+          Awaiting Agent Vote
         </Badge>
       );
     }
 
     const outcome = getVoteOutcome(vote, currentBitcoinHeight);
+    const inVetoWindow = isInVetoWindow(vote, currentBitcoinHeight);
+
+    if (existingVeto) {
+      const formattedAmount = formatBalance(existingVeto.amount || "0", 8);
+
+      if (inVetoWindow) {
+        return (
+          <Badge className="bg-primary text-primary-foreground">
+            Vetoed ({formattedAmount})
+          </Badge>
+        );
+      }
+
+      if (outcome === "passed") {
+        return (
+          <div className="flex items-center gap-2">
+            <Badge className="bg-primary text-primary-foreground">
+              Proposal Passed
+            </Badge>
+            <Badge className="bg-primary text-primary-foreground">
+              Vetoed ({formattedAmount})
+            </Badge>
+          </div>
+        );
+      } else if (outcome === "failed") {
+        return (
+          <div className="flex items-center gap-2">
+            <Badge className="bg-muted/30 text-muted-foreground">
+              Proposal Failed
+            </Badge>
+            <Badge className="bg-primary text-primary-foreground">
+              Vetoed ({formattedAmount})
+            </Badge>
+          </div>
+        );
+      }
+    }
+
+    if (inVetoWindow) {
+      return (
+        <Badge className="bg-muted/30 text-muted-foreground">
+          Veto Period Active
+        </Badge>
+      );
+    }
+
     if (outcome === "passed") {
       return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-          Approved
+        <Badge className="bg-primary text-primary-foreground">
+          Proposal Passed
         </Badge>
       );
     } else if (outcome === "failed") {
       return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-          Denied
+        <Badge className="bg-muted/30 text-muted-foreground">
+          Proposal Failed
         </Badge>
       );
     }
 
     return (
-      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-        Voting Active
-      </Badge>
+      <Badge className="bg-muted/30 text-muted-foreground">Voting Active</Badge>
     );
   };
 
   const getVoteChip = () => {
     if (vote.voted === false) {
       return (
-        <Badge variant="outline" className="text-amber-600 border-amber-300">
+        <Badge className="bg-muted/30 text-muted-foreground">
           <Clock className="h-3 w-3 mr-1" />
-          Pending
+          Pending Vote
         </Badge>
       );
     }
@@ -397,21 +427,21 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
 
     return (
       <Badge
-        className={`${
+        className={
           vote.answer
-            ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300"
-            : "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300"
-        }`}
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted/30 text-muted-foreground"
+        }
       >
         {vote.answer ? (
           <>
             <ThumbsUp className="h-3 w-3 mr-1" />
-            Approve{confidenceText}
+            Voted Yes{confidenceText}
           </>
         ) : (
           <>
             <ThumbsDown className="h-3 w-3 mr-1" />
-            Deny{confidenceText}
+            Voted No{confidenceText}
           </>
         )}
       </Badge>
@@ -566,6 +596,28 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
     };
   }, [voteData]);
 
+  // Normalize vetoes (supports future array or single existingVeto)
+  const vetoes = useMemo(() => {
+    const fromVote = (vote as any)?.vetoes;
+    if (Array.isArray(fromVote) && fromVote.length) {
+      return fromVote.map((v: any) => ({
+        address: v.address || v.vetoer || v.account || null,
+        amount: v.amount || "0",
+        tx_id: v.tx_id || v.txId || v.txid || null,
+      }));
+    }
+    if (existingVeto) {
+      return [
+        {
+          address: agentAccountAddress,
+          amount: existingVeto.amount || "0",
+          tx_id: existingVeto.tx_id || null,
+        },
+      ];
+    }
+    return [];
+  }, [existingVeto, agentAccountAddress, vote]);
+
   return (
     <Card className="group hover:shadow-md transition-all duration-200">
       <CardContent className="p-0">
@@ -644,7 +696,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
             {/* Your Agent Voted */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
-                Your Agent Voted:
+                {/* Your Agent Voted: */}
               </span>
               {getVoteChip()}
             </div>
@@ -683,7 +735,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                   <div className="space-y-3">
                     {/* Decision and Score */}
                     <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                      <div className="flex items-center gap-2">
+                      {/* <div className="flex items-center gap-2">
                         <Badge
                           variant={
                             evaluationData.decision ? "default" : "destructive"
@@ -691,8 +743,8 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                           className="text-xs"
                         >
                           {evaluationData.decision
-                            ? "✓ Approved"
-                            : "✗ Rejected"}
+                            ? "✓ Agent Voted Yes"
+                            : "✗ Agent Voted No"}
                         </Badge>
                         <Badge
                           variant={
@@ -706,7 +758,7 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                         >
                           {evaluationData.final_score}/100
                         </Badge>
-                      </div>
+                      </div> */}
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {evaluationData.summary}
                       </p>
@@ -724,9 +776,9 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
                             .map((flag: string, index: number) => (
                               <div
                                 key={index}
-                                className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded p-2"
+                                className="bg-muted/30 text-muted-foreground rounded p-2"
                               >
-                                <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                                <p className="text-xs text-muted-foreground">
                                   {flag}
                                 </p>
                               </div>
@@ -752,24 +804,66 @@ function VoteCard({ vote, currentBitcoinHeight }: VoteCardProps) {
             {/* Inline Veto Button or Vetoed Status */}
             {vote.dao_id &&
               vote.proposal_id &&
-              isInVetoWindow(vote, currentBitcoinHeight) && (
+              (existingVeto || isInVetoWindow(vote, currentBitcoinHeight)) && (
                 <div className="pt-2">
                   {existingVeto ? (
-                    <div className="bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                      <div className="flex items-center gap-3 text-sm text-purple-800 dark:text-purple-200">
-                        <Shield className="h-4 w-4 text-purple-600" />
-                        <span className="font-medium">Vetoed</span>
-                        <span>{formatBalance(existingVeto.amount || "0")}</span>
-                        <a
-                          href={`https://explorer.hiro.so/txid/${existingVeto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1"
-                        >
-                          {existingVeto.tx_id?.slice(0, 8)}...
-                          {existingVeto.tx_id?.slice(-8)}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
+                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-sm">
+                          <Shield className="h-4 w-4" />
+                          <span className="font-medium">Vetoes</span>
+                        </div>
+                        <Badge className="bg-muted/30 text-muted-foreground">
+                          {vetoes.length}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {vetoes.map((v, idx) => (
+                          <div
+                            key={idx}
+                            className="text-xs flex flex-wrap items-center gap-2 justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-primary-foreground/80">
+                                Veto cast by
+                              </span>
+                              <a
+                                href={`https://explorer.hiro.so/address/${v.address}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium underline"
+                                aria-label={`Open ${v.address} in explorer`}
+                              >
+                                {maskAddress(v.address)}
+                              </a>
+                              <span className="text-primary-foreground/80">
+                                holding
+                              </span>
+                              <span className="font-medium">
+                                {formatBalance(v.amount || "0")}
+                              </span>
+                              <span className="text-primary-foreground/80">
+                                {vote.dao_name}.
+                              </span>
+                            </div>
+                            {v.tx_id && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-primary-foreground/80">
+                                  txid:
+                                </span>
+                                <a
+                                  href={`https://explorer.hiro.so/txid/${v.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline flex items-center gap-1"
+                                >
+                                  {v.tx_id.slice(0, 5)}...{v.tx_id.slice(-5)}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : (
@@ -1095,18 +1189,18 @@ export function VotesView({ votes }: VotesViewProps) {
   const getTabTitle = (tab: TabType): string => {
     switch (tab) {
       case "evaluation":
-        return "Awaiting Vote";
+        return "Awaiting Agent Vote";
       case "voting":
-        return "Active Voting";
+        return "Community Voting";
       case "veto":
         return "Veto Period";
       case "passed":
-        return "Passed";
+        return "Proposals Passed";
       case "failed":
-        return "Failed";
+        return "Proposals Failed";
       case "all":
       default:
-        return "All Votes";
+        return "All Proposals";
     }
   };
 
@@ -1310,9 +1404,9 @@ export function VotesView({ votes }: VotesViewProps) {
               </h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                 {activeTab === "evaluation" &&
-                  "Your agent has already voted on every proposal."}
+                  "Your agent has voted on all available proposals."}
                 {activeTab === "voting" &&
-                  "No proposals are currently open for voting."}
+                  "No proposals are currently open for community voting."}
                 {activeTab === "veto" && "No proposals are in the veto window."}
                 {activeTab === "passed" && "No proposals have passed yet."}
                 {activeTab === "failed" && "No proposals have failed yet."}

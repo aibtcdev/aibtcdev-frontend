@@ -69,7 +69,7 @@ export function EvaluationModal({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Evaluation Details</DialogTitle>
+            <DialogTitle>Agent Evaluation Details</DialogTitle>
           </DialogHeader>
           <div className="p-4 text-center text-muted-foreground">
             {evaluation ? "Invalid evaluation data" : "No evaluation available"}
@@ -95,7 +95,7 @@ export function EvaluationModal({
             ) : (
               <XCircle className="h-5 w-5 text-red-600" />
             )}
-            Evaluation Details
+            Agent Evaluation Details
             {proposalTitle && (
               <span className="text-sm font-normal text-muted-foreground">
                 - {proposalTitle}
@@ -126,14 +126,35 @@ export function EvaluationModal({
                   </Badge>
                 </div>
               </div>
-              <div className="bg-muted/30 rounded-lg p-4">
-                <p className="text-sm leading-relaxed">
+              <div className=" rounded-lg p-4">
+                <p className="text-md leading-relaxed">
                   {evaluationData.summary}
                 </p>
               </div>
             </div>
 
-            {/* Flags Section */}
+            {/* Categories Section (Simplified, one line per category) */}
+            <div className="space-y-2">
+              {evaluationData.categories.map((category, index) => {
+                const reasons = (category.reasoning || [])
+                  .filter(Boolean)
+                  .join(" ");
+                return (
+                  <p
+                    key={index}
+                    className="text-sm leading-relaxed bg-muted/30 p-3 rounded-md"
+                  >
+                    <span className="font-bold text-lg">
+                      {category.category} ({category.score})
+                    </span>
+                    : {reasons || "—"}
+                  </p>
+                );
+              })}
+            </div>
+
+            <Separator />
+
             {evaluationData.flags && evaluationData.flags.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -154,37 +175,15 @@ export function EvaluationModal({
                 </div>
               </div>
             )}
-
-            <Separator />
-
-            {/* Categories Section (Simplified, one line per category) */}
-            <div className="space-y-2">
-              {evaluationData.categories.map((category, index) => {
-                const reasons = (category.reasoning || [])
-                  .filter(Boolean)
-                  .join("; ");
-                return (
-                  <p key={index} className="text-sm leading-relaxed">
-                    <span className="font-bold text-md">
-                      {category.category} ({category.score})
-                    </span>
-                    : {reasons || "—"}
-                  </p>
-                );
-              })}
-            </div>
-
-            <Separator />
-
             {/* Detailed Explanation */}
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <h3 className="text-lg font-semibold">Detailed Explanation</h3>
               <div className="bg-muted/30 rounded-lg p-4">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {evaluationData.explanation}
                 </p>
               </div>
-            </div>
+            </div> */}
 
             {/* Metadata */}
             {(evaluationData.images_processed ||
@@ -199,10 +198,6 @@ export function EvaluationModal({
                         Images Processed: {evaluationData.images_processed}
                       </span>
                     )}
-                    {evaluationData.token_usage &&
-                      Object.keys(evaluationData.token_usage).length > 0 && (
-                        <span>Token Usage: Available</span>
-                      )}
                   </div>
                 </div>
               </>
