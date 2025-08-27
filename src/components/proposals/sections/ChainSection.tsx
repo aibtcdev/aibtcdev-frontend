@@ -5,7 +5,7 @@ import { Layers, Hash, ExternalLink } from "lucide-react";
 import { ProposalSection } from "../layout/ProposalSection";
 import { Badge } from "@/components/ui/badge";
 import { getExplorerLink } from "@/utils/format";
-import { safeString, safeNumberFromBigInt } from "@/utils/proposal";
+import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface ChainSectionProps {
