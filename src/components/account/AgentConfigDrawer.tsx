@@ -30,6 +30,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
 import type { AgentPrompt } from "./AgentPrompt";
+import { AI_MODELS } from "@/lib/constant";
 
 interface AgentConfigDrawerProps {
   isOpen: boolean;
@@ -45,22 +46,6 @@ interface FormData {
   model: string;
   temperature: number;
 }
-
-const AI_MODELS = [
-  { value: "gpt-4.1", label: "GPT-4.1", description: "Most capable model" },
-  { value: "gpt-4o", label: "GPT-4o", description: "Optimized for speed" },
-  {
-    value: "gpt-4o-mini",
-    label: "GPT-4o Mini",
-    description: "Fast and efficient",
-  },
-  { value: "gpt-4.1-nano", label: "GPT-4.1 Nano", description: "Lightweight" },
-  {
-    value: "gpt-4.1-mini",
-    label: "GPT-4.1 Mini",
-    description: "Balanced performance",
-  },
-];
 
 export function AgentConfigDrawer({
   isOpen,
@@ -83,7 +68,7 @@ export function AgentConfigDrawer({
   const [formData, setFormData] = useState<FormData>({
     dao_id: "",
     prompt_text: "",
-    model: "gpt-4.1",
+    model: "openai/gpt-5",
     temperature: 0.1,
   });
 
@@ -107,14 +92,14 @@ export function AgentConfigDrawer({
         setFormData({
           dao_id: daoId,
           prompt_text: "",
-          model: "gpt-4.1",
+          model: "GPT-5",
           temperature: 0.1,
         });
       } else {
         setFormData({
           dao_id: "",
           prompt_text: "",
-          model: "gpt-4.1",
+          model: "GPT-5",
           temperature: 0.1,
         });
       }

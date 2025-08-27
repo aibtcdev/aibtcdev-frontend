@@ -269,6 +269,52 @@ export async function fetchVetoById(vetoId: string): Promise<Veto | null> {
   }
 }
 
+// Check if an agent has already vetoed a specific proposal
+export async function checkAgentVetoStatus(
+  proposalId: string,
+  contractCaller: string
+): Promise<Veto | null> {
+  try {
+    const tableExists = await checkVetosTableExists();
+    if (!tableExists) {
+      return null;
+    }
+
+    console.log("Checking veto status for:", { proposalId, contractCaller });
+
+    // Try a more flexible approach - first check if any vetos exist for this proposal
+    const { data: allVetos, error: listError } = await supabase
+      .from("vetos")
+      .select("*")
+      .eq("proposal_id", proposalId);
+
+    if (listError) {
+      console.warn("Error fetching vetos for proposal:", listError);
+      return null;
+    }
+
+    console.log("All vetos for proposal:", allVetos);
+
+    // Find matching veto by contract_caller
+    const matchingVeto = allVetos?.find(
+      (veto) => veto.contract_caller === contractCaller
+    );
+
+    if (matchingVeto) {
+      console.log("Found matching veto:", matchingVeto);
+      return matchingVeto;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn(
+      `Failed to check veto status for proposal ${proposalId}:`,
+      error
+    );
+    return null;
+  }
+}
+
 /**
  * Helper function to format veto amounts (similar to vote formatting)
  * @param amount String representing raw veto amount

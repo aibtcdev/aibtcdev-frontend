@@ -5,7 +5,7 @@ import { Layers, Hash, ExternalLink } from "lucide-react";
 import { ProposalSection } from "../layout/ProposalSection";
 import { Badge } from "@/components/ui/badge";
 import { getExplorerLink } from "@/utils/format";
-import { safeString, safeNumberFromBigInt } from "@/utils/proposal";
+import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface ChainSectionProps {
@@ -85,8 +85,9 @@ export function ChainSection({
                       Creator
                     </p>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-mono truncate">
-                        {safeString(proposal.creator)}
+                      <p className="text-sm font-mono">
+                        {proposal.creator.slice(0, 5)}...
+                        {proposal.creator.slice(-5)}
                       </p>
                       <a
                         href={getExplorerLink("address", proposal.creator)}
@@ -113,7 +114,7 @@ export function ChainSection({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Hash className="h-4 w-4" />
-                  <span>Transaction</span>
+                  <span>TXID</span>
                 </div>
                 <div className="space-y-3">
                   <div>
@@ -125,14 +126,20 @@ export function ChainSection({
                     </p>
                   </div>
                   <div>
-                    <a
-                      href={getExplorerLink("tx", proposal.tx_id)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:text-primary/80 flex items-center gap-2"
-                    >
-                      Tx id <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono">
+                        {proposal.tx_id.slice(0, 5)}...
+                        {proposal.tx_id.slice(-5)}
+                      </p>
+                      <a
+                        href={getExplorerLink("tx", proposal.tx_id)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>

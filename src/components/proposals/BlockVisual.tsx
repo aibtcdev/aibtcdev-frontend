@@ -18,7 +18,7 @@ const BlockVisual = ({ value, type }: BlockVisualProps) => {
   const getExplorerUrl = () => {
     return type === "bitcoin"
       ? `https://mempool.space/block/${value}`
-      : `https://explorer.stacks.co/block/${value}`;
+      : `https://explorer.hiro.so/block/${value}`;
   };
 
   const getTypeColor = () => {
