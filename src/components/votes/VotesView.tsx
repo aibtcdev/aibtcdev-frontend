@@ -197,13 +197,13 @@ const formatRelativeTime = (dateStr: string): string => {
 };
 
 // Helper function to safely convert bigint to number for comparison
-const safeNumberFromBigInt = (value: bigint | null): number => {
-  if (value === null) return 0;
-  if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-  return Number(value);
-};
+// const safeNumberFromBigInt = (value: bigint | null): number => {
+//   if (value === null) return 0;
+//   if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+//     return Number.MAX_SAFE_INTEGER;
+//   }
+//   return Number(value);
+// };
 
 function VoteCard({ vote }: VoteCardProps) {
   // const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
@@ -570,7 +570,7 @@ function VoteCard({ vote }: VoteCardProps) {
   const {
     data: voteData,
     isLoading: isLoadingVoteData,
-    error: voteDataError,
+    // error: voteDataError,
   } = useQuery({
     queryKey: [
       "proposalVotes",
