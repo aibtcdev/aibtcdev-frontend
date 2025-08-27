@@ -11,6 +11,9 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "../ui/tooltip";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { Loader2 } from "lucide-react";
 
 interface ApproveContractButtonProps {
   contractToApprove: string;
@@ -31,11 +34,21 @@ export function ApproveContractButton({
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTxId, setCurrentTxId] = useState<string | null>(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const [response, setResponse] = useState<{
     success: boolean;
     message: string;
     link?: string;
   } | null>(null);
+
+  const {
+    transactionMessage,
+    transactionStatus,
+    startMonitoring,
+    stopMonitoring,
+    reset: resetVerification,
+  } = useTransactionVerification();
 
   const handleApprove = async () => {
     if (!accessToken) {
@@ -79,7 +92,17 @@ export function ApproveContractButton({
         link: parsed?.data?.link,
       });
 
-      if (parsed.success && onSuccess) onSuccess();
+      // Extract transaction ID from the response
+      const txId = parsed?.data?.txid || parsed?.txid || result?.txid;
+      if (txId) {
+        setCurrentTxId(txId);
+        setShowStatusModal(true);
+        setConfirmOpen(false);
+        // Start monitoring the transaction
+        await startMonitoring(txId);
+      } else if (parsed.success && onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       setResponse({
         success: false,
@@ -179,7 +202,14 @@ export function ApproveContractButton({
                 disabled={isLoading}
                 className="bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md"
               >
-                {isLoading ? "Approving..." : "Confirm"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Approving...
+                  </>
+                ) : (
+                  "Confirm"
+                )}
               </Button>
             </div>
           )}
@@ -207,6 +237,32 @@ export function ApproveContractButton({
           </p>
         </TooltipContent>
       </Tooltip>
+      {/* Transaction Status Modal */}
+      <TransactionStatusModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          if (transactionStatus === "success" && onSuccess) {
+            onSuccess();
+          }
+        }}
+        txId={currentTxId || undefined}
+        transactionStatus={transactionStatus}
+        transactionMessage={transactionMessage}
+        title="Contract Approval Status"
+        successTitle="Approval Confirmed"
+        failureTitle="Approval Failed"
+        successDescription="The contract has been successfully approved for voting operations."
+        failureDescription="The contract approval could not be completed. Please try again."
+        pendingDescription="The contract approval is being processed on the blockchain. This may take a few minutes."
+        onRetry={() => {
+          setShowStatusModal(false);
+          resetVerification();
+          setCurrentTxId(null);
+          setConfirmOpen(true);
+        }}
+        showRetryButton={true}
+      />
     </TooltipProvider>
   );
 }

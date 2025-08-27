@@ -142,6 +142,32 @@ function parseOutput(raw: string): ParsedOutput | null {
 }
 
 /**
+ * Extracts error code from transaction result
+ * @param txResult - The transaction result object from WebSocket
+ * @returns The error code number or null if not found
+ */
+function extractErrorCode(txResult?: {
+  hex: string;
+  repr: string;
+}): number | null {
+  if (!txResult) return null;
+
+  const raw = txResult.repr || txResult.hex;
+  const match = raw.match(/u?(\d{4,})/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Checks if an error code requires contract approval
+ * @param errorCode - The numeric error code
+ * @returns boolean indicating if approval is needed
+ */
+function requiresContractApproval(errorCode: number | null): boolean {
+  // u1101 specifically indicates the contract needs approval
+  return errorCode === 1101;
+}
+
+/**
  * Cleans a Twitter/X.com URL by removing query parameters and extra arguments
  * @param url - The raw URL input
  * @returns The cleaned URL or empty string if invalid
@@ -546,7 +572,7 @@ export function ProposalSubmission({
               <div className="flex items-center gap-2">
                 <Gift className="h-4 w-4 text-green-600 flex-shrink-0" />
                 <div className="text-sm text-foreground">
-                  You’ve sent{" "}
+                  You've sent{" "}
                   <span className="font-medium">{senderAirdrops.length}</span>{" "}
                   airdrop
                   {senderAirdrops.length > 1 ? "s" : ""};{" "}
@@ -840,7 +866,7 @@ export function ProposalSubmission({
             isWithinLimit && (
               <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
                 💡 <strong>Tip:</strong> Make sure your contribution is clear,
-                specific, and aligned with the DAO’s mission. AI agents will
+                specific, and aligned with the DAO's mission. AI agents will
                 vote on this contribution with {name}.
               </div>
             )}
@@ -1006,8 +1032,15 @@ export function ProposalSubmission({
                             Contribution Failed
                           </DialogTitle>
                           <DialogDescription className="text-base text-muted-foreground">
-                            The contribution transaction could not be completed.
-                            Please try again.
+                            {(() => {
+                              const errorCode = extractErrorCode(
+                                websocketMessage?.tx_result
+                              );
+                              if (requiresContractApproval(errorCode)) {
+                                return "Contract approval is required before you can submit contributions.";
+                              }
+                              return "The contribution transaction could not be completed. Please try again.";
+                            })()}
                           </DialogDescription>
                         </DialogHeader>
 
@@ -1024,26 +1057,29 @@ export function ProposalSubmission({
                             {websocketMessage?.tx_result && (
                               <div className="text-sm">
                                 {(() => {
-                                  const raw =
-                                    websocketMessage.tx_result.repr ||
-                                    websocketMessage.tx_result.hex;
-                                  const match = raw.match(/u?(\d{4,})/);
+                                  const errorCode = extractErrorCode(
+                                    websocketMessage.tx_result
+                                  );
                                   let description = "Transaction failed";
-                                  if (match) {
-                                    const code = parseInt(match[1], 10);
+
+                                  if (errorCode && errorCodeMap[errorCode]) {
                                     description =
-                                      errorCodeMap[code]?.description ||
-                                      description;
+                                      errorCodeMap[errorCode].description;
                                   }
 
                                   return (
                                     <>
                                       <span className="text-muted-foreground">
-                                        Reason: "
+                                        Reason:{" "}
                                       </span>
                                       <span className="font-medium">
                                         {description}
                                       </span>
+                                      {errorCode && (
+                                        <span className="text-muted-foreground ml-2">
+                                          (Error {errorCode})
+                                        </span>
+                                      )}
                                     </>
                                   );
                                 })()}
@@ -1054,26 +1090,12 @@ export function ProposalSubmission({
                           <hr className="my-4 border-border/50" />
                           <div className="flex justify-end gap-3 mt-6">
                             {(() => {
-                              // Insert approve button logic as sibling to actions
-                              const raw =
-                                websocketMessage?.tx_result?.repr ||
-                                websocketMessage?.tx_result?.hex ||
-                                "";
-                              const match = raw.match(/u?(\d{4,})/);
-                              let description = "Transaction failed";
-                              if (match) {
-                                const code = parseInt(match[1], 10);
-                                description =
-                                  errorCodeMap[code]?.description ||
-                                  description;
-                              }
+                              const errorCode = extractErrorCode(
+                                websocketMessage?.tx_result
+                              );
                               const needsApproval =
-                                description
-                                  .toLowerCase()
-                                  .includes("not recognized") ||
-                                description
-                                  .toLowerCase()
-                                  .includes("not supported");
+                                requiresContractApproval(errorCode);
+
                               if (
                                 needsApproval &&
                                 hasAccessToken &&
@@ -1088,30 +1110,43 @@ export function ProposalSubmission({
                                     ext.type === "EXTENSIONS" &&
                                     ext.subtype === "ACTION_PROPOSAL_VOTING"
                                 );
+
                                 if (
-                                  !userAgent?.account_contract ||
-                                  !votingExt?.contract_principal
-                                )
-                                  return null;
-                                return (
-                                  <ApproveContractButton
-                                    contractToApprove={
-                                      votingExt.contract_principal
-                                    }
-                                    agentAccountContract={
-                                      userAgent.account_contract
-                                    }
-                                    onSuccess={() => {
-                                      console.log("Proposal contract approved");
-                                    }}
-                                  />
-                                );
+                                  userAgent?.account_contract &&
+                                  votingExt?.contract_principal
+                                ) {
+                                  return (
+                                    <ApproveContractButton
+                                      contractToApprove={
+                                        votingExt.contract_principal
+                                      }
+                                      agentAccountContract={
+                                        userAgent.account_contract
+                                      }
+                                      onSuccess={() => {
+                                        console.log(
+                                          "Contract approved successfully"
+                                        );
+                                        // Optionally close the modal and allow user to retry
+                                        setShowResultDialog(false);
+                                        setTxStatusView("initial");
+                                      }}
+                                    />
+                                  );
+                                }
                               }
                               return null;
                             })()}
-                            <Button variant="outline" onClick={handleRetry}>
-                              Try Again
-                            </Button>
+
+                            {/* Only show Try Again if it's not a u1101 error */}
+                            {!requiresContractApproval(
+                              extractErrorCode(websocketMessage?.tx_result)
+                            ) && (
+                              <Button variant="outline" onClick={handleRetry}>
+                                Try Again
+                              </Button>
+                            )}
+
                             {parsed?.data?.link && (
                               <Button variant="outline" asChild>
                                 <a
@@ -1187,8 +1222,10 @@ export function ProposalSubmission({
                       hasAccessToken &&
                       agents &&
                       daoExtensions &&
-                      parsedApiResponse?.data?.reason ===
-                        "The specified asset is not recognized or supported.";
+                      (parsedApiResponse?.data?.reason ===
+                        "The specified asset is not recognized or supported." ||
+                        parsedApiResponse?.message?.includes("1101"));
+
                     if (needsApproval) {
                       const userAgent = agents.find(
                         (a) => a.profile_id === userId
@@ -1198,23 +1235,27 @@ export function ProposalSubmission({
                           ext.type === "EXTENSIONS" &&
                           ext.subtype === "ACTION_PROPOSAL_VOTING"
                       );
+
                       if (
-                        !userAgent?.account_contract ||
-                        !votingExt?.contract_principal
-                      )
-                        return null;
-                      return (
-                        <ApproveContractButton
-                          contractToApprove={votingExt.contract_principal}
-                          agentAccountContract={userAgent.account_contract}
-                          onSuccess={() => {
-                            console.log("Proposal contract approved");
-                          }}
-                        />
-                      );
+                        userAgent?.account_contract &&
+                        votingExt?.contract_principal
+                      ) {
+                        return (
+                          <ApproveContractButton
+                            contractToApprove={votingExt.contract_principal}
+                            agentAccountContract={userAgent.account_contract}
+                            onSuccess={() => {
+                              console.log("Contract approved successfully");
+                              setShowResultDialog(false);
+                              setTxStatusView("initial");
+                            }}
+                          />
+                        );
+                      }
                     }
                     return null;
                   })()}
+
                   <Button variant="outline" onClick={handleRetry}>
                     Try Again
                   </Button>
