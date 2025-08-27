@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import { ThemeToggle } from "@/components/reusables/ThemeToggle";
 import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
+// import AssetTracker from "@/components/reusables/AssetTracker";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -372,6 +373,7 @@ export default function ApplicationLayout({
         </div>
       </div>
 
+      {/* <AssetTracker /> */}
       {/* Main Content */}
       <div className="flex-1 flex min-w-0 max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
         {/* Mobile Sidebar */}
