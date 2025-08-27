@@ -42,7 +42,7 @@ interface EvaluationData {
 import { Badge } from "@/components/ui/badge";
 import { AI_MODELS } from "@/lib/constant";
 import { Button } from "@/components/ui/button";
-import type { Vote as VoteType } from "@/types";
+import type { Vote as VoteType, Proposal } from "@/types";
 import { DAOVetoProposal } from "@/components/proposals/DAOVetoProposal";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -70,32 +70,47 @@ import { getProposalStatus } from "@/utils/proposal";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 
 // Helper function to convert Vote to Proposal-like object for useProposalStatus hook
-const voteToProposal = (vote: VoteType): any => ({
+const voteToProposal = (vote: VoteType): Proposal => ({
   id: vote.proposal_id,
   proposal_id: vote.blockchain_proposal_id || BigInt(0),
   title: vote.proposal_title,
   content: vote.proposal_content || "",
-  status: vote.proposal_status || "PENDING", // Use actual status from proposals table
-  passed: vote.proposal_passed ?? false, // Use actual passed field from proposals table
-  vote_start: vote.vote_start,
-  vote_end: vote.vote_end,
-  exec_start: vote.exec_start,
-  exec_end: vote.exec_end,
+  status: vote.proposal_status || "PENDING",
+  passed: vote.proposal_passed ?? false,
+  vote_start: vote.vote_start || BigInt(0),
+  vote_end: vote.vote_end || BigInt(0),
+  exec_start: vote.exec_start || BigInt(0),
+  exec_end: vote.exec_end || BigInt(0),
   created_at: vote.created_at,
-  updated_at: vote.created_at,
   dao_id: vote.dao_id,
-  profile_id: vote.profile_id || "",
-  wallet_id: vote.wallet_id || "",
-  address: vote.address || "",
-  amount: vote.amount || "",
-  tx_id: vote.tx_id || "",
-  prompt: vote.prompt || "",
-  reasoning: vote.reasoning || "",
-  evaluation: vote.evaluation || "",
-  confidence: vote.confidence || 0,
-  voted: vote.voted || false,
   evaluation_score: vote.evaluation_score || {},
   flags: vote.flags || [],
+  // Required fields from Proposal interface with default values
+  summary: vote.proposal_content || "",
+  contract_principal: "",
+  tx_id: vote.tx_id || "",
+  action: "",
+  caller: "",
+  creator: "",
+  liquid_tokens: "0",
+  concluded_by: "",
+  executed: false,
+  met_quorum: false,
+  met_threshold: false,
+  votes_against: "0",
+  votes_for: "0",
+  bond: "0",
+  type: "",
+  contract_caller: "",
+  created_btc: BigInt(0),
+  created_stx: BigInt(0),
+  memo: "",
+  tx_sender: "",
+  voting_delay: BigInt(0),
+  voting_period: BigInt(0),
+  voting_quorum: BigInt(0),
+  voting_reward: "0",
+  voting_threshold: BigInt(0),
 });
 
 import {
@@ -188,20 +203,6 @@ const safeNumberFromBigInt = (value: bigint | null): number => {
     return Number.MAX_SAFE_INTEGER;
   }
   return Number(value);
-};
-
-// Helper function to check if a vote is in the veto window
-const isInVetoWindow = (
-  vote: VoteType,
-  currentBitcoinHeight: number
-): boolean => {
-  // Remove the voted check - veto should be available regardless of agent vote status
-  if (!vote.vote_end || !vote.exec_start) return false;
-
-  const voteEnd = safeNumberFromBigInt(vote.vote_end);
-  const execStart = safeNumberFromBigInt(vote.exec_start);
-
-  return currentBitcoinHeight > voteEnd && currentBitcoinHeight <= execStart;
 };
 
 function VoteCard({ vote }: VoteCardProps) {
@@ -507,8 +508,8 @@ function VoteCard({ vote }: VoteCardProps) {
     null;
 
   // Debug logging
-  console.log("VoteCard - Vote evaluation:", vote.evaluation);
-  console.log("VoteCard - Parsed evaluation data:", evaluationData);
+  // console.log("VoteCard - Vote evaluation:", vote.evaluation);
+  // console.log("VoteCard - Parsed evaluation data:", evaluationData);
 
   // Try both DAO fetching methods to find the correct one
   const { data: daosWithExtensions } = useQuery({
@@ -568,8 +569,8 @@ function VoteCard({ vote }: VoteCardProps) {
   // Fetch real vote data for this proposal
   const {
     data: voteData,
-    // isLoading: isLoadingVoteData,
-    // error: voteDataError,
+    isLoading: isLoadingVoteData,
+    error: voteDataError,
   } = useQuery({
     queryKey: [
       "proposalVotes",
@@ -595,36 +596,25 @@ function VoteCard({ vote }: VoteCardProps) {
     refetchInterval: proposalStatus === "ACTIVE" ? 30 * 1000 : undefined, // Auto-refetch every 30 seconds for active proposals
   });
 
-  // Calculate vote progress percentages using raw values, no defaulting to "0"
-  const voteProgress = useMemo(() => {
+  // Extract and format vote data
+  const voteDisplayData = useMemo(() => {
     if (!voteData) return null;
 
-    const rawFor = voteData.votesFor;
-    const rawAgainst = voteData.votesAgainst;
+    const rawFor = voteData.votesFor || voteData.data?.votesFor;
+    const rawAgainst = voteData.votesAgainst || voteData.data?.votesAgainst;
+    const rawLiquidTokens =
+      voteData.liquidTokens || voteData.data?.liquidTokens;
 
-    const toNum = (v: unknown): number | null => {
-      if (typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))) {
-        return Number(v);
-      }
-      if (typeof v === "number" && !isNaN(v)) return v;
-      return null;
+    if (!rawFor || !rawAgainst || !rawLiquidTokens) return null;
+
+    return {
+      votesFor: formatBalance(rawFor),
+      votesAgainst: formatBalance(rawAgainst),
+      liquidTokens: formatBalance(rawLiquidTokens),
+      rawVotesFor: rawFor,
+      rawVotesAgainst: rawAgainst,
+      rawLiquidTokens: rawLiquidTokens,
     };
-
-    const forNum = toNum(rawFor);
-    const againstNum = toNum(rawAgainst);
-
-    if (forNum === null || againstNum === null) return null;
-
-    const total = forNum + againstNum;
-    if (total <= 0) {
-      return { yes: 0, no: 0, abstain: 0 };
-    }
-
-    const yesPercent = Math.round((forNum / total) * 100);
-    const noPercent = Math.round((againstNum / total) * 100);
-    const abstainPercent = Math.max(0, 100 - yesPercent - noPercent);
-
-    return { yes: yesPercent, no: noPercent, abstain: abstainPercent };
   }, [voteData]);
 
   // Normalize vetoes - use all vetos from the hook, plus agent's veto if it exists
@@ -698,38 +688,145 @@ function VoteCard({ vote }: VoteCardProps) {
               {vote.proposal_title}
             </h3>
 
-            {/* Vote Progress Bar */}
+            {/* Vote Counts */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Vote Progress</span>
-                <div className="flex items-center gap-4 text-xs">
-                  <span className="text-green-600">
-                    Yes: {formatBalance(voteData?.votesFor ?? "") || "—"} (
-                    {voteProgress ? `${voteProgress.yes}%` : "—"})
+                <span className="text-muted-foreground">Vote Counts</span>
+                {isLoadingVoteData && (
+                  <span className="text-xs text-muted-foreground animate-pulse">
+                    Loading votes...
                   </span>
-                  <span className="text-red-600">
-                    No: {formatBalance(voteData?.votesAgainst ?? "") || "—"} (
-                    {voteProgress ? `${voteProgress.no}%` : "—"})
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-xs mb-3">
+                <div className="space-y-1">
+                  <span className="text-green-600 font-medium">For</span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.votesFor || "—"
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-red-600 font-medium">Against</span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.votesAgainst || "—"
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-blue-600 font-medium">
+                    Liquid Tokens
                   </span>
-                  <span className="text-gray-500">
-                    Abstain: {voteProgress ? `${voteProgress.abstain}%` : "—"}
-                  </span>
+                  <div className="text-foreground">
+                    {isLoadingVoteData ? (
+                      <span className="animate-pulse">Loading...</span>
+                    ) : (
+                      voteDisplayData?.liquidTokens || "—"
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex h-2 rounded-full overflow-hidden bg-muted">
-                <div
-                  className="bg-green-500"
-                  style={{ width: `${voteProgress?.yes ?? 0}%` }}
-                />
-                <div
-                  className="bg-red-500"
-                  style={{ width: `${voteProgress?.no ?? 0}%` }}
-                />
-                <div
-                  className="bg-gray-400"
-                  style={{ width: `${voteProgress?.abstain ?? 0}%` }}
-                />
-              </div>
+
+              {/* Progress Bar */}
+              {voteDisplayData && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    {/* Background bar */}
+                    <div className="h-6 bg-muted rounded-lg overflow-hidden">
+                      {/* Votes for (green) */}
+                      <div
+                        className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
+                          voteDisplayData.rawVotesFor &&
+                          Number(voteDisplayData.rawVotesFor) > 0
+                            ? "rounded-l-lg"
+                            : ""
+                        } ${
+                          (!voteDisplayData.rawVotesAgainst ||
+                            Number(voteDisplayData.rawVotesAgainst) === 0) &&
+                          voteDisplayData.rawVotesFor &&
+                          Number(voteDisplayData.rawVotesFor) > 0
+                            ? "rounded-r-lg"
+                            : ""
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesFor) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                        }}
+                      />
+                      {/* Votes against (red) */}
+                      <div
+                        className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
+                          voteDisplayData.rawVotesAgainst &&
+                          Number(voteDisplayData.rawVotesAgainst) > 0 &&
+                          (!voteDisplayData.rawVotesFor ||
+                            Number(voteDisplayData.rawVotesFor) === 0)
+                            ? "rounded-l-lg"
+                            : ""
+                        } ${
+                          voteDisplayData.rawVotesAgainst &&
+                          Number(voteDisplayData.rawVotesAgainst) > 0
+                            ? "rounded-r-lg"
+                            : ""
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesAgainst) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                          left: `${Math.min(
+                            voteDisplayData.rawLiquidTokens
+                              ? Math.round(
+                                  (Number(voteDisplayData.rawVotesFor) /
+                                    Number(voteDisplayData.rawLiquidTokens)) *
+                                    100
+                                )
+                              : 0,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vote breakdown */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span>For: {voteDisplayData.votesFor}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-red-500 rounded-full" />
+                        <span>Against: {voteDisplayData.votesAgainst}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                      <span>Total: {voteDisplayData.liquidTokens}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Reasoning Preview */}
