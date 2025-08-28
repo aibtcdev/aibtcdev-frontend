@@ -41,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Info, Bitcoin } from "lucide-react";
+import { Info } from "lucide-react";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 

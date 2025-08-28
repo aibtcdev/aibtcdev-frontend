@@ -5,12 +5,12 @@ import { useState, useEffect, useRef } from "react";
 import {
   Send,
   // Sparkles,
-  Edit3,
+  // Edit3,
   Check,
   ExternalLink,
   AlertCircle,
   Gift,
-  X,
+  // X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";

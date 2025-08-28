@@ -362,7 +362,7 @@ export default function AllDaos() {
     }
 
     return filtered;
-  }, [daos, searchQuery, sortBy, tokenPrices, holdersMap]);
+  }, [daos, searchQuery, sortBy, tokenPrices, holdersMap, proposalCounts]);
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
   const paginatedDAOs = filteredAndSortedDAOs.slice(

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { TransactionPriority } from "@faktoryfun/styx-sdk";
-import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/reusables/Loader";
 import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
@@ -28,7 +27,7 @@ export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
-  headerOffset = 96,
+  // headerOffset = 96,
   // tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
