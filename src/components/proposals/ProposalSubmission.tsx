@@ -5,12 +5,12 @@ import { useState, useEffect, useRef } from "react";
 import {
   Send,
   // Sparkles,
-  Edit3,
+  // Edit3,
   Check,
   ExternalLink,
   AlertCircle,
   Gift,
-  X,
+  // X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
@@ -109,6 +109,7 @@ interface ProposalSubmissionProps {
   token?: Token;
   daoName?: string;
   onSubmissionSuccess?: () => void;
+  headerOffset?: number;
 }
 
 interface ParsedOutput {
@@ -550,246 +551,269 @@ export function ProposalSubmission({
 
   return (
     <>
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-l-4 border-primary rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-            <Edit3 className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              Submit Contribution
-            </h2>
-            <p className="text-muted-foreground">
-              Propose a completed contribution to the DAO to request a reward.
-            </p>
-          </div>
+      <div
+        className="rounded-2xl border-t border-l border-white/10  mb- sm:p-6 lg:p-7 flex flex-col"
+        style={{
+          maxHeight: "var(--available-height)",
+        }}
+      >
+        {/* Header */}
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-white mb-1">
+            Submit Contribution
+          </h2>
+          <p className="text-zinc-400 text-sm">
+            Share your work and get rewarded with DAO tokens
+          </p>
         </div>
 
-        {/* Airdrop Notification */}
-        {showAirdropNotification && senderAirdrops.length > 0 && (
-          <div className="mb-4 bg-gradient-to-r from-green-500/10 via-green-500/5 to-transparent border-l-4 border-green-500 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-green-600 flex-shrink-0" />
-                <div className="text-sm text-foreground">
-                  You've sent{" "}
-                  <span className="font-medium">{senderAirdrops.length}</span>{" "}
-                  airdrop
-                  {senderAirdrops.length > 1 ? "s" : ""};{" "}
-                  <span className="font-medium">
+        {/* Scrollable Body */}
+        <div
+          className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3"
+          style={{
+            paddingBottom:
+              "calc(var(--submit-cta-height) + var(--cta-spacing))",
+          }}
+        >
+          {/* Airdrop Notification */}
+          {showAirdropNotification && senderAirdrops.length > 0 && (
+            <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-green-300 flex-shrink-0" />
+                  <div className="text-sm text-green-100">
+                    You've sent{" "}
+                    <span className="font-medium">{senderAirdrops.length}</span>{" "}
+                    airdrop
+                    {senderAirdrops.length > 1 ? "s" : ""};{" "}
+                    <span className="font-medium">
+                      {senderAirdrops.reduce(
+                        (total, airdrop) => total + airdrop.recipients.length,
+                        0
+                      )}
+                    </span>{" "}
+                    recipient
                     {senderAirdrops.reduce(
                       (total, airdrop) => total + airdrop.recipients.length,
                       0
-                    )}
-                  </span>{" "}
-                  recipient
-                  {senderAirdrops.reduce(
-                    (total, airdrop) => total + airdrop.recipients.length,
-                    0
-                  ) === 1
-                    ? ""
-                    : "s"}{" "}
-                  received.
+                    ) === 1
+                      ? ""
+                      : "s"}{" "}
+                    received.
+                  </div>
                 </div>
+                {/* <button
+                  onClick={() => setShowAirdropNotification(false)}
+                  className="p-1 rounded-md hover:bg-muted/50 transition-colors duration-200"
+                  aria-label="Dismiss notification"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button> */}
               </div>
-              <button
-                onClick={() => setShowAirdropNotification(false)}
-                className="p-1 rounded-md hover:bg-muted/50 transition-colors duration-200"
-                aria-label="Dismiss notification"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <textarea
-              value={contribution}
-              onChange={(e) => {
-                const value = e.target.value;
-                // Clean the input to remove invisible characters and normalize whitespace
-                const cleanedValue = value
-                  // Remove zero-width characters and other invisible Unicode characters
-                  .replace(/[\u200B-\u200D\uFEFF]/g, "")
-                  // Remove other control characters except newlines and tabs
-                  .replace(
-                    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-                    ""
-                  )
-                  // Normalize Unicode characters
-                  .normalize("NFC");
-                setContribution(cleanedValue);
-              }}
-              placeholder={
-                hasAccessToken
-                  ? "Describe what you contributed. What did you create or share? Why does it matter?"
-                  : "Connect your wallet to create a contribution"
-              }
-              className="w-full  p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
-              disabled={
-                !hasAccessToken ||
-                isSubmitting ||
-                // isGenerating ||
-                isLoadingExtensions ||
-                isLoadingAgents
-              }
-            />
-            {contribution.length > 0 && (
-              <div className="absolute bottom-3 right-3 text-xs text-muted-foreground">
-                {combinedLength} / 2043 characters
-              </div>
-            )}
-          </div>
-          {!isWithinLimit && (
-            <div className="text-xs text-red-500 mt-1">
-              ⚠️ Combined text exceeds the 2043-character limit. Please shorten
-              your message or use a shorter Twitter URL.
             </div>
           )}
-          {/* <UnicodeIssueWarning issues={issues} /> */}
-          <div className="relative">
-            <input
-              type="url"
-              value={twitterUrl}
-              onChange={(e) => {
-                setTwitterUrl(e.target.value);
-              }}
-              onBlur={() => {
-                const cleaned = cleanTwitterUrl(twitterUrl);
-                if (cleaned) setTwitterUrl(cleaned);
-              }}
-              placeholder="Paste the X.com (Twitter) post that shows your work"
-              className="w-full p-4 bg-background/50 border border-border/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
-              disabled={
-                !hasAccessToken ||
-                isSubmitting ||
-                // isGenerating ||
-                isLoadingExtensions ||
-                isLoadingAgents
-              }
-              required
-            />
-            {twitterUrl && !isValidTwitterUrl && (
-              <div className="text-xs mt-1">
-                ⚠️ Please enter a valid X.com (Twitter) post URL in the format:
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="relative">
+              <textarea
+                value={contribution}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Clean the input to remove invisible characters and normalize whitespace
+                  const cleanedValue = value
+                    // Remove zero-width characters and other invisible Unicode characters
+                    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+                    // Remove other control characters except newlines and tabs
+                    .replace(
+                      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+                      ""
+                    )
+                    // Normalize Unicode characters
+                    .normalize("NFC");
+                  setContribution(cleanedValue);
+                }}
+                placeholder={
+                  hasAccessToken
+                    ? "Describt what you contributed. What did you create or share? Why does it matter?"
+                    : "Connect your wallet to create a contribution"
+                }
+                className={`w-full min-h-[100px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
+                disabled={
+                  !hasAccessToken ||
+                  isSubmitting ||
+                  // isGenerating ||
+                  isLoadingExtensions ||
+                  isLoadingAgents
+                }
+              />
+              {contribution.length > 0 && (
+                <div className="absolute bottom-3 right-3 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+                  {combinedLength} / 2043 characters
+                </div>
+              )}
+              {!isWithinLimit && (
+                <div className="text-xs text-red-400 mt-1">
+                  ⚠️ Combined text exceeds the 2043-character limit. Please
+                  shorten your message or use a shorter Twitter URL.
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="url"
+                value={twitterUrl}
+                onChange={(e) => {
+                  setTwitterUrl(e.target.value);
+                }}
+                onBlur={() => {
+                  const cleaned = cleanTwitterUrl(twitterUrl);
+                  if (cleaned) setTwitterUrl(cleaned);
+                }}
+                placeholder="Paste the X.com (Twitter) post that shows your work"
+                className={`w-full p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
+                disabled={
+                  !hasAccessToken ||
+                  isSubmitting ||
+                  // isGenerating ||
+                  isLoadingExtensions ||
+                  isLoadingAgents
+                }
+                required
+              />
+              {twitterUrl && !isValidTwitterUrl && (
+                <div className="text-xs text-red-400 mt-1">
+                  ⚠️ Please enter a valid X.com (Twitter) post URL in the
+                  format: https://x.com/username/status/1234567890123456789
+                </div>
+              )}
+            </div>
+
+            {/* Airdrop Selector */}
+            {senderAirdrops.length > 0 && (
+              <div className="space-y-1">
+                <label
+                  htmlFor="airdrop-select"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Attach an Airdrop (Optional)
+                </label>
+                <Select
+                  onValueChange={(value) =>
+                    setSelectedAirdropTxHash(value === "none" ? null : value)
+                  }
+                  value={selectedAirdropTxHash || "none"}
+                >
+                  <SelectTrigger
+                    id="airdrop-select"
+                    className="w-full bg-background/60 border border-white/10 h-10"
+                  >
+                    <SelectValue placeholder="Select an airdrop to reference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {senderAirdrops.map((airdrop) => (
+                      <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>
+                            {new Date(airdrop.created_at).toLocaleDateString()}{" "}
+                            - {airdrop.recipients.length} recipients
+                          </span>
+                          <span className="ml-4 text-xs text-muted-foreground font-mono">
+                            {truncateString(airdrop.tx_hash, 6, 6)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedAirdropTxHash && (
+                  <div className="mt-1 flex items-center justify-end">
+                    <a
+                      href={getExplorerLink("tx", selectedAirdropTxHash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View selected airdrop on explorer
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Twitter Embed Preview */}
+            {twitterUrl && isValidTwitterUrl && (
+              <div className="bg-background/60 rounded-xl p-3 shadow-sm">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Twitter Post Preview
+                </div>
+                {isLoadingEmbed ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      Loading preview...
+                    </div>
+                  </div>
+                ) : twitterEmbed ? (
+                  <div
+                    className="twitter-embed"
+                    dangerouslySetInnerHTML={{ __html: twitterEmbed.html }}
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground py-4">
+                    Failed to load Twitter post preview
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Error/Status Messages */}
+            {!hasAccessToken && (
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+                💡 <strong>Note:</strong> Connect your wallet to submit
+                contributions to the DAO.
+              </div>
+            )}
+
+            {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
+              <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
+                <strong>Invalid Twitter URL:</strong> URL must be in the format
                 https://x.com/username/status/1234567890123456789
               </div>
             )}
-          </div>
 
-          {/* Airdrop Selector */}
-          {senderAirdrops.length > 0 && (
-            <div className="space-y-2">
-              <label
-                htmlFor="airdrop-select"
-                className="text-sm font-medium text-foreground"
-              >
-                Attach an Airdrop (Optional)
-              </label>
-              <Select
-                onValueChange={(value) =>
-                  setSelectedAirdropTxHash(value === "none" ? null : value)
-                }
-                value={selectedAirdropTxHash || "none"}
-              >
-                <SelectTrigger
-                  id="airdrop-select"
-                  className="w-full bg-background/50 border-border/50"
-                >
-                  <SelectValue placeholder="Select an airdrop to reference" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {senderAirdrops.map((airdrop) => (
-                    <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>
-                          {new Date(airdrop.created_at).toLocaleDateString()} -{" "}
-                          {airdrop.recipients.length} recipients
-                        </span>
-                        <span className="ml-4 text-xs text-muted-foreground font-mono">
-                          {truncateString(airdrop.tx_hash, 6, 6)}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedAirdropTxHash && (
-                <div className="mt-2 flex items-center justify-end">
-                  <a
-                    href={getExplorerLink("tx", selectedAirdropTxHash)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View selected airdrop on explorer
-                  </a>
+            {hasAccessToken &&
+              contribution.trim() &&
+              twitterUrl.trim() &&
+              isValidTwitterUrl &&
+              isWithinLimit && (
+                <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+                  💡 <strong>Tip:</strong> Make sure your contribution is clear,
+                  specific, and aligned with the DAO's mission. AI agents will
+                  vote on this contribution with {name}.
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Twitter Embed Preview */}
-          {twitterUrl && isValidTwitterUrl && (
-            <div className="bg-background/50 border border-border/50 rounded-xl p-4">
-              <div className="text-sm font-medium text-muted-foreground mb-3">
-                Twitter Post Preview
+            {isLoadingExtensions && (
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+                ⏳ Loading DAO extensions...
               </div>
-              {isLoadingEmbed ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    Loading preview...
-                  </div>
-                </div>
-              ) : twitterEmbed ? (
-                <div
-                  className="twitter-embed"
-                  dangerouslySetInnerHTML={{ __html: twitterEmbed.html }}
-                />
-              ) : (
-                <div className="text-sm text-muted-foreground py-4">
-                  Failed to load Twitter post preview
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            {/* <Button
-              type="button"
-              variant="outline"
-              onClick={handleAIGenerate}
-              disabled={
-                !hasAccessToken ||
-                isSubmitting ||
-                isGenerating ||
-                isLoadingExtensions ||
-                isLoadingAgents
-              }
-              className="flex items-center gap-2 border-secondary/50 text-secondary hover:bg-secondary/10 hover:border-secondary"
-            >
-              <Sparkles
-                className={`h-4 w-4 ${isGenerating ? "animate-spin" : ""}`}
-              />
-              {isGenerating ? "Generating..." : "Generate Message"}
-            </Button> */}
-            {/* {hasAnyIssues && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClean}
-                className="flex items-center gap-2 border-secondary/50 text-secondary hover:bg-secondary/10 hover:border-secondary"
-              >
-                Remove Issues
-              </Button>
-            )} */}
+            {isLoadingAgents && (
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+                ⏳ Loading user agent...
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Sticky Footer CTA */}
+        <div className="sticky bottom-0 -mx-5 sm:-mx-6 lg:-mx-7  pt-4 z-20">
+          <div className="px-5 sm:px-6 lg:px-7">
             <Button
-              type="submit"
+              onClick={handleSubmit}
               disabled={
                 !hasAccessToken ||
                 !contribution.trim() ||
@@ -797,92 +821,26 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
-                // isGenerating ||
                 isLoadingExtensions ||
                 isLoadingAgents
-                // hasAnyIssues
               }
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6"
+              className="w-full rounded-xl bg-primary text-white font-medium border-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-0"
+              style={{ height: "var(--submit-cta-height)" }}
             >
-              {isSubmitting ? <Loader /> : <Send className="h-4 w-4" />}
-              {isSubmitting ? "Submitting..." : "Submit Contribution"}
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>Submitting...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Send className="h-4 w-4" />
+                  <span>Submit Contribution</span>
+                </div>
+              )}
             </Button>
-
-            {/* {hasAccessToken &&
-              agents &&
-              daoExtensions &&
-              (() => {
-                const userAgent = agents.find((a) => a.profile_id === userId);
-                const votingExt = daoExtensions.find(
-                  (ext) =>
-                    ext.type === "EXTENSIONS" &&
-                    ext.subtype === "ACTION_PROPOSAL_VOTING"
-                );
-
-                if (
-                  !userAgent?.account_contract ||
-                  !votingExt?.contract_principal
-                )
-                  return null;
-
-                return (
-                  <ApproveContractButton
-                    contractToApprove={votingExt.contract_principal}
-                    agentAccountContract={userAgent.account_contract}
-                    onSuccess={() => {
-                      console.log("Proposal contract approved");
-                    }}
-                  />
-                );
-              })()} */}
           </div>
-
-          {/* Error/Status Messages */}
-          {!hasAccessToken && (
-            <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-              💡 <strong>Note:</strong> Connect your wallet to submit
-              contributions to the DAO.
-            </div>
-          )}
-
-          {/* {hasAccessToken && !twitterUrl.trim() && (
-            <div className="text-sm rounded-lg p-3">
-              <strong>Twitter URL Required:</strong> Please provide a reference
-              X.com (Twitter) post URL.
-            </div>
-          )} */}
-
-          {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
-            <div className="text-sm text-red-500 bg-red-50 rounded-lg p-3">
-              <strong>Invalid Twitter URL:</strong> URL must be in the format
-              https://x.com/username/status/1234567890123456789
-            </div>
-          )}
-
-          {hasAccessToken &&
-            contribution.trim() &&
-            twitterUrl.trim() &&
-            isValidTwitterUrl &&
-            isWithinLimit && (
-              <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-                💡 <strong>Tip:</strong> Make sure your contribution is clear,
-                specific, and aligned with the DAO's mission. AI agents will
-                vote on this contribution with {name}.
-              </div>
-            )}
-
-          {isLoadingExtensions && (
-            <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-              ⏳ Loading DAO extensions...
-            </div>
-          )}
-
-          {isLoadingAgents && (
-            <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-              ⏳ Loading user agent...
-            </div>
-          )}
-        </form>
+        </div>
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}
@@ -918,12 +876,12 @@ export function ProposalSubmission({
 
                         <div className="mt-8 space-y-4">
                           {parsed?.data?.txid && (
-                            <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                            <div className="bg-background/60 rounded-xl p-4 shadow-sm">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">
                                   Transaction Status
                                 </span>
-                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                                   Processing
                                 </span>
                               </div>
@@ -973,12 +931,12 @@ export function ProposalSubmission({
                         </DialogHeader>
 
                         <div className="mt-8 space-y-4">
-                          <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                          <div className="bg-background/60 rounded-xl p-4 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-sm text-muted-foreground">
                                 Transaction Status
                               </span>
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                                 Confirmed
                               </span>
                             </div>
@@ -1045,12 +1003,12 @@ export function ProposalSubmission({
                         </DialogHeader>
 
                         <div className="mt-8 space-y-4">
-                          <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                          <div className="bg-background/60 rounded-xl p-4 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-sm text-muted-foreground">
                                 Transaction Status
                               </span>
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
                                 Failed
                               </span>
                             </div>
@@ -1193,7 +1151,7 @@ export function ProposalSubmission({
 
               <div className="mt-8 space-y-4">
                 {parsedApiResponse?.message ? (
-                  <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                  <div className="bg-background/60 rounded-xl p-4 shadow-sm">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Error: </span>
                       <span className="font-medium">
@@ -1205,7 +1163,7 @@ export function ProposalSubmission({
                   </div>
                 ) : (
                   apiResponse?.error && (
-                    <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+                    <div className="bg-background/60 rounded-xl p-4 shadow-sm">
                       <div className="text-sm">
                         <span className="text-muted-foreground">Error: </span>
                         <span className="font-medium">{apiResponse.error}</span>

@@ -1,203 +1,149 @@
-// "use client";
+"use client";
 
-// import { useState, useEffect, useCallback, useMemo } from "react";
-// import { formatBalance } from "@/lib/format";
-// import { useWalletStore } from "@/store/wallet";
-// import { getStacksAddress } from "@/lib/address";
-// import Link from "next/link";
-// import type { WalletBalance } from "@/store/wallet";
+import { useState, useEffect, useMemo } from "react";
+import { useWalletStore } from "@/store/wallet";
+import { getStacksAddress } from "@/lib/address";
+import Link from "next/link";
+import { X } from "lucide-react";
 
-// const isFakeToken = (tokenId: string) => {
-//   // Normalize a possible trailing colon from some indexers
-//   const cleaned = tokenId.replace(/:$/, "");
-//   const parts = cleaned.split("::");
-//   const asset = parts[parts.length - 1];
-//   // Accept only fake tokens
-//   return asset === "fake";
-// };
+// Custom format function for token balances with specified decimals
+const formatBalance = (balance: number, decimals: number = 8): string => {
+  if (!balance || balance === 0) return "0";
+  const divisor = Math.pow(10, decimals);
+  const formatted = (balance / divisor).toFixed(decimals);
+  return parseFloat(formatted).toString();
+};
 
-// const TokenTracker = () => {
-//   const { balances, fetchSingleBalance } = useWalletStore();
-//   const [agentSbtcStatus, setAgentSbtcStatus] = useState<
-//     Record<string, number>
-//   >({});
-//   const [isLoaded, setIsLoaded] = useState(false);
+// Session storage key for dismissed state
+const DISMISSED_KEY = "assetTracker_dismissed";
 
-//   // Function to find fake token balance in fungible tokens
-//   const findFakeTokenBalance = (
-//     fungibleTokens: WalletBalance["fungible_tokens"] | undefined
-//   ) => {
-//     if (!fungibleTokens) return 0;
-//     for (const [tokenId, tokenData] of Object.entries(fungibleTokens)) {
-//       if (isFakeToken(tokenId)) {
-//         return Number(tokenData.balance || 0);
-//       }
-//     }
-//     return 0;
-//   };
+const isFakeToken = (tokenId: string) => {
+  const cleaned = tokenId.replace(/:$/, "");
+  const parts = cleaned.split("::");
+  const asset = parts[parts.length - 1];
+  return asset === "fake";
+};
 
-//   // Memoize fetchData to prevent unnecessary recreations
-//   const fetchData = useCallback(
-//     async (address: string) => {
-//       try {
-//         await fetchSingleBalance(address);
-//       } catch (err) {
-//         console.error("Error fetching balance:", err);
-//       }
-//     },
-//     [fetchSingleBalance]
-//   );
+const getFakeTokenName = (tokenId: string) => {
+  const cleaned = tokenId.replace(/:$/, "");
+  const parts = cleaned.split("::");
+  if (parts.length >= 2) {
+    return parts[parts.length - 1].toUpperCase();
+  }
+  return "FAKE";
+};
 
-//   // Check user's Stacks address for fake token balance
-//   useEffect(() => {
-//     const checkUserWallet = async () => {
-//       setIsLoaded(false);
-//       const address = getStacksAddress();
-//       if (!address) {
-//         console.log("No connected user Stacks address found");
-//         setAgentSbtcStatus({});
-//         setIsLoaded(true);
-//         return;
-//       }
+const AssetTracker = () => {
+  const { balances, fetchSingleBalance } = useWalletStore();
+  const [isDismissed, setIsDismissed] = useState(() => {
+    // Initialize from sessionStorage immediately
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem(DISMISSED_KEY) === "true";
+    }
+    return false;
+  });
+  const [isInitialized, setIsInitialized] = useState(false);
 
-//       try {
-//         if (!balances[address]) {
-//           console.log(`Fetching balance for user address: ${address}`);
-//           await fetchData(address);
-//         }
+  // Get current user address
+  const address = getStacksAddress();
 
-//         const fakeBalance = findFakeTokenBalance(
-//           balances[address]?.fungible_tokens
-//         );
-//         setAgentSbtcStatus({ [address]: fakeBalance });
-//         setIsLoaded(true);
-//       } catch (err) {
-//         console.error("Error checking user wallet:", err);
-//         setAgentSbtcStatus({});
-//         setIsLoaded(true);
-//       }
-//     };
+  useEffect(() => {
+    const initializeBalance = async () => {
+      if (!address || isInitialized) return;
 
-//     checkUserWallet();
-//     // Re-run when balances change for the current address
-//   }, [balances, fetchData]);
+      // Fetch balance and mark as initialized
+      await fetchSingleBalance(address);
+      setIsInitialized(true);
+    };
 
-//   // Check if any agent wallet has fake token balance > 0
-//   const hasAnySbtc = Object.values(agentSbtcStatus).some(
-//     (balance) => balance > 0
-//   );
+    initializeBalance();
+  }, [address, fetchSingleBalance, isInitialized]);
 
-//   const fakeBalanceRaw = useMemo(() => {
-//     const vals = Object.values(agentSbtcStatus);
-//     return (vals.length > 0 && typeof vals[0] === "number") ? vals[0] : 0;
-//   }, [agentSbtcStatus]);
+  // Calculate token info whenever balances change
+  const { tokenBalance, tokenName } = useMemo(() => {
+    if (!address || !balances[address]?.fungible_tokens) {
+      return { tokenBalance: 0, tokenName: "FAKE" };
+    }
 
-//   const formattedFakeBalance = useMemo(() => formatBalance(fakeBalanceRaw, 8), [fakeBalanceRaw]);
+    const fungibleTokens = balances[address].fungible_tokens;
 
-//   // Only render content if user is logged in
-//   return (
-//     <div className="w-full max-w-2xl mx-auto my-4 bg-[#2A2A2A] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.2)] border border-zinc-800 p-4 flex items-center gap-3">
-//       {/* Status Icon */}
-//       <span className="flex-shrink-0">
-//         {!isLoaded ? (
-//           // Spinner
-//           <svg
-//             className="animate-spin h-6 w-6 text-zinc-400"
-//             viewBox="0 0 24 24"
-//           >
-//             <circle
-//               className="opacity-25"
-//               cx="12"
-//               cy="12"
-//               r="10"
-//               stroke="currentColor"
-//               strokeWidth="4"
-//               fill="none"
-//             />
-//             <path
-//               className="opacity-75"
-//               fill="currentColor"
-//               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-//             />
-//           </svg>
-//         ) : hasAnySbtc ? (
-//           // Bitcoin icon (replace with your icon set)
-//           <svg
-//             className="h-6 w-6 text-[#FF6B00]"
-//             fill="none"
-//             viewBox="0 0 24 24"
-//             stroke="currentColor"
-//           >
-//             <circle
-//               cx="12"
-//               cy="12"
-//               r="10"
-//               stroke="#FF6B00"
-//               strokeWidth="2"
-//               fill="#232323"
-//             />
-//             <text
-//               x="12"
-//               y="16"
-//               textAnchor="middle"
-//               fontSize="10"
-//               fill="#FF6B00"
-//               fontWeight="bold"
-//             >
-//               ₿
-//             </text>
-//           </svg>
-//         ) : (
-//           // Alert icon for no token
-//           <svg
-//             className="h-6 w-6 text-zinc-400"
-//             fill="none"
-//             viewBox="0 0 24 24"
-//             stroke="currentColor"
-//           >
-//             <circle
-//               cx="12"
-//               cy="12"
-//               r="10"
-//               stroke="currentColor"
-//               strokeWidth="2"
-//               fill="#232323"
-//             />
-//             <path
-//               d="M12 8v4m0 4h.01"
-//               stroke="#FF6B00"
-//               strokeWidth="2"
-//               strokeLinecap="round"
-//             />
-//           </svg>
-//         )}
-//       </span>
-//       <div className="flex-1">
-//         {!isLoaded && (
-//           <span className="text-zinc-400 text-sm">
-//             Checking your connected wallet for the sBTC token...
-//           </span>
-//         )}
-//         {isLoaded && hasAnySbtc && (
-//           <span className="text-[#FF6B00] font-medium text-sm">
-//             Your connected wallet holds {formattedFakeBalance} fake
-//             tokens. Deposit your {formattedFakeBalance} fake tokens
-//             into your agent voting account.
-//           </span>
-//         )}
-//         {isLoaded && !hasAnySbtc && (
-//           <span className="text-zinc-400 text-sm flex items-center gap-2">
-//             Your connected wallet does not hold any fake tokens.
-//             <Link href="/deposit" legacyBehavior>
-//               <a className="ml-2 px-3 py-1 rounded bg-[#FF6B00] text-white text-xs font-semibold hover:bg-[#FF8533] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B00] focus-visible:ring-offset-2">
-//                 Deposit BTC
-//               </a>
-//             </Link>
-//           </span>
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
+    for (const [tokenId, tokenData] of Object.entries(fungibleTokens)) {
+      if (isFakeToken(tokenId)) {
+        const balance = Number(tokenData.balance || 0);
+        if (balance > 0) {
+          return {
+            tokenBalance: balance,
+            tokenName: getFakeTokenName(tokenId),
+          };
+        }
+      }
+    }
 
-// export default TokenTracker;
+    return { tokenBalance: 0, tokenName: "FAKE" };
+  }, [balances, address]);
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    sessionStorage.setItem(DISMISSED_KEY, "true");
+  };
+
+  // Only show if we have tokens and not dismissed
+  if (tokenBalance === 0 || isDismissed) {
+    return null;
+  }
+
+  const formattedBalance = formatBalance(tokenBalance, 8);
+
+  return (
+    <div
+      className={`fixed top-10 right-4 z-50 max-w-sm transition-all duration-300 ease-out ${
+        isDismissed ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
+      }`}
+    >
+      <div className="bg-primary/90 backdrop-blur-sm rounded-lg shadow-lg animate-in slide-in-from-right-5 duration-300 border border-white/10">
+        <div className="flex items-center gap-3 p-3">
+          {/* Token Icon */}
+          <div className="flex-shrink-0">
+            <div className="h-5 w-5 bg-white/20 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-xs">₿</span>
+            </div>
+          </div>
+
+          {/* Banner Content */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-xs font-medium leading-relaxed">
+              Deposit your{" "}
+              <span className="font-bold text-yellow-100">
+                {formattedBalance} {tokenName}
+              </span>{" "}
+              into Agent voting contract to send contribution and provide them
+              voting power
+            </p>
+          </div>
+
+          {/* Action Button */}
+          <div className="flex-shrink-0">
+            <Link href="/account?tab=wallets" onClick={handleDismiss}>
+              <span className="px-2 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-medium rounded transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-white/50 backdrop-blur-sm whitespace-nowrap cursor-pointer">
+                Deposit
+              </span>
+            </Link>
+          </div>
+
+          {/* Close Button */}
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleDismiss}
+              className="p-0.5 hover:bg-white/20 rounded-full transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-white/50"
+              aria-label="Dismiss notification"
+            >
+              <X className="h-3 w-3 text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AssetTracker;

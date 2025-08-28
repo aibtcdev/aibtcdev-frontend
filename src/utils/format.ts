@@ -193,21 +193,129 @@ export function formatTokenPrice(value: number | string): string {
   return `$${num.toFixed(2)}`;
 }
 
-export function extractMission(markdown: string): string {
-  if (!markdown) return "";
+export function extractMission(description: string): string {
+  if (!description) return "";
+
+  // Check if the description contains markdown structure
+  const hasMarkdownStructure =
+    /##\s*\w+|###\s*\w+|\*\*\w+\*\*|\n\s*[-*]\s+|\[.*\]\(.*\)/i.test(
+      description
+    );
+
+  if (!hasMarkdownStructure) {
+    // If no markdown structure detected, return the description as-is (truncated if too long)
+    return description.length > 150
+      ? description.substring(0, 150) + "..."
+      : description;
+  }
 
   // First, convert literal \n to actual newlines if needed
-  const normalizedMarkdown = markdown.includes("\\n")
-    ? markdown.replace(/\\n/g, "\n")
-    : markdown;
+  const normalizedMarkdown = description.includes("\\n")
+    ? description.replace(/\\n/g, "\n")
+    : description;
 
-  // Now try the regex with actual newlines
+  // Try to extract mission section
   const missionRegex = /##\s*Mission\s*\n\s*([\s\S]*?)(?=\n##|$)/i;
   const match = normalizedMarkdown.match(missionRegex);
 
   if (match && match[1]) {
-    return match[1].trim().replace(/\n\s*\n\s*\n/g, "\n\n"); // Normalize multiple newlines
+    const mission = match[1].trim().replace(/\n\s*\n\s*\n/g, "\n\n"); // Normalize multiple newlines
+    // Clean up markdown formatting for display
+    return cleanMarkdownForDisplay(mission);
   }
 
-  return "";
+  // If no mission section found, try to extract the first paragraph/section
+  const firstParagraphMatch = normalizedMarkdown.match(
+    /^(?:#{1,6}\s*.*\n\s*)?(.*?)(?=\n#{1,6}|$)/
+  );
+  if (firstParagraphMatch && firstParagraphMatch[1]) {
+    const firstParagraph = firstParagraphMatch[1].trim();
+    return cleanMarkdownForDisplay(firstParagraph);
+  }
+
+  // Fallback: return first 150 characters
+  return description.length > 150
+    ? description.substring(0, 150) + "..."
+    : description;
+}
+
+// Helper function to clean markdown formatting for display
+function cleanMarkdownForDisplay(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markers
+    .replace(/\*(.*?)\*/g, "$1") // Remove italic markers
+    .replace(/`(.*?)`/g, "$1") // Remove code markers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Convert links to just text
+    .replace(/\n\s*[-*]\s+/g, "\n• ") // Convert list markers to bullets
+    .replace(/\n{3,}/g, "\n\n") // Normalize multiple newlines
+    .trim();
+}
+
+// Alternative approach with more detailed detection
+export function extractMissionAdvanced(description: string): string {
+  if (!description) return "";
+
+  // Detect different types of content structure
+  const contentAnalysis = {
+    hasHeaders: /#{1,6}\s+/g.test(description),
+    hasLists: /\n\s*[-*]\s+/g.test(description),
+    hasBold: /\*\*.*?\*\*/g.test(description),
+    hasLinks: /\[.*?\]\(.*?\)/g.test(description),
+    hasNewlines: /\n/g.test(description),
+    isShort: description.length < 100,
+    hasMarkdownSyntax: /[#*`\[\]]/g.test(description),
+  };
+
+  // If it's a short description without markdown syntax, return as-is
+  if (contentAnalysis.isShort && !contentAnalysis.hasMarkdownSyntax) {
+    return description;
+  }
+
+  // If it's just a sentence or two without markdown structure
+  if (
+    !contentAnalysis.hasHeaders &&
+    !contentAnalysis.hasLists &&
+    !contentAnalysis.hasNewlines
+  ) {
+    return description.length > 150
+      ? description.substring(0, 150) + "..."
+      : description;
+  }
+
+  // Process markdown content
+  const normalizedMarkdown = description.includes("\\n")
+    ? description.replace(/\\n/g, "\n")
+    : description;
+
+  // Try to extract mission section
+  const missionRegex = /##\s*Mission\s*\n\s*([\s\S]*?)(?=\n##|$)/i;
+  const match = normalizedMarkdown.match(missionRegex);
+
+  if (match && match[1]) {
+    return cleanMarkdownForDisplay(match[1].trim());
+  }
+
+  // Extract first meaningful content block
+  const lines = normalizedMarkdown.split("\n").filter((line) => line.trim());
+  let content = "";
+
+  for (const line of lines) {
+    // Skip headers that are just titles
+    if (line.match(/^#{1,6}\s*.{1,30}$/)) continue;
+
+    // Take first substantial content
+    if (line.length > 20) {
+      content = line;
+      break;
+    }
+  }
+
+  if (content) {
+    return cleanMarkdownForDisplay(content);
+  }
+
+  // Final fallback
+  return description.length > 150
+    ? description.substring(0, 150) + "..."
+    : description;
 }

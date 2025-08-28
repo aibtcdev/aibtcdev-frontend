@@ -74,17 +74,9 @@ export default function HoldersPage() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {holdersData?.holders && holdersData.holders.length > 0 ? (
-        <DAOHolders
-          holders={holdersData.holders}
-          tokenSymbol={token?.symbol || ""}
-        />
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-zinc-400">No holders found for this DAO.</p>
-        </div>
-      )}
-    </div>
+    <DAOHolders
+      holders={holdersData?.holders || []}
+      tokenSymbol={token?.symbol || ""}
+    />
   );
 }

@@ -48,11 +48,5 @@ export default function ExtensionsPage() {
     );
   }
 
-  return (
-    <div className="max-w-[1400px] mx-auto space-y-8">
-      <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-border/30 p-4 sm:p-8">
-        <DAOExtensions extensions={extensions} />
-      </div>
-    </div>
-  );
+  return <DAOExtensions extensions={extensions} />;
 }
