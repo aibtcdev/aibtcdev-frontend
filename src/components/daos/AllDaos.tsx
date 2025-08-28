@@ -3,19 +3,19 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { useViewMode } from "@/hooks/useView";
 
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Search, Grid3X3, List, Filter } from "lucide-react";
+import {
+  Search,
+  Grid3X3,
+  List,
+  TrendingUp,
+  Users,
+  Calendar,
+  Activity,
+} from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/reusables/Pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
 import { DAOCard, DAOListItem } from "@/components/daos/DaoCard";
 import type { DAO, Holder } from "@/types";
 import {
@@ -65,87 +65,105 @@ function SearchAndFilters({
   totalResults: number;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      {/* Search */}
-      <div className="relative flex-1 max-w-md group">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
-        <Input
-          placeholder="Search DAOs by name, description, or mission..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 h-10 text-sm bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-border/80 transition-all duration-300"
-          aria-label="Search DAOs"
-        />
+    <div className="space-y-4">
+      {/* Main Toolbar - Filters Left, Search & Controls Right */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+        {/* Left Side - Filter Chips */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap self-start sm:self-center">
+            Sort by:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => onSortChange("market_cap")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                sortBy === "market_cap"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <TrendingUp className="h-3 w-3" />
+              Top Market Cap
+            </button>
+            <button
+              onClick={() => onSortChange("created")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                sortBy === "created"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Calendar className="h-3 w-3" />
+              Newest
+            </button>
+            <button
+              onClick={() => onSortChange("holders")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                sortBy === "holders"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Users className="h-3 w-3" />
+              Most Holders
+            </button>
+            <button
+              onClick={() => onSortChange("price_change")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                sortBy === "price_change"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <Activity className="h-3 w-3" />
+              Most Active
+            </button>
+          </div>
+        </div>
+
+        {/* Right Side - Search & View Controls */}
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
+            <Input
+              placeholder="Search DAOs..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-9 h-10 w-64 text-sm bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-border/80 transition-all duration-300"
+              aria-label="Search DAOs"
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-muted/30 rounded-lg p-1 flex-shrink-0">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onViewModeChange("grid")}
+              className="h-8 w-8 p-0"
+              aria-label="Grid view"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => onViewModeChange("list")}
+              className="h-8 w-8 p-0"
+              aria-label="List view"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-3">
-        {/* Results count */}
-        <span className="text-sm text-muted-foreground hidden sm:inline">
+      {/* Results Count */}
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-muted-foreground">
           {totalResults} result{totalResults !== 1 ? "s" : ""}
         </span>
-
-        {/* Sort */}
-        <Select
-          value={sortBy}
-          onValueChange={(value: SortOption) => onSortChange(value)}
-        >
-          <SelectTrigger className="w-[140px] h-10 bg-background border-border">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            <SelectItem value="name" className="text-foreground hover:bg-muted">
-              Name
-            </SelectItem>
-            <SelectItem
-              value="created"
-              className="text-foreground hover:bg-muted"
-            >
-              Newest
-            </SelectItem>
-            <SelectItem
-              value="market_cap"
-              className="text-foreground hover:bg-muted"
-            >
-              Market Cap
-            </SelectItem>
-            <SelectItem
-              value="holders"
-              className="text-foreground hover:bg-muted"
-            >
-              Holders
-            </SelectItem>
-            <SelectItem
-              value="price_change"
-              className="text-foreground hover:bg-muted"
-            >
-              Price Change
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center bg-muted/30 rounded-lg p-1">
-          <Button
-            variant={viewMode === "grid" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onViewModeChange("grid")}
-            className="h-8 w-8 p-0"
-            aria-label="Grid view"
-          >
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onViewModeChange("list")}
-            className="h-8 w-8 p-0"
-            aria-label="List view"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -154,24 +172,24 @@ function SearchAndFilters({
 function ListHeader() {
   return (
     <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
-      <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,3fr)_repeat(2,minmax(0,1fr))] lg:grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,3fr)_repeat(4,minmax(0,1fr))] items-center gap-x-4 h-10">
-        <div className="px-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[1fr_80px_100px_80px] lg:grid-cols-[1fr_80px_100px_80px_100px] items-center gap-x-2 sm:gap-x-4 h-12 px-4">
+        <div className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           DAO
         </div>
-        <div className="px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Price
         </div>
-        <div className="hidden md:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden sm:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Market Cap
         </div>
-        <div className="hidden lg:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Holders
         </div>
-        <div className="hidden xl:block px-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Contributions
+        <div className="hidden lg:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Proposals
         </div>
       </div>
-      <div className="border-b border-border/50 -mt-px" />
+      <div className="border-b border-border/50" />
     </div>
   );
 }
@@ -334,9 +352,9 @@ export default function AllDaos() {
         break;
       case "price_change":
         filtered.sort((a, b) => {
-          const changeA = tokenPrices?.[a.id]?.price24hChanges || 0;
-          const changeB = tokenPrices?.[b.id]?.price24hChanges || 0;
-          return changeB - changeA;
+          const proposalsA = proposalCounts?.[a.id] || 0;
+          const proposalsB = proposalCounts?.[b.id] || 0;
+          return proposalsB - proposalsA;
         });
         break;
       default:
@@ -345,7 +363,6 @@ export default function AllDaos() {
 
     return filtered;
   }, [daos, searchQuery, sortBy, tokenPrices, holdersMap]);
-
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
   const paginatedDAOs = filteredAndSortedDAOs.slice(
@@ -424,6 +441,31 @@ export default function AllDaos() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [currentPage, totalPages, handlePageChange, viewMode, setViewMode]);
 
+  // Helper function to get adaptive grid classes with height scaling
+  const getGridConfig = (itemCount: number) => {
+    if (itemCount === 1) {
+      return {
+        grid: "grid-cols-1 max-w-md mx-auto",
+        cardHeight: "min-h-[480px] max-h-[550px]", // Tallest for single wide card
+      };
+    } else if (itemCount === 2) {
+      return {
+        grid: "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto",
+        cardHeight: "min-h-[420px] max-h-[480px]", // Taller for 2 cards
+      };
+    } else if (itemCount === 3) {
+      return {
+        grid: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto",
+        cardHeight: "min-h-[380px] max-h-[430px]", // Medium for 3 cards
+      };
+    } else {
+      return {
+        grid: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
+        cardHeight: "min-h-[340px] max-h-[430px]", // Standard for 4+ cards
+      };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-[2400px]">
@@ -486,38 +528,44 @@ export default function AllDaos() {
           ) : (
             <>
               {viewMode === "grid" ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
-                  {paginatedDAOs.map((dao) => (
-                    <DAOCard
-                      key={dao.id}
-                      dao={dao}
-                      token={tokens?.find((t) => t.dao_id === dao.id)}
-                      tokenPrice={tokenPrices?.[dao.id]}
-                      isFetchingPrice={isFetchingTokenPrices}
-                      trades={tradesMap[dao.id]}
-                      holders={holdersMap[dao.id]}
-                      proposalCount={proposalCounts?.[dao.id]}
-                    />
-                  ))}
+                <div className="px-4">
+                  {(() => {
+                    const config = getGridConfig(paginatedDAOs.length);
+                    return (
+                      <div
+                        className={`grid gap-4 sm:gap-6 auto-rows-fr ${config.grid}`}
+                      >
+                        {paginatedDAOs.map((dao) => (
+                          <DAOCard
+                            key={dao.id}
+                            dao={dao}
+                            token={tokens?.find((t) => t.dao_id === dao.id)}
+                            tokenPrice={tokenPrices?.[dao.id]}
+                            isFetchingPrice={isFetchingTokenPrices}
+                            trades={tradesMap[dao.id]}
+                            holders={holdersMap[dao.id]}
+                            proposalCount={proposalCounts?.[dao.id]}
+                            heightClass={config.cardHeight}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
-                <div className="border border-border/50 rounded-lg overflow-hidden">
+                <div className="border border-border/50 rounded-lg overflow-hidden bg-card/30 backdrop-blur-sm">
                   <ListHeader />
                   <div className="divide-y divide-border/50">
                     {paginatedDAOs.map((dao) => (
-                      <div
+                      <DAOListItem
                         key={dao.id}
-                        className="grid grid-cols-[minmax(0,3fr)_minmax(0,1fr)] md:grid-cols-[minmax(0,3fr)_repeat(2,minmax(0,1fr))] lg:grid-cols-[minmax(0,3fr)_repeat(3,minmax(0,1fr))] xl:grid-cols-[minmax(0,3fr)_repeat(4,minmax(0,1fr))_min-content] items-center gap-x-4 h-16 hover:bg-muted/50 transition-colors"
-                      >
-                        <DAOListItem
-                          dao={dao}
-                          token={tokens?.find((t) => t.dao_id === dao.id)}
-                          tokenPrice={tokenPrices?.[dao.id]}
-                          isFetchingPrice={isFetchingTokenPrices}
-                          holders={holdersMap[dao.id]}
-                          proposalCount={proposalCounts?.[dao.id]}
-                        />
-                      </div>
+                        dao={dao}
+                        token={tokens?.find((t) => t.dao_id === dao.id)}
+                        tokenPrice={tokenPrices?.[dao.id]}
+                        isFetchingPrice={isFetchingTokenPrices}
+                        holders={holdersMap[dao.id]}
+                        proposalCount={proposalCounts?.[dao.id]}
+                      />
                     ))}
                   </div>
                 </div>
