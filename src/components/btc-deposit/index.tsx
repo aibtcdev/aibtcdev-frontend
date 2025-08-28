@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { TransactionPriority } from "@faktoryfun/styx-sdk";
-import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/reusables/Loader";
 import DepositForm from "@/components/btc-deposit/DepositForm";
 import TransactionConfirmation from "@/components/btc-deposit/TransactionConfirmation";
@@ -21,12 +20,14 @@ interface BitcoinDepositProps {
   dexContract: string;
   daoName: string;
   tokenContract: string;
+  headerOffset?: number;
 }
 
 export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
+  // headerOffset = 96,
   // tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
@@ -112,14 +113,18 @@ export default function BitcoinDeposit({
   // }
 
   return (
-    <div className="max-w-xl mx-auto">
-      <Card className="bg-card border-border/30 p-4 h-full">
+    <div
+      className="rounded-2xl border border-white/10 bg-[#141414] p-5 sm:p-6 lg:p-7 lg:sticky flex flex-col"
+      style={{
+        top: `calc(var(--header-height) + 16px)`,
+        maxHeight: "var(--available-height)",
+      }}
+    >
+      <div className="flex-1 overflow-y-auto">
         {isDataLoading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <Loader />
-            <p className="text-sm text-muted-foreground">
-              Loading deposit data...
-            </p>
+            <p className="text-sm text-zinc-400">Loading deposit data...</p>
           </div>
         ) : btcPriceError ? (
           <div className="p-4 text-center">
@@ -141,13 +146,12 @@ export default function BitcoinDeposit({
             daoName={daoName}
             userAddress={userAddress}
             dexId={dexId}
-            // tokenContract={tokenContract}
             swapType="aibtc"
             poolId="aibtc"
             aiAccountReceiver={userAgentAddress || ""}
           />
         )}
-      </Card>
+      </div>
 
       {showConfirmation && confirmationData && (
         <TransactionConfirmation
@@ -162,7 +166,6 @@ export default function BitcoinDeposit({
           refetchDepositHistory={refetchDepositHistory}
           refetchAllDeposits={refetchAllDeposits}
           aiAccountReceiver={userAgentAddress || ""}
-          // minTokenOut={minTokenOut}
           poolId="aibtc"
           swapType={swapType}
           dexId={dexId}

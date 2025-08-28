@@ -8,7 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Copy, Check, ExternalLink, Puzzle } from "lucide-react";
+import { useClipboard } from "@/hooks/useClipboard";
+import { getExplorerLink } from "@/utils/format";
 import type { Extension } from "@/types";
+import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
 
 interface DAOExtensionsProps {
   extensions: Extension[];
@@ -20,73 +25,109 @@ function formatExtensionType(type: string): string {
   return type.replace(/-/g, " ");
 }
 
-const getExplorerUrl = (txId: string) => {
-  const baseUrl = "https://explorer.hiro.so/txid";
-  const isTestnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet";
-  return `${baseUrl}/${txId}${isTestnet ? "?chain=testnet" : ""}`;
+// Helper function to truncate address for display
+const truncateAddress = (address: string, startLength = 5, endLength = 5) => {
+  if (address.length <= startLength + endLength) return address;
+  return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
+};
+
+// Helper function to extract contract name from principal
+const getContractName = (contractPrincipal: string) => {
+  const parts = contractPrincipal.split(".");
+  return parts.length > 1 ? parts[1] : contractPrincipal;
 };
 
 export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Extensions</h2>
-          <p className="text-muted-foreground mt-2">
-            Manage and monitor your DAO&apos;s active extensions and
-            capabilities
-          </p>
-        </div>
+  const { copyToClipboard, copiedText } = useClipboard();
 
-        <div className="space-y-6">
-          {extensions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Subtype</TableHead>
-                    <TableHead>Contract Principal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {extensions.map((extension) => (
-                    <TableRow key={extension.id}>
-                      <TableCell className="font-medium capitalize">
-                        {formatExtensionType(extension.type)}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {extension.subtype}
-                      </TableCell>
-                      <TableCell>
-                        {extension.contract_principal && extension.tx_id && (
+  return (
+    <DAOTabLayout
+      title="Extensions"
+      description="Manage and monitor your DAO's active extensions and capabilities"
+      icon={Puzzle}
+      isEmpty={extensions.length === 0}
+      emptyTitle="No Extensions Found"
+      emptyDescription="This DAO has no active extensions."
+      emptyIcon={Puzzle}
+    >
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Type</TableHead>
+              <TableHead>Subtype</TableHead>
+              <TableHead>Contract Name</TableHead>
+              <TableHead>Deployer</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {extensions.map((extension) => {
+              const contractName = extension.contract_principal
+                ? getContractName(extension.contract_principal)
+                : "Unknown";
+              const deployer = extension.contract_principal
+                ? extension.contract_principal.split(".")[0]
+                : "Unknown";
+
+              return (
+                <TableRow key={extension.id}>
+                  <TableCell className="font-medium capitalize">
+                    {formatExtensionType(extension.type)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {extension.subtype}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    {contractName}
+                  </TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">
+                    {truncateAddress(deployer)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {extension.contract_principal && (
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            copyToClipboard(extension.contract_principal!)
+                          }
+                          className="h-8 w-8 p-0"
+                        >
+                          {copiedText === extension.contract_principal ? (
+                            <Check className="h-4 w-4 text-primary" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                          className="h-8 w-8 p-0"
+                        >
                           <a
-                            href={getExplorerUrl(extension.tx_id)}
+                            href={getExplorerLink(
+                              "address",
+                              extension.contract_principal
+                            )}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-muted-foreground hover:text-primary transition-colors hover:underline"
                           >
-                            {extension.contract_principal}
+                            <ExternalLink className="h-4 w-4" />
                           </a>
-                        )}
-                        {!extension.tx_id && extension.contract_principal && (
-                          <span className="text-xs">
-                            {extension.contract_principal}
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-zinc-400">No extensions found.</p>
-            </div>
-          )}
-        </div>
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
-    </div>
+    </DAOTabLayout>
   );
 }

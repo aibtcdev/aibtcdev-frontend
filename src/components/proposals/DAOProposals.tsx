@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import ProposalCard from "@/components/proposals/ProposalCard";
 import type { Proposal } from "@/types";
 import { FileText } from "lucide-react";
+import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
 
 interface DAOProposalsProps {
   proposals: Proposal[];
@@ -16,38 +17,28 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
     return proposals.filter((proposal) => proposal.status === "DEPLOYED");
   }, [proposals]);
 
-  if (deployedProposals.length === 0) {
-    return (
-      <div className="border-dashed border rounded-lg py-12">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium text-foreground">
-              No Contributions Found
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              This DAO has no active or concluded contributions.
-            </p>
-          </div>
+  return (
+    <DAOTabLayout
+      title="Contributions"
+      description="Active and concluded contributions to this DAO"
+      icon={FileText}
+      isEmpty={deployedProposals.length === 0}
+      emptyTitle="No Contributions Found"
+      emptyDescription="This DAO has no active or concluded contributions."
+      emptyIcon={FileText}
+    >
+      <div className="space-y-4">
+        <div className="divide-y">
+          {deployedProposals.map((proposal) => (
+            <ProposalCard
+              key={proposal.id}
+              proposal={proposal}
+              tokenSymbol={tokenSymbol}
+            />
+          ))}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="divide-y ">
-        {deployedProposals.map((proposal) => (
-          <ProposalCard
-            key={proposal.id}
-            proposal={proposal}
-            tokenSymbol={tokenSymbol}
-          />
-        ))}
-      </div>
-    </div>
+    </DAOTabLayout>
   );
 };
 

@@ -809,7 +809,7 @@ export default function DepositForm({
   }
 
   return (
-    <div className="flex flex-col space-y-8 md:space-y-10 w-full max-w-lg mx-auto">
+    <div className="flex flex-col space-y-5 md:space-y-6 w-full max-w-lg mx-auto">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <h2 className="text-2xl font-semibold text-white">Buy ${daoName}</h2>
@@ -939,10 +939,12 @@ export default function DepositForm({
             onValueChange={(value) => setBuyWithSbtc(value === "sbtc")}
             disabled={!accessToken}
           >
-            <SelectTrigger className="w-auto bg-orange-500 hover:bg-orange-600 border-0 text-white font-medium">
+            <SelectTrigger className="w-auto bg-primary hover:bg-primary/90 border-0 text-primary-foreground font-medium">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">₿</span>
+                <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+                  <span className="text-primary-foreground text-xs font-bold">
+                    ₿
+                  </span>
                 </div>
                 <SelectValue />
               </div>
@@ -987,6 +989,8 @@ export default function DepositForm({
             }}
             className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
             disabled={!accessToken || BUY_DISABLED}
+            tabIndex={0}
+            aria-label="Set amount to maximum available balance"
           >
             MAX
           </Button>
@@ -995,55 +999,59 @@ export default function DepositForm({
 
       {/* Available Balance */}
       {accessToken && (
-        <div className="text-sm text-zinc-400">
-          Available Balance:{" "}
-          <button
-            onClick={() => {
-              const balance = buyWithSbtc ? sbtcBalance : btcBalance;
-              if (balance !== null && balance !== undefined) {
-                setAmount(balance.toFixed(8));
-                setSelectedPreset(null);
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-300">
+              Available Balance
+            </span>
+            <button
+              onClick={() => {
+                const balance = buyWithSbtc ? sbtcBalance : btcBalance;
+                if (balance !== null && balance !== undefined) {
+                  setAmount(balance.toFixed(8));
+                  setSelectedPreset(null);
+                }
+              }}
+              className="text-white font-bold hover:text-primary transition-colors"
+              disabled={
+                buyWithSbtc
+                  ? isSbtcBalanceLoading ||
+                    sbtcBalance === null ||
+                    sbtcBalance === undefined
+                  : isBalanceLoading ||
+                    btcBalance === null ||
+                    btcBalance === undefined
               }
-            }}
-            className="text-orange-500"
-            disabled={
-              buyWithSbtc
-                ? isSbtcBalanceLoading ||
-                  sbtcBalance === null ||
-                  sbtcBalance === undefined
-                : isBalanceLoading ||
-                  btcBalance === null ||
-                  btcBalance === undefined
-            }
-          >
-            {buyWithSbtc
-              ? isSbtcBalanceLoading
-                ? "Loading..."
-                : sbtcBalance !== null && sbtcBalance !== undefined
-                  ? `${sbtcBalance.toFixed(8)} sBTC`
-                  : "Unable to load balance"
-              : isBalanceLoading
-                ? "Loading..."
-                : btcBalance !== null && btcBalance !== undefined
-                  ? `${btcBalance.toFixed(8)} BTC`
-                  : "Unable to load balance"}
-          </button>
+            >
+              {buyWithSbtc
+                ? isSbtcBalanceLoading
+                  ? "Loading..."
+                  : sbtcBalance !== null && sbtcBalance !== undefined
+                    ? `${sbtcBalance.toFixed(8)} sBTC`
+                    : "Unable to load balance"
+                : isBalanceLoading
+                  ? "Loading..."
+                  : btcBalance !== null && btcBalance !== undefined
+                    ? `${btcBalance.toFixed(8)} BTC`
+                    : "Unable to load balance"}
+            </button>
+          </div>
         </div>
       )}
 
       {/* Quote display */}
-      {buyQuote && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
+        {loadingQuote ? (
+          <div className="flex items-center gap-2">
+            <Loader />
+            <span className="text-sm text-zinc-400">Fetching quote…</span>
+          </div>
+        ) : (
           <div className="text-2xl font-semibold text-white">
             {buyQuote} ${daoName}
           </div>
-          {loadingQuote && (
-            <div className="flex items-center justify-center mt-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Place Order Button */}
       <Button
@@ -1056,7 +1064,7 @@ export default function DepositForm({
           BUY_DISABLED ||
           (buyWithSbtc && (stxBalance || 0) < 0.01)
         }
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 text-lg"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
       >
         {isSubmitting ? (
           <div className="flex items-center space-x-2">
@@ -1064,7 +1072,14 @@ export default function DepositForm({
             <span>Processing...</span>
           </div>
         ) : (
-          "Place Order"
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-xs font-bold">
+                ₿
+              </span>
+            </div>
+            <span>Place Order</span>
+          </div>
         )}
       </Button>
 
@@ -1075,12 +1090,33 @@ export default function DepositForm({
       )}
 
       {accessToken && !hasAgentAccount && (
-        <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-800 text-sm">
+        <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-lg">
+          <p className="text-yellow-200 text-sm">
             Your agent account is being deployed. Please check back in a few
             minutes.
           </p>
         </div>
+      )}
+
+      {buyWithSbtc && (
+        <TransactionStatusModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            reset();
+            setActiveTxId(null);
+          }}
+          txId={activeTxId ?? undefined}
+          transactionStatus={transactionStatus}
+          transactionMessage={transactionMessage}
+          title="sBTC Transaction"
+          successTitle="Buy Order Confirmed"
+          failureTitle="Buy Order Failed"
+          successDescription={`Your transaction to buy ${daoName} tokens has been successfully confirmed.`}
+          failureDescription="The transaction could not be completed. Please check your balance and try again."
+          pendingDescription="Your transaction is being processed. This may take a few minutes."
+          onRetry={handleBuyWithSbtc}
+        />
       )}
 
       {buyWithSbtc && (

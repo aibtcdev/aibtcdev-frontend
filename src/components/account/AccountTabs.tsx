@@ -21,7 +21,7 @@ interface AccountTabsProps {
 
 export function AccountTabs({
   userAgentAddress,
-  initialTab = "wallet",
+  initialTab = "wallets",
   onTabChange,
 }: AccountTabsProps) {
   const router = useRouter();
@@ -52,11 +52,11 @@ export function AccountTabs({
       <Tabs value={activeTab} onValueChange={handleTabChange} className="">
         <TabsList className="grid w-full grid-cols-2 sticky-tabs border rounded-lg p-1">
           <TabsTrigger
-            value="wallet"
+            value="wallets"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             <LayoutDashboard className="h-4 w-4" />
-            <span className=" sm:inline">Wallet</span>
+            <span className=" sm:inline">Wallets</span>
           </TabsTrigger>
 
           <TabsTrigger
@@ -68,7 +68,7 @@ export function AccountTabs({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="wallet" className="py-6">
+        <TabsContent value="wallets" className="py-6">
           <ProfileTab agentAddress={userAgentAddress} />
         </TabsContent>
 

@@ -4,6 +4,7 @@ import type React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Info } from "lucide-react";
+import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
 
 type MarkdownComponentProps = {
   children?: React.ReactNode;
@@ -118,52 +119,31 @@ export function MissionContent({ description }: MissionContentProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-secondary/20 to-secondary/10 flex items-center justify-center">
-          <Info className="h-5 w-5 text-secondary" />
+    <DAOTabLayout
+      title="Charter"
+      description="Learn about our vision and goals"
+      icon={Info}
+      isEmpty={!description}
+      emptyTitle="No Mission Statement"
+      emptyDescription="This DAO hasn't provided a mission statement yet. Check back later for updates."
+      emptyIcon={Info}
+    >
+      {description && (
+        <div className="prose prose-invert prose-zinc max-w-none">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            className="text-muted-foreground leading-relaxed"
+            components={
+              markdownComponents as Record<
+                string,
+                React.ComponentType<MarkdownComponentProps>
+              >
+            }
+          >
+            {description.replace(/\\n/g, "\n")}
+          </ReactMarkdown>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Charter</h2>
-          <p className="text-sm text-muted-foreground">
-            Learn about our vision and goals
-          </p>
-        </div>
-      </div>
-
-      <div>
-        {description ? (
-          <div className="prose prose-invert prose-zinc max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              className="text-muted-foreground leading-relaxed"
-              components={
-                markdownComponents as Record<
-                  string,
-                  React.ComponentType<MarkdownComponentProps>
-                >
-              }
-            >
-              {description.replace(/\\n/g, "\n")}
-            </ReactMarkdown>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted/50 mb-4">
-              <Info className="h-8 w-8 text-muted-foreground/50" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-foreground">
-                No Mission Statement
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
-                This DAO hasn&apos;t provided a mission statement yet. Check
-                back later for updates.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </DAOTabLayout>
   );
 }
