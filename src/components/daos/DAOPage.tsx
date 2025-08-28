@@ -138,10 +138,10 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   if (isBasicLoading || !dao) {
     return (
       <main className="flex h-screen w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center gap-2 text-center">
           <Building2 className="h-12 w-12 text-muted-foreground/50" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">
+            <h1 className="text-xl font-semibold text-foreground">
               {isBasicLoading ? "Loading DAO..." : "DAO Not Found"}
             </h1>
             <p className="max-w-md text-muted-foreground">
@@ -203,76 +203,90 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 }
                 alt={dao.name}
               />
-              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 font-bold text-foreground text-2xl rounded-lg">
+              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-2xl rounded-lg">
                 {dao.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{dao.name}</h1>
-              <p className="text-muted-foreground mt-2">
+              <h1 className="text-4xl text-white">{dao.name}</h1>
+              <p className="text-zinc-400 mt-2 text-sm">
                 {extractMission(dao.mission)}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="w-full bg-muted rounded-lg">
-                <div className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-                  <div className="flex items-center justify-center gap-2 py-2 px-4">
-                    <span className="text-xs font-medium text-white">
-                      Price
-                    </span>
-                    <span className="text-lg font-bold text-white">
-                      {formatTokenPrice(enhancedMarketStats.price)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 py-2 px-4">
-                    <span className="text-xs font-medium text-white">
-                      Market Cap
-                    </span>
-                    <span className="text-lg font-bold text-white">
-                      ${formatNumber(enhancedMarketStats.marketCap)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 py-2 px-4">
-                    <span className="text-xs font-medium text-white">
-                      Holders
-                    </span>
-                    <span className="text-lg font-bold text-white">
-                      {formatNumber(enhancedMarketStats.holderCount)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 py-2 px-4">
-                    <span className="text-xs font-medium text-white">
-                      Contributions
-                    </span>
-                    <span className="text-lg font-bold text-white">
-                      {formatNumber(totalProposals)}
-                    </span>
-                  </div>
+          {/* Token Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-7">
+            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
+              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
+                <span className="text-xs">Price: </span>
+                {formatTokenPrice(enhancedMarketStats.price)}
+              </div>
+            </div>
+            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
+              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
+                <span className="text-xs">Market Cap: </span>$
+                {formatNumber(enhancedMarketStats.marketCap)}
+              </div>
+            </div>
+            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
+              <div className="min-w-0 flex items-center justify-center text-center">
+                <div className="text-xs">
+                  Holders: {Math.floor(enhancedMarketStats.holderCount)}
                 </div>
               </div>
-              <ProposalSubmission daoId={dao.id} daoName={dao.name} />
             </div>
-            <div className="lg:col-span-1 ">
-              {dexContract && (
-                <BitcoinDeposit
-                  dexContract={dexContract}
-                  tokenContract={dexContract}
-                  daoName={dao.name}
-                  dexId={1}
-                />
-              )}
+            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
+              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
+                <span className="text-xs">Contributions: </span>
+                {totalProposals}
+              </div>
             </div>
           </div>
 
+          {/* Two-column grid layout with viewport calculations */}
+          <div
+            className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-7 items-start"
+            style={
+              {
+                "--header-height": "96px",
+                "--tabs-height": "60px",
+                "--vertical-gap": "24px",
+                "--submit-cta-height": "56px",
+                "--cta-spacing": "16px",
+                "--available-height":
+                  "calc(100dvh - var(--header-height) - var(--tabs-height) - var(--vertical-gap) - 120px)",
+              } as React.CSSProperties
+            }
+          >
+            {/* Left column - Submit Contribution */}
+            <div className="order-2 lg:order-1">
+              <ProposalSubmission
+                daoId={dao.id}
+                daoName={dao.name}
+                headerOffset={96}
+              />
+            </div>
+
+            {/* Right column - Buy Panel */}
+            <div className="order-1 lg:order-2">
+              <BitcoinDeposit
+                dexId={1}
+                dexContract={dexContract || ""}
+                daoName={dao.name}
+                tokenContract={dexContract || ""}
+                headerOffset={96}
+              />
+            </div>
+          </div>
+
+          {/* Tabs outside the grid */}
           <Tabs
             defaultValue={defaultTabValue}
             value={pathname}
-            className="w-full"
+            className="w-full mt-0.5"
           >
-            <TabsList className="grid w-full grid-cols-4 h-auto mb-6">
+            <TabsList className="grid w-full grid-cols-4 h-auto mb-3 sticky bottom-0 bg-muted/95  mt-0 backdrop-blur-sm ">
               {navItems.map((item) => (
                 <TabsTrigger
                   key={item.label}

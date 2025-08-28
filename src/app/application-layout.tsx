@@ -247,7 +247,7 @@ export default function ApplicationLayout({
                   href={item.href}
                   onClick={(e) => handleNavigation(item.href, e)}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-300 ease-in-out relative group whitespace-nowrap",
+                    "flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-all duration-300 ease-in-out relative group whitespace-nowrap",
                     "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
                     isActive
                       ? "text-primary-foreground bg-primary shadow-lg hover:shadow-xl hover:shadow-primary/20"
