@@ -45,28 +45,22 @@ interface DAOHoldersProps {
 }
 
 export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("balance");
+  // const [searchQuery, setSearchQuery] = useState("");
+  // const [sortBy, setSortBy] = useState("balance");
   const { copyToClipboard, copiedText } = useClipboard();
 
-  const filteredHolders = useMemo(() => {
-    return holders.filter((holder) =>
-      holder.address.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [holders, searchQuery]);
+  // const filteredHolders = useMemo(() => {
+  //   return holders.filter((holder) =>
+  //     holder.address.toLowerCase().includes(searchQuery.toLowerCase())
+  //   );
+  // }, [holders, searchQuery]);
 
+  // Sort by balance by default (highest to lowest)
   const sortedHolders = useMemo(() => {
-    return [...filteredHolders].sort((a, b) => {
-      switch (sortBy) {
-        case "balance":
-          return Number.parseFloat(b.balance) - Number.parseFloat(a.balance);
-        case "percentage":
-          return b.percentage - a.percentage;
-        default:
-          return 0;
-      }
+    return [...holders].sort((a, b) => {
+      return Number.parseFloat(b.balance) - Number.parseFloat(a.balance);
     });
-  }, [filteredHolders, sortBy]);
+  }, [holders]);
 
   // const toolbar = (
   //   <div className="flex flex-col gap-4 sm:items-end">
