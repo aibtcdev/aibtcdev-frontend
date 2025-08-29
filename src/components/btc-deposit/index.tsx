@@ -114,7 +114,7 @@ export default function BitcoinDeposit({
 
   return (
     <div
-      className="rounded-2xl border border-white/10 bg-[#141414] p-5 sm:p-6 lg:p-7 lg:sticky flex flex-col"
+      className="rounded-2xl bg-muted/10 p-5 sm:p-6 lg:p-7 lg:sticky flex flex-col"
       style={{
         top: `calc(var(--header-height) + 16px)`,
         maxHeight: "var(--available-height)",

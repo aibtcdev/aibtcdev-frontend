@@ -733,8 +733,8 @@ function VoteCard({ vote }: VoteCardProps) {
                 </div>
               </div>
 
-              {/* Progress Bar */}
-              {voteDisplayData && (
+              {/* Progress Bar - Hide when status is pending */}
+              {voteDisplayData && proposalStatus !== "PENDING" && (
                 <div className="space-y-2">
                   <div className="relative">
                     {/* Background bar */}

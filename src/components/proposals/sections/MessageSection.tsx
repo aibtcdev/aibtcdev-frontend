@@ -21,7 +21,7 @@ export function MessageSection({
 
   // Extract reference link from content
   const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
-  const airdropReferenceRegex = /Airdrop Reference:\s*(https?:\/\/\S+)/i;
+  const airdropReferenceRegex = /Airdrop Transaction ID:\s*(0x[a-fA-F0-9]+)/i;
   const match = proposal.content.match(referenceRegex);
   const airdropMatch = proposal.content.match(airdropReferenceRegex);
   const referenceLink = match?.[1];
@@ -66,8 +66,11 @@ export function MessageSection({
             )}
             {airdropReferenceLink && (
               <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/50">
+                <div className="text-xs text-muted-foreground mb-1">
+                  Airdrop Transaction ID
+                </div>
                 <a
-                  href={airdropReferenceLink}
+                  href={`https://explorer.hiro.so/txid/${airdropReferenceLink}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"

@@ -34,17 +34,24 @@ export default function ProposalCard({
   // Use the unified status system
   const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
 
-  // Memoize vote summary
+  // Memoize vote summary - don't default to 0, handle null/undefined properly
   const voteSummary = useMemo(() => {
-    const votesFor = Number(proposal.votes_for || 0);
-    const votesAgainst = Number(proposal.votes_against || 0);
+    const votesFor = proposal.votes_for ? Number(proposal.votes_for) : 0;
+    const votesAgainst = proposal.votes_against
+      ? Number(proposal.votes_against)
+      : 0;
     const totalVotes = votesFor + votesAgainst;
-    return { votesFor, votesAgainst, totalVotes };
+    const hasVoteData =
+      proposal.votes_for !== null &&
+      proposal.votes_for !== undefined &&
+      proposal.votes_against !== null &&
+      proposal.votes_against !== undefined;
+    return { votesFor, votesAgainst, totalVotes, hasVoteData };
   }, [proposal.votes_for, proposal.votes_against]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
   const liquidTokens = Number(proposal.liquid_tokens || 0);
-  const { votesFor, votesAgainst, totalVotes } = voteSummary;
+  const { votesFor, votesAgainst, totalVotes, hasVoteData } = voteSummary;
 
   // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
   const forPercentage = liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
@@ -79,7 +86,7 @@ export default function ProposalCard({
       href={`/proposals/${proposal.id}`}
       className="block group cursor-pointer"
     >
-      <div className="p-4 sm:p-6 group-hover:bg-muted/20 transition-colors duration-300">
+      <div className="p-4 sm:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -96,40 +103,123 @@ export default function ProposalCard({
               />
             </div>
 
+            {/* Reference Links - Extract from content and display below title */}
+            {(() => {
+              if (!proposal.content) return null;
+
+              const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+              const airdropReferenceRegex =
+                /Airdrop Transaction ID:\s*(0x[a-fA-F0-9]+)/i;
+              const referenceMatch = proposal.content.match(referenceRegex);
+              const airdropMatch = proposal.content.match(
+                airdropReferenceRegex
+              );
+              const referenceLink = referenceMatch?.[1];
+              const airdropTxId = airdropMatch?.[1];
+
+              if (!referenceLink && !airdropTxId) return null;
+
+              return (
+                <div className="space-y-3 mb-4">
+                  {referenceLink && (
+                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Reference
+                      </div>
+                      <span
+                        role="link"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(
+                            referenceLink,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        <svg
+                          className="h-4 w-4 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        <span className="inline-block max-w-full break-all">
+                          {referenceLink}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {airdropTxId && (
+                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Airdrop Transaction ID
+                      </div>
+                      <span
+                        role="link"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(
+                            `https://explorer.hiro.so/txid/${airdropTxId}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        <svg
+                          className="h-4 w-4 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        <span className="inline-block max-w-full break-all">
+                          {airdropTxId}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {proposal.summary && (
-              <div className="text-sm text-foreground/75 mb-3 break-words overflow-hidden">
+              <div className="text-base text-foreground/75 mb-3 break-words overflow-hidden">
                 {(() => {
-                  // Find first URL in the summary
-                  const urlMatch = proposal.summary.match(/(https?:\/\/\S+)/);
-                  // Text before the URL
-                  const textBefore = urlMatch
-                    ? proposal.summary.split(urlMatch[0])[0]
-                    : proposal.summary;
-                  return (
-                    <>
-                      <span className="break-words">{textBefore.trim()}</span>
-                      {urlMatch && (
-                        <>
-                          {" "}
-                          <span
-                            role="link"
-                            className="text-primary underline cursor-pointer break-all inline-block"
-                            onClick={(e) => {
-                              e.preventDefault(); // Prevent default link behavior
-                              e.stopPropagation(); // Stop event from bubbling up
-                              window.open(
-                                urlMatch[0],
-                                "_blank",
-                                "noopener,noreferrer"
-                              );
-                            }}
-                          >
-                            {urlMatch[0]}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  );
+                  if (!proposal.content) return proposal.summary;
+
+                  // Remove reference links from summary since we show them separately
+                  const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+                  const airdropReferenceRegex =
+                    /Airdrop Transaction ID:\s*(0x[a-fA-F0-9]+)/i;
+
+                  let cleanedSummary = proposal.summary
+                    .replace(referenceRegex, "")
+                    .replace(airdropReferenceRegex, "")
+                    .trim();
+
+                  // Remove any remaining URLs from summary
+                  cleanedSummary = cleanedSummary
+                    .replace(/(https?:\/\/\S+)/g, "")
+                    .trim();
+
+                  return <span className="break-words">{cleanedSummary}</span>;
                 })()}
               </div>
             )}
@@ -182,7 +272,7 @@ export default function ProposalCard({
                 : "Unknown date"}
             </span>
           </div>
-          {totalVotes > 0 && (
+          {hasVoteData && totalVotes > 0 && (
             <div className="flex items-center gap-1 min-w-0 max-w-[80px] sm:max-w-none">
               <BarChart3 className="h-3 w-3 flex-shrink-0" />
               <TokenBalance variant="abbreviated" value={totalVotes} />
@@ -191,7 +281,7 @@ export default function ProposalCard({
         </div>
 
         {/* Voting Progress for Active Proposals */}
-        {isActive && totalVotes > 0 && (
+        {isActive && hasVoteData && totalVotes > 0 && (
           <div className="space-y-2 sm:space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
@@ -225,7 +315,7 @@ export default function ProposalCard({
         )}
 
         {/* Completed Status */}
-        {isPassed && (
+        {/* {isPassed && (
           <div className="text-sm">
             <span className="text-foreground/75">Final result: </span>
             <span className="font-medium">
@@ -239,15 +329,15 @@ export default function ProposalCard({
               </span>
             </span>
           </div>
-        )}
+        )} */}
 
-        {/* Enhanced Chart Section for detailed view */}
+        {/* Enhanced Chart Section for detailed view - Hide for pending proposals */}
         {(isActive ||
           statusConfig.label === "Veto Period" ||
           statusConfig.label === "Execution Window" ||
           isPassed ||
           statusConfig.label === "Failed") &&
-          totalVotes > 0 && (
+          statusConfig.label !== "Pending" && (
             <div className="">
               <VoteStatusChart
                 votesFor={proposal.votes_for}
