@@ -14,7 +14,7 @@ async function fetchApprovals(
     contractIds.map(async (targetContractId) => {
       const res = await fetch(
         // `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${agentAddr}/${agentName}/is-approved-contract`,
-        `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${agentAddr}/${agentName}/get-agent-permissions`,
+        `https://aibtcdev-cache-preview.hosting-962.workers.dev/contract-calls/read-only/${agentAddr}/${agentName}/get-agent-permissions`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

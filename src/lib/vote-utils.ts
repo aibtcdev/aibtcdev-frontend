@@ -27,7 +27,7 @@ export async function getProposalVotes(
   // Call the endpoint with POST method and the correct request body format
   const response = await fetch(
     // `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`,
-    `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
+    `https://aibtcdev-cache-preview.hosting-962.workers.dev/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
     {
       method: "POST",
       headers: {
