@@ -14,7 +14,6 @@ import type {
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
 import { Loader } from "@/components/reusables/Loader";
-import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,6 +165,7 @@ export default function DepositForm({
 
   // Get session state from Zustand store
   const { accessToken, isLoading } = useAuth();
+  const hasAccessToken = !!accessToken && !isLoading;
 
   // Get addresses from the lib - only if we have a session
   const { userAgentAddress } = useAgentAccount();
@@ -194,7 +194,9 @@ export default function DepositForm({
       const data = await response.json();
       return parseInt(data.stx.balance) / 10 ** 6;
     },
-    enabled: !!userAddress && buyWithSbtc,
+    enabled: hasAccessToken && !!userAddress && buyWithSbtc,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const { data: sbtcBalance, isLoading: isSbtcBalanceLoading } = useQuery<
@@ -222,7 +224,10 @@ export default function DepositForm({
 
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
-      if (!dexContract || !userAddress) return null;
+      if (!dexContract) return null;
+      // Use a default address for quote calculation when not authenticated
+      const senderAddress =
+        userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
       const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = parseFloat(amount) * Math.pow(10, 8);
@@ -234,7 +239,7 @@ export default function DepositForm({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            sender: userAddress,
+            sender: senderAddress,
             arguments: [cvToHex(uintCV(btcAmount))],
           }),
         });
@@ -327,9 +332,10 @@ export default function DepositForm({
       );
       return totalSats / 100000000;
     },
-    enabled: !!btcAddress && !buyWithSbtc,
+    enabled: hasAccessToken && !!btcAddress && !buyWithSbtc,
     staleTime: 40 * 60 * 1000,
     retry: 2,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -820,7 +826,8 @@ export default function DepositForm({
         </div>
       </div>
 
-      {accessToken && (userAddress || btcAddress) && (
+      {/* Show dialog when authenticated and has addresses */}
+      {hasAccessToken && (userAddress || btcAddress) && (
         <Dialog open={isAgentDetailsOpen} onOpenChange={setIsAgentDetailsOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -926,7 +933,7 @@ export default function DepositForm({
               onChange={handleAmountChange}
               placeholder="0.0006"
               className="text-4xl font-light bg-transparent border-0 p-0 h-auto text-white placeholder:text-zinc-500 focus-visible:ring-0"
-              disabled={!accessToken || BUY_DISABLED}
+              disabled={!hasAccessToken || BUY_DISABLED}
             />
             <div className="text-sm text-zinc-400 mt-1">
               {formatUsdValue(calculateUsdValue(amount))} ~
@@ -937,7 +944,7 @@ export default function DepositForm({
           <Select
             value={buyWithSbtc ? "sbtc" : "btc"}
             onValueChange={(value) => setBuyWithSbtc(value === "sbtc")}
-            disabled={!accessToken}
+            disabled={!hasAccessToken}
           >
             <SelectTrigger className="w-auto bg-primary hover:bg-primary/90 border-0 text-primary-foreground font-medium">
               <div className="flex items-center gap-2">
@@ -997,13 +1004,13 @@ export default function DepositForm({
         </div>
       </div>
 
-      {/* Available Balance */}
-      {accessToken && (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-300">
-              Available Balance
-            </span>
+      {/* Available Balance - Show disabled version when not authenticated */}
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-zinc-300">
+            Available Balance
+          </span>
+          {hasAccessToken ? (
             <button
               onClick={() => {
                 const balance = buyWithSbtc ? sbtcBalance : btcBalance;
@@ -1035,20 +1042,26 @@ export default function DepositForm({
                     ? `${btcBalance.toFixed(8)} BTC`
                     : "Unable to load balance"}
             </button>
-          </div>
+          ) : (
+            <span className="text-zinc-500 font-bold">N/A</span>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Quote display */}
       <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
-        {loadingQuote ? (
+        {!hasAccessToken ? (
+          <div className="text-2xl font-semibold text-zinc-500">
+            0 {daoName}
+          </div>
+        ) : loadingQuote ? (
           <div className="flex items-center gap-2">
             <Loader />
             <span className="text-sm text-zinc-400">Fetching quote…</span>
           </div>
         ) : (
           <div className="text-2xl font-semibold text-white">
-            {buyQuote} ${daoName}
+            {buyQuote || "0.00"} ${daoName}
           </div>
         )}
       </div>
@@ -1057,7 +1070,7 @@ export default function DepositForm({
       <Button
         onClick={handleDepositConfirm}
         disabled={
-          !accessToken ||
+          !hasAccessToken ||
           !hasAgentAccount ||
           parseFloat(amount) <= 0 ||
           isSubmitting ||
@@ -1078,18 +1091,16 @@ export default function DepositForm({
                 ₿
               </span>
             </div>
-            <span>Place Order</span>
+            {hasAccessToken ? (
+              <span>Place Order</span>
+            ) : (
+              <span>Connect wallet to Place Order</span>
+            )}
           </div>
         )}
       </Button>
 
-      {!accessToken && (
-        <div className="text-center">
-          <AuthButton />
-        </div>
-      )}
-
-      {accessToken && !hasAgentAccount && (
+      {hasAccessToken && !hasAgentAccount && (
         <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-lg">
           <p className="text-yellow-200 text-sm">
             Your agent account is being deployed. Please check back in a few
