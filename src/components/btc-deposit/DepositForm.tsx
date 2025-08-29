@@ -14,7 +14,6 @@ import type {
 import { MIN_DEPOSIT_SATS, MAX_DEPOSIT_SATS } from "@faktoryfun/styx-sdk";
 import { useToast } from "@/hooks/useToast";
 import { Loader } from "@/components/reusables/Loader";
-import AuthButton from "@/components/home/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -256,7 +255,7 @@ export default function DepositForm({
         return null;
       }
     },
-    [userAddress, dexContract, hasAccessToken]
+    [userAddress, dexContract]
   );
 
   useEffect(() => {
