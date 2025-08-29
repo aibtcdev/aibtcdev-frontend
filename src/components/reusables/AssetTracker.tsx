@@ -96,7 +96,7 @@ const AssetTracker = () => {
 
   return (
     <div
-      className={`fixed top-10 right-4 z-50 max-w-sm transition-all duration-300 ease-out ${
+      className={`fixed top-16 right-4 z-50 max-w-sm transition-all duration-300 ease-out ${
         isDismissed ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       }`}
     >

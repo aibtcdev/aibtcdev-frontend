@@ -5,13 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ThumbsUp, ThumbsDown, RefreshCw, Info } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface VoteStatusChartProps {
   votesFor?: string;
@@ -39,16 +33,11 @@ const VoteStatusChart = ({
   const [bustCache, setBustCache] = useState(false); // Add state to control cache busting
   const queryClient = useQueryClient();
 
-  // Memoize initial votes parsing
+  // Memoize initial votes - no parsing needed, no defaults to 0
   const initialParsedVotes = useMemo(() => {
-    const parsedFor = initialVotesFor ? initialVotesFor.replace(/n$/, "") : "0";
-    const parsedAgainst = initialVotesAgainst
-      ? initialVotesAgainst.replace(/n$/, "")
-      : "0";
-
     return {
-      votesFor: parsedFor,
-      votesAgainst: parsedAgainst,
+      votesFor: initialVotesFor || null,
+      votesAgainst: initialVotesAgainst || null,
     };
   }, [initialVotesFor, initialVotesAgainst]);
 
@@ -134,8 +123,18 @@ const VoteStatusChart = ({
 
   // Memoize vote calculations to prevent unnecessary recalculations
   const voteCalculations = useMemo(() => {
-    const votesForNum = Number(parsedVotes.votesFor) || 0;
-    const votesAgainstNum = Number(parsedVotes.votesAgainst) || 0;
+    // Don't default to 0 - return null if votes are not available
+    const votesForNum = parsedVotes.votesFor
+      ? Number(parsedVotes.votesFor)
+      : null;
+    const votesAgainstNum = parsedVotes.votesAgainst
+      ? Number(parsedVotes.votesAgainst)
+      : null;
+
+    // If either vote count is null, we're still loading
+    if (votesForNum === null || votesAgainstNum === null) {
+      return null;
+    }
     const totalVotes = votesForNum + votesAgainstNum;
     const liquidTokensNum = Number(liquidTokens) || 0;
 
@@ -170,19 +169,20 @@ const VoteStatusChart = ({
     };
   }, [parsedVotes, liquidTokens]);
 
-  // Update parsed votes when data changes
+  // Update parsed votes when data changes - don't default to "0"
   useEffect(() => {
     if (data) {
       setParsedVotes({
-        votesFor: data.votesFor || "0",
-        votesAgainst: data.votesAgainst || "0",
+        votesFor: data.votesFor || null,
+        votesAgainst: data.votesAgainst || null,
       });
     }
   }, [data]);
 
   const isRefreshingAny = localRefreshing || refreshing;
 
-  if (isLoading && !isRefreshingAny) {
+  // Show loading state if data is loading OR if vote calculations are null (votes not available)
+  if ((isLoading && !isRefreshingAny) || !voteCalculations) {
     return (
       <div className="space-y-2">
         <div className="h-3 sm:h-4 bg-muted rounded-full animate-pulse"></div>
@@ -238,223 +238,80 @@ const VoteStatusChart = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-end text-xs space-x-1">
-        <span className="text-muted-foreground">Total Liquid:</span>
-        <TokenBalance
-          value={liquidTokens}
-          symbol={tokenSymbol}
-          decimals={8}
-          variant="abbreviated"
-          showSymbol={false}
-          className="truncate text-right"
-        />
-      </div>
-
-      <div className="relative h-3 sm:h-4 bg-muted rounded-md overflow-hidden">
-        {voteCalculations.totalVotes > 0 ? (
-          <>
-            {/* For votes */}
+      {/* Progress Bar - Match VotesView.tsx design */}
+      <div className="space-y-2">
+        <div className="relative">
+          {/* Background bar */}
+          <div className="h-6 bg-muted rounded-lg overflow-hidden">
+            {/* Votes for (green) */}
             <div
-              className="absolute h-full bg-success/80 left-0 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
-              style={{ width: `${voteCalculations.barPercentageFor}%` }}
-            >
-              {voteCalculations.barPercentageFor && (
-                <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
-                  <ThumbsUp className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">
-                    {voteCalculations.barPercentageFor.toFixed(1)}%
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Against votes */}
-            <div
-              className="absolute h-full bg-destructive/80 transition-all duration-500 ease-out flex items-center justify-start pl-1 sm:pl-2"
+              className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
+                voteCalculations.votesForNum > 0 ? "rounded-l-lg" : ""
+              } ${
+                voteCalculations.votesAgainstNum === 0 &&
+                voteCalculations.votesForNum > 0
+                  ? "rounded-r-lg"
+                  : ""
+              }`}
               style={{
-                width: `${voteCalculations.barPercentageAgainst}%`,
-                left: `${voteCalculations.barPercentageFor}%`,
+                width: `${Math.min(voteCalculations.barPercentageFor, 100)}%`,
               }}
-            >
-              {voteCalculations.barPercentageAgainst >= 4 && (
-                <div className="flex items-center gap-0.5 sm:gap-1 text-white text-xs font-medium">
-                  <ThumbsDown className="h-1.5 w-1.5 sm:h-2 sm:w-2" />
-                  <span className="hidden sm:inline">
-                    {voteCalculations.barPercentageAgainst.toFixed(1)}%
-                  </span>
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full bg-muted/50"></div>
-        )}
-      </div>
-
-      {/* Mobile: Stacked Layout */}
-      <div className="space-y-2 sm:hidden text-xs">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-success flex-shrink-0"></div>
-            <span className="text-foreground/75">For:</span>
-          </div>
-          <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-            <TokenBalance
-              value={parsedVotes.votesFor}
-              symbol={tokenSymbol}
-              decimals={8}
-              variant="abbreviated"
-              showSymbol={false}
-              className="truncate text-right"
             />
-            <span className="text-success font-medium flex-shrink-0 text-xs">
-              ({voteCalculations.barPercentageFor.toFixed(1)}%)
-            </span>
+            {/* Votes against (red) */}
+            <div
+              className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
+                voteCalculations.votesAgainstNum > 0 &&
+                voteCalculations.votesForNum === 0
+                  ? "rounded-l-lg"
+                  : ""
+              } ${voteCalculations.votesAgainstNum > 0 ? "rounded-r-lg" : ""}`}
+              style={{
+                width: `${Math.min(voteCalculations.barPercentageAgainst, 100)}%`,
+                left: `${Math.min(voteCalculations.barPercentageFor, 100)}%`,
+              }}
+            />
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0"></div>
-            <span className="text-foreground/75">Against:</span>
-          </div>
-          <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-            <TokenBalance
-              value={parsedVotes.votesAgainst}
-              symbol={tokenSymbol}
-              decimals={8}
-              variant="abbreviated"
-              showSymbol={false}
-              className="truncate text-right"
-            />
-            <span className="text-destructive font-medium flex-shrink-0 text-xs">
-              ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <div className="w-2 h-2 rounded-full bg-muted flex-shrink-0"></div>
-            <span className="text-foreground/75">Not Voted:</span>
-          </div>
-          <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
-            <TokenBalance
-              value={voteCalculations.unvotedTokensNum.toString()}
-              symbol={tokenSymbol}
-              decimals={8}
-              variant="abbreviated"
-              showSymbol={false}
-              className="truncate text-right"
-            />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-pointer flex-shrink-0">
-                    <Info className="h-3 w-3 text-foreground/75" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs max-w-xs">
-                  <p>
-                    Total liquid tokens available for contribution voting.
-                    <br />
-                    {(
-                      100 -
-                      voteCalculations.liquidPercentageFor -
-                      voteCalculations.liquidPercentageAgainst
-                    ).toFixed(1)}
-                    % have not voted.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop: Grid Layout */}
-      <div className="hidden sm:grid grid-cols-3 gap-2 text-xs">
-        <div className="min-w-0">
-          <div className="flex flex-col gap-1">
+        {/* Vote breakdown */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-success flex-shrink-0"></div>
-              <span className="text-foreground/75">For:</span>
-            </div>
-            <div className="flex items-center gap-1 min-w-0">
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <span>For: </span>
               <TokenBalance
-                value={parsedVotes.votesFor}
+                value={parsedVotes.votesFor || "0"}
                 symbol={tokenSymbol}
                 decimals={8}
                 variant="abbreviated"
                 showSymbol={false}
-                className="truncate"
+                className=""
               />
-              <span className="text-success font-medium flex-shrink-0">
-                ({voteCalculations.barPercentageFor.toFixed(1)}%)
-              </span>
             </div>
-          </div>
-        </div>
-
-        <div className="min-w-0">
-          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0"></div>
-              <span className="text-foreground/75">Against:</span>
-            </div>
-            <div className="flex items-center gap-1 min-w-0">
+              <div className="w-2 h-2 bg-red-500 rounded-full" />
+              <span>Against: </span>
               <TokenBalance
-                value={parsedVotes.votesAgainst}
+                value={parsedVotes.votesAgainst || "0"}
                 symbol={tokenSymbol}
                 decimals={8}
                 variant="abbreviated"
                 showSymbol={false}
-                className="truncate"
+                className=""
               />
-              <span className="text-destructive font-medium flex-shrink-0">
-                ({voteCalculations.barPercentageAgainst.toFixed(1)}%)
-              </span>
             </div>
           </div>
-        </div>
-
-        <div className="min-w-0">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-muted flex-shrink-0"></div>
-              <span className="text-foreground/75">Not Voted:</span>
-            </div>
-            <div className="flex items-center gap-1 min-w-0">
-              <TokenBalance
-                value={voteCalculations.unvotedTokensNum.toString()}
-                symbol={tokenSymbol}
-                decimals={8}
-                variant="abbreviated"
-                showSymbol={false}
-                className="truncate"
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="cursor-pointer flex-shrink-0">
-                      <Info className="h-3.5 w-3.5 text-foreground/75" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs max-w-xs">
-                    <p>
-                      Total liquid tokens available for contribution voting.
-                      <br />
-                      {(
-                        100 -
-                        voteCalculations.liquidPercentageFor -
-                        voteCalculations.liquidPercentageAgainst
-                      ).toFixed(1)}
-                      % have not voted.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-blue-600 rounded-full" />
+            <span>Liquid Token: </span>
+            <TokenBalance
+              value={liquidTokens}
+              symbol={tokenSymbol}
+              decimals={8}
+              variant="abbreviated"
+              showSymbol={false}
+              className=""
+            />
           </div>
         </div>
       </div>

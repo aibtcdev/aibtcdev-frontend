@@ -433,12 +433,8 @@ export function ProposalSubmission({
       ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
 
-    // Clean the final message to ensure no invisible characters
-    const cleanMessage = `${contribution.trim()}${twitterReference}`
-      .replace(/[\u200B-\u200D\uFEFF]/g, "")
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "")
-      .normalize("NFC")
-      .trim();
+    // Simple message construction - just trim
+    const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
 
     return {
       agent_account_contract: userAgent.account_contract,
@@ -552,7 +548,7 @@ export function ProposalSubmission({
   return (
     <>
       <div
-        className="rounded-2xl border-t border-l border-white/10  mb- sm:p-6 lg:p-7 flex flex-col"
+        className="rounded-2xl bg-muted/10 border-white/10  mb- sm:p-6 lg:p-7 flex flex-col"
         style={{
           maxHeight: "var(--available-height)",
         }}
@@ -618,23 +614,11 @@ export function ProposalSubmission({
               <textarea
                 value={contribution}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Clean the input to remove invisible characters and normalize whitespace
-                  const cleanedValue = value
-                    // Remove zero-width characters and other invisible Unicode characters
-                    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-                    // Remove other control characters except newlines and tabs
-                    .replace(
-                      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-                      ""
-                    )
-                    // Normalize Unicode characters
-                    .normalize("NFC");
-                  setContribution(cleanedValue);
+                  setContribution(e.target.value);
                 }}
                 placeholder={
                   hasAccessToken
-                    ? "Describt what you contributed. What did you create or share? Why does it matter?"
+                    ? "Describe what you contributed. What did you create or share? Why does it matter?"
                     : "Connect your wallet to create a contribution"
                 }
                 className={`w-full min-h-[100px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
@@ -824,7 +808,7 @@ export function ProposalSubmission({
                 isLoadingExtensions ||
                 isLoadingAgents
               }
-              className="w-full rounded-xl bg-primary text-white font-medium border-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-0"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
               style={{ height: "var(--submit-cta-height)" }}
             >
               {isSubmitting ? (
