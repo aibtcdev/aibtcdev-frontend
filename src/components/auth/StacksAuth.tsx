@@ -248,7 +248,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         onClick={handleAuth}
         disabled={isLoading}
         variant="primary"
-        className="flex items-center gap-1 px-2 py-1 sm:px-6 sm:py-3 text-xs sm:text-base font-inter font-bold text-primary-foreground bg-primary rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 ease-in-out motion-reduce:transition-none"
+        className="flex items-center gap-1 px-2 py-1 sm:px-6 sm:py-3 text-xs sm:text-base font-inter font-bold text-primary-foreground bg-primary rounded-md sm:rounded-md hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 ease-in-out motion-reduce:transition-none"
         aria-label={isLoading ? "Connecting wallet" : "Connect wallet"}
       >
         {isLoading ? (
