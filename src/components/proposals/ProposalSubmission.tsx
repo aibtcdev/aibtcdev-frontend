@@ -247,6 +247,9 @@ export function ProposalSubmission({
 
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
 
+  // Determine if user has access token
+  const hasAccessToken = !!accessToken && !isSessionLoading;
+
   // Error code mapping
   const errorDetailsArray = getAllErrorDetails();
   const errorCodeMap = errorDetailsArray.reduce(
@@ -260,14 +263,20 @@ export function ProposalSubmission({
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
     queryKey: ["daoExtensions", daoId],
     queryFn: () => fetchDAOExtensions(daoId),
+    enabled: hasAccessToken, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Fetch user's DAO Manager agent
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents"],
     queryFn: fetchAgents,
+    enabled: hasAccessToken, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Fetch airdrops by sender address to check for matches
@@ -275,8 +284,10 @@ export function ProposalSubmission({
     queryKey: ["airdrops", "sender", stacksAddress],
     queryFn: () => fetchAirdropsBySender(stacksAddress!),
     // queryFn: () => fetchAirdropsBySender(),
-    enabled: !!stacksAddress,
+    enabled: hasAccessToken && !!stacksAddress, // Only fetch when authenticated and address available
     staleTime: 5 * 60 * 1000, // 5 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Twitter URL validation
@@ -302,8 +313,12 @@ export function ProposalSubmission({
 
   // Get connected wallet address
   useEffect(() => {
-    setStacksAddress(getStacksAddress());
-  }, []);
+    if (hasAccessToken) {
+      setStacksAddress(getStacksAddress());
+    } else {
+      setStacksAddress(null); // Clear address when not authenticated
+    }
+  }, [hasAccessToken]); // Re-run when authentication state changes
 
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
@@ -536,8 +551,6 @@ export function ProposalSubmission({
     }
   };
 
-  const hasAccessToken = !!accessToken && !isSessionLoading;
-
   // Parse the backend output for inner success and message
   const parsedApiResponse = apiResponse
     ? parseOutput(apiResponse.output)
@@ -571,31 +584,40 @@ export function ProposalSubmission({
               "calc(var(--submit-cta-height) + var(--cta-spacing))",
           }}
         >
-          {/* Airdrop Notification */}
-          {showAirdropNotification && senderAirdrops.length > 0 && (
+          {/* Airdrop Notification - Only show when authenticated */}
+          {hasAccessToken ? (
             <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-300 flex-shrink-0" />
                   <div className="text-sm text-green-100">
-                    You've sent{" "}
-                    <span className="font-medium">{senderAirdrops.length}</span>{" "}
-                    airdrop
-                    {senderAirdrops.length > 1 ? "s" : ""};{" "}
-                    <span className="font-medium">
-                      {senderAirdrops.reduce(
-                        (total, airdrop) => total + airdrop.recipients.length,
-                        0
-                      )}
-                    </span>{" "}
-                    recipient
-                    {senderAirdrops.reduce(
-                      (total, airdrop) => total + airdrop.recipients.length,
-                      0
-                    ) === 1
-                      ? ""
-                      : "s"}{" "}
-                    received.
+                    {senderAirdrops.length > 0 ? (
+                      <>
+                        You've sent{" "}
+                        <span className="font-medium">
+                          {senderAirdrops.length}
+                        </span>{" "}
+                        airdrop
+                        {senderAirdrops.length > 1 ? "s" : ""};{" "}
+                        <span className="font-medium">
+                          {senderAirdrops.reduce(
+                            (total, airdrop) =>
+                              total + airdrop.recipients.length,
+                            0
+                          )}
+                        </span>{" "}
+                        recipient
+                        {senderAirdrops.reduce(
+                          (total, airdrop) => total + airdrop.recipients.length,
+                          0
+                        ) === 1
+                          ? ""
+                          : "s"}{" "}
+                        received.
+                      </>
+                    ) : (
+                      "Send airdrops to boost your contribution"
+                    )}
                   </div>
                 </div>
                 {/* <button
@@ -607,7 +629,7 @@ export function ProposalSubmission({
                 </button> */}
               </div>
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="relative">
@@ -672,8 +694,8 @@ export function ProposalSubmission({
               )}
             </div>
 
-            {/* Airdrop Selector */}
-            {senderAirdrops.length > 0 && (
+            {/* Airdrop Selector - Show disabled version when not authenticated */}
+            {(senderAirdrops.length > 0 || !hasAccessToken) && (
               <div className="space-y-1">
                 <label
                   htmlFor="airdrop-select"
@@ -686,28 +708,41 @@ export function ProposalSubmission({
                     setSelectedAirdropTxHash(value === "none" ? null : value)
                   }
                   value={selectedAirdropTxHash || "none"}
+                  disabled={!hasAccessToken}
                 >
                   <SelectTrigger
                     id="airdrop-select"
                     className="w-full bg-background/60 border border-white/10 h-10"
                   >
-                    <SelectValue placeholder="Select an airdrop to reference" />
+                    <SelectValue
+                      placeholder={
+                        hasAccessToken
+                          ? "Select an airdrop to reference"
+                          : "Connect wallet to attach airdrops"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {senderAirdrops.map((airdrop) => (
-                      <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>
-                            {new Date(airdrop.created_at).toLocaleDateString()}{" "}
-                            - {airdrop.recipients.length} recipients
-                          </span>
-                          <span className="ml-4 text-xs text-muted-foreground font-mono">
-                            {truncateString(airdrop.tx_hash, 6, 6)}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {hasAccessToken &&
+                      senderAirdrops.map((airdrop) => (
+                        <SelectItem
+                          key={airdrop.tx_hash}
+                          value={airdrop.tx_hash}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span>
+                              {new Date(
+                                airdrop.created_at
+                              ).toLocaleDateString()}{" "}
+                              - {airdrop.recipients.length} recipients
+                            </span>
+                            <span className="ml-4 text-xs text-muted-foreground font-mono">
+                              {truncateString(airdrop.tx_hash, 6, 6)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {selectedAirdropTxHash && (
@@ -805,8 +840,7 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
-                isLoadingExtensions ||
-                isLoadingAgents
+                (hasAccessToken && (isLoadingExtensions || isLoadingAgents))
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
               style={{ height: "var(--submit-cta-height)" }}
@@ -819,7 +853,11 @@ export function ProposalSubmission({
               ) : (
                 <div className="flex items-center gap-3">
                   <Send className="h-4 w-4" />
-                  <span>Submit Contribution</span>
+                  {accessToken ? (
+                    <span>Submit Contribution</span>
+                  ) : (
+                    <span>Connect Wallet to Submit contribution</span>
+                  )}
                 </div>
               )}
             </Button>
