@@ -548,7 +548,7 @@ export function ProposalSubmission({
   return (
     <>
       <div
-        className="rounded-2xl bg-muted/10 border-white/10  mb- sm:p-6 lg:p-7 flex flex-col"
+        className="rounded-2xl bg-muted/10 border-white/10 p-4  sm:p-6 lg:p-7 flex flex-col"
         style={{
           maxHeight: "var(--available-height)",
         }}
