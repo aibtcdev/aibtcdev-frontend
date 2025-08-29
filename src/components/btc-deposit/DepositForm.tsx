@@ -918,7 +918,7 @@ export default function DepositForm({
       )}
 
       {/* Main amount input with integrated currency selector */}
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6">
+      <div className=" border rounded-lg p-6">
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Input
