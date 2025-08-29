@@ -15,12 +15,13 @@ import {
   X,
   Eye,
   ChevronDown,
-  Shield,
+  // Shield,
   Link as LinkIcon,
   // Image,
   MessageSquare,
-  Settings,
   Edit3,
+  // Settings,
+  // Edit3,
 } from "lucide-react";
 
 interface EvaluationData {
@@ -569,7 +570,7 @@ function VoteCard({ vote }: VoteCardProps) {
   // Fetch real vote data for this proposal
   const {
     data: voteData,
-    isLoading: isLoadingVoteData,
+    // isLoading: isLoadingVoteData,
     // error: voteDataError,
   } = useQuery({
     queryKey: [
