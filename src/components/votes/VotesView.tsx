@@ -404,12 +404,12 @@ function VoteCard({ vote }: VoteCardProps) {
         {vote.answer ? (
           <>
             <ThumbsUp className="h-3 w-3 mr-1" />
-            Agent Voted Yes{confidenceText}
+            Your agent voted Yes{confidenceText}
           </>
         ) : (
           <>
             <ThumbsDown className="h-3 w-3 mr-1" />
-            Agent Voted No{confidenceText}
+            Your agent voted No{confidenceText}
           </>
         )}
       </Badge>
@@ -473,7 +473,7 @@ function VoteCard({ vote }: VoteCardProps) {
 
   const {
     // content,
-    reference,
+    // reference,
   } = parseContributionContent();
 
   // Parse evaluation data and extract summary
@@ -652,31 +652,35 @@ function VoteCard({ vote }: VoteCardProps) {
   return (
     <Card className="group hover:shadow-md transition-all duration-200">
       <CardContent className="p-0">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px]">
           {/* Main Content */}
           <div className="p-6 space-y-4">
             {/* Contribution Header */}
             <div className="flex items-start gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={tokenData?.image_url} alt={vote.dao_name} />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
                   {vote.dao_name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm text-muted-foreground">
-                    {vote.dao_name}
-                  </span>
-                  <span className="text-sm font-semibold text-foreground">
-                    Contribution #
-                    {vote.blockchain_proposal_id || vote.proposal_id}
-                  </span>
+                  <Link href={`/daos/${encodeURIComponent(vote.dao_name)}`}>
+                    <span className="font-bold  hover:text-primary cursor-pointer transition-colors">
+                      {vote.dao_name}
+                    </span>
+                  </Link>
+                  <Link href={`/proposals/${vote.proposal_id}`}>
+                    <span className="text-base font-semibold text-foreground hover:text-primary cursor-pointer transition-colors">
+                      Contribution #
+                      {vote.blockchain_proposal_id || vote.proposal_id}
+                    </span>
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {getContributionStatusBadge()}
-                  {getAgentVotingBadge()}
-                  <span className="text-xs text-muted-foreground">
+
+                  <span className="text-sm text-muted-foreground">
                     Submitted: {formatRelativeTime(vote.created_at)}
                   </span>
                 </div>
@@ -684,157 +688,222 @@ function VoteCard({ vote }: VoteCardProps) {
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-semibold text-foreground leading-tight">
+            <h3 className="text-xl font-semibold text-foreground leading-tight">
               {vote.proposal_title}
             </h3>
 
-            {/* Vote Counts */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Vote Counts</span>
-                {isLoadingVoteData && (
-                  <span className="text-xs text-muted-foreground animate-pulse">
-                    Loading votes...
-                  </span>
+            {/* Reference Links - Extract from content and display below title */}
+            {(() => {
+              if (!vote.proposal_content) return null;
+
+              const referenceRegex = /Reference:\s*(https?:\/\/\S+)/i;
+              const airdropReferenceRegex =
+                /Airdrop Transaction ID:\s*(0x[a-fA-F0-9]+)/i;
+              const referenceMatch =
+                vote.proposal_content.match(referenceRegex);
+              const airdropMatch = vote.proposal_content.match(
+                airdropReferenceRegex
+              );
+              const referenceLink = referenceMatch?.[1];
+              const airdropTxId = airdropMatch?.[1];
+
+              if (!referenceLink && !airdropTxId) return null;
+
+              return (
+                <div className="space-y-3 mb-4">
+                  {referenceLink && (
+                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Reference
+                      </div>
+                      <span
+                        role="link"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(
+                            referenceLink,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        <svg
+                          className="h-4 w-4 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        <span className="inline-block max-w-full break-all">
+                          {referenceLink}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                  {airdropTxId && (
+                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Airdrop Transaction ID
+                      </div>
+                      <span
+                        role="link"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(
+                            `https://explorer.hiro.so/txid/${airdropTxId}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`,
+                            "_blank",
+                            "noopener,noreferrer"
+                          );
+                        }}
+                      >
+                        <svg
+                          className="h-4 w-4 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                        <span className="inline-block max-w-full break-all">
+                          {airdropTxId}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Vote Counts - Hide when status is pending */}
+            {proposalStatus !== "PENDING" && (
+              <div className="space-y-2">
+                {/* Progress Bar - Hide when status is pending */}
+                {voteDisplayData && (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      {/* Background bar */}
+                      <div className="h-6 bg-muted rounded-lg overflow-hidden">
+                        {/* Votes for (green) */}
+                        <div
+                          className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
+                            voteDisplayData.rawVotesFor &&
+                            Number(voteDisplayData.rawVotesFor) > 0
+                              ? "rounded-l-lg"
+                              : ""
+                          } ${
+                            (!voteDisplayData.rawVotesAgainst ||
+                              Number(voteDisplayData.rawVotesAgainst) === 0) &&
+                            voteDisplayData.rawVotesFor &&
+                            Number(voteDisplayData.rawVotesFor) > 0
+                              ? "rounded-r-lg"
+                              : ""
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              voteDisplayData.rawLiquidTokens
+                                ? Math.round(
+                                    (Number(voteDisplayData.rawVotesFor) /
+                                      Number(voteDisplayData.rawLiquidTokens)) *
+                                      100
+                                  )
+                                : 0,
+                              100
+                            )}%`,
+                          }}
+                        />
+                        {/* Votes against (red) */}
+                        <div
+                          className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
+                            voteDisplayData.rawVotesAgainst &&
+                            Number(voteDisplayData.rawVotesAgainst) > 0 &&
+                            (!voteDisplayData.rawVotesFor ||
+                              Number(voteDisplayData.rawVotesFor) === 0)
+                              ? "rounded-l-lg"
+                              : ""
+                          } ${
+                            voteDisplayData.rawVotesAgainst &&
+                            Number(voteDisplayData.rawVotesAgainst) > 0
+                              ? "rounded-r-lg"
+                              : ""
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              voteDisplayData.rawLiquidTokens
+                                ? Math.round(
+                                    (Number(voteDisplayData.rawVotesAgainst) /
+                                      Number(voteDisplayData.rawLiquidTokens)) *
+                                      100
+                                  )
+                                : 0,
+                              100
+                            )}%`,
+                            left: `${Math.min(
+                              voteDisplayData.rawLiquidTokens
+                                ? Math.round(
+                                    (Number(voteDisplayData.rawVotesFor) /
+                                      Number(voteDisplayData.rawLiquidTokens)) *
+                                      100
+                                  )
+                                : 0,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Vote breakdown */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          <span>For: {voteDisplayData.votesFor}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 bg-red-500 rounded-full" />
+                          <span>Against: {voteDisplayData.votesAgainst}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                        <span>Total: {voteDisplayData.liquidTokens}</span>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-4 text-xs mb-3">
-                <div className="space-y-1">
-                  <span className="text-green-600 font-medium">For</span>
-                  <div className="text-foreground">
-                    {isLoadingVoteData ? (
-                      <span className="animate-pulse">Loading...</span>
-                    ) : (
-                      voteDisplayData?.votesFor || "—"
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-red-600 font-medium">Against</span>
-                  <div className="text-foreground">
-                    {isLoadingVoteData ? (
-                      <span className="animate-pulse">Loading...</span>
-                    ) : (
-                      voteDisplayData?.votesAgainst || "—"
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-blue-600 font-medium">
-                    Liquid Tokens
-                  </span>
-                  <div className="text-foreground">
-                    {isLoadingVoteData ? (
-                      <span className="animate-pulse">Loading...</span>
-                    ) : (
-                      voteDisplayData?.liquidTokens || "—"
-                    )}
-                  </div>
-                </div>
-              </div>
+            )}
 
-              {/* Progress Bar - Hide when status is pending */}
-              {voteDisplayData && proposalStatus !== "PENDING" && (
-                <div className="space-y-2">
-                  <div className="relative">
-                    {/* Background bar */}
-                    <div className="h-6 bg-muted rounded-lg overflow-hidden">
-                      {/* Votes for (green) */}
-                      <div
-                        className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
-                          voteDisplayData.rawVotesFor &&
-                          Number(voteDisplayData.rawVotesFor) > 0
-                            ? "rounded-l-lg"
-                            : ""
-                        } ${
-                          (!voteDisplayData.rawVotesAgainst ||
-                            Number(voteDisplayData.rawVotesAgainst) === 0) &&
-                          voteDisplayData.rawVotesFor &&
-                          Number(voteDisplayData.rawVotesFor) > 0
-                            ? "rounded-r-lg"
-                            : ""
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            voteDisplayData.rawLiquidTokens
-                              ? Math.round(
-                                  (Number(voteDisplayData.rawVotesFor) /
-                                    Number(voteDisplayData.rawLiquidTokens)) *
-                                    100
-                                )
-                              : 0,
-                            100
-                          )}%`,
-                        }}
-                      />
-                      {/* Votes against (red) */}
-                      <div
-                        className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
-                          voteDisplayData.rawVotesAgainst &&
-                          Number(voteDisplayData.rawVotesAgainst) > 0 &&
-                          (!voteDisplayData.rawVotesFor ||
-                            Number(voteDisplayData.rawVotesFor) === 0)
-                            ? "rounded-l-lg"
-                            : ""
-                        } ${
-                          voteDisplayData.rawVotesAgainst &&
-                          Number(voteDisplayData.rawVotesAgainst) > 0
-                            ? "rounded-r-lg"
-                            : ""
-                        }`}
-                        style={{
-                          width: `${Math.min(
-                            voteDisplayData.rawLiquidTokens
-                              ? Math.round(
-                                  (Number(voteDisplayData.rawVotesAgainst) /
-                                    Number(voteDisplayData.rawLiquidTokens)) *
-                                    100
-                                )
-                              : 0,
-                            100
-                          )}%`,
-                          left: `${Math.min(
-                            voteDisplayData.rawLiquidTokens
-                              ? Math.round(
-                                  (Number(voteDisplayData.rawVotesFor) /
-                                    Number(voteDisplayData.rawLiquidTokens)) *
-                                    100
-                                )
-                              : 0,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Vote breakdown */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <span>For: {voteDisplayData.votesFor}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full" />
-                        <span>Against: {voteDisplayData.votesAgainst}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                      <span>Total: {voteDisplayData.liquidTokens}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Reasoning Preview */}
+            {/* Show veto button only if current user hasn't vetoed yet */}
+            {proposalStatus === "VETO_PERIOD" && !existingVeto && (
+              <DAOVetoProposal
+                daoId={vote.dao_id}
+                proposalId={vote.proposal_id}
+                size="sm"
+                variant="destructive"
+              />
+            )}
+            {/* Agent Evaluation Summary */}
             {(evaluationData || reasoningPreview) && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">
-                    Agent Evaluation
+                    Agent Evaluation {getAgentVotingBadge()}
                   </span>
                   <div className="flex items-center gap-2">
                     <Link href={`/proposals/${vote.proposal_id}`}>
@@ -863,30 +932,6 @@ function VoteCard({ vote }: VoteCardProps) {
                   <div className="space-y-3">
                     {/* Decision and Score */}
                     <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                      {/* <div className="flex items-center gap-2">
-                        <Badge
-                          variant={
-                            evaluationData.decision ? "default" : "destructive"
-                          }
-                          className="text-xs"
-                        >
-                          {evaluationData.decision
-                            ? "✓ Agent Voted Yes"
-                            : "✗ Agent Voted No"}
-                        </Badge>
-                        <Badge
-                          variant={
-                            evaluationData.final_score >= 80
-                              ? "default"
-                              : evaluationData.final_score >= 60
-                                ? "secondary"
-                                : "destructive"
-                          }
-                          className="text-xs"
-                        >
-                          {evaluationData.final_score}/100
-                        </Badge>
-                      </div> */}
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {evaluationData.summary}
                       </p>
@@ -928,125 +973,82 @@ function VoteCard({ vote }: VoteCardProps) {
                 )}
               </div>
             )}
-            {/* Show veto button only if current user hasn't vetoed yet */}
-            {proposalStatus === "VETO_PERIOD" && !existingVeto && (
-              <DAOVetoProposal
-                daoId={vote.dao_id}
-                proposalId={vote.proposal_id}
-                size="sm"
-                variant="destructive"
-              />
-            )}
+
             {/* Inline Veto Button or Vetoed Status */}
             {vote.dao_id &&
               vote.proposal_id &&
               (hasVetos || proposalStatus === "VETO_PERIOD") && (
-                <div className="pt-2">
-                  {/* Show vetoes if they exist */}
-                  {hasVetos && (
-                    <div className="bg-muted/30 text-foreground rounded-lg p-3 mb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-sm">
-                          <Shield className="h-4 w-4 text-red-500" />
-                          <span className="font-medium">Veto Applied</span>
-                        </div>
-                        <Badge className="bg-muted/30 text-muted-foreground">
-                          {vetoCount}
-                        </Badge>
-                      </div>
-                      <div className="mt-2 space-y-2">
-                        {vetoes.map((v, idx) => (
-                          <div
-                            key={idx}
-                            className="text-xs flex flex-wrap items-center gap-2"
-                          >
-                            <span className="text-muted-foreground">Veto:</span>
-                            <span className="font-medium">
-                              {formatBalance(v.amount || "0")}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">
+                      Veto Status
+                    </span>
+                    <Badge
+                      variant={hasVetos ? "destructive" : "secondary"}
+                      className="text-xs"
+                    >
+                      {hasVetos
+                        ? `${vetoCount} Veto${vetoCount !== 1 ? "s" : ""}`
+                        : "No Vetos"}
+                    </Badge>
+                  </div>
+
+                  {vetoes.length > 0 && (
+                    <div className="space-y-2">
+                      {vetoes.slice(0, 3).map((veto, index) => (
+                        <div
+                          key={index}
+                          className="bg-destructive/10 border border-destructive/20 rounded-lg p-3"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-destructive">
+                              Vetoed {formatBalance(veto.amount)}{" "}
+                              {vote.dao_name} by {maskAddress(veto.address)}
                             </span>
-                            <span className="text-muted-foreground">
-                              {vote.dao_name} by
-                            </span>
-                            <a
-                              href={`https://explorer.hiro.so/address/${v.address}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-medium underline"
-                              aria-label={`Open ${v.address} in explorer`}
-                            >
-                              {maskAddress(v.address)}
-                            </a>
-                            {v.tx_id && (
-                              <div className="flex items-center gap-1">
-                                <span className="text-muted-foreground">
-                                  txid:
-                                </span>
-                                <a
-                                  href={`https://explorer.hiro.so/txid/${v.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="underline flex items-center gap-1"
-                                >
-                                  {v.tx_id.slice(0, 5)}...{v.tx_id.slice(-5)}
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              </div>
+                            {veto.tx_id && (
+                              <a
+                                href={`https://explorer.hiro.so/txid/${veto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 ml-2"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                View Transaction
+                              </a>
                             )}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
+                      {vetoes.length > 3 && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          +{vetoes.length - 3} more vetos
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
               )}
           </div>
 
-          {/* Right Rail */}
-          <div className="border-l bg-muted/20 p-4 space-y-4">
-            {/* Media/Reference Preview */}
-            {reference ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Reference</span>
-                </div>
-                <div className="bg-background rounded-lg p-3 border">
-                  <a
-                    href={reference}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 break-all"
-                  >
-                    {reference}
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {/* <div className="flex items-center gap-2">
-                  <Image className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Media Preview</span>
-                </div> */}
-                <div className="bg-background rounded-lg p-3 border border-dashed">
-                  <p className="text-xs text-muted-foreground text-center">
-                    No media attached
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Training Feedback */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Training Feedback</span>
-              </div>
+          {/* Right Sidebar - Training Feedback */}
+          <div className="border-l border-border/50 p-6 bg-muted/20 space-y-6">
+            {/* Training Feedback Section */}
+            <div className="space-y-3">
+              <h5 className="text-lg font-semibold text-foreground">
+                Training Feedback
+              </h5>
+              <p className="text-base text-muted-foreground mt-2 mb-3">
+                Are you satisfied with the agent's vote in this contribuiton for{" "}
+                {vote.dao_name}?
+              </p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 text-xs">
-                  👍 Yes
+                <Button size="sm" variant="outline" className="text-sm h-8">
+                  <ThumbsUp className="h-4 w-4 mr-2" />
+                  Yes
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1 text-xs">
-                  👎 No
+                <Button size="sm" variant="outline" className="text-sm h-8">
+                  <ThumbsDown className="h-4 w-4 mr-2" />
+                  No
                 </Button>
               </div>
             </div>
@@ -1054,48 +1056,55 @@ function VoteCard({ vote }: VoteCardProps) {
             {/* Agent Instructions */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  Your Instructions to Agent
+                {/* <Settings className="h-5 w-5 text-muted-foreground" /> */}
+                <span className="text-lg font-semibold">
+                  Your Instructions to Agent for {vote.dao_name}
                 </span>
               </div>
 
-              <div className="space-y-2">
-                {isEditingInstructions ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      value={editingData.prompt_text}
-                      onChange={(e) =>
-                        setEditingData({
-                          ...editingData,
-                          prompt_text: e.target.value,
-                        })
+              <div className="space-y-3">
+                <Textarea
+                  value={editingData.prompt_text}
+                  onChange={(e) =>
+                    setEditingData({
+                      ...editingData,
+                      prompt_text: e.target.value,
+                    })
+                  }
+                  placeholder={
+                    currentAgentPrompt?.prompt_text ||
+                    (isCreating
+                      ? "Enter instructions for your agent..."
+                      : "No instructions configured. Click Edit to add.")
+                  }
+                  className="min-h-[100px] resize-none text-base"
+                  readOnly={!isEditingInstructions}
+                  autoFocus={isEditingInstructions}
+                />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={editingData.model}
+                      onValueChange={(value) =>
+                        setEditingData({ ...editingData, model: value })
                       }
-                      placeholder="Enter your agent instructions..."
-                      className="min-h-[80px] resize-none text-xs"
-                      autoFocus
-                    />
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={editingData.model}
-                          onValueChange={(value) =>
-                            setEditingData({ ...editingData, model: value })
-                          }
-                        >
-                          <SelectTrigger className="h-7 text-xs w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {AI_MODELS.map((model) => (
-                              <SelectItem key={model.value} value={model.value}>
-                                {model.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex gap-1">
+                      disabled={!isEditingInstructions}
+                    >
+                      <SelectTrigger className="h-10 text-base w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AI_MODELS.map((model) => (
+                          <SelectItem key={model.value} value={model.value}>
+                            {model.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-1">
+                    {isEditingInstructions ? (
+                      <>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1104,7 +1113,7 @@ function VoteCard({ vote }: VoteCardProps) {
                             updatePromptMutation.isPending ||
                             createPromptMutation.isPending
                           }
-                          className="h-7 px-2 text-xs"
+                          className="h-10 px-4 text-base"
                         >
                           Cancel
                         </Button>
@@ -1115,7 +1124,7 @@ function VoteCard({ vote }: VoteCardProps) {
                             updatePromptMutation.isPending ||
                             createPromptMutation.isPending
                           }
-                          className="h-7 px-3 text-xs"
+                          className="h-10 px-4 text-base"
                         >
                           {updatePromptMutation.isPending ||
                           createPromptMutation.isPending
@@ -1126,32 +1135,20 @@ function VoteCard({ vote }: VoteCardProps) {
                               ? "Create"
                               : "Save"}
                         </Button>
-                      </div>
-                    </div>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingInstructions(true)}
+                        className="h-8 px-4 text-sm"
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <div
-                    className="bg-background rounded-lg p-3 border cursor-pointer hover:border-primary/50 transition-colors group"
-                    onClick={() => setIsEditingInstructions(true)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed flex-1 pr-2">
-                        {currentAgentPrompt?.prompt_text ||
-                          (isCreating
-                            ? "Click to add instructions for your agent..."
-                            : "No instructions configured. Click to add.")}
-                      </p>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {currentAgentPrompt && (
-                          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                            {currentAgentPrompt.model}
-                          </span>
-                        )}
-                        <Edit3 className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

@@ -433,12 +433,8 @@ export function ProposalSubmission({
       ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
 
-    // Clean the final message to ensure no invisible characters
-    const cleanMessage = `${contribution.trim()}${twitterReference}`
-      .replace(/[\u200B-\u200D\uFEFF]/g, "")
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, "")
-      .normalize("NFC")
-      .trim();
+    // Simple message construction - just trim
+    const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
 
     return {
       agent_account_contract: userAgent.account_contract,
@@ -618,19 +614,7 @@ export function ProposalSubmission({
               <textarea
                 value={contribution}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Clean the input to remove invisible characters and normalize whitespace
-                  const cleanedValue = value
-                    // Remove zero-width characters and other invisible Unicode characters
-                    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-                    // Remove other control characters except newlines and tabs
-                    .replace(
-                      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-                      ""
-                    )
-                    // Normalize Unicode characters
-                    .normalize("NFC");
-                  setContribution(cleanedValue);
+                  setContribution(e.target.value);
                 }}
                 placeholder={
                   hasAccessToken
