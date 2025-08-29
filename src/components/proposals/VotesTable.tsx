@@ -3,17 +3,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchProposalVotes } from "@/services/vote.service";
 import type { Vote } from "@/types";
-import { ThumbsUp, ThumbsDown, ExternalLink } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ExternalLink, Eye } from "lucide-react";
 import { DataTable, Column } from "./data-table/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { TokenBalance } from "../reusables/BalanceDisplay";
 import { getExplorerLink } from "@/utils/format";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 interface VotesTableProps {
   proposalId: string;
 }
 
 const VotesTable = ({ proposalId }: VotesTableProps) => {
+  const [selectedReasoning, setSelectedReasoning] = useState<{
+    reasoning: string;
+    voter: string;
+  } | null>(null);
+
   const {
     data: votes,
     isLoading,
@@ -135,15 +148,28 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
       label: "Reasoning",
       filterable: true,
       responsive: "sm",
-      render: (value: string) => {
+      width: 250,
+      minWidth: 200,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render: (value: string, row: any) => {
         if (!value)
           return <span className="text-muted-foreground text-xs">-</span>;
 
         return (
-          <div className="max-w-xs">
-            <p className="text-xs text-muted-foreground truncate" title={value}>
-              {value}
-            </p>
+          <div className="w-full">
+            <button
+              onClick={() =>
+                setSelectedReasoning({
+                  reasoning: value,
+                  voter: row.address || "Unknown",
+                })
+              }
+              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer group w-full text-left"
+              title="Click to view full reasoning"
+            >
+              <Eye className="h-3 w-3 opacity-60 group-hover:opacity-100 flex-shrink-0" />
+              <span className="truncate">{value}</span>
+            </button>
           </div>
         );
       },
@@ -152,6 +178,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
       key: "tx_id",
       label: "TX",
       width: 60,
+      minWidth: 60,
       align: "center",
       render: (value: string) => {
         if (!value)
@@ -172,43 +199,75 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
   ];
 
   return (
-    <DataTable.Provider
-      data={votes || []}
-      columns={columns}
-      isLoading={isLoading}
-      error={isError ? error?.message || "Unknown error" : null}
-      defaultSort={{ column: "created_at", direction: "desc" }}
-      itemHeight={56}
-      containerHeight={400}
-    >
-      <DataTable.Container>
-        <DataTable.Toolbar
-          showSearch={true}
-          searchPlaceholder="Search votes..."
-        />
+    <>
+      <DataTable.Provider
+        data={votes || []}
+        columns={columns}
+        isLoading={isLoading}
+        error={isError ? error?.message || "Unknown error" : null}
+        defaultSort={{ column: "created_at", direction: "desc" }}
+        itemHeight={56}
+        containerHeight={400}
+      >
+        <DataTable.Container>
+          <DataTable.Toolbar
+            showSearch={true}
+            searchPlaceholder="Search votes..."
+          />
 
-        {isLoading ? (
-          <DataTable.Loading rows={8} />
-        ) : isError ? (
-          <DataTable.Error
-            title="Failed to load votes"
-            description={
-              error?.message ||
-              "There was an error loading the vote data. Please try again."
-            }
-            onRetry={() => window.location.reload()}
-          />
-        ) : !votes || votes.length === 0 ? (
-          <DataTable.Empty
-            icon={<ThumbsUp className="h-12 w-12 text-muted-foreground/50" />}
-            title="No votes recorded"
-            description="No votes have been recorded for this contribution yet."
-          />
-        ) : (
-          <DataTable.Virtualized />
-        )}
-      </DataTable.Container>
-    </DataTable.Provider>
+          {isLoading ? (
+            <DataTable.Loading rows={8} />
+          ) : isError ? (
+            <DataTable.Error
+              title="Failed to load votes"
+              description={
+                error?.message ||
+                "There was an error loading the vote data. Please try again."
+              }
+              onRetry={() => window.location.reload()}
+            />
+          ) : !votes || votes.length === 0 ? (
+            <DataTable.Empty
+              icon={<ThumbsUp className="h-12 w-12 text-muted-foreground/50" />}
+              title="No votes recorded"
+              description="No votes have been recorded for this contribution yet."
+            />
+          ) : (
+            <DataTable.Virtualized />
+          )}
+        </DataTable.Container>
+      </DataTable.Provider>
+
+      {/* Reasoning Modal */}
+      <Dialog
+        open={!!selectedReasoning}
+        onOpenChange={(open) => !open && setSelectedReasoning(null)}
+      >
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Vote Reasoning
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <strong>Voter:</strong>{" "}
+              <span className="font-mono">
+                {selectedReasoning?.voter
+                  ? truncateAddress(selectedReasoning.voter)
+                  : "Unknown"}
+              </span>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                {selectedReasoning?.reasoning || "No reasoning provided"}
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
