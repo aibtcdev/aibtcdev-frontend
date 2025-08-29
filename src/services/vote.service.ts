@@ -279,13 +279,14 @@ export async function getProposalVotes(
   const proposalIdString = proposalId.toString();
 
   try {
-    const apiUrl = `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`;
+    // const apiUrl = `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`;
+    const apiUrl = `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${contractAddress}/${contractName}/get-agent-permissions`;
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         functionArgs: [{ type: "uint", value: proposalIdString }],
-        // Optional: Add cache control if the endpoint supports it
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK,
         cacheControl: bustCache ? { bustCache: true, ttl: 3600 } : undefined,
       }),
     });

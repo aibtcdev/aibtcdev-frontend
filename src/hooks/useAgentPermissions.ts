@@ -13,7 +13,8 @@ export function useAgentPermissions(agentAddress: string | null) {
 
     const [contractAddress, contractName] = agentAddress.split(".");
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
+      // `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
+      `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
       {
         method: "POST",
         headers: {

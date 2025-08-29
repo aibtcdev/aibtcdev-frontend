@@ -13,7 +13,8 @@ async function fetchApprovals(
   const results = await Promise.all(
     contractIds.map(async (targetContractId) => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${agentAddr}/${agentName}/is-approved-contract`,
+        // `${process.env.NEXT_PUBLIC_CACHE_URL}/contract-calls/read-only/${agentAddr}/${agentName}/is-approved-contract`,
+        `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${agentAddr}/${agentName}/get-agent-permissions`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

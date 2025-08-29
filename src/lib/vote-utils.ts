@@ -7,10 +7,10 @@ export function formatVotes(votes: number): string {
   return (votes / 1e8).toString();
 }
 
-const url =
-  process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
-    ? process.env.NEXT_PUBLIC_CACHE_URL_TESTNET
-    : process.env.NEXT_PUBLIC_CACHE_URL;
+// const url =
+//   process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet"
+//     ? process.env.NEXT_PUBLIC_CACHE_URL_TESTNET
+//     : process.env.NEXT_PUBLIC_CACHE_URL;
 
 export async function getProposalVotes(
   contractPrincipal: string,
@@ -26,7 +26,8 @@ export async function getProposalVotes(
 
   // Call the endpoint with POST method and the correct request body format
   const response = await fetch(
-    `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`,
+    // `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`,
+    `https://aibtcdev-cache-preview.hosting-962.workers.dev/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
     {
       method: "POST",
       headers: {
