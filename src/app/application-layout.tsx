@@ -494,13 +494,7 @@ export default function ApplicationLayout({
       <AuthModal
         isOpen={showAuthModal}
         onClose={closeAuthModal}
-        redirectUrl={
-          pathname === "/votes"
-            ? "/votes"
-            : pathname === "/evaluation"
-              ? "/evaluation"
-              : "/account"
-        }
+        redirectUrl={"/votes"}
       />
     </div>
   );
