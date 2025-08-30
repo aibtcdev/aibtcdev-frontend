@@ -42,7 +42,16 @@ export function AgentSettingsTab() {
         {/* Agent Permission Section */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-4">Agent Permission</h3>
-          <AgentPermissions agentAddress={agentAddress} />
+          {agentAddress ? (
+            <AgentPermissions agentAddress={agentAddress} />
+          ) : (
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                Your agent account is under deployment. Please come back in a
+                few minutes.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Voting Instructions Section */}
