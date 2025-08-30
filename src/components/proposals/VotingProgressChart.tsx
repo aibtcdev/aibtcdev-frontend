@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 // import { getProposalVotes } from "@/services/vote.service";
 import { getProposalVotes } from "@/lib/vote-utils";
@@ -56,44 +56,45 @@ const VotingProgressChart = ({
     isFailed,
   });
 
-  // Helper function to safely parse vote values
-  const parseVoteValue = (value: string | null | undefined): string => {
-    if (!value) return "0";
-    // Remove 'n' suffix if present and ensure it's a valid number
-    const cleaned = value.replace(/n$/, "");
-    return isNaN(Number(cleaned)) ? "0" : cleaned;
-  };
-
-  // State to store parsed vote values from live data
-  const [parsedVotes, setParsedVotes] = useState({
-    votesFor: parseVoteValue(proposal.votes_for),
-    votesAgainst: parseVoteValue(proposal.votes_against),
-  });
+  // State to store vote values from live data
+  const [voteDisplayData, setVoteDisplayData] = useState<{
+    votesFor: string;
+    votesAgainst: string;
+    liquidTokens: string;
+    rawVotesFor: string;
+    rawVotesAgainst: string;
+    rawLiquidTokens: string;
+  } | null>(null);
   console.log(proposal.votes_for, proposal.votes_against);
-  console.log("parsedVotes state:", parsedVotes);
+  console.log("voteDisplayData state:", voteDisplayData);
 
   // Fetch live vote data with real-time updates using getProposalVotes
   const proposalId = Number(proposal.proposal_id);
 
   const { data: proposalVoteData, isLoading: isLoadingVotes } = useQuery({
-    queryKey: ["proposalVotes", proposalId, contractPrincipal],
+    queryKey: [
+      "proposalVotes",
+      contractPrincipal,
+      proposalId,
+      isActive ? "bustCache" : "cached", // Add cache busting key for active proposals
+    ],
     queryFn: async () => {
-      if (proposalId && contractPrincipal) {
-        const result = await getProposalVotes(
-          contractPrincipal,
-          proposalId,
-          isActive
-        );
-        console.log("getProposalVotes result:", result);
-        return result;
+      if (!proposalId || !contractPrincipal) {
+        return null;
       }
-      return null;
+      // Bust cache if proposal is in active voting to get real-time vote counts
+      const shouldBustCache = isActive;
+      const result = await getProposalVotes(
+        contractPrincipal,
+        proposalId,
+        shouldBustCache
+      );
+      console.log("getProposalVotes result:", result);
+      return result;
     },
     enabled: !!proposalId && !!contractPrincipal,
-    refetchOnWindowFocus: true,
-
-    staleTime: 5000, // Consider data stale after 5 seconds
-    refetchInterval: isActive ? 10000 : false, // Refetch every 10 seconds if voting is active
+    staleTime: isActive ? 30 * 1000 : 5 * 60 * 1000, // 30 seconds for active, 5 minutes for others
+    refetchInterval: isActive ? 30 * 1000 : undefined, // Auto-refetch every 30 seconds for active proposals
     retry: 3,
   });
 
@@ -105,44 +106,68 @@ const VotingProgressChart = ({
     refetchInterval: 60000, // 1 minute
   });
 
-  // Update vote totals from the getProposalVotes response
+  // Extract and format vote data (matching VotesView.tsx pattern)
   useEffect(() => {
     console.log("proposalVoteData update:", proposalVoteData);
     if (proposalVoteData) {
-      const newVotesFor = parseVoteValue(proposalVoteData.votesFor);
-      const newVotesAgainst = parseVoteValue(proposalVoteData.votesAgainst);
+      const rawFor =
+        proposalVoteData.votesFor || proposalVoteData.data?.votesFor;
+      const rawAgainst =
+        proposalVoteData.votesAgainst || proposalVoteData.data?.votesAgainst;
+      const rawLiquidTokens =
+        proposalVoteData.liquidTokens ||
+        proposalVoteData.data?.liquidTokens ||
+        proposal.liquid_tokens;
 
-      console.log("Setting parsed votes from API:", {
-        newVotesFor,
-        newVotesAgainst,
-      });
-
-      setParsedVotes({
-        votesFor: newVotesFor,
-        votesAgainst: newVotesAgainst,
-      });
+      if (rawFor && rawAgainst && rawLiquidTokens) {
+        setVoteDisplayData({
+          votesFor: formatBalance(rawFor),
+          votesAgainst: formatBalance(rawAgainst),
+          liquidTokens: formatBalance(rawLiquidTokens),
+          rawVotesFor: rawFor,
+          rawVotesAgainst: rawAgainst,
+          rawLiquidTokens: rawLiquidTokens,
+        });
+      } else {
+        setVoteDisplayData(null);
+      }
     } else {
-      // Fallback to proposal data if no live data available
-      const fallbackVotesFor = parseVoteValue(proposal.votes_for);
-      const fallbackVotesAgainst = parseVoteValue(proposal.votes_against);
-
-      console.log("Setting parsed votes from proposal:", {
-        fallbackVotesFor,
-        fallbackVotesAgainst,
-      });
-
-      setParsedVotes({
-        votesFor: fallbackVotesFor,
-        votesAgainst: fallbackVotesAgainst,
-      });
+      // No live data available
+      setVoteDisplayData(null);
     }
-  }, [proposalVoteData, proposal.votes_for, proposal.votes_against]);
+  }, [proposalVoteData, proposal.liquid_tokens]);
+
+  // Utility function to format vote balances (matching VotesView.tsx)
+  const formatBalance = useCallback(
+    (value: string | number, decimals: number = 8) => {
+      let num = typeof value === "string" ? parseFloat(value) : value;
+      if (isNaN(num)) return "";
+
+      num = num / Math.pow(10, decimals);
+
+      if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + "M";
+      } else if (num >= 1000) {
+        return (num / 1000).toFixed(2) + "K";
+      } else if (num < 1) {
+        return num.toFixed(decimals).replace(/\.?0+$/, "");
+      } else {
+        return num.toFixed(decimals).replace(/\.?0+$/, "");
+      }
+    },
+    []
+  );
 
   const calculations = useMemo(() => {
-    const votesFor = Number(parsedVotes.votesFor || 0);
-    const votesAgainst = Number(parsedVotes.votesAgainst || 0);
+    // Return null if we don't have valid vote data
+    if (!voteDisplayData) {
+      return null;
+    }
+
+    const votesFor = Number(voteDisplayData.rawVotesFor || 0);
+    const votesAgainst = Number(voteDisplayData.rawVotesAgainst || 0);
     const totalVotes = votesFor + votesAgainst;
-    const liquidTokens = Number(proposal.liquid_tokens || 0);
+    const liquidTokens = Number(voteDisplayData.rawLiquidTokens || 0);
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
@@ -215,7 +240,7 @@ const VotingProgressChart = ({
       metThreshold: actuallyMetThreshold,
       failedToExecute,
     };
-  }, [proposal, parsedVotes, chainState]); // Added parsedVotes to dependency array
+  }, [proposal, voteDisplayData, chainState]); // Updated dependency array
 
   // Helper functions using the new status system
   const getStatusText = (met: boolean, percentage?: number) => {
@@ -338,6 +363,108 @@ const VotingProgressChart = ({
   const resultStatus = getResultStatus();
   console.log("resultStatus:", resultStatus);
 
+  // Show loading state if data is loading or calculations are null
+  if (isLoadingVotes || !calculations) {
+    return (
+      <div className="space-y-6 overflow-x-auto">
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          {isLoadingVotes
+            ? "Loading vote data..."
+            : "Processing vote information..."}
+        </div>
+
+        {/* Loading skeleton */}
+        <div className="space-y-3">
+          <div className="h-6 bg-muted rounded-lg animate-pulse"></div>
+          <div className="flex justify-between">
+            <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-4 rounded-lg border bg-muted/10">
+              <div className="h-4 w-16 bg-muted rounded animate-pulse mb-2"></div>
+              <div className="h-6 w-24 bg-muted rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if we couldn't load vote data
+  if (!voteDisplayData && !isLoadingVotes) {
+    return (
+      <div className="space-y-6 overflow-x-auto">
+        <div className="text-sm text-destructive flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          Unable to load vote data. Please refresh to try again.
+        </div>
+
+        {/* Show basic proposal status without vote counts */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg border bg-muted/10">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Quorum
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Data unavailable
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border bg-muted/10">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Threshold
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Data unavailable
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "p-4 rounded-lg border transition-colors",
+              resultStatus.bgColor
+            )}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Result
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {resultStatus.icon}
+                <span
+                  className={cn("text-sm font-semibold", resultStatus.color)}
+                >
+                  {resultStatus.status}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Vote data unavailable
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 overflow-x-auto">
       {/* Loading indicator for vote data */}
@@ -430,41 +557,16 @@ const VotingProgressChart = ({
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>
-                For:{" "}
-                <TokenBalance
-                  value={calculations.votesFor.toString()}
-                  decimals={8}
-                  variant="abbreviated"
-                  symbol={tokenSymbol}
-                />
-              </span>
+              <span>For: {voteDisplayData?.votesFor || "0"}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full" />
-              <span>
-                Against:{" "}
-                <TokenBalance
-                  value={calculations.votesAgainst.toString()}
-                  decimals={8}
-                  variant="abbreviated"
-                  symbol={tokenSymbol}
-                />
-              </span>
+              <span>Against: {voteDisplayData?.votesAgainst || "0"}</span>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>
-              Quorum:{" "}
-              <TokenBalance
-                value={calculations.quorumTokensRequired.toString()}
-                decimals={8}
-                variant="abbreviated"
-                symbol={tokenSymbol}
-              />{" "}
-              ({calculations.quorumPercentage}%)
-            </span>
+            <span>Total: {voteDisplayData?.liquidTokens || "0"}</span>
           </div>
         </div>
       </div>
