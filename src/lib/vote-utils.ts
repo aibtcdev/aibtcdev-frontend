@@ -65,18 +65,32 @@ export async function getProposalVotes(
   const voteData = responseData.data || responseData;
 
   if (!voteData) {
+    // Return null values instead of "0" to indicate data unavailable
     return {
       ...responseData,
-      votesFor: "0",
-      votesAgainst: "0",
-      formattedVotesFor: "0",
-      formattedVotesAgainst: "0",
+      votesFor: null,
+      votesAgainst: null,
+      formattedVotesFor: null,
+      formattedVotesAgainst: null,
+      error: "Vote data not available",
     };
   }
 
+  // Check if we got stale cached data with "0" values when we expect real data
+  // If bustCache was requested but we still get "0", treat as potentially stale
+  const votesFor = voteData.votesFor;
+  const votesAgainst = voteData.votesAgainst;
+
+  // If both votes are "0" and we're not busting cache, this might be stale data
+  const isPotentiallyStale =
+    !bustCache &&
+    (votesFor === "0" || votesFor === 0) &&
+    (votesAgainst === "0" || votesAgainst === 0);
+
   return {
     ...responseData,
-    votesFor: voteData.votesFor,
-    votesAgainst: voteData.votesAgainst,
+    votesFor: votesFor,
+    votesAgainst: votesAgainst,
+    isPotentiallyStale, // Flag to indicate this might be stale cached data
   };
 }
