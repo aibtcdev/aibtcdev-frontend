@@ -33,37 +33,64 @@ const VoteStatusChart = ({
   const [bustCache, setBustCache] = useState(false); // Add state to control cache busting
   const queryClient = useQueryClient();
 
-  // Memoize initial votes - no parsing needed, no defaults to 0
-  const initialParsedVotes = useMemo(() => {
-    return {
-      votesFor: initialVotesFor || null,
-      votesAgainst: initialVotesAgainst || null,
-    };
-  }, [initialVotesFor, initialVotesAgainst]);
+  // State to store vote display data (matching VotesView.tsx pattern)
+  const [voteDisplayData, setVoteDisplayData] = useState<{
+    votesFor: string;
+    votesAgainst: string;
+    rawVotesFor: string;
+    rawVotesAgainst: string;
+  } | null>(null);
 
-  // State to store parsed vote values
-  const [parsedVotes, setParsedVotes] = useState(initialParsedVotes);
+  // Utility function to format vote balances (matching VotesView.tsx)
+  const formatBalance = useCallback(
+    (value: string | number, decimals: number = 8) => {
+      let num = typeof value === "string" ? parseFloat(value) : value;
+      if (isNaN(num)) return "";
+
+      num = num / Math.pow(10, decimals);
+
+      if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + "M";
+      } else if (num >= 1000) {
+        return (num / 1000).toFixed(2) + "K";
+      } else if (num < 1) {
+        return num.toFixed(decimals).replace(/\.?0+$/, "");
+      } else {
+        return num.toFixed(decimals).replace(/\.?0+$/, "");
+      }
+    },
+    []
+  );
 
   // Refresh votes data
-  const refreshVotesData = useCallback(async () => {
-    if (!contractAddress || !proposalId) return;
+  const refreshVotesData = useCallback(
+    async (e?: React.MouseEvent) => {
+      // Prevent default behavior to avoid page navigation
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
-    setLocalRefreshing(true);
-    setBustCache(true); // Set bustCache to true when manually refreshing
+      if (!contractAddress || !proposalId) return;
 
-    try {
-      await queryClient.invalidateQueries({
-        queryKey: ["proposalVotes", contractAddress, proposalId],
-        refetchType: "all",
-      });
+      setLocalRefreshing(true);
+      setBustCache(true); // Set bustCache to true when manually refreshing
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    } finally {
-      setLocalRefreshing(false);
-      setNextRefreshIn(60);
-      // We'll keep bustCache true until the query completes
-    }
-  }, [queryClient, contractAddress, proposalId]);
+      try {
+        await queryClient.invalidateQueries({
+          queryKey: ["proposalVotes", contractAddress, proposalId],
+          refetchType: "all",
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      } finally {
+        setLocalRefreshing(false);
+        setNextRefreshIn(60);
+        // We'll keep bustCache true until the query completes
+      }
+    },
+    [queryClient, contractAddress, proposalId]
+  );
 
   // Implement countdown timer for active proposals only
   useEffect(() => {
@@ -87,54 +114,81 @@ const VoteStatusChart = ({
     };
   }, [isActive, localRefreshing, refreshing, refreshVotesData]);
 
-  // Memoize query options to prevent unnecessary refetches
+  // Memoize query options to prevent unnecessary refetches (matching VotesView.tsx pattern)
   const queryOptions = useMemo(
     () => ({
       queryKey: [
         "proposalVotes",
         contractAddress,
         proposalId,
-        refreshing,
+        isActive ? "bustCache" : "cached",
         bustCache,
       ],
       queryFn: async () => {
         if (contractAddress && proposalId) {
-          // Pass bustCache to getProposalVotes
+          // Bust cache if proposal is active or manually requested
+          const shouldBustCache = isActive || bustCache;
           return getProposalVotes(
             contractAddress,
             Number(proposalId),
-            bustCache
+            shouldBustCache
           );
         }
         return null;
       },
       enabled: !!contractAddress && !!proposalId,
       refetchOnWindowFocus: false,
+      staleTime: isActive ? 30 * 1000 : 5 * 60 * 1000, // 30 seconds for active, 5 minutes for others
+      refetchInterval: isActive ? 30 * 1000 : undefined, // Auto-refetch every 30 seconds for active proposals
       onSettled: () => {
         // Reset bustCache after query completes (success or error)
         setBustCache(false);
       },
     }),
-    [contractAddress, proposalId, refreshing, bustCache]
+    [contractAddress, proposalId, refreshing, bustCache, isActive]
   );
 
   // Use useQuery with memoized options
   const { data, isLoading, error } = useQuery(queryOptions);
 
+  // Update vote display data from API response (matching VotesView.tsx pattern)
+  useEffect(() => {
+    if (data) {
+      const rawFor = data.votesFor || data.data?.votesFor;
+      const rawAgainst = data.votesAgainst || data.data?.votesAgainst;
+
+      if (rawFor && rawAgainst) {
+        setVoteDisplayData({
+          votesFor: formatBalance(rawFor),
+          votesAgainst: formatBalance(rawAgainst),
+          rawVotesFor: rawFor,
+          rawVotesAgainst: rawAgainst,
+        });
+      } else {
+        setVoteDisplayData(null);
+      }
+    } else if (initialVotesFor && initialVotesAgainst) {
+      // Fallback to initial props if available
+      setVoteDisplayData({
+        votesFor: formatBalance(initialVotesFor),
+        votesAgainst: formatBalance(initialVotesAgainst),
+        rawVotesFor: initialVotesFor,
+        rawVotesAgainst: initialVotesAgainst,
+      });
+    } else {
+      setVoteDisplayData(null);
+    }
+  }, [data, initialVotesFor, initialVotesAgainst, formatBalance]);
+
   // Memoize vote calculations to prevent unnecessary recalculations
   const voteCalculations = useMemo(() => {
-    // Don't default to 0 - return null if votes are not available
-    const votesForNum = parsedVotes.votesFor
-      ? Number(parsedVotes.votesFor)
-      : null;
-    const votesAgainstNum = parsedVotes.votesAgainst
-      ? Number(parsedVotes.votesAgainst)
-      : null;
-
-    // If either vote count is null, we're still loading
-    if (votesForNum === null || votesAgainstNum === null) {
+    // Return null if we don't have valid vote data
+    if (!voteDisplayData) {
       return null;
     }
+
+    const votesForNum = Number(voteDisplayData.rawVotesFor || 0);
+    const votesAgainstNum = Number(voteDisplayData.rawVotesAgainst || 0);
     const totalVotes = votesForNum + votesAgainstNum;
     const liquidTokensNum = Number(liquidTokens) || 0;
 
@@ -167,17 +221,7 @@ const VoteStatusChart = ({
       unvotedTokensNum,
       unvotedPercentage,
     };
-  }, [parsedVotes, liquidTokens]);
-
-  // Update parsed votes when data changes - don't default to "0"
-  useEffect(() => {
-    if (data) {
-      setParsedVotes({
-        votesFor: data.votesFor || null,
-        votesAgainst: data.votesAgainst || null,
-      });
-    }
-  }, [data]);
+  }, [voteDisplayData, liquidTokens]);
 
   const isRefreshingAny = localRefreshing || refreshing;
 
@@ -196,8 +240,25 @@ const VoteStatusChart = ({
 
   if (error) {
     return (
-      <div className="text-red-500 text-sm">
-        Error: {(error as Error).message}
+      <div className="space-y-2">
+        <div className="text-red-500 text-sm flex items-center gap-2">
+          <RefreshCw className="h-3 w-3" />
+          Unable to load vote data. Please refresh to try again.
+        </div>
+        <div className="flex items-center justify-end">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={refreshVotesData}
+            disabled={isRefreshingAny}
+            title="Refresh vote data"
+          >
+            <RefreshCw
+              className={`h-3 w-3 ${isRefreshingAny ? "animate-spin" : ""}`}
+            />
+          </Button>
+        </div>
       </div>
     );
   }
@@ -278,27 +339,11 @@ const VoteStatusChart = ({
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>For: </span>
-              <TokenBalance
-                value={parsedVotes.votesFor || "0"}
-                symbol={tokenSymbol}
-                decimals={8}
-                variant="abbreviated"
-                showSymbol={false}
-                className=""
-              />
+              <span>For: {voteDisplayData?.votesFor || "--"}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full" />
-              <span>Against: </span>
-              <TokenBalance
-                value={parsedVotes.votesAgainst || "0"}
-                symbol={tokenSymbol}
-                decimals={8}
-                variant="abbreviated"
-                showSymbol={false}
-                className=""
-              />
+              <span>Against: {voteDisplayData?.votesAgainst || "--"}</span>
             </div>
           </div>
           <div className="flex items-center gap-1">

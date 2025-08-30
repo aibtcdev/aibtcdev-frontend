@@ -667,14 +667,16 @@ function VoteCard({ vote }: VoteCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Link href={`/daos/${encodeURIComponent(vote.dao_name)}`}>
-                    <span className="font-bold  hover:text-primary cursor-pointer transition-colors">
+                    <span className="font-bold hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       {vote.dao_name}
+                      <ExternalLink className="h-3 w-3" />
                     </span>
                   </Link>
                   <Link href={`/proposals/${vote.proposal_id}`}>
-                    <span className="text-base font-semibold text-foreground hover:text-primary cursor-pointer transition-colors">
+                    <span className="text-base font-semibold text-foreground hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       Contribution #
                       {vote.blockchain_proposal_id || vote.proposal_id}
+                      <ExternalLink className="h-3 w-3" />
                     </span>
                   </Link>
                 </div>
@@ -914,7 +916,7 @@ function VoteCard({ vote }: VoteCardProps) {
                         className="text-xs h-6 px-2"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
-                        View Proposal
+                        View Contribution
                       </Button>
                     </Link>
                     <Button
