@@ -573,9 +573,8 @@ export function ProposalSubmission({
           </h2>
           <p className="text-zinc-400 text-sm">
             Submitting contribuiton requires{" "}
-            <span className="text-primary">250 {daoName}</span> bond. Upon
-            successful contribuiton, you will get rewarded with{" "}
-            <span className="text-primary">{daoName}</span> tokens.
+            <span className="text-primary">250 {daoName}</span> bond. If your
+            contribution is accepted, you will be rewarded with 1000 {daoName}.
           </p>
         </div>
 
