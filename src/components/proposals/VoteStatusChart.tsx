@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
@@ -20,12 +20,12 @@ interface VoteStatusChartProps {
 const VoteStatusChart = ({
   initialVotesFor,
   initialVotesAgainst,
-  refreshing = false,
+  // refreshing = false,
   tokenSymbol = "",
   proposal,
 }: VoteStatusChartProps) => {
   const [localRefreshing, setLocalRefreshing] = useState(false);
-  const [nextRefreshIn, setNextRefreshIn] = useState(60);
+  // const [nextRefreshIn, setNextRefreshIn] = useState(60);
 
   // Use the consolidated vote hook
   const {
@@ -35,7 +35,6 @@ const VoteStatusChart = ({
     error,
     hasData,
     refreshVoteData,
-    shouldPoll,
   } = useProposalVote({
     proposal: proposal!,
     contractPrincipal: proposal?.contract_principal,
@@ -57,32 +56,10 @@ const VoteStatusChart = ({
         await new Promise((resolve) => setTimeout(resolve, 500));
       } finally {
         setLocalRefreshing(false);
-        setNextRefreshIn(60);
       }
     },
     [refreshVoteData]
   );
-
-  // Implement countdown timer for active proposals only
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (shouldPoll && !localRefreshing && !refreshing) {
-      interval = setInterval(() => {
-        setNextRefreshIn((prev) => {
-          if (prev <= 1) {
-            refreshVotesData();
-            return 60;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [shouldPoll, localRefreshing, refreshing, refreshVotesData]);
 
   // Show loading state
   if (isLoadingVotes && !error) {
@@ -132,7 +109,7 @@ const VoteStatusChart = ({
     );
   }
 
-  const isRefreshingAny = localRefreshing || refreshing;
+  // const isRefreshingAny = localRefreshing || refreshing;
 
   // Main vote display
   return (
@@ -183,28 +160,6 @@ const VoteStatusChart = ({
           <div className="w-2 h-2 bg-red-500 rounded-full" />
         </div>
       </div>
-
-      {/* Refresh Controls */}
-      {shouldPoll && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            {isRefreshingAny
-              ? "Refreshing..."
-              : `Next refresh in ${nextRefreshIn}s`}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={refreshVotesData}
-            disabled={isRefreshingAny}
-            className="h-6 px-2 text-xs"
-          >
-            <RefreshCw
-              className={`h-3 w-3 ${isRefreshingAny ? "animate-spin" : ""}`}
-            />
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

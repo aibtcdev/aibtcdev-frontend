@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProposalVotes } from "@/lib/vote-utils";
 import { fetchProposalVotes } from "@/services/vote.service";
@@ -107,11 +107,7 @@ export function useProposalVote({
       }
 
       const shouldForceFresh = shouldAlwaysBustCache || shouldBustCache;
-      const cacheBustReason = shouldAlwaysBustCache
-        ? "Active proposal"
-        : shouldBustCache
-          ? "Status transition"
-          : "Normal fetch";
+      // const cacheBustReason = shouldAlwaysBustCache ? 'Active proposal' : shouldBustCache ? 'Status transition' : 'Normal fetch';
 
       // console.log(`🔄 Fetching vote data for proposal ${proposalId} (${cacheBustReason})`);
       // console.log(`   shouldAlwaysBustCache: ${shouldAlwaysBustCache}, shouldBustCache: ${shouldBustCache}, shouldForceFresh: ${shouldForceFresh}`);
@@ -289,46 +285,6 @@ export function useProposalVote({
     };
   }, [voteDisplayData]);
 
-  // Debug logging with more detail
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      const statusIcon = isActive ? "🟢" : "🔴";
-      const cacheIcon = shouldAlwaysBustCache || shouldBustCache ? "🔄" : "💾";
-
-      // console.log(`${statusIcon} ${cacheIcon} Proposal ${proposal.proposal_id || proposal.id} - Active: ${isActive}, Data Source: ${dataSource.toUpperCase()}`);
-      // console.log(`   Primary Query - Loading: ${primaryQuery.isLoading}, Error: ${!!primaryQuery.error}, Data: ${!!primaryQuery.data}`);
-      // console.log(`   Fallback Query - Loading: ${fallbackQuery.isLoading}, Error: ${!!fallbackQuery.error}, Data: ${!!fallbackQuery.data}`);
-      // console.log(`   shouldAlwaysBustCache: ${shouldAlwaysBustCache}, shouldBustCache: ${shouldBustCache}`);
-
-      if (primaryQuery.error) {
-        // console.log(`   Primary Query Error:`, primaryQuery.error);
-      }
-
-      if (activeVoteData) {
-        // console.table({
-        //   'Votes For': activeVoteData.votesFor,
-        //   'Votes Against': activeVoteData.votesAgainst,
-        //   'Source': activeVoteData.source,
-        //   'Cache Bust': shouldAlwaysBustCache ? 'Active' : shouldBustCache ? 'Transition' : 'None',
-        // });
-      }
-    }
-  }, [
-    proposal.id,
-    proposal.proposal_id,
-    isActive,
-    dataSource,
-    activeVoteData,
-    shouldAlwaysBustCache,
-    shouldBustCache,
-    primaryQuery.isLoading,
-    primaryQuery.error,
-    primaryQuery.data,
-    fallbackQuery.isLoading,
-    fallbackQuery.error,
-    fallbackQuery.data,
-  ]);
-
   // Manual refresh
   const refreshVoteData = useCallback(async () => {
     if (!contractPrincipal || !proposalId) {
@@ -351,8 +307,8 @@ export function useProposalVote({
       ]);
 
       // console.log(`✅ Vote data refreshed for proposal ${proposalId}`);
-    } catch (error) {
-      // console.error("❌ Failed to refresh vote data:", error);
+    } catch {
+      console.error("❌ Failed to refresh vote data:");
     }
   }, [queryClient, contractPrincipal, proposalId, proposal.id]);
 
