@@ -1,6 +1,6 @@
 // Helper function to format votes with appropriate suffixes
 export function formatVotes(votes: number): string {
-  if (isNaN(votes)) return "0";
+  if (isNaN(votes)) throw new Error("Invalid vote value: NaN");
   if (votes === 0) return "0";
 
   // Simply return the number divided by 1e8 as requested

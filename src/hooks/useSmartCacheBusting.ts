@@ -10,9 +10,9 @@ interface UseSmartCacheBustingProps {
 
 /**
  * Smart cache busting hook that:
- * 1. Busts cache once when transitioning to veto/execution periods
- * 2. Only polls during active voting
- * 3. Tracks status transitions to avoid redundant cache busting
+ * 1. Busts cache for active proposals (forces fresh data)
+ * 2. Busts cache once when transitioning between statuses
+ * 3. Uses normal caching otherwise
  */
 export function useSmartCacheBusting({
   proposalId,
@@ -41,26 +41,26 @@ export function useSmartCacheBusting({
       return;
     }
 
-    // Determine if we need to bust cache for this status transition
-    const shouldBustForTransition =
-      // Transitioning from ACTIVE to VETO_PERIOD (voting just ended)
-      (previousStatus === "ACTIVE" && currentStatus === "VETO_PERIOD") ||
-      // Transitioning from VETO_PERIOD to EXECUTION_WINDOW
-      (previousStatus === "VETO_PERIOD" &&
-        currentStatus === "EXECUTION_WINDOW") ||
-      // Transitioning to any final state (PASSED/FAILED)
-      currentStatus === "PASSED" ||
-      currentStatus === "FAILED";
+    // Cache bust for specific status transitions (if not already busted)
+    if (!hasBustedForStatusRef.current.has(currentStatus)) {
+      const criticalTransitions = [
+        // Transitioning from ACTIVE to VETO_PERIOD (voting just ended)
+        previousStatus === "ACTIVE" && currentStatus === "VETO_PERIOD",
+        // Transitioning from VETO_PERIOD to EXECUTION_WINDOW
+        previousStatus === "VETO_PERIOD" &&
+          currentStatus === "EXECUTION_WINDOW",
+        // Transitioning to any final state
+        currentStatus === "PASSED",
+        currentStatus === "FAILED",
+      ];
 
-    if (
-      shouldBustForTransition &&
-      !hasBustedForStatusRef.current.has(currentStatus)
-    ) {
-      console.log(
-        `Smart cache bust triggered: ${previousStatus} → ${currentStatus}`
-      );
-      setShouldBustCache(true);
-      hasBustedForStatusRef.current.add(currentStatus);
+      if (criticalTransitions.some(Boolean)) {
+        console.log(
+          `🔄 Cache bust triggered: ${previousStatus} → ${currentStatus}`
+        );
+        setShouldBustCache(true);
+        hasBustedForStatusRef.current.add(currentStatus);
+      }
     }
 
     previousStatusRef.current = currentStatus;
@@ -81,16 +81,9 @@ export function useSmartCacheBusting({
             refetchType: "all",
           });
 
-          // Also invalidate the general proposals query to update proposal data
-          await queryClient.invalidateQueries({
-            queryKey: ["proposals"],
-          });
-
-          console.log(
-            `Cache invalidated for proposal ${proposalId} due to status transition`
-          );
+          console.log(`✅ Cache invalidated for proposal ${proposalId}`);
         } catch (error) {
-          console.error("Failed to invalidate queries:", error);
+          console.error("❌ Failed to invalidate queries:", error);
         }
       };
 
@@ -101,9 +94,9 @@ export function useSmartCacheBusting({
   return {
     shouldBustCache,
     resetCacheBust,
-    // Disable polling - only use cache busting
-    shouldPoll: false, // No polling, cache busting only
-    pollInterval: undefined, // No polling intervals
-    staleTime: isActive ? 60000 : 300000, // 1 minute for active, 5 minutes for others
+    // For active proposals, always bust cache (force fresh data)
+    // For others, use normal caching
+    shouldAlwaysBustCache: isActive,
+    staleTime: 300000, // 5 minutes default stale time
   };
 }
