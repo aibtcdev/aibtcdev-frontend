@@ -1,7 +1,6 @@
-import { ContributionHistory, SupabaseProposal } from "../types/contribution";
+import { ContributionHistory } from "../types/contribution";
 import { supabase } from "./supabase";
 
-// Define the actual response type from Supabase
 type SupabaseProposalResponse = {
   id: string;
   proposal_id: bigint;
