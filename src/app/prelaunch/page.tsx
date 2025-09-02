@@ -35,6 +35,14 @@ const PrelaunchPage = () => {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [isRefunding, setIsRefunding] = useState(false);
 
+  // Format balance to avoid unnecessary decimal places
+  const formatBalance = (balance: number): string => {
+    if (balance % 1 === 0) {
+      return balance.toString();
+    }
+    return balance.toFixed(8).replace(/\.?0+$/, "");
+  };
+
   const { toast } = useToast();
   const { accessToken, isLoading } = useAuth();
   const hasAccessToken = !!accessToken && !isLoading;
@@ -80,44 +88,49 @@ const PrelaunchPage = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch sBTC balance
+  // Fetch sBTC balance - dynamically detect tokens ending with "sbtc-token"
   const { data: sbtcBalance, isLoading: isSbtcBalanceLoading } = useQuery<
     number | null
   >({
     queryKey: ["sbtcBalance", userAddress],
     queryFn: async () => {
       if (!userAddress) return null;
-      // Try testnet API first
-      const testnetUrl = `https://api.testnet.hiro.so/extended/v1/address/${userAddress}/balances`;
 
-      const testnetResponse = await fetch(testnetUrl);
-      if (testnetResponse.ok) {
-        const testnetData = await testnetResponse.json();
-        const sbtcAssetIdentifier = `${SBTC_CONTRACT}::sbtc-token`;
+      const fetchBalanceFromNetwork = async (apiUrl: string) => {
+        const response = await fetch(
+          `${apiUrl}/extended/v1/address/${userAddress}/balances`
+        );
+        if (!response.ok) return null;
 
-        if (testnetData.fungible_tokens?.[sbtcAssetIdentifier]) {
-          const balance =
-            testnetData.fungible_tokens[sbtcAssetIdentifier].balance;
-          return parseInt(balance) / 10 ** 8;
+        const data = await response.json();
+        if (!data.fungible_tokens) return 0;
+
+        // Find any token that ends with "btc-token"
+        const btcTokenEntry = Object.entries(data.fungible_tokens).find(
+          ([identifier]) => identifier.endsWith("::sbtc-token")
+        );
+
+        if (btcTokenEntry) {
+          const [, tokenData] = btcTokenEntry as [string, { balance: string }];
+          return parseInt(tokenData.balance) / 10 ** 8;
         }
-      }
+
+        return 0;
+      };
+
+      // Try testnet API first
+      const testnetBalance = await fetchBalanceFromNetwork(
+        "https://api.testnet.hiro.so"
+      );
+      if (testnetBalance !== null) return testnetBalance;
 
       // Fallback to mainnet API
-      const mainnetUrl = `https://api.hiro.so/extended/v1/address/${userAddress}/balances`;
+      const mainnetBalance = await fetchBalanceFromNetwork(
+        "https://api.hiro.so"
+      );
+      if (mainnetBalance !== null) return mainnetBalance;
 
-      const mainnetResponse = await fetch(mainnetUrl);
-      if (!mainnetResponse.ok) {
-        throw new Error("Failed to fetch sBTC balance from both networks");
-      }
-
-      const mainnetData = await mainnetResponse.json();
-      const sbtcAssetIdentifier = `${SBTC_CONTRACT}::sbtc-token`;
-      if (mainnetData.fungible_tokens?.[sbtcAssetIdentifier]) {
-        const balance =
-          mainnetData.fungible_tokens[sbtcAssetIdentifier].balance;
-        return parseInt(balance) / 10 ** 8;
-      }
-      return 0;
+      throw new Error("Failed to fetch BTC token balance from both networks");
     },
     enabled: !!userAddress,
   });
@@ -155,7 +168,7 @@ const PrelaunchPage = () => {
 
   const handleMaxClick = (): void => {
     if (sbtcBalance !== null && sbtcBalance !== undefined) {
-      setAmount(sbtcBalance.toFixed(8));
+      setAmount(formatBalance(sbtcBalance));
       setSelectedPreset("max");
     } else {
       toast({
@@ -418,7 +431,7 @@ const PrelaunchPage = () => {
                   <Button
                     onClick={() => {
                       if (sbtcBalance !== null && sbtcBalance !== undefined) {
-                        setAmount(sbtcBalance.toFixed(8));
+                        setAmount(formatBalance(sbtcBalance));
                         setSelectedPreset(null);
                       }
                     }}
@@ -432,7 +445,7 @@ const PrelaunchPage = () => {
                     {isSbtcBalanceLoading
                       ? "Loading..."
                       : sbtcBalance !== null && sbtcBalance !== undefined
-                        ? `${sbtcBalance.toFixed(8)} sBTC`
+                        ? `${formatBalance(sbtcBalance)} sBTC`
                         : "Unable to load balance"}
                   </Button>
                 ) : (
