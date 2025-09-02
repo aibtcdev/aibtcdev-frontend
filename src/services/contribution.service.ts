@@ -1,6 +1,22 @@
 import { ContributionHistory, SupabaseProposal } from "../types/contribution";
 import { supabase } from "./supabase";
 
+// Define the actual response type from Supabase
+type SupabaseProposalResponse = {
+  id: string;
+  proposal_id: bigint;
+  title: string;
+  created_at: string;
+  executed: boolean;
+  met_quorum: boolean;
+  met_threshold: boolean;
+  passed: boolean;
+  contract_caller: string;
+  daos: {
+    name: string;
+  } | null;
+};
+
 export async function fetchAgentContributionHistory(
   agentAddress: string
 ): Promise<ContributionHistory[]> {
@@ -32,7 +48,8 @@ export async function fetchAgentContributionHistory(
     `
     )
     .eq("contract_caller", agentAddress)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .returns<SupabaseProposalResponse[]>();
 
   console.log("📊 Query result:", {
     data,
@@ -55,45 +72,43 @@ export async function fetchAgentContributionHistory(
     `✅ Found ${data.length} proposals created by agent ${agentAddress}`
   );
 
-  const contributions: ContributionHistory[] = data.map(
-    (proposal: SupabaseProposal) => {
-      const dao = proposal.daos;
+  const contributions: ContributionHistory[] = data.map((proposal) => {
+    const dao = proposal.daos;
 
-      const isSuccessfulContribution =
-        proposal.executed &&
-        proposal.met_quorum &&
-        proposal.met_threshold &&
-        proposal.passed;
+    const isSuccessfulContribution =
+      proposal.executed &&
+      proposal.met_quorum &&
+      proposal.met_threshold &&
+      proposal.passed;
 
-      const isFailedContribution = !isSuccessfulContribution;
+    const isFailedContribution = !isSuccessfulContribution;
 
-      let rewardAmount = 0;
-      let rewardType: "gain" | "loss" = "gain";
+    let rewardAmount = 0;
+    let rewardType: "gain" | "loss" = "gain";
 
-      if (isSuccessfulContribution) {
-        rewardAmount = 1000;
-        rewardType = "gain";
-      } else if (isFailedContribution) {
-        rewardAmount = 250;
-        rewardType = "loss";
-      }
-
-      return {
-        id: proposal.id,
-        dao_name: dao?.[0]?.name ?? "Unknown DAO",
-        proposal_title: proposal.title || "Unknown Proposal",
-        proposal_id: proposal.proposal_id,
-        created_at: proposal.created_at,
-        executed: proposal.executed || false,
-        met_quorum: proposal.met_quorum || false,
-        met_threshold: proposal.met_threshold || false,
-        passed: proposal.passed || false,
-        agent_vote: true, // Agent created the proposal, so it's always "for"
-        reward_amount: rewardAmount,
-        reward_type: rewardType,
-      };
+    if (isSuccessfulContribution) {
+      rewardAmount = 1000;
+      rewardType = "gain";
+    } else if (isFailedContribution) {
+      rewardAmount = 250;
+      rewardType = "loss";
     }
-  );
+
+    return {
+      id: proposal.id,
+      dao_name: dao?.name ?? "Unknown DAO",
+      proposal_title: proposal.title || "Unknown Proposal",
+      proposal_id: proposal.proposal_id,
+      created_at: proposal.created_at,
+      executed: proposal.executed || false,
+      met_quorum: proposal.met_quorum || false,
+      met_threshold: proposal.met_threshold || false,
+      passed: proposal.passed || false,
+      // agent_vote: not needed for contribution history
+      reward_amount: rewardAmount,
+      reward_type: rewardType,
+    };
+  });
 
   return contributions;
 }

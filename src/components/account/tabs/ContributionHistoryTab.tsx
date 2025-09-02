@@ -73,23 +73,33 @@ export function ContributionHistoryTab({
     }
   };
 
-  const handleProposalClick = (proposalId: string) => {
+  const handleProposalClick = (proposalId: bigint) => {
     router.push(`/proposals/${proposalId}`);
   };
 
   const getStatusBadge = (contribution: ContributionHistory) => {
-    if (
+    const isSuccessful =
       contribution.executed &&
       contribution.met_quorum &&
       contribution.met_threshold &&
-      contribution.passed
+      contribution.passed;
+
+    if (isSuccessful) {
+      return <Badge className="bg-green-600 hover:bg-green-700">Success</Badge>;
+    }
+
+    // Check if proposal is still pending (null values indicate pending)
+    if (
+      contribution.executed === null ||
+      contribution.met_quorum === null ||
+      contribution.met_threshold === null ||
+      contribution.passed === null
     ) {
-      return <Badge variant="default">Success</Badge>;
+      return <Badge variant="secondary">Pending</Badge>;
     }
-    if (!contribution.passed || !contribution.executed) {
-      return <Badge variant="destructive">Failed</Badge>;
-    }
-    return <Badge variant="secondary">Pending</Badge>;
+
+    // If executed but didn't meet requirements or didn't pass
+    return <Badge variant="destructive">Failed</Badge>;
   };
 
   const getRewardDisplay = (contribution: ContributionHistory) => {
@@ -100,7 +110,9 @@ export function ContributionHistoryTab({
 
     return (
       <div
-        className={`flex items-center gap-1 ${isGain ? "text-primary" : "text-red-600"}`}
+        className={`flex items-center gap-1 ${
+          isGain ? "text-green-600" : "text-red-600"
+        }`}
       >
         {isGain ? (
           <TrendingUp className="h-4 w-4" />
@@ -173,24 +185,26 @@ export function ContributionHistoryTab({
             No Contributions Yet
           </h3>
           <p className="text-sm text-muted-foreground">
-            Your agent hasn't participated in any DAO proposals yet
+            Your agent hasn't created any DAO proposals yet
           </p>
         </div>
       </div>
     );
   }
 
-  const totalRewards = sortedContributions.reduce((acc, contribution) => {
-    if (contribution.reward_type === "gain") {
-      return acc + contribution.reward_amount;
-    } else {
-      return acc - contribution.reward_amount;
-    }
-  }, 0);
+  // Calculate summary statistics
+  const totalRewards = sortedContributions
+    .filter((c) => c.reward_type === "gain")
+    .reduce((acc, contribution) => acc + contribution.reward_amount, 0);
+
+  const totalLostBonds = sortedContributions
+    .filter((c) => c.reward_type === "loss")
+    .reduce((acc, contribution) => acc + contribution.reward_amount, 0);
 
   const successfulContributions = sortedContributions.filter(
     (c) => c.reward_type === "gain"
   ).length;
+
   const failedContributions = sortedContributions.filter(
     (c) => c.reward_type === "loss"
   ).length;
@@ -198,29 +212,41 @@ export function ContributionHistoryTab({
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span className="text-sm font-medium">Successful Proposals</span>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium">Successful</span>
           </div>
-          <p className="text-2xl font-bold">{successfulContributions}</p>
+          <p className="text-2xl font-bold text-green-600">
+            {successfulContributions}
+          </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4" />
-            <span className="text-sm font-medium">Failed Proposals</span>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+            <span className="text-sm font-medium">Failed</span>
           </div>
-          <p className="text-2xl font-bold">{failedContributions}</p>
+          <p className="text-2xl font-bold text-red-600">
+            {failedContributions}
+          </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            <span className="text-sm font-medium">Net Rewards</span>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium">Total Rewards</span>
           </div>
-          <p className="text-2xl font-bold">
-            {totalRewards >= 0 ? "+" : ""}
-            {totalRewards.toLocaleString()}
+          <p className="text-2xl font-bold text-green-600">
+            +{totalRewards.toLocaleString()}
+          </p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-4 w-4 text-red-600" />
+            <span className="text-sm font-medium">Lost Bonds</span>
+          </div>
+          <p className="text-2xl font-bold text-red-600">
+            -{totalLostBonds.toLocaleString()}
           </p>
         </div>
       </div>
@@ -268,12 +294,16 @@ export function ContributionHistoryTab({
                     {format(new Date(contribution.created_at), "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {contribution.dao_name}
+                    <Badge variant="outline" className="text-xs">
+                      {contribution.dao_name}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <button
-                      onClick={() => handleProposalClick(contribution.id)}
-                      className="text-left hover:text-primary transition-colors group flex items-center gap-1"
+                      onClick={() =>
+                        handleProposalClick(contribution.proposal_id)
+                      }
+                      className="text-left hover:text-green-600 transition-colors group flex items-center gap-1 max-w-[300px]"
                       title="Click to view proposal details"
                     >
                       <span className="truncate">

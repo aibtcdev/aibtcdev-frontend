@@ -8,7 +8,7 @@ export interface ContributionHistory {
   met_quorum: boolean;
   met_threshold: boolean;
   passed: boolean;
-  agent_vote: boolean;
+  // agent_vote: boolean;
   reward_amount: number;
   reward_type: "gain" | "loss";
 }
@@ -23,9 +23,7 @@ export interface SupabaseProposal {
   met_threshold: boolean;
   passed: boolean;
   contract_caller: string;
-  daos:
-    | {
-        name: string;
-      }[]
-    | null;
+  daos: {
+    name: string;
+  } | null;
 }
