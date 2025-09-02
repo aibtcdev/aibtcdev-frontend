@@ -20,10 +20,8 @@ import {
   ArrowUpDown,
   ExternalLink,
 } from "lucide-react";
-import {
-  fetchAgentContributionHistory,
-  ContributionHistory,
-} from "@/services/contribution.service";
+import { fetchAgentContributionHistory } from "@/services/contribution.service";
+import { ContributionHistory } from "@/types/contribution";
 import { format } from "date-fns";
 
 interface ContributionHistoryTabProps {
