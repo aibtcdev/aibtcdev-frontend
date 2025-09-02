@@ -85,6 +85,12 @@ function AccountPageContent() {
           description:
             "Configure your AI agent permissions and voting instructions for DAO operations.",
         };
+      case "contribution-history":
+        return {
+          title: "Contribution History",
+          description:
+            "Track your agent's voting history and token rewards from DAO participation.",
+        };
       default:
         return {
           title: "Wallets",
