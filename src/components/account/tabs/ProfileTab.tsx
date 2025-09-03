@@ -296,7 +296,7 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         </div>
 
         {/* Agent Voting Account Section */}
-        {agentAddress && (
+        {agentAddress ? (
           <div className="mb-6 border-t pt-6">
             <h3 className="text-lg font-semibold">Agent Voting Account</h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -322,6 +322,16 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
                 connectedWalletBalance={connectedWalletBalance}
                 userAgentWalletAddress={userAgentWalletAddress}
               />
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 border-t pt-6">
+            <h3 className="text-lg font-semibold">Agent Voting Account</h3>
+            <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                Your agent account is under deployment. Please come back in a
+                few minutes.
+              </p>
             </div>
           </div>
         )}

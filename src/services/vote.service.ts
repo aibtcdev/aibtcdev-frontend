@@ -233,8 +233,9 @@ export async function fetchProposalVotes(proposalId: string): Promise<Vote[]> {
  * @param votes Number representing raw vote amount
  * @returns Formatted string representation
  */
-export function formatVotes(votes: number | null | undefined): string {
-  if (votes === null || votes === undefined || isNaN(votes)) return "0";
+export function formatVotes(votes: number | null | undefined): string | null {
+  if (votes === null || votes === undefined) return null;
+  if (isNaN(votes)) throw new Error("Invalid vote value: NaN");
   if (votes === 0) return "0";
   // Assuming 1e8 (100,000,000) is the correct decimal place adjustment
   const adjustedVotes = votes / 1e8;
@@ -301,8 +302,8 @@ export async function getProposalVotes(
     const responseData = await response.json();
     const voteData = responseData.data || responseData;
 
-    let votesFor = "0",
-      votesAgainst = "0";
+    let votesFor: string | null = null,
+      votesAgainst: string | null = null;
     // Safely access and parse vote counts
     if (voteData && typeof voteData.votesFor === "string") {
       votesFor = voteData.votesFor.replace(/n$/, "");
@@ -316,17 +317,20 @@ export async function getProposalVotes(
       votesAgainst = voteData.votesAgainst.toString();
     }
 
-    const votesForNum = !isNaN(Number(votesFor)) ? Number(votesFor) : 0;
-    const votesAgainstNum = !isNaN(Number(votesAgainst))
-      ? Number(votesAgainst)
-      : 0;
+    const votesForNum =
+      votesFor !== null && !isNaN(Number(votesFor)) ? Number(votesFor) : null;
+    const votesAgainstNum =
+      votesAgainst !== null && !isNaN(Number(votesAgainst))
+        ? Number(votesAgainst)
+        : null;
 
     // Return a structured object
     return {
-      votesFor: votesFor, // String version without 'n'
-      votesAgainst: votesAgainst, // String version without 'n'
-      formattedVotesFor: formatVotes(votesForNum),
-      formattedVotesAgainst: formatVotes(votesAgainstNum),
+      votesFor: votesFor, // String version without 'n' or null
+      votesAgainst: votesAgainst, // String version without 'n' or null
+      formattedVotesFor: votesForNum !== null ? formatVotes(votesForNum) : null,
+      formattedVotesAgainst:
+        votesAgainstNum !== null ? formatVotes(votesAgainstNum) : null,
     };
   } catch (error) {
     console.error(
