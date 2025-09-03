@@ -39,11 +39,11 @@ const VotingProgressChart = ({
   tokenSymbol = "",
   contractPrincipal,
 }: VotingProgressChartProps) => {
-  console.log("VotingProgressChart props:", {
-    proposal,
-    tokenSymbol,
-    contractPrincipal,
-  });
+  // console.log("VotingProgressChart props:", {
+  //   proposal,
+  //   tokenSymbol,
+  //   contractPrincipal,
+  // });
 
   // Use the new useProposalStatus hook
   const { status, statusConfig, isActive, isEnded, isPassed, isFailed } =
@@ -64,15 +64,15 @@ const VotingProgressChart = ({
     fallbackVotesAgainst: proposal.votes_against,
   });
 
-  console.log("Proposal status:", {
-    status,
-    isActive,
-    isEnded,
-    isPassed,
-    isFailed,
-    hasData,
-    voteDataError,
-  });
+  // console.log("Proposal status:", {
+  //   status,
+  //   isActive,
+  //   isEnded,
+  //   isPassed,
+  //   isFailed,
+  //   hasData,
+  //   voteDataError,
+  // });
 
   // Fetch current chain state to check execution deadline
   const { data: chainState } = useQuery({
@@ -233,7 +233,7 @@ const VotingProgressChart = ({
   };
 
   const resultStatus = getResultStatus();
-  console.log("resultStatus:", resultStatus);
+  // console.log("resultStatus:", resultStatus);
 
   // Use the refresh function from the hook
   const handleManualRefresh = refreshVoteData;
