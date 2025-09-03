@@ -98,8 +98,12 @@ export function useProposalVote({
       "proposalVotes",
       contractPrincipal,
       proposalId,
-      // Cache bust for active proposals OR status transitions
-      shouldAlwaysBustCache || shouldBustCache ? "fresh" : "cached",
+      // Always use consistent cache key for critical periods
+      shouldAlwaysBustCache
+        ? "fresh"
+        : shouldBustCache
+          ? "transition"
+          : "cached",
     ],
     queryFn: async (): Promise<VoteDataSource> => {
       if (!proposalId || !contractPrincipal) {
@@ -107,10 +111,14 @@ export function useProposalVote({
       }
 
       const shouldForceFresh = shouldAlwaysBustCache || shouldBustCache;
-      // const cacheBustReason = shouldAlwaysBustCache ? 'Active proposal' : shouldBustCache ? 'Status transition' : 'Normal fetch';
+      const cacheBustReason = shouldAlwaysBustCache
+        ? "Active proposal"
+        : shouldBustCache
+          ? "Status transition"
+          : "Normal fetch";
 
-      // console.log(`🔄 Fetching vote data for proposal ${proposalId} (${cacheBustReason})`);
-      // console.log(`   shouldAlwaysBustCache: ${shouldAlwaysBustCache}, shouldBustCache: ${shouldBustCache}, shouldForceFresh: ${shouldForceFresh}`);
+      // console.log(`🔄 [VOTE DATA] Fetching vote data for proposal ${proposalId} (${cacheBustReason})`);
+      // console.log(`   [VOTE DATA] Cache flags - shouldAlwaysBustCache: ${shouldAlwaysBustCache}, shouldBustCache: ${shouldBustCache}, shouldForceFresh: ${shouldForceFresh}`);
 
       try {
         const result = await getProposalVotes(
@@ -124,10 +132,12 @@ export function useProposalVote({
           resetCacheBust();
         }
 
-        // console.log(`✅ Vote data fetched from vote-utils:`, {
+        // console.log(`✅ [VOTE DATA] Primary data fetched from vote-utils:`, {
         //   votesFor: result.votesFor,
         //   votesAgainst: result.votesAgainst,
+        //   liquidTokens: result.liquidTokens,
         //   cacheBustReason,
+        //   source: 'vote-utils (blockchain/cache)'
         // });
 
         return {
@@ -137,7 +147,7 @@ export function useProposalVote({
           source: "vote-utils",
         };
       } catch (error) {
-        // console.warn("❌ Primary vote fetch failed:", error);
+        // console.warn("❌ [VOTE DATA] Primary vote fetch failed:", error);
         throw error;
       }
     },
@@ -159,7 +169,7 @@ export function useProposalVote({
   const fallbackQuery = useQuery({
     queryKey: ["proposalVotesFallback", proposal.id],
     queryFn: async (): Promise<VoteDataSource> => {
-      // console.log(`🔄 Fetching fallback vote data for proposal ${proposal.id}`);
+      // console.log(`🔄 [VOTE DATA] Fetching fallback vote data for proposal ${proposal.id} from Supabase`);
 
       const votes = await fetchProposalVotes(proposal.id);
 
@@ -176,9 +186,11 @@ export function useProposalVote({
         { totalFor: 0, totalAgainst: 0 }
       );
 
-      // console.log(`✅ Fallback vote data fetched from supabase:`, {
+      // console.log(`✅ [VOTE DATA] Fallback data fetched from Supabase:`, {
       //   votesFor: totalFor.toString(),
       //   votesAgainst: totalAgainst.toString(),
+      //   liquidTokens: proposal.liquid_tokens,
+      //   source: 'supabase (database)'
       // });
 
       return {
@@ -197,17 +209,35 @@ export function useProposalVote({
   // Determine active data source
   const activeVoteData = useMemo(() => {
     if (primaryQuery.data && !primaryQuery.error) {
+      // console.log(`📊 [VOTE DATA] Using PRIMARY data source (vote-utils):`, {
+      //   votesFor: primaryQuery.data.votesFor,
+      //   votesAgainst: primaryQuery.data.votesAgainst,
+      //   source: primaryQuery.data.source,
+      //   proposalId: proposal.id
+      // });
       setDataSource("vote-utils");
       return primaryQuery.data;
     }
 
     if (fallbackQuery.data && !fallbackQuery.error) {
+      // console.log(`📊 [VOTE DATA] Using FALLBACK data source (Supabase):`, {
+      //   votesFor: fallbackQuery.data.votesFor,
+      //   votesAgainst: fallbackQuery.data.votesAgainst,
+      //   source: fallbackQuery.data.source,
+      //   proposalId: proposal.id
+      // });
       setDataSource("supabase");
       return fallbackQuery.data;
     }
 
     // Final fallback to proposal props
     if (fallbackVotesFor && fallbackVotesAgainst) {
+      // console.log(`📊 [VOTE DATA] Using PROPS data source:`, {
+      //   votesFor: fallbackVotesFor,
+      //   votesAgainst: fallbackVotesAgainst,
+      //   source: 'props',
+      //   proposalId: proposal.id
+      // });
       setDataSource("props");
       return {
         votesFor: fallbackVotesFor,
@@ -217,6 +247,7 @@ export function useProposalVote({
       };
     }
 
+    // console.warn(`⚠️ [VOTE DATA] No data source available for proposal ${proposal.id}`);
     setDataSource("none");
     return null;
   }, [
@@ -236,9 +267,23 @@ export function useProposalVote({
     const { votesFor, votesAgainst, liquidTokens } = activeVoteData;
 
     if (!votesFor || !votesAgainst || !liquidTokens) {
-      // console.warn("⚠️ Incomplete vote data:", { votesFor, votesAgainst, liquidTokens });
+      // console.warn(`⚠️ [VOTE DATA] Incomplete vote data for proposal ${proposal.id}:`, {
+      //   votesFor,
+      //   votesAgainst,
+      //   liquidTokens,
+      //   dataSource: activeVoteData.source
+      // });
       return null;
     }
+
+    // console.log(`✨ [VOTE DATA] Final processed data for display:`, {
+    //   proposalId: proposal.id,
+    //   formattedVotesFor: formatBalance(votesFor),
+    //   formattedVotesAgainst: formatBalance(votesAgainst),
+    //   rawVotesFor: votesFor,
+    //   rawVotesAgainst: votesAgainst,
+    //   dataSource: activeVoteData.source
+    // });
 
     return {
       votesFor: formatBalance(votesFor),
@@ -288,12 +333,12 @@ export function useProposalVote({
   // Manual refresh
   const refreshVoteData = useCallback(async () => {
     if (!contractPrincipal || !proposalId) {
-      // console.warn("⚠️ Cannot refresh: missing contractPrincipal or proposalId");
+      // console.warn(`⚠️ [VOTE DATA] Cannot refresh: missing contractPrincipal (${contractPrincipal}) or proposalId (${proposalId})`);
       return;
     }
 
     try {
-      // console.log(`🔄 Manual refresh triggered for proposal ${proposalId}`);
+      // console.log(`🔄 [VOTE DATA] Manual refresh triggered for proposal ${proposalId}`);
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -306,7 +351,7 @@ export function useProposalVote({
         }),
       ]);
 
-      // console.log(`✅ Vote data refreshed for proposal ${proposalId}`);
+      // console.log(`✅ [VOTE DATA] Vote data refreshed for proposal ${proposalId}`);
     } catch {
       console.error("❌ Failed to refresh vote data:");
     }
