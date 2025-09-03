@@ -25,7 +25,7 @@ export function getStacksAddress(): string | null {
     if (!data) {
       return null;
     }
-    console.log(data);
+
     const stxList = data.addresses.stx as AddressObject[];
     const isTestnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet";
     const preferred = stxList.find((addr) =>

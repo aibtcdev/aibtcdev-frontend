@@ -30,7 +30,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
-import { ThemeToggle } from "@/components/reusables/ThemeToggle";
+// import { ThemeToggle } from "@/components/reusables/ThemeToggle";
 import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
 import AssetTracker from "@/components/reusables/AssetTracker";
 
@@ -195,7 +195,7 @@ export default function ApplicationLayout({
           ) : (
             <AuthButton />
           )}
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
         </div>
       </div>
 
@@ -369,7 +369,7 @@ export default function ApplicationLayout({
               <AuthButton />
             </div>
           )}
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
         </div>
       </div>
 
