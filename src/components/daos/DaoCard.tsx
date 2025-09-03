@@ -249,7 +249,7 @@ export const DAOCard = ({
                               {isFetchingPrice ? (
                                 <Loader />
                               ) : tokenPrice?.marketCap ? (
-                                `${formatNumber(tokenPrice.marketCap)}`
+                                "$" + `${formatNumber(tokenPrice.marketCap)}`
                               ) : (
                                 "—"
                               )}

@@ -17,6 +17,7 @@ import { useMemo } from "react";
 import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
+import { useProposalVote } from "@/hooks/useProposalVote";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -34,8 +35,33 @@ export default function ProposalCard({
   // Use the unified status system
   const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
 
-  // Memoize vote summary - return null for invalid data instead of defaulting to 0
+  // Use centralized vote hook for consistent data fetching
+  const { voteDisplayData, error: hasVoteDataError } = useProposalVote({
+    proposal,
+    contractPrincipal: proposal.contract_principal,
+  });
+
+  // Extract vote data with fallback to proposal props
   const voteSummary = useMemo(() => {
+    // Use hook data if available, otherwise fallback to proposal props
+    if (voteDisplayData && !hasVoteDataError) {
+      return {
+        votesFor: voteDisplayData.votesFor
+          ? Number(voteDisplayData.votesFor)
+          : null,
+        votesAgainst: voteDisplayData.votesAgainst
+          ? Number(voteDisplayData.votesAgainst)
+          : null,
+        totalVotes:
+          voteDisplayData.votesFor && voteDisplayData.votesAgainst
+            ? Number(voteDisplayData.votesFor) +
+              Number(voteDisplayData.votesAgainst)
+            : null,
+        hasVoteData: true,
+      };
+    }
+
+    // Fallback to proposal props if hook data unavailable
     const hasVoteData =
       proposal.votes_for !== null &&
       proposal.votes_for !== undefined &&
@@ -56,7 +82,12 @@ export default function ProposalCard({
     const totalVotes = votesFor + votesAgainst;
 
     return { votesFor, votesAgainst, totalVotes, hasVoteData: true };
-  }, [proposal.votes_for, proposal.votes_against]);
+  }, [
+    voteDisplayData,
+    hasVoteDataError,
+    proposal.votes_for,
+    proposal.votes_against,
+  ]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
   const liquidTokens = Number(proposal.liquid_tokens || 0);
@@ -362,13 +393,10 @@ export default function ProposalCard({
           statusConfig.label !== "Pending" && (
             <div className="">
               <VoteStatusChart
-                votesFor={proposal.votes_for}
-                votesAgainst={proposal.votes_against}
-                contractAddress={proposal.contract_principal}
                 proposalId={proposal.proposal_id?.toString()}
                 tokenSymbol={tokenSymbol}
                 liquidTokens={proposal.liquid_tokens}
-                isActive={isActive}
+                proposal={proposal}
               />
             </div>
           )}
