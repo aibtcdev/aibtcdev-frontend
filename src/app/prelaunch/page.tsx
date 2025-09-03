@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { uintCV, Pc } from "@stacks/transactions";
+import { uintCV, Pc, PostConditionMode } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 
 // Hardcoded values for prelaunch
@@ -257,7 +257,8 @@ const PrelaunchPage = () => {
         contract: `${contractAddress}.${contractName}` as `${string}.${string}`,
         functionName: "buy-seats-and-deposit",
         functionArgs: [uintCV(sbtcAmountInSats)],
-        postConditions,
+        // postConditions,
+        postConditionMode: "allow" as const,
       };
 
       const response = await request("stx_callContract", params);
