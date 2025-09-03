@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Users,
   Copy,
@@ -25,6 +25,7 @@ import { useClipboard } from "@/hooks/useClipboard";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { useWalletStore } from "@/store/wallet";
 import { getExplorerLink } from "@/utils/format";
+import { truncateAddress } from "@/utils/address-utils";
 import {
   categorizeHolders,
   getSectionInfo,
@@ -51,6 +52,19 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
   const { copyToClipboard, copiedText } = useClipboard();
   const { userAgentAddress } = useAgentAccount();
   const { userWallet } = useWalletStore();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
 
   // Get user context for highlighting
   const userContext: UserContext = useMemo(() => {
@@ -150,33 +164,46 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
                     <TableCell className="pl-4 text-muted-foreground">
                       {startIndex + index + 1}
                     </TableCell>
-                    <TableCell className="break-all font-medium">
-                      <div className="flex items-center gap-2">
-                        <span>{holder.address}</span>
-                        {isUserConnectedWallet && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500" />
-                            <Badge variant="outline" className="text-xs">
-                              Your Wallet
-                            </Badge>
-                          </div>
-                        )}
-                        {isUserAgent && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-blue-500" />
-                            <Badge variant="outline" className="text-xs">
-                              Your Agent
-                            </Badge>
-                          </div>
-                        )}
-                        {isUserConnectedWallet && holder.percentage < 1 && (
-                          <div className="flex items-center gap-1">
-                            <AlertTriangle className="h-4 w-4 text-orange-500" />
-                            <Badge variant="destructive" className="text-xs">
-                              Consider depositing more!
-                            </Badge>
-                          </div>
-                        )}
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className={isMobile ? "text-sm" : "break-all"}>
+                            {truncateAddress(holder.address, isMobile)}
+                          </span>
+                        </div>
+
+                        {/* Badges row */}
+                        <div className="flex flex-wrap items-center gap-1">
+                          {isUserConnectedWallet && (
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 text-yellow-500" />
+                              <Badge
+                                variant="outline"
+                                className="text-xs px-1 py-0"
+                              >
+                                Your Wallet
+                              </Badge>
+                            </div>
+                          )}
+                          {isUserAgent && (
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs p-2">
+                                Your Agent
+                              </Badge>
+                            </div>
+                          )}
+                          {isUserConnectedWallet && holder.percentage < 1 && (
+                            <div className="flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3 text-orange-500" />
+                              <Badge
+                                variant="destructive"
+                                className="text-xs px-1 py-0"
+                              >
+                                Consider depositing more!
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

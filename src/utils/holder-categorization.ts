@@ -14,11 +14,12 @@ export interface UserContext {
 
 /**
  * Protocol contracts - core DAO functionality
+ * These should be checked first and most specifically
  */
 const PROTOCOL_CONTRACTS = [
-  "fake-treasury",
-  "fake-faktory-dex",
-  "fake-pre-faktory",
+  "treasury",
+  "faktory-dex",
+  "pre-faktory",
   // Add bitflow pool patterns after graduation
 ];
 
@@ -31,9 +32,11 @@ const OTHER_CONTRACTS = ["aibtc-dao-run-cost", "btc2aibtc"];
  * Check if an address is a protocol contract
  */
 export function isProtocolContract(address: string): boolean {
-  return PROTOCOL_CONTRACTS.some((contract) =>
-    address.includes(`.${contract}`)
-  );
+  return PROTOCOL_CONTRACTS.some((contract) => {
+    // Check if address contains the contract name pattern (with any prefix)
+    // Matches: fast12-treasury, fake-treasury, treasury, etc.
+    return address.includes(`-${contract}`) || address.endsWith(`.${contract}`);
+  });
 }
 
 /**
@@ -95,13 +98,24 @@ export function categorizeHolders(
   };
 
   for (const holder of holders) {
+    // Check protocol contracts FIRST and most specifically
     if (isProtocolContract(holder.address)) {
       categorized.protocol.push(holder);
-    } else if (isAgentVotingAccount(holder.address)) {
+    }
+    // Check agent voting accounts SECOND
+    else if (isAgentVotingAccount(holder.address)) {
       categorized.agentVotingAccounts.push(holder);
-    } else if (isOtherContract(holder.address) || isContract(holder.address)) {
+    }
+    // Check other known contracts THIRD
+    else if (isOtherContract(holder.address)) {
       categorized.contracts.push(holder);
-    } else {
+    }
+    // Check if it's any other contract format FOURTH
+    else if (isContract(holder.address)) {
+      categorized.contracts.push(holder);
+    }
+    // Everything else is a regular address
+    else {
       categorized.addresses.push(holder);
     }
   }
