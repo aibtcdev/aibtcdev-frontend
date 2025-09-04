@@ -26,7 +26,7 @@ const HARDCODED_VALUES = {
 const SBTC_CONTRACT = "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
 
 const PrelaunchPage = () => {
-  const [amount, setAmount] = useState<string>("0.0001");
+  const [amount, setAmount] = useState<string>("0.0001000");
   const [buyQuote, setBuyQuote] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,13 +34,18 @@ const PrelaunchPage = () => {
   const [activeTxId, setActiveTxId] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [isRefunding, setIsRefunding] = useState(false);
+  const [transactionType, setTransactionType] = useState<"buy" | "refund">(
+    "buy"
+  );
 
   // Format balance to avoid unnecessary decimal places
   const formatBalance = (balance: number): string => {
     if (balance % 1 === 0) {
       return balance.toString();
     }
-    return balance.toFixed(8).replace(/\.?0+$/, "");
+    // Ensure we maintain precision for calculations
+    const formatted = balance.toFixed(8).replace(/\.?0+$/, "");
+    return formatted === "" ? "0" : formatted;
   };
 
   const { toast } = useToast();
@@ -161,14 +166,20 @@ const PrelaunchPage = () => {
     }
   };
 
-  const handlePresetClick = (presetAmount: string): void => {
-    setAmount(presetAmount);
-    setSelectedPreset(presetAmount);
-  };
-
   const handleMaxClick = (): void => {
     if (sbtcBalance !== null && sbtcBalance !== undefined) {
-      setAmount(formatBalance(sbtcBalance));
+      // Calculate max seats user can buy based on balance and seat limit
+      const maxSeatsFromBalance = calculateSeats(sbtcBalance.toString());
+      const maxSeatsAllowed = Math.min(
+        maxSeatsFromBalance,
+        HARDCODED_VALUES.maxSeatsPerUser
+      );
+
+      // Calculate exact amount needed for max seats
+      const exactAmount =
+        (maxSeatsAllowed * HARDCODED_VALUES.seatPriceSats) / Math.pow(10, 8);
+
+      setAmount(exactAmount.toFixed(8));
       setSelectedPreset("max");
     } else {
       toast({
@@ -247,9 +258,17 @@ const PrelaunchPage = () => {
         HARDCODED_VALUES.buyAndDepositContract.split(".");
       const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
 
+      // Two post conditions based on the actual asset transfers:
+      // 1. User transfers sBTC to adapter contract
+      // 2. Adapter contract transfers sBTC to DEX
       const postConditions = [
+        // User -> Adapter contract transfer
         Pc.principal(userAddress)
-          .willSendLte(sbtcAmountInSats)
+          .willSendEq(sbtcAmountInSats)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // Adapter contract -> DEX transfer (same amount)
+        Pc.principal(`${contractAddress}.${contractName}`)
+          .willSendEq(sbtcAmountInSats)
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
       ];
 
@@ -258,12 +277,14 @@ const PrelaunchPage = () => {
         functionName: "buy-seats-and-deposit",
         functionArgs: [uintCV(sbtcAmountInSats)],
         postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", params);
 
       if (response && response.txid) {
         setActiveTxId(response.txid);
+        setTransactionType("buy");
         setIsModalOpen(true);
 
         // Add fallback check after 30 seconds
@@ -314,24 +335,31 @@ const PrelaunchPage = () => {
     try {
       const [contractAddress, contractName] =
         HARDCODED_VALUES.buyAndDepositContract.split(".");
+      // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+
+      // const postConditions = [
+      //   Pc.principal(`${contractAddress}.${contractName}`)
+      //     .willSendGte(0) // Allow contract to send any amount of sBTC for refund
+      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      // ];
 
       const params = {
         contract: `${contractAddress}.${contractName}` as `${string}.${string}`,
         functionName: "refund-seat-and-deposit",
         functionArgs: [], // No parameters required
-        postConditions: [], // No post conditions needed for refund
+        postConditionMode: "allow" as const,
       };
 
       const response = await request("stx_callContract", params);
 
       if (response && response.txid) {
         setActiveTxId(response.txid);
+        setTransactionType("refund");
         setIsModalOpen(true);
 
         toast({
-          title: "Refund Initiated",
-          description:
-            "Your prelaunch seat refund has been initiated. sBTC will be returned to your agent voting account.",
+          title: "Refund Confirmed",
+          description: `Your refund for prelaunch seat for ${HARDCODED_VALUES.daoName} is confirmed.`,
           variant: "default",
         });
       } else {
@@ -395,20 +423,45 @@ const PrelaunchPage = () => {
                     selectedPreset === "0.0002" ? "default" : "secondary"
                   }
                   size="sm"
-                  onClick={() => handlePresetClick("0.0002")}
+                  onClick={() => {
+                    const exactAmount =
+                      (1 * HARDCODED_VALUES.seatPriceSats) / Math.pow(10, 8);
+                    setAmount(exactAmount.toFixed(8));
+                    setSelectedPreset("0.0002");
+                  }}
                   disabled={!hasAccessToken}
                 >
                   1 Seat
                 </Button>
                 <Button
                   variant={
-                    selectedPreset === "0.0014" ? "default" : "secondary"
+                    selectedPreset === "0.0004" ? "default" : "secondary"
                   }
                   size="sm"
-                  onClick={() => handlePresetClick("0.0014")}
+                  onClick={() => {
+                    const exactAmount =
+                      (2 * HARDCODED_VALUES.seatPriceSats) / Math.pow(10, 8);
+                    setAmount(exactAmount.toFixed(8));
+                    setSelectedPreset("0.0004");
+                  }}
                   disabled={!hasAccessToken}
                 >
-                  7 Seats
+                  2 Seats
+                </Button>
+                <Button
+                  variant={
+                    selectedPreset === "0.0006" ? "default" : "secondary"
+                  }
+                  size="sm"
+                  onClick={() => {
+                    const exactAmount =
+                      (3 * HARDCODED_VALUES.seatPriceSats) / Math.pow(10, 8);
+                    setAmount(exactAmount.toFixed(8));
+                    setSelectedPreset("0.0006");
+                  }}
+                  disabled={!hasAccessToken}
+                >
+                  3 Seats
                 </Button>
               </div>
               <Button
@@ -422,34 +475,51 @@ const PrelaunchPage = () => {
             </div>
 
             {/* Available Balance */}
-            <div className="border rounded-lg p-4">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Available sBTC Balance
+                <span className="text-sm font-medium text-zinc-300">
+                  Available Balance
                 </span>
                 {hasAccessToken ? (
-                  <Button
+                  <button
                     onClick={() => {
                       if (sbtcBalance !== null && sbtcBalance !== undefined) {
-                        setAmount(formatBalance(sbtcBalance));
+                        // Calculate max seats user can buy based on balance and seat limit
+                        const maxSeatsFromBalance = calculateSeats(
+                          sbtcBalance.toString()
+                        );
+                        const maxSeatsAllowed = Math.min(
+                          maxSeatsFromBalance,
+                          HARDCODED_VALUES.maxSeatsPerUser
+                        );
+
+                        // Calculate exact amount needed for max seats
+                        const exactAmount =
+                          (maxSeatsAllowed * HARDCODED_VALUES.seatPriceSats) /
+                          Math.pow(10, 8);
+
+                        setAmount(exactAmount.toFixed(8));
                         setSelectedPreset(null);
                       }
                     }}
-                    className="font-bold hover:text-primary transition-colors"
+                    className="text-white font-bold hover:text-primary transition-colors flex items-center gap-2"
                     disabled={
                       isSbtcBalanceLoading ||
                       sbtcBalance === null ||
                       sbtcBalance === undefined
                     }
                   >
+                    <div className="w-4 h-4 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-primary text-xs font-bold">₿</span>
+                    </div>
                     {isSbtcBalanceLoading
                       ? "Loading..."
                       : sbtcBalance !== null && sbtcBalance !== undefined
                         ? `${formatBalance(sbtcBalance)} sBTC`
                         : "Unable to load balance"}
-                  </Button>
+                  </button>
                 ) : (
-                  <span className="font-bold">N/A</span>
+                  <span className="text-zinc-500 font-bold">N/A</span>
                 )}
               </div>
             </div>
@@ -523,14 +593,14 @@ const PrelaunchPage = () => {
         </Button>
 
         {/* Connection Status */}
-        {!hasAccessToken && (
+        {/* {!hasAccessToken && (
           <div className="text-center p-4 border rounded-lg">
             <p className="text-sm">
               Connect your wallet to start buying {HARDCODED_VALUES.daoName}{" "}
               prelaunch seats
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Transaction Status Modal */}
         <TransactionStatusModal
@@ -544,12 +614,30 @@ const PrelaunchPage = () => {
           transactionStatus={transactionStatus}
           transactionMessage={transactionMessage}
           title="sBTC Transaction"
-          successTitle="Buy Order Confirmed"
-          failureTitle="Buy Order Failed"
-          successDescription={`Your prelaunch seat purchase for ${HARDCODED_VALUES.daoName} has been successfully confirmed. Vesting will be automatically deposited to your agent account when released.`}
-          failureDescription="The transaction could not be completed. Please check your balance and try again."
+          successTitle={
+            transactionType === "buy"
+              ? "Buy Order Confirmed"
+              : "Refund Confirmed"
+          }
+          failureTitle={
+            transactionType === "buy" ? "Buy Order Failed" : "Refund Failed"
+          }
+          successDescription={
+            transactionType === "buy"
+              ? `Your prelaunch seat purchase for ${HARDCODED_VALUES.daoName} has been successfully confirmed. Vesting will be automatically deposited to your agent account when released.`
+              : `Your refund for prelaunch seat for ${HARDCODED_VALUES.daoName} is confirmed.`
+          }
+          failureDescription={
+            transactionType === "buy"
+              ? "The transaction could not be completed. Please check your balance and try again."
+              : "The refund could not be completed. Please try again."
+          }
           pendingDescription="Your transaction is being processed. This may take a few minutes."
-          onRetry={handleBuyPrelaunchSeats}
+          onRetry={
+            transactionType === "buy"
+              ? handleBuyPrelaunchSeats
+              : handleRefundSeats
+          }
         />
       </div>
     </div>
