@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { uintCV, Pc, PostConditionMode } from "@stacks/transactions";
+import { uintCV, Pc } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 
 // Hardcoded values for prelaunch
@@ -164,11 +164,6 @@ const PrelaunchPage = () => {
       setAmount(value);
       setSelectedPreset(null);
     }
-  };
-
-  const handlePresetClick = (presetAmount: string): void => {
-    setAmount(presetAmount);
-    setSelectedPreset(presetAmount);
   };
 
   const handleMaxClick = (): void => {
