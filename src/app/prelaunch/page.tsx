@@ -10,11 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import {
-  uintCV,
-  // Pc,
-  //  PostConditionMode
-} from "@stacks/transactions";
+import { uintCV, Pc, PostConditionMode } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 
 // Hardcoded values for prelaunch
@@ -27,7 +23,7 @@ const HARDCODED_VALUES = {
 };
 
 // sBTC contract used by the buy-seats-and-deposit contract
-// const SBTC_CONTRACT = "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+const SBTC_CONTRACT = "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
 
 const PrelaunchPage = () => {
   const [amount, setAmount] = useState<string>("0.0001");
@@ -249,20 +245,28 @@ const PrelaunchPage = () => {
     try {
       const [contractAddress, contractName] =
         HARDCODED_VALUES.buyAndDepositContract.split(".");
-      // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+      const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
 
-      // const postConditions = [
-      //   Pc.principal(userAddress)
-      //     .willSendLte(sbtcAmountInSats)
-      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      // ];
+      // Two post conditions based on the actual asset transfers:
+      // 1. User transfers sBTC to adapter contract
+      // 2. Adapter contract transfers sBTC to DEX
+      const postConditions = [
+        // User -> Adapter contract transfer
+        Pc.principal(userAddress)
+          .willSendEq(sbtcAmountInSats)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // Adapter contract -> DEX transfer (same amount)
+        Pc.principal(`${contractAddress}.${contractName}`)
+          .willSendEq(sbtcAmountInSats)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      ];
 
       const params = {
         contract: `${contractAddress}.${contractName}` as `${string}.${string}`,
         functionName: "buy-seats-and-deposit",
         functionArgs: [uintCV(sbtcAmountInSats)],
-        // postConditions,
-        postConditionMode: "allow" as const,
+        postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", params);
