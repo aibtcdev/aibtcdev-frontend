@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { Copy, Check, ExternalLink, Wifi, WifiOff } from "lucide-react";
+import { Copy, Check, ExternalLink, WifiOff } from "lucide-react";
 import { useClipboard } from "@/hooks/useClipboard";
 import { getExplorerLink } from "@/utils/format";
 import { Card, CardContent } from "@/components/ui/card";
