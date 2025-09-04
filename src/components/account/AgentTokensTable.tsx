@@ -321,7 +321,74 @@ export function AgentTokensTable({
 
   return (
     <>
-      <div className="rounded-lg border">
+      {/* Mobile Card View */}
+      <div className="block sm:hidden space-y-4">
+        {tokensData.map(({ dao, agentBalance, userBalance, tokenData }) => {
+          const hasAgentBalance = parseFloat(agentBalance) > 0;
+          const hasUserBalance = parseFloat(userBalance) > 0;
+          const contractPrincipal = tokenData.contractPrincipal;
+
+          // Get voting contract principal (different from token contract)
+          const votingContractPrincipal = dao.extensions?.find(
+            (ext) =>
+              ext.type === "EXTENSIONS" &&
+              ext.subtype === "ACTION_PROPOSAL_VOTING"
+          )?.contract_principal;
+
+          // Get approval statuses
+          const isTokenApproved =
+            tokenApprovals.data?.[contractPrincipal] || false;
+          const isSwapApproved =
+            swapApprovals.data?.[contractPrincipal] || false;
+          const isVotingApproved = votingContractPrincipal
+            ? votingApprovals.data?.[votingContractPrincipal] || false
+            : false;
+
+          return (
+            <div
+              key={dao.id}
+              className="rounded-lg border bg-card p-4 space-y-3"
+            >
+              {/* Token Header */}
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-xs">
+                  {dao.name}
+                </Badge>
+                <span className="font-mono text-sm font-medium">
+                  {formatBalance(agentBalance, 8)}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    handleDeposit(tokenData, agentAddress, "agent")
+                  }
+                  disabled={!hasUserBalance}
+                  className="flex-1 text-xs"
+                >
+                  Deposit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleWithdraw(tokenData, agentBalance)}
+                  disabled={!hasAgentBalance || !isTokenApproved}
+                  className="flex-1 text-xs"
+                >
+                  Withdraw
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>

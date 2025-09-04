@@ -17,22 +17,30 @@ export function WalletTab({
   return (
     <div className="flex flex-col items-center">
       <div className="w-full">
-        <div className="mt-6">
-          <AssetsDataTable walletBalance={userAgentContractBalance} />
+        {/* Assets Section */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">Your Assets</h3>
+          <div className="w-full">
+            <AssetsDataTable walletBalance={userAgentContractBalance} />
+          </div>
         </div>
 
+        {/* Agent Account Section */}
         {agentAddress && (
-          <div className="mt-6 border-t pt-4">
+          <div className="border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">
               Agent Contract Account
             </h3>
-            <AccountCard
-              title="Agent Account"
-              address={agentAddress}
-              icon={Bot}
-              isPrimary={false}
-              network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
-            />
+            <div className="w-full">
+              <AccountCard
+                title="Agent Account"
+                address={agentAddress}
+                icon={Bot}
+                isPrimary={false}
+                network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
+                helpText="Smart contract between you and the agent for autonomous operations"
+              />
+            </div>
           </div>
         )}
       </div>
