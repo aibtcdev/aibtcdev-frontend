@@ -240,29 +240,24 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
       <div className="w-full">
         {/* Connected Wallet Section */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-1">Connected Wallet</h3>
-          <p className="text-sm text-muted-foreground">
-            Your login and primary funding source.
-          </p>
-          <div className="mt-4">
-            <AccountCard
-              title="Connected Wallet"
-              address={stacksAddress}
-              icon={Wallet}
-              isPrimary={true}
-              network={
-                stacksAddress?.startsWith("SP") ||
-                stacksAddress?.startsWith("SM")
-                  ? "mainnet"
-                  : "testnet"
-              }
-              metadata={getLimitedBalances(connectedWalletBalance)}
-            />
-          </div>
+          <h3 className="text-lg font-semibold mb-4">Connected Wallet</h3>
+          <AccountCard
+            title="Connected Wallet"
+            address={stacksAddress}
+            icon={Wallet}
+            isPrimary={true}
+            network={
+              stacksAddress?.startsWith("SP") || stacksAddress?.startsWith("SM")
+                ? "mainnet"
+                : "testnet"
+            }
+            helpText="Your login and primary funding source"
+            metadata={getLimitedBalances(connectedWalletBalance)}
+          />
 
-          {/* View All Assets Button */}
+          {/* View All Assets Button - Hidden on mobile */}
           {connectedWalletBalance && (
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 hidden sm:flex justify-end">
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -298,20 +293,15 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         {/* Agent Voting Account Section */}
         {agentAddress ? (
           <div className="mb-6 border-t pt-6">
-            <h3 className="text-lg font-semibold">Agent Voting Account</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Where your agent holds AI DAO tokens to power voting.
-            </p>
-            <div className="mt-4">
-              <AccountCard
-                title="Agent Account"
-                address={agentAddress}
-                icon={Building2}
-                isPrimary={false}
-                network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
-                // metadata={getAllBalances(agentAccountBalance)}
-              />
-            </div>
+            <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
+            <AccountCard
+              title="Agent Account"
+              address={agentAddress}
+              icon={Building2}
+              isPrimary={false}
+              network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
+              helpText="Where your agent holds AI DAO tokens to power voting"
+            />
 
             {/* DAO Tokens Management Table */}
             <div className="mt-6">
@@ -326,8 +316,8 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
           </div>
         ) : (
           <div className="mb-6 border-t pt-6">
-            <h3 className="text-lg font-semibold">Agent Voting Account</h3>
-            <div className="mt-4 rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+            <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
               <p className="text-sm text-muted-foreground">
                 Your agent account is under deployment. Please come back in a
                 few minutes.
@@ -338,25 +328,19 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
 
         {/* Agent Wallet Section */}
         {userAgentWalletAddress && (
-          <div className="border-t pt-4">
-            <h3 className="text-lg font-semibold">Agent Gas Wallet</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Where your agent stores STX to cover gas fees for voting.
-            </p>
-            <div className="mt-4">
-              <AccountCard
-                title="Agent Wallet"
-                address={userAgentWalletAddress}
-                icon={Bot}
-                isPrimary={false}
-                network={
-                  userAgentWalletAddress?.startsWith("SP")
-                    ? "mainnet"
-                    : "testnet"
-                }
-                metadata={getAllBalances(agentWalletBalance)}
-              />
-            </div>
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Agent Gas Wallet</h3>
+            <AccountCard
+              title="Agent Wallet"
+              address={userAgentWalletAddress}
+              icon={Bot}
+              isPrimary={false}
+              network={
+                userAgentWalletAddress?.startsWith("SP") ? "mainnet" : "testnet"
+              }
+              helpText="Where your agent stores STX to cover gas fees for voting"
+              metadata={getAllBalances(agentWalletBalance)}
+            />
           </div>
         )}
 

@@ -83,7 +83,9 @@ export function AgentTokensTable({
   const [depositType, setDepositType] = useState<"agent" | "wallet" | null>(
     null
   );
-  const [updatingApproval, setUpdatingApproval] = useState(false);
+  const [updatingApprovals, setUpdatingApprovals] = useState<Set<string>>(
+    new Set()
+  );
   const [currentApprovalTxId, setCurrentApprovalTxId] = useState<string | null>(
     null
   );
@@ -157,7 +159,10 @@ export function AgentTokensTable({
       contractPrincipal: string;
     }) => {
       if (!agentAddress) throw new Error("Missing agent address");
-      setUpdatingApproval(true);
+
+      // Create a unique key for this specific approval
+      const approvalKey = `${contractPrincipal}-${type}`;
+      setUpdatingApprovals((prev) => new Set(prev).add(approvalKey));
       setApprovalAction(enabled ? "approve" : "revoke");
 
       const functionName = enabled ? "approve-contract" : "revoke-contract";
@@ -177,7 +182,13 @@ export function AgentTokensTable({
       return { txid: response.txid, enabled, type, contractPrincipal };
     },
     onSuccess: async (data) => {
-      setUpdatingApproval(false);
+      // Remove this specific approval from the updating set
+      const approvalKey = `${data.contractPrincipal}-${data.type}`;
+      setUpdatingApprovals((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(approvalKey);
+        return newSet;
+      });
       // Invalidate queries for all approval types
       await Promise.all([
         queryClient.invalidateQueries({
@@ -217,7 +228,8 @@ export function AgentTokensTable({
       }
     },
     onError: (error) => {
-      setUpdatingApproval(false);
+      // Clear all updating approvals on error
+      setUpdatingApprovals(new Set());
       toast({
         title: "Error",
         description: (error as Error).message,
@@ -321,7 +333,74 @@ export function AgentTokensTable({
 
   return (
     <>
-      <div className="rounded-lg border">
+      {/* Mobile Card View */}
+      <div className="block sm:hidden space-y-4">
+        {tokensData.map(({ dao, agentBalance, userBalance, tokenData }) => {
+          const hasAgentBalance = parseFloat(agentBalance) > 0;
+          const hasUserBalance = parseFloat(userBalance) > 0;
+          const contractPrincipal = tokenData.contractPrincipal;
+
+          // Get voting contract principal (different from token contract)
+          // const votingContractPrincipal = dao.extensions?.find(
+          //   (ext) =>
+          //     ext.type === "EXTENSIONS" &&
+          //     ext.subtype === "ACTION_PROPOSAL_VOTING"
+          // )?.contract_principal;
+
+          // Get approval statuses
+          const isTokenApproved =
+            tokenApprovals.data?.[contractPrincipal] || false;
+          // const isSwapApproved =
+          //   swapApprovals.data?.[contractPrincipal] || false;
+          // const isVotingApproved = votingContractPrincipal
+          //   ? votingApprovals.data?.[votingContractPrincipal] || false
+          //   : false;
+
+          return (
+            <div
+              key={dao.id}
+              className="rounded-lg border bg-card p-4 space-y-3"
+            >
+              {/* Token Header */}
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-xs">
+                  {dao.name}
+                </Badge>
+                <span className="font-mono text-sm font-medium">
+                  {formatBalance(agentBalance, 8)}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    handleDeposit(tokenData, agentAddress, "agent")
+                  }
+                  disabled={!hasUserBalance}
+                  className="flex-1 text-xs"
+                >
+                  Deposit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleWithdraw(tokenData, agentBalance)}
+                  disabled={!hasAgentBalance || !isTokenApproved}
+                  className="flex-1 text-xs"
+                >
+                  Withdraw
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -380,9 +459,13 @@ export function AgentTokensTable({
                   );
                 }
 
+                // Check if this specific approval is being updated
+                const approvalKey = `${targetContractPrincipal}-${type}`;
+                const isUpdating = updatingApprovals.has(approvalKey);
+
                 return (
                   <div className="flex items-center justify-center">
-                    {isLoading || updatingApproval ? (
+                    {isLoading || isUpdating ? (
                       <RotateCcw className="w-4 h-4 animate-spin text-muted-foreground" />
                     ) : (
                       <button
@@ -393,7 +476,7 @@ export function AgentTokensTable({
                             contractPrincipal: targetContractPrincipal,
                           })
                         }
-                        disabled={updatingApproval}
+                        disabled={isUpdating}
                         className={`
                           flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors
                           ${
@@ -401,7 +484,7 @@ export function AgentTokensTable({
                               ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300"
                               : "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300"
                           }
-                          ${updatingApproval ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"}
+                          ${isUpdating ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"}
                         `}
                       >
                         {isApproved ? (
