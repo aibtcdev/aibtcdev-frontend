@@ -573,8 +573,9 @@ export function ProposalSubmission({
           </h2>
           <p className="text-zinc-400 text-sm">
             Submitting contribution requires{" "}
-            <span className="text-primary">250 {daoName}</span> bond. If your
-            contribution is accepted, you will be rewarded with 1000 {daoName}.
+            <span className="text-primary font-semibold">250 {daoName}</span>{" "}
+            bond. If your contribution is accepted, you will be rewarded with{" "}
+            <span className="text-primary font-semibold">1000 {daoName}.</span>
           </p>
         </div>
 
