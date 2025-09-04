@@ -393,26 +393,26 @@ function VoteCard({ vote }: VoteCardProps) {
     );
   };
 
-  const renderAgentVoteBadge = (confidenceText: string) => {
+  const renderAgentVoteBadge = () => {
     return (
       <Badge
-        className={
-          vote.answer
-            ? "bg-primary/10 text-primary border-primary/20 hover:bg-muted"
-            : "bg-muted text-muted-foreground border-muted hover:bg-muted"
-        }
+        className={`text-xs px-2 py-1 ${
+          vote.answer ? "text-white " : " text-white bg-muted"
+        }`}
       >
-        {vote.answer ? (
-          <>
-            <ThumbsUp className="h-3 w-3 mr-1" />
-            Your agent voted Yes{confidenceText}
-          </>
-        ) : (
-          <>
-            <ThumbsDown className="h-3 w-3 mr-1" />
-            Your agent voted No{confidenceText}
-          </>
-        )}
+        <div className="flex items-center gap-1">
+          {vote.answer ? (
+            <>
+              <ThumbsUp className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Yes</span>
+            </>
+          ) : (
+            <>
+              <ThumbsDown className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">No</span>
+            </>
+          )}
+        </div>
       </Badge>
     );
   };
@@ -427,33 +427,29 @@ function VoteCard({ vote }: VoteCardProps) {
     if (proposalStatus === "ACTIVE") {
       if (vote.voted === false) {
         return (
-          <Badge className="bg-muted/30">
-            <Clock className="h-3 w-3 mr-1" />
-            Awaiting Agent Vote
+          <Badge className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-1">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Pending</span>
+            </div>
           </Badge>
         );
       } else {
-        const confidenceText =
-          vote.confidence !== null
-            ? ` (${Math.round(vote.confidence * 100)}%)`
-            : "";
-        return renderAgentVoteBadge(confidenceText);
+        return renderAgentVoteBadge();
       }
     }
 
     // For other statuses (VETO_PERIOD, EXECUTION_WINDOW, PASSED, FAILED), show final vote if available
     if (vote.voted === true) {
-      const confidenceText =
-        vote.confidence !== null
-          ? ` (${Math.round(vote.confidence * 100)}%)`
-          : "";
-      return renderAgentVoteBadge(confidenceText);
+      return renderAgentVoteBadge();
     }
 
     return (
-      <Badge className="bg-muted/30 text-muted-foreground">
-        <Clock className="h-3 w-3 mr-1" />
-        No Vote Cast
+      <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-xs px-2 py-1">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 flex-shrink-0" />
+          <span className="font-medium">No Vote</span>
+        </div>
       </Badge>
     );
   };
@@ -906,7 +902,9 @@ function VoteCard({ vote }: VoteCardProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">
-                    Agent Evaluation {getAgentVotingBadge()}
+                    <span className="hidden sm:inline">Agent Evaluation</span>
+                    <span className="sm:hidden">Expand Evaluation</span>
+                    {getAgentVotingBadge()}
                   </span>
                   <div className="flex items-center gap-2">
                     <Link href={`/proposals/${vote.proposal_id}`}>
