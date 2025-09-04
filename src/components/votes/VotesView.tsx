@@ -1041,7 +1041,7 @@ function VoteCard({ vote }: VoteCardProps) {
                 Training Feedback
               </h5>
               <p className="text-base text-muted-foreground mt-2 mb-3">
-                Are you satisfied with the agent's vote in this contribuiton for{" "}
+                Are you satisfied with the agent's vote in this contribution for{" "}
                 {vote.dao_name}?
               </p>
               <div className="flex gap-2">
