@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useParams, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
@@ -44,7 +43,6 @@ import { formatNumber } from "@/utils/format";
 
 export function DAOPage({ children }: { children: React.ReactNode }) {
   const params = useParams();
-  const pathname = usePathname();
   const encodedName = params.name as string;
 
   // State for modal
