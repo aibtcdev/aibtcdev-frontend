@@ -253,6 +253,9 @@ export function ProposalSubmission({
 
   // State for DAO token balance
   const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
+  const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
+    string | null
+  >(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   // Error code mapping
@@ -288,11 +291,26 @@ export function ProposalSubmission({
   const userAgent = agents?.find((agent) => agent.profile_id === userId);
   const hasAgentAccount = !!userAgent?.account_contract;
 
+  // Debug logs - these will show immediately when component renders
+  console.log("DEBUG - userAgent:", userAgent);
+  console.log(
+    "DEBUG - userAgent.account_contract:",
+    userAgent?.account_contract
+  );
+  console.log("DEBUG - hasAgentAccount:", hasAgentAccount);
+  console.log("DEBUG - agentDaoTokenBalance:", agentDaoTokenBalance);
+  console.log(
+    "DEBUG - hasAgentDaoTokens:",
+    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
+  );
+
   // Check DAO token balance (simplified - checking if user has any DAO tokens)
   const daoTokenExt = daoExtensions?.find(
     (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
   );
   const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
+  const hasAgentDaoTokens =
+    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
@@ -338,38 +356,143 @@ export function ProposalSubmission({
   // Fetch DAO token balance when we have the necessary data
   useEffect(() => {
     const fetchDaoTokenBalance = async () => {
+      console.log("BALANCE FETCH - Starting fetch with conditions:");
+      console.log("  hasAccessToken:", hasAccessToken);
+      console.log("  stacksAddress:", stacksAddress);
+      console.log(
+        "  daoTokenExt?.contract_principal:",
+        daoTokenExt?.contract_principal
+      );
+      console.log(
+        "  userAgent?.account_contract:",
+        userAgent?.account_contract
+      );
+
       if (
         !hasAccessToken ||
         !stacksAddress ||
         !daoTokenExt?.contract_principal
       ) {
+        console.log("BALANCE FETCH - Early return due to missing conditions");
         setDaoTokenBalance(null);
+        setAgentDaoTokenBalance(null);
         return;
       }
 
       setIsLoadingBalance(true);
+      console.log("BALANCE FETCH - Starting balance fetch...");
+
       try {
-        // Use the wallet store to fetch balance
+        // Use the wallet store to fetch balance for user wallet
         const { fetchSingleBalance } = useWalletStore.getState();
+        console.log(
+          "BALANCE FETCH - Fetching user wallet balance for:",
+          stacksAddress
+        );
         const balance = await fetchSingleBalance(stacksAddress);
+        console.log("BALANCE FETCH - User wallet balance response:", balance);
 
         if (balance?.fungible_tokens?.[daoTokenExt.contract_principal]) {
-          setDaoTokenBalance(
-            balance.fungible_tokens[daoTokenExt.contract_principal].balance
-          );
+          const userBalance =
+            balance.fungible_tokens[daoTokenExt.contract_principal].balance;
+          console.log("BALANCE FETCH - User DAO token balance:", userBalance);
+          setDaoTokenBalance(userBalance);
         } else {
+          console.log("BALANCE FETCH - No user DAO tokens found, setting to 0");
           setDaoTokenBalance("0");
         }
+
+        // Fetch balance for agent account contract if it exists
+        if (userAgent?.account_contract) {
+          console.log(
+            "BALANCE FETCH - Fetching agent account balance for:",
+            userAgent.account_contract
+          );
+          const agentBalance = await fetchSingleBalance(
+            userAgent.account_contract
+          );
+          console.log(
+            "BALANCE FETCH - Agent account balance response:",
+            agentBalance
+          );
+          console.log(
+            "BALANCE FETCH - Looking for DAO token contract:",
+            daoTokenExt.contract_principal
+          );
+          console.log(
+            "BALANCE FETCH - Available fungible tokens:",
+            Object.keys(agentBalance?.fungible_tokens || {})
+          );
+          console.log("BALANCE FETCH - Looking for daoName:", daoName);
+
+          // First try exact match
+          if (agentBalance?.fungible_tokens?.[daoTokenExt.contract_principal]) {
+            const agentTokenBalance =
+              agentBalance.fungible_tokens[daoTokenExt.contract_principal]
+                .balance;
+            console.log(
+              "BALANCE FETCH - Agent DAO token balance (exact match):",
+              agentTokenBalance
+            );
+            setAgentDaoTokenBalance(agentTokenBalance);
+          } else {
+            // Try to find token by matching daoName after ::
+            const matchingTokenContract = Object.keys(
+              agentBalance?.fungible_tokens || {}
+            ).find((contract) => {
+              const tokenName = contract.split("::")[1];
+              return tokenName === daoName?.toLowerCase();
+            });
+
+            if (matchingTokenContract && agentBalance?.fungible_tokens) {
+              const agentTokenBalance =
+                agentBalance.fungible_tokens[matchingTokenContract].balance;
+              console.log(
+                "BALANCE FETCH - Agent DAO token balance (name match):",
+                agentTokenBalance,
+                "for contract:",
+                matchingTokenContract
+              );
+              setAgentDaoTokenBalance(agentTokenBalance);
+            } else {
+              console.log(
+                "BALANCE FETCH - No agent DAO tokens found for contract:",
+                daoTokenExt.contract_principal
+              );
+              console.log(
+                "BALANCE FETCH - No matching token name found for:",
+                daoName
+              );
+              console.log("BALANCE FETCH - Setting to 0");
+              setAgentDaoTokenBalance("0");
+            }
+          }
+        } else {
+          console.log(
+            "BALANCE FETCH - No agent account contract, setting agent balance to null"
+          );
+          setAgentDaoTokenBalance(null);
+        }
       } catch (error) {
-        console.error("Failed to fetch DAO token balance:", error);
+        console.error(
+          "BALANCE FETCH - Error fetching DAO token balance:",
+          error
+        );
         setDaoTokenBalance("0");
+        setAgentDaoTokenBalance("0");
       } finally {
         setIsLoadingBalance(false);
+        console.log("BALANCE FETCH - Finished loading");
       }
     };
 
     fetchDaoTokenBalance();
-  }, [hasAccessToken, stacksAddress, daoTokenExt?.contract_principal]);
+  }, [
+    hasAccessToken,
+    stacksAddress,
+    daoTokenExt?.contract_principal,
+    userAgent?.account_contract,
+  ]);
 
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
@@ -501,7 +624,9 @@ export function ProposalSubmission({
 
     // Simple message construction - just trim
     const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
-
+    console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
+    console.log("userAgent:", userAgent);
+    console.log("userAgent.account_contract:", userAgent?.account_contract);
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -632,6 +757,25 @@ export function ProposalSubmission({
             </div>
           </div>
         )}
+
+        {/* Locked Overlay for Users without Agent DAO Tokens */}
+        {hasAccessToken &&
+          hasAgentAccount &&
+          !isLoadingBalance &&
+          !hasAgentDaoTokens && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Join {daoName} to unlock the earning
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
         {/* Header */}
         <div className="mb-4">
           <h2 className="text-2xl font-bold mb-1">Earn ${daoName}</h2>
@@ -846,10 +990,8 @@ export function ProposalSubmission({
 
             {/* Agent Account Validation */}
             {hasAccessToken && !isLoadingAgents && !hasAgentAccount && (
-              <div className="text-sm text-orange-300 bg-orange-900/40 border border-orange-800 rounded-lg p-3">
-                <strong>Agent Account Required:</strong> You need to deploy an
-                agent account before submitting contributions. Please wait for
-                your agent account to be deployed.
+              <div className="text-sm text-orange-300 ">
+                <strong>Your agent account is being deployed</strong>
               </div>
             )}
 
@@ -900,6 +1042,7 @@ export function ProposalSubmission({
                 isSubmitting ||
                 !hasAgentAccount ||
                 !hasDaoTokens ||
+                !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
                 isLoadingBalance

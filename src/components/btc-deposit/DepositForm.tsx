@@ -41,8 +41,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
-import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import {
+  connectWallet,
+  requestSignature,
+} from "@/components/auth/StacksProvider";
+import { supabase } from "@/utils/supabase/client";
+import { createDaoAgent } from "@/services/dao-agent.service";
+import { TermsOfService } from "@/components/terms-and-condition/TermsOfService";
+import { DialogFooter } from "@/components/ui/dialog";
 
 interface DepositFormProps {
   btcUsdPrice: number | null;
@@ -124,6 +132,12 @@ export default function DepositForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTxId, setActiveTxId] = useState<string | null>(null);
+  const [pendingOrderAfterConnection, setPendingOrderAfterConnection] =
+    useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   const { transactionStatus, transactionMessage, reset, startMonitoring } =
     useTransactionVerification();
@@ -339,6 +353,49 @@ export default function DepositForm({
     refetchOnWindowFocus: false,
   });
 
+  // Auto-place order after wallet connection - wait for all data to load
+  useEffect(() => {
+    if (
+      pendingOrderAfterConnection &&
+      hasAccessToken &&
+      userAddress &&
+      !loadingQuote &&
+      !isBalanceLoading &&
+      buyQuote !== null
+    ) {
+      if (hasAgentAccount) {
+        // Agent account is ready, proceed with order
+        setPendingOrderAfterConnection(false);
+        setIsAuthenticating(false);
+        setTimeout(() => {
+          handleDepositConfirm();
+        }, 1000);
+      } else {
+        // Agent account not ready, show message and reset after timeout
+        setTimeout(() => {
+          if (!hasAgentAccount) {
+            setPendingOrderAfterConnection(false);
+            setIsAuthenticating(false);
+            toast({
+              title: "Agent Account Required",
+              description:
+                "Your agent account is still being deployed. Please try again in a few minutes.",
+              variant: "destructive",
+            });
+          }
+        }, 30000); // 30 second timeout
+      }
+    }
+  }, [
+    pendingOrderAfterConnection,
+    hasAccessToken,
+    userAddress,
+    loadingQuote,
+    isBalanceLoading,
+    hasAgentAccount,
+    buyQuote,
+  ]);
+
   const formatUsdValue = (amount: number): string => {
     if (!amount || amount <= 0) return "$0.00";
     return new Intl.NumberFormat("en-US", {
@@ -421,13 +478,121 @@ export default function DepositForm({
     }
   };
 
-  const handleBuyWithSbtc = async () => {
-    if (!accessToken || !userAddress) {
+  const handleWalletAuth = async () => {
+    setIsAuthenticating(true);
+    try {
       toast({
-        title: "Wallet not connected",
+        title: "Connecting wallet...",
         description: "Please connect your wallet to continue.",
+      });
+
+      const data = await connectWallet({
+        onCancel: () => {
+          toast({
+            title: "Connection cancelled",
+            description: "Wallet connection was cancelled.",
+            variant: "destructive",
+          });
+          setPendingOrderAfterConnection(false);
+          setIsAuthenticating(false);
+        },
+      });
+
+      setUserData(data);
+      setShowTerms(true);
+      setIsAuthenticating(false);
+    } catch (error) {
+      console.error("Wallet connection error:", error);
+      toast({
+        title: "Connection failed",
+        description: "Failed to connect wallet. Please try again.",
         variant: "destructive",
       });
+      setPendingOrderAfterConnection(false);
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    if (!userData || !hasScrolledToBottom) return;
+
+    setIsAuthenticating(true);
+    setShowTerms(false);
+
+    try {
+      const stxAddress = getStacksAddress();
+      if (!stxAddress) {
+        throw new Error("No STX address found in wallet data");
+      }
+
+      toast({
+        title: "Please sign the message to authenticate...",
+      });
+
+      const signature = await requestSignature();
+
+      toast({
+        title: "Signature received. Authenticating...",
+      });
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: `${stxAddress}@stacks.id`,
+        password: signature,
+      });
+
+      if (signInError && signInError.status === 400) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: `${stxAddress}@stacks.id`,
+          password: signature,
+        });
+
+        if (signUpError) throw signUpError;
+
+        try {
+          await createDaoAgent();
+          toast({
+            title: "DAO Agent Initialized",
+            description: "Your DAO agent has been set up successfully.",
+          });
+        } catch (error) {
+          console.error("Error initializing DAO agent:", error);
+        }
+
+        toast({
+          title: "Account created",
+          description: "Successfully signed up and connected wallet.",
+        });
+      } else if (signInError) {
+        throw signInError;
+      } else {
+        toast({
+          title: "Connected",
+          description: "Wallet connected successfully.",
+        });
+      }
+
+      setIsAuthenticating(false);
+    } catch (error) {
+      console.error("Authentication error:", error);
+      toast({
+        title: "Authentication failed",
+        description: "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
+      setPendingOrderAfterConnection(false);
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleScrollComplete = (isComplete: boolean) => {
+    setHasScrolledToBottom(isComplete);
+  };
+
+  const handleBuyWithSbtc = async () => {
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
       return;
     }
 
@@ -604,17 +769,15 @@ export default function DepositForm({
   };
 
   const handleDepositConfirm = async (): Promise<void> => {
-    if (buyWithSbtc) {
-      await handleBuyWithSbtc();
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
       return;
     }
 
-    if (!accessToken || !userAddress) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet to continue.",
-        variant: "destructive",
-      });
+    if (buyWithSbtc) {
+      await handleBuyWithSbtc();
       return;
     }
 
@@ -1050,11 +1213,7 @@ export default function DepositForm({
 
       {/* Quote display */}
       <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
-        {!hasAccessToken ? (
-          <div className="text-2xl font-semibold text-zinc-500">
-            0 {daoName}
-          </div>
-        ) : loadingQuote ? (
+        {loadingQuote ? (
           <div className="flex items-center gap-2">
             <Loader />
             <span className="text-sm text-zinc-400">Fetching quote…</span>
@@ -1070,12 +1229,13 @@ export default function DepositForm({
       <Button
         onClick={handleDepositConfirm}
         disabled={
-          !hasAccessToken ||
-          !hasAgentAccount ||
           parseFloat(amount) <= 0 ||
           isSubmitting ||
+          pendingOrderAfterConnection ||
+          isAuthenticating ||
           BUY_DISABLED ||
-          (buyWithSbtc && (stxBalance || 0) < 0.01)
+          (hasAccessToken && buyWithSbtc && (stxBalance || 0) < 0.01) ||
+          (hasAccessToken && !hasAgentAccount)
         }
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
       >
@@ -1084,6 +1244,11 @@ export default function DepositForm({
             <Loader />
             <span>Processing...</span>
           </div>
+        ) : pendingOrderAfterConnection || isAuthenticating ? (
+          <div className="flex items-center space-x-2">
+            <Loader />
+            <span>Connecting & Loading...</span>
+          </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
@@ -1091,11 +1256,7 @@ export default function DepositForm({
                 ₿
               </span>
             </div>
-            {hasAccessToken ? (
-              <span>Place Order</span>
-            ) : (
-              <span>Connect wallet to Place Order</span>
-            )}
+            <span>Place Order</span>
           </div>
         )}
       </Button>
@@ -1150,6 +1311,73 @@ export default function DepositForm({
           onRetry={handleBuyWithSbtc}
         />
       )}
+
+      {/* Terms & Conditions Dialog */}
+      <Dialog open={showTerms} onOpenChange={setShowTerms}>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[900px] h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+            <DialogTitle className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+              Terms & Conditions
+            </DialogTitle>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+              Please read the complete terms and scroll to the bottom to
+              continue.
+            </p>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-hidden">
+            <TermsOfService onScrollComplete={handleScrollComplete} />
+          </div>
+
+          <DialogFooter className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Button
+                onClick={() => {
+                  setShowTerms(false);
+                  setPendingOrderAfterConnection(false);
+                  setIsAuthenticating(false);
+                }}
+                variant="outline"
+                className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAcceptTerms}
+                disabled={isAuthenticating || !hasScrolledToBottom}
+                className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
+                  hasScrolledToBottom
+                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                }`}
+                title={
+                  !hasScrolledToBottom
+                    ? "Please scroll to the bottom to read all terms"
+                    : ""
+                }
+              >
+                {isAuthenticating ? (
+                  <>
+                    <Loader />
+                    <span className="ml-2">Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    {hasScrolledToBottom
+                      ? "Accept & Continue"
+                      : "Please scroll to continue"}
+                  </>
+                )}
+              </Button>
+            </div>
+            {!hasScrolledToBottom && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                You must read all terms before accepting
+              </p>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
