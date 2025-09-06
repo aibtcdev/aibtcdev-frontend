@@ -111,8 +111,11 @@ export function AgentPermissions({ agentAddress }: Props) {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">Vote on contributions</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Vote on Contributions</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to vote with tokens in the agent voting account
+            </p>
           </div>
           <Switch
             checked={canUseProposals}
@@ -123,8 +126,12 @@ export function AgentPermissions({ agentAddress }: Props) {
           />
         </div>
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Manage approved contracts</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to approve and revoke contracts for use with agent
+              voting account
+            </p>
           </div>
           <Switch
             checked={canApproveRevokeContracts}
@@ -138,9 +145,10 @@ export function AgentPermissions({ agentAddress }: Props) {
           />
         </div>
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">
-              Trade sBTC and DAO tokens in contract
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Trade sBTC and DAO tokens</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to buy and sell within the agent voting account
             </p>
           </div>
           <Switch
@@ -152,9 +160,11 @@ export function AgentPermissions({ agentAddress }: Props) {
           />
         </div>
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">
-              Deposit tokens into the agent account
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Initiate deposit or withdraw</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to deposit or withdraw from the agent voting account.
+              *funds always go to owner / connected wallet
             </p>
           </div>
           <Switch

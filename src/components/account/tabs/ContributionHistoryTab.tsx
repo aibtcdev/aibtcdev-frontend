@@ -210,118 +210,172 @@ export function ContributionHistoryTab({
   ).length;
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium">Successful</span>
+    <div className="flex flex-col items-center">
+      <div className="w-full space-y-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="rounded-lg border bg-card p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              <span className="text-xs sm:text-sm font-medium">Successful</span>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold text-green-600">
+              {successfulContributions}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-green-600">
-            {successfulContributions}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-red-600" />
-            <span className="text-sm font-medium">Failed</span>
+          <div className="rounded-lg border bg-card p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-red-600" />
+              <span className="text-xs sm:text-sm font-medium">Failed</span>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold text-red-600">
+              {failedContributions}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-red-600">
-            {failedContributions}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium">Total Rewards</span>
+          <div className="rounded-lg border bg-card p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" />
+              <span className="text-xs sm:text-sm font-medium">Rewards</span>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold text-green-600">
+              +{totalRewards.toLocaleString()}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-green-600">
-            +{totalRewards.toLocaleString()}
-          </p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-red-600" />
-            <span className="text-sm font-medium">Lost Bonds</span>
+          <div className="rounded-lg border bg-card p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4 text-red-600" />
+              <span className="text-xs sm:text-sm font-medium">Lost</span>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold text-red-600">
+              -{totalLostBonds.toLocaleString()}
+            </p>
           </div>
-          <p className="text-2xl font-bold text-red-600">
-            -{totalLostBonds.toLocaleString()}
-          </p>
         </div>
-      </div>
 
-      {/* Contribution History Table */}
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[120px]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort("date")}
-                    className="h-auto p-0 font-medium hover:bg-transparent"
-                  >
-                    Date
-                    <ArrowUpDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[120px]">DAO</TableHead>
-                <TableHead className="min-w-[200px]">Proposal</TableHead>
-                <TableHead className="w-[100px] text-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSort("status")}
-                    className="h-auto p-0 font-medium hover:bg-transparent"
-                  >
-                    Status
-                    <ArrowUpDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[120px] text-right">Reward</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedContributions.map((contribution) => (
-                <TableRow
-                  key={contribution.id}
-                  className="hover:bg-muted/50 transition-colors"
+        {/* Contribution History */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Contribution History</h3>
+
+          {/* Mobile Card View */}
+          <div className="block md:hidden space-y-4">
+            {sortedContributions.map((contribution) => (
+              <div
+                key={contribution.id}
+                className="rounded-lg border bg-card p-4 space-y-3"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2">
+                  <Badge variant="outline" className="text-xs flex-shrink-0">
+                    {contribution.dao_name}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {format(new Date(contribution.created_at), "MMM dd")}
+                  </span>
+                </div>
+
+                {/* Proposal Title */}
+                <button
+                  onClick={() => handleProposalClick(contribution.proposal_id)}
+                  className="text-left hover:text-green-600 transition-colors group flex items-start gap-2 w-full min-w-0"
+                  title="Click to view proposal details"
                 >
-                  <TableCell className="text-sm text-muted-foreground">
-                    {format(new Date(contribution.created_at), "MMM dd, yyyy")}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <Badge variant="outline" className="text-xs">
-                      {contribution.dao_name}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <button
-                      onClick={() =>
-                        handleProposalClick(contribution.proposal_id)
-                      }
-                      className="text-left hover:text-green-600 transition-colors group flex items-center gap-1 max-w-[300px]"
-                      title="Click to view proposal details"
-                    >
-                      <span className="truncate">
-                        {contribution.proposal_title}
-                      </span>
-                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                    </button>
-                  </TableCell>
-                  <TableCell className="text-center">
+                  <span className="text-sm font-medium break-words flex-1 min-w-0">
+                    {contribution.proposal_title}
+                  </span>
+                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+                </button>
+
+                {/* Status and Reward */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex-shrink-0">
                     {getStatusBadge(contribution)}
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </div>
+                  <div className="flex-shrink-0">
                     {getRewardDisplay(contribution)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block rounded-lg border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[120px]">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort("date")}
+                        className="h-auto p-0 font-medium hover:bg-transparent"
+                      >
+                        Date
+                        <ArrowUpDown className="ml-1 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-[120px]">DAO</TableHead>
+                    <TableHead className="min-w-[200px]">Proposal</TableHead>
+                    <TableHead className="w-[100px] text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort("status")}
+                        className="h-auto p-0 font-medium hover:bg-transparent"
+                      >
+                        Status
+                        <ArrowUpDown className="ml-1 h-3 w-3" />
+                      </Button>
+                    </TableHead>
+                    <TableHead className="w-[120px] text-right">
+                      Reward
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedContributions.map((contribution) => (
+                    <TableRow
+                      key={contribution.id}
+                      className="hover:bg-muted/50 transition-colors"
+                    >
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(
+                          new Date(contribution.created_at),
+                          "MMM dd, yyyy"
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <Badge variant="outline" className="text-xs">
+                          {contribution.dao_name}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          onClick={() =>
+                            handleProposalClick(contribution.proposal_id)
+                          }
+                          className="text-left hover:text-green-600 transition-colors group flex items-center gap-1 max-w-[300px]"
+                          title="Click to view proposal details"
+                        >
+                          <span className="truncate">
+                            {contribution.proposal_title}
+                          </span>
+                          <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </button>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getStatusBadge(contribution)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {getRewardDisplay(contribution)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
