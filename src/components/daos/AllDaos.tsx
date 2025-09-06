@@ -13,22 +13,10 @@ import {
   fetchDAOsWithExtension,
   fetchTokens,
   fetchTokenPrices,
-  fetchTokenTrades,
+  // fetchTokenTrades,
   fetchHolders,
   fetchProposalCounts,
 } from "@/services/dao.service";
-
-// Define TokenTrade interface locally since it's defined in queries but not exported
-interface TokenTrade {
-  txId: string;
-  tokenContract: string;
-  type: string;
-  tokensAmount: number;
-  ustxAmount: number;
-  pricePerToken: number;
-  maker: string;
-  timestamp: number;
-}
 
 type SortOption =
   | "name"
@@ -245,27 +233,27 @@ export default function AllDaos() {
 
   console.log(tokenPrices);
   // Helper function to get dex principal and token contract
-  const getTokenContract = useCallback((dao: DAO) => {
-    const dexExtension = dao.extensions?.find(
-      (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
-    );
-    const dexPrincipal = dexExtension?.contract_principal;
-    return dexPrincipal;
-  }, []);
+  // const getTokenContract = useCallback((dao: DAO) => {
+  //   const dexExtension = dao.extensions?.find(
+  //     (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
+  //   );
+  //   const dexPrincipal = dexExtension?.contract_principal;
+  //   return dexPrincipal;
+  // }, []);
 
   // Fetch token trades using useQueries for parallel fetching
-  const tradeQueries = useQueries({
-    queries:
-      daos?.map((dao) => {
-        const tokenContract = getTokenContract(dao);
-        return {
-          queryKey: ["tokenTrades", dao.id, tokenContract],
-          queryFn: () => fetchTokenTrades(tokenContract!),
-          enabled: !!tokenContract,
-          staleTime: 5 * 60 * 1000, // 5 minutes
-        };
-      }) || [],
-  });
+  // const _tradeQueries = useQueries({
+  //   queries:
+  //     daos?.map((dao) => {
+  //       const tokenContract = getTokenContract(dao);
+  //       return {
+  //         queryKey: ["tokenTrades", dao.id, tokenContract],
+  //         queryFn: () => fetchTokenTrades(tokenContract!),
+  //         enabled: !!tokenContract,
+  //         staleTime: 5 * 60 * 1000, // 5 minutes
+  //       };
+  //     }) || [],
+  // });
 
   // Fetch holders for each DAO
   const holderQueries = useQueries({
@@ -280,28 +268,7 @@ export default function AllDaos() {
       }) || [],
   });
 
-  // Transform trades data for easy access
-  const tradesMap = useMemo(() => {
-    const map: Record<
-      string,
-      { data: Array<{ timestamp: number; price: number }>; isLoading: boolean }
-    > = {};
-    daos?.forEach((dao, index) => {
-      const query = tradeQueries[index];
-      // Transform TokenTrade data to the expected format
-      const transformedData = (query?.data || []).map((trade: TokenTrade) => ({
-        timestamp: trade.timestamp,
-        price: trade.pricePerToken,
-      }));
-
-      map[dao.id] = {
-        data: transformedData,
-        isLoading: query?.isLoading || false,
-      };
-    });
-    return map;
-  }, [daos, tradeQueries]);
-
+  //
   // Transform holders data for easy access
   const holdersMap = useMemo(() => {
     const map: Record<
