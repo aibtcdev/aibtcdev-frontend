@@ -292,15 +292,17 @@ export function ProposalSubmission({
   const hasAgentAccount = !!userAgent?.account_contract;
 
   // Debug logs - these will show immediately when component renders
-  console.log("DEBUG - userAgent:", userAgent);
+  console.log("DEBUG - ProposalSubmission Agent Validation:");
+  console.log("  - userId:", userId);
+  console.log("  - agents array:", agents);
+  console.log("  - userAgent found:", userAgent);
+  console.log("  - userAgent.account_contract:", userAgent?.account_contract);
+  console.log("  - hasAgentAccount:", hasAgentAccount);
+  console.log("  - isLoadingAgents:", isLoadingAgents);
+  console.log("  - hasAccessToken:", hasAccessToken);
+  console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
   console.log(
-    "DEBUG - userAgent.account_contract:",
-    userAgent?.account_contract
-  );
-  console.log("DEBUG - hasAgentAccount:", hasAgentAccount);
-  console.log("DEBUG - agentDaoTokenBalance:", agentDaoTokenBalance);
-  console.log(
-    "DEBUG - hasAgentDaoTokens:",
+    "  - hasAgentDaoTokens:",
     agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
   );
 
@@ -989,12 +991,15 @@ export function ProposalSubmission({
 
             {/* Error/Status Messages - Only show when authenticated */}
 
-            {/* Agent Account Validation */}
-            {hasAccessToken && !isLoadingAgents && !hasAgentAccount && (
-              <div className="text-sm text-orange-300 ">
-                <strong>Your agent account is being deployed</strong>
-              </div>
-            )}
+            {/* Agent Account Validation - Only show if we have actually loaded agents data */}
+            {hasAccessToken &&
+              !isLoadingAgents &&
+              agents &&
+              !hasAgentAccount && (
+                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-lg p-3">
+                  <strong>⏳ Your agent account is being deployed</strong>
+                </div>
+              )}
 
             {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
               <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
