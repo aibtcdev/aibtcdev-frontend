@@ -39,22 +39,8 @@ interface ApplicationLayoutProps {
   children: React.ReactNode;
 }
 
-const navigation = [
-  { id: "daos", name: "DAOs", href: "/daos", icon: Boxes },
-  // {
-  //   id: "proposals",
-  //   name: "Contributions",
-  //   href: "/proposals",
-  //   icon: FileText,
-  // },
-  { id: "votes", name: "Voting", href: "/votes", icon: Vote },
-  // {
-  //   id: "playground",
-  //   name: "Playground",
-  //   href: "/evaluation",
-  //   icon: FlaskConical,
-  // },
-];
+const navigation: Array<{ id: string; name: string; href: string; icon: any }> =
+  [];
 
 export default function ApplicationLayout({
   children,
@@ -183,15 +169,25 @@ export default function ApplicationLayout({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account?tab=contribution-history", e);
+                    handleNavigation("/account?tab=earning-history", e);
                     setMobileMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <History className="h-4 w-4" />
                   <span className="group-hover:text-white">
-                    Contribution History
+                    Earning History
                   </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/votes", e);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <Vote className="h-4 w-4" />
+                  <span className="group-hover:text-white">Voting History</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -259,67 +255,10 @@ export default function ApplicationLayout({
           </Link>
         </div>
 
-        {/* Center Section - Navigation  */}
-        <nav className="flex justify-center relative z-10">
-          <div className="inline-flex items-center gap-3">
-            {navigation.map((item) => {
-              const isActive = pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={(e) => handleNavigation(item.href, e)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-all duration-300 ease-in-out relative group whitespace-nowrap",
-                    "hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50",
-                    isActive
-                      ? "text-primary-foreground bg-primary shadow-lg hover:shadow-xl hover:shadow-primary/20"
-                      : "text-primary hover:bg-primary/10 hover:shadow-md"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "relative transition-all duration-300",
-                      isActive ? "drop-shadow-sm" : "group-hover:scale-110"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4 relative z-10" />
-                    {isActive && (
-                      <div className="absolute inset-0 bg-primary-foreground/20 rounded-full scale-150 blur-sm" />
-                    )}
-                  </div>
-
-                  <span
-                    className={cn(
-                      "font-medium tracking-wide transition-all duration-300 hidden sm:inline",
-                      isActive
-                        ? "text-primary-foreground"
-                        : "group-hover:tracking-wider"
-                    )}
-                  >
-                    {item.name}
-                  </span>
-
-                  {/* Active indicator */}
-                  {isActive && (
-                    <>
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-primary-foreground rounded-full shadow-sm" />
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-primary-foreground/20 rounded-full blur-sm" />
-                    </>
-                  )}
-
-                  {/* Hover glow effect */}
-                  <div
-                    className={cn(
-                      "absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-                      "bg-gradient-to-r from-primary/5 to-secondary/5"
-                    )}
-                  />
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        {/* Center Section - Empty since navigation moved to dropdown */}
+        <div className="flex justify-center relative z-10">
+          {/* Navigation items now in dropdown menu */}
+        </div>
 
         {/* Right Section - BTC Balance Dropdown & Auth Button */}
         <div className="flex items-center gap-2 relative z-10 justify-end">
@@ -367,15 +306,25 @@ export default function ApplicationLayout({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
-                    handleNavigation("/account?tab=contribution-history", e);
+                    handleNavigation("/account?tab=earning-history", e);
                     setDesktopMenuOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                 >
                   <History className="h-4 w-4" />
                   <span className="group-hover:text-white">
-                    Contribution History
+                    Earning History
                   </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    handleNavigation("/votes", e);
+                    setDesktopMenuOpen(false);
+                  }}
+                  className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                >
+                  <Vote className="h-4 w-4" />
+                  <span className="group-hover:text-white">Voting History</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="my-1" />
                 <div className="px-3 py-2 border-y border-border/20">
@@ -447,61 +396,12 @@ export default function ApplicationLayout({
               </Button>
             </div>
 
-            {/* Navigation */}
+            {/* Navigation - Empty since items moved to dropdown */}
             <nav className="flex-1 px-4 py-6 relative z-10 overflow-y-auto">
               <div className="space-y-3">
-                {navigation.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      onClick={(e) => {
-                        handleNavigation(item.href, e);
-                        setLeftPanelOpen(false);
-                      }}
-                      className={cn(
-                        "group flex items-center gap-4 px-4 py-4 text-base font-semibold rounded-xl transition-all duration-300 ease-in-out relative overflow-hidden hover:scale-[1.02]",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-xl scale-[1.02] hover:shadow-2xl"
-                          : "text-primary hover:bg-primary/10 hover:shadow-lg"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 relative z-10 flex-shrink-0",
-                          isActive
-                            ? "bg-primary-foreground/20 shadow-lg"
-                            : "bg-muted/30 group-hover:bg-primary/20 group-hover:scale-110"
-                        )}
-                      >
-                        <item.icon
-                          className={cn(
-                            "h-6 w-6 transition-all duration-300",
-                            isActive
-                              ? "text-primary-foreground"
-                              : "text-muted-foreground group-hover:text-primary"
-                          )}
-                        />
-                      </div>
-
-                      <span
-                        className={cn(
-                          "font-semibold tracking-wide transition-all duration-300 relative z-10",
-                          isActive
-                            ? "text-primary-foreground"
-                            : "group-hover:tracking-wider"
-                        )}
-                      >
-                        {item.name}
-                      </span>
-
-                      {isActive && (
-                        <div className="absolute right-4 w-3 h-3 bg-primary-foreground rounded-full shadow-lg animate-pulse" />
-                      )}
-                    </Link>
-                  );
-                })}
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  Use the dropdown menu above to navigate
+                </div>
               </div>
             </nav>
           </div>
