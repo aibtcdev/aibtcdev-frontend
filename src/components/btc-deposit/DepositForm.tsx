@@ -89,6 +89,16 @@ export interface ConfirmationData {
   swapType: string;
 }
 
+interface AddressEntry {
+  symbol?: string;
+  address: string;
+  publicKey: string;
+}
+
+interface UserData {
+  addresses: AddressEntry[];
+}
+
 const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
 
 // Helper function to get token asset name
@@ -137,7 +147,7 @@ export default function DepositForm({
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   const { transactionStatus, transactionMessage, reset, startMonitoring } =
     useTransactionVerification();
@@ -353,49 +363,6 @@ export default function DepositForm({
     refetchOnWindowFocus: false,
   });
 
-  // Auto-place order after wallet connection - wait for all data to load
-  useEffect(() => {
-    if (
-      pendingOrderAfterConnection &&
-      hasAccessToken &&
-      userAddress &&
-      !loadingQuote &&
-      !isBalanceLoading &&
-      buyQuote !== null
-    ) {
-      if (hasAgentAccount) {
-        // Agent account is ready, proceed with order
-        setPendingOrderAfterConnection(false);
-        setIsAuthenticating(false);
-        setTimeout(() => {
-          handleDepositConfirm();
-        }, 1000);
-      } else {
-        // Agent account not ready, show message and reset after timeout
-        setTimeout(() => {
-          if (!hasAgentAccount) {
-            setPendingOrderAfterConnection(false);
-            setIsAuthenticating(false);
-            toast({
-              title: "Agent Account Required",
-              description:
-                "Your agent account is still being deployed. Please try again in a few minutes.",
-              variant: "destructive",
-            });
-          }
-        }, 30000); // 30 second timeout
-      }
-    }
-  }, [
-    pendingOrderAfterConnection,
-    hasAccessToken,
-    userAddress,
-    loadingQuote,
-    isBalanceLoading,
-    hasAgentAccount,
-    buyQuote,
-  ]);
-
   const formatUsdValue = (amount: number): string => {
     if (!amount || amount <= 0) return "$0.00";
     return new Intl.NumberFormat("en-US", {
@@ -412,14 +379,18 @@ export default function DepositForm({
     return isNaN(numAmount) ? 0 : numAmount * btcUsdPrice;
   };
 
-  const calculateFee = (btcAmount: string): string => {
-    if (buyWithSbtc) return "0.00000000";
-    if (!btcAmount || Number.parseFloat(btcAmount) <= 0) return "0.00000000";
-    const numAmount = Number.parseFloat(btcAmount);
-    if (isNaN(numAmount)) return "0.00003000";
+  // Memoize calculateFee to ensure stable reference
+  const calculateFee = useCallback(
+    (btcAmount: string): string => {
+      if (buyWithSbtc) return "0.00000000";
+      if (!btcAmount || Number.parseFloat(btcAmount) <= 0) return "0.00000000";
+      const numAmount = Number.parseFloat(btcAmount);
+      if (isNaN(numAmount)) return "0.00003000";
 
-    return numAmount <= 0.002 ? "0.00003000" : "0.00006000";
-  };
+      return numAmount <= 0.002 ? "0.00003000" : "0.00006000";
+    },
+    [buyWithSbtc]
+  );
 
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value;
@@ -478,7 +449,7 @@ export default function DepositForm({
     }
   };
 
-  const handleWalletAuth = async () => {
+  const handleWalletAuth = useCallback(async () => {
     setIsAuthenticating(true);
     try {
       toast({
@@ -511,7 +482,7 @@ export default function DepositForm({
       setPendingOrderAfterConnection(false);
       setIsAuthenticating(false);
     }
-  };
+  }, [toast]);
 
   const handleAcceptTerms = async () => {
     if (!userData || !hasScrolledToBottom) return;
@@ -588,7 +559,7 @@ export default function DepositForm({
     setHasScrolledToBottom(isComplete);
   };
 
-  const handleBuyWithSbtc = async () => {
+  const handleBuyWithSbtc = useCallback(async () => {
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -766,9 +737,90 @@ export default function DepositForm({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    rawBuyQuote,
+    sbtcBalance,
+    targetStx,
+    currentSlippage,
+    dexContract,
+    tokenContract,
+    daoName,
+    transactionStatus,
+    toast,
+    handleWalletAuth,
+  ]);
 
-  const handleDepositConfirm = async (): Promise<void> => {
+  // Memoized error handlers
+  const isAddressTypeError = useCallback((error: Error): boolean => {
+    return (
+      error.message.includes("inputType: sh without redeemScript") ||
+      error.message.includes("P2SH") ||
+      error.message.includes("redeem script")
+    );
+  }, []);
+
+  const handleAddressTypeError = useCallback(
+    (error: Error, walletProvider: "leather" | "xverse" | null): void => {
+      if (walletProvider === "leather") {
+        toast({
+          title: "Unsupported Address Type",
+          description:
+            "Leather wallet does not support P2SH addresses (starting with '3'). Please use a SegWit address (starting with 'bc1') instead.",
+          variant: "destructive",
+        });
+      } else if (walletProvider === "xverse") {
+        toast({
+          title: "P2SH Address Error",
+          description:
+            "There was an issue with the P2SH address. This might be due to wallet limitations. Try using a SegWit address (starting with 'bc1') instead.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "P2SH Address Not Supported",
+          description:
+            "Your wallet doesn't provide the necessary information for your P2SH address. Please try using a SegWit address (starting with bc1) instead.",
+          variant: "destructive",
+        });
+      }
+    },
+    [toast]
+  );
+
+  const isInscriptionError = useCallback((error: Error): boolean => {
+    return error.message.includes("with inscriptions");
+  }, []);
+
+  const handleInscriptionError = useCallback(
+    (error: Error): void => {
+      toast({
+        title: "Inscriptions Detected",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    [toast]
+  );
+
+  const isUtxoCountError = useCallback((error: Error): boolean => {
+    return error.message.includes("small UTXOs");
+  }, []);
+
+  const handleUtxoCountError = useCallback(
+    (error: Error): void => {
+      toast({
+        title: "Too Many UTXOs",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+    [toast]
+  );
+
+  const handleDepositConfirm = useCallback(async (): Promise<void> => {
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -906,67 +958,77 @@ export default function DepositForm({
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    accessToken,
+    userAddress,
+    buyWithSbtc,
+    amount,
+    btcAddress,
+    btcBalance,
+    toast,
+    handleBuyWithSbtc,
+    handleWalletAuth,
+    activeWalletProvider,
+    minTokenOut,
+    swapType,
+    poolId,
+    dexId,
+    aiAccountReceiver,
+    setConfirmationData,
+    setShowConfirmation,
+    calculateFee,
+    isInscriptionError,
+    handleInscriptionError,
+    isUtxoCountError,
+    handleUtxoCountError,
+    isAddressTypeError,
+    handleAddressTypeError,
+  ]);
 
-  function isAddressTypeError(error: Error): boolean {
-    return (
-      error.message.includes("inputType: sh without redeemScript") ||
-      error.message.includes("P2SH") ||
-      error.message.includes("redeem script")
-    );
-  }
-
-  function handleAddressTypeError(
-    error: Error,
-    walletProvider: "leather" | "xverse" | null
-  ): void {
-    if (walletProvider === "leather") {
-      toast({
-        title: "Unsupported Address Type",
-        description:
-          "Leather wallet does not support P2SH addresses (starting with '3'). Please use a SegWit address (starting with 'bc1') instead.",
-        variant: "destructive",
-      });
-    } else if (walletProvider === "xverse") {
-      toast({
-        title: "P2SH Address Error",
-        description:
-          "There was an issue with the P2SH address. This might be due to wallet limitations. Try using a SegWit address (starting with 'bc1') instead.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "P2SH Address Not Supported",
-        description:
-          "Your wallet doesn't provide the necessary information for your P2SH address. Please try using a SegWit address (starting with bc1) instead.",
-        variant: "destructive",
-      });
+  // Auto-place order after wallet connection - wait for all data to load
+  useEffect(() => {
+    if (
+      pendingOrderAfterConnection &&
+      hasAccessToken &&
+      userAddress &&
+      !loadingQuote &&
+      !isBalanceLoading &&
+      buyQuote !== null
+    ) {
+      if (hasAgentAccount) {
+        // Agent account is ready, proceed with order
+        setPendingOrderAfterConnection(false);
+        setIsAuthenticating(false);
+        setTimeout(() => {
+          handleDepositConfirm();
+        }, 1000);
+      } else {
+        // Agent account not ready, show message and reset after timeout
+        setTimeout(() => {
+          if (!hasAgentAccount) {
+            setPendingOrderAfterConnection(false);
+            setIsAuthenticating(false);
+            toast({
+              title: "Agent Account Required",
+              description:
+                "Your agent account is still being deployed. Please try again in a few minutes.",
+              variant: "destructive",
+            });
+          }
+        }, 30000); // 30 second timeout
+      }
     }
-  }
-
-  function isInscriptionError(error: Error): boolean {
-    return error.message.includes("with inscriptions");
-  }
-
-  function handleInscriptionError(error: Error): void {
-    toast({
-      title: "Inscriptions Detected",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
-
-  function isUtxoCountError(error: Error): boolean {
-    return error.message.includes("small UTXOs");
-  }
-
-  function handleUtxoCountError(error: Error): void {
-    toast({
-      title: "Too Many UTXOs",
-      description: error.message,
-      variant: "destructive",
-    });
-  }
+  }, [
+    pendingOrderAfterConnection,
+    hasAccessToken,
+    userAddress,
+    loadingQuote,
+    isBalanceLoading,
+    buyQuote,
+    hasAgentAccount,
+    handleDepositConfirm,
+    toast,
+  ]);
 
   if (isLoading) {
     return (
@@ -1268,27 +1330,6 @@ export default function DepositForm({
             minutes.
           </p>
         </div>
-      )}
-
-      {buyWithSbtc && (
-        <TransactionStatusModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            reset();
-            setActiveTxId(null);
-          }}
-          txId={activeTxId ?? undefined}
-          transactionStatus={transactionStatus}
-          transactionMessage={transactionMessage}
-          title="sBTC Transaction"
-          successTitle="Buy Order Confirmed"
-          failureTitle="Buy Order Failed"
-          successDescription={`Your transaction to buy ${daoName} tokens has been successfully confirmed.`}
-          failureDescription="The transaction could not be completed. Please check your balance and try again."
-          pendingDescription="Your transaction is being processed. This may take a few minutes."
-          onRetry={handleBuyWithSbtc}
-        />
       )}
 
       {buyWithSbtc && (

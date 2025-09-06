@@ -492,6 +492,7 @@ export function ProposalSubmission({
     stacksAddress,
     daoTokenExt?.contract_principal,
     userAgent?.account_contract,
+    daoName,
   ]);
 
   // Show airdrop notification if user has sent airdrops
