@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  Boxes,
   Menu,
   X,
   Vote,
@@ -39,13 +38,11 @@ interface ApplicationLayoutProps {
   children: React.ReactNode;
 }
 
-const navigation: Array<{ id: string; name: string; href: string; icon: any }> =
-  [];
+// Navigation items moved to dropdown menu
 
 export default function ApplicationLayout({
   children,
 }: ApplicationLayoutProps) {
-  const pathname = usePathname();
   const router = useRouter();
   const [leftPanelOpen, setLeftPanelOpen] = React.useState(false);
   const [isDesktopMenuOpen, setDesktopMenuOpen] = React.useState(false);

@@ -1,22 +1,13 @@
 "use client";
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { useViewMode } from "@/hooks/useView";
 
 import { useQuery, useQueries } from "@tanstack/react-query";
-import {
-  Search,
-  Grid3X3,
-  List,
-  TrendingUp,
-  Users,
-  Calendar,
-  Activity,
-} from "lucide-react";
+import { Search, TrendingUp, Users, Calendar, Activity } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/reusables/Pagination";
-import { DAOCard, DAOListItem } from "@/components/daos/DaoCard";
+import { DAOListItem } from "@/components/daos/DaoCard";
 import type { DAO, Holder } from "@/types";
 import {
   fetchDAOsWithExtension,
@@ -45,23 +36,18 @@ type SortOption =
   | "market_cap"
   | "holders"
   | "price_change";
-type ViewMode = "grid" | "list";
 
 function SearchAndFilters({
   searchQuery,
   onSearchChange,
   sortBy,
   onSortChange,
-  viewMode,
-  onViewModeChange,
   totalResults,
 }: {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
   totalResults: number;
 }) {
   return (
@@ -134,28 +120,6 @@ function SearchAndFilters({
               aria-label="Search DAOs"
             />
           </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-muted/30 rounded-lg p-1 flex-shrink-0">
-            <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onViewModeChange("grid")}
-              className="h-8 w-8 p-0"
-              aria-label="Grid view"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onViewModeChange("list")}
-              className="h-8 w-8 p-0"
-              aria-label="List view"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -194,11 +158,64 @@ function ListHeader() {
   );
 }
 
+// Mock DAO data for "Coming Soon" display
+const createMockDAOs = (count: number): DAO[] => {
+  const mockNames = [
+    "AI Trading Bot DAO",
+    "Neural Network DAO",
+    "Quantum Computing DAO",
+    "Machine Learning DAO",
+    "Blockchain AI DAO",
+    "Smart Contract DAO",
+    "DeFi Analytics DAO",
+    "Predictive AI DAO",
+    "Autonomous Agent DAO",
+    "Deep Learning DAO",
+  ];
+
+  const mockDescriptions = [
+    "Advanced AI trading algorithms for optimal portfolio management",
+    "Decentralized neural network training and deployment",
+    "Quantum-enhanced blockchain solutions",
+    "Community-driven machine learning model development",
+    "AI-powered blockchain infrastructure",
+    "Automated smart contract optimization",
+    "DeFi market analysis and insights",
+    "Predictive analytics for crypto markets",
+    "Autonomous agent coordination platform",
+    "Deep learning model marketplace",
+  ];
+
+  return Array.from(
+    { length: count },
+    (_, i) =>
+      ({
+        id: `mock-dao-${i + 1}`,
+        name: mockNames[i] || `AI DAO ${i + 1}`,
+        description:
+          mockDescriptions[i] ||
+          `Advanced AI-powered DAO for innovative blockchain solutions`,
+        mission: `Advancing AI technology through decentralized governance`,
+        website_url: "",
+        x_url: "",
+        telegram_url: "",
+        image_url: "",
+        is_graduated: false,
+        is_deployed: false,
+        created_at: new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        author_id: "mock-author",
+        extensions: [],
+        is_mock: true, // Flag to identify mock DAOs
+      }) as DAO & { is_mock: boolean }
+  );
+};
+
 export default function AllDaos() {
   // State for search, filtering, and pagination
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("market_cap");
-  const [viewMode, setViewMode] = useViewMode();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
 
@@ -308,11 +325,19 @@ export default function AllDaos() {
     return map;
   }, [daos, holderQueries]);
 
-  // Filter and sort DAOs
+  // Filter and sort DAOs with mock data when only one real DAO exists
   const filteredAndSortedDAOs = useMemo(() => {
     if (!daos) return [];
 
-    const filtered = daos.filter((dao) => {
+    let allDAOs = [...daos];
+
+    // Add mock DAOs if there's only one real DAO
+    if (daos.length === 1) {
+      const mockDAOs = createMockDAOs(10);
+      allDAOs = [...daos, ...mockDAOs];
+    }
+
+    const filtered = allDAOs.filter((dao) => {
       const query = searchQuery.toLowerCase();
       try {
         return (
@@ -363,6 +388,9 @@ export default function AllDaos() {
 
     return filtered;
   }, [daos, searchQuery, sortBy, tokenPrices, holdersMap, proposalCounts]);
+
+  // Check if we should show search and filters (hide when only one real DAO)
+  const shouldShowSearchAndFilters = daos && daos.length > 1;
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
   const paginatedDAOs = filteredAndSortedDAOs.slice(
@@ -412,12 +440,6 @@ export default function AllDaos() {
           ) as HTMLInputElement;
           searchInput?.focus();
           break;
-        case "g":
-          if (e.shiftKey) {
-            e.preventDefault();
-            setViewMode(viewMode === "grid" ? "list" : "grid");
-          }
-          break;
         case "ArrowLeft":
           if (e.metaKey || e.ctrlKey) {
             e.preventDefault();
@@ -439,46 +461,21 @@ export default function AllDaos() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [currentPage, totalPages, handlePageChange, viewMode, setViewMode]);
-
-  // Helper function to get adaptive grid classes with height scaling
-  const getGridConfig = (itemCount: number) => {
-    if (itemCount === 1) {
-      return {
-        grid: "grid-cols-1 max-w-md mx-auto",
-        cardHeight: "min-h-[480px] max-h-[550px]", // Tallest for single wide card
-      };
-    } else if (itemCount === 2) {
-      return {
-        grid: "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto",
-        cardHeight: "min-h-[420px] max-h-[480px]", // Taller for 2 cards
-      };
-    } else if (itemCount === 3) {
-      return {
-        grid: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto",
-        cardHeight: "min-h-[380px] max-h-[430px]", // Medium for 3 cards
-      };
-    } else {
-      return {
-        grid: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
-        cardHeight: "min-h-[340px] max-h-[430px]", // Standard for 4+ cards
-      };
-    }
-  };
+  }, [currentPage, totalPages, handlePageChange]);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-[2400px]">
-        {/* Search and Filters */}
-        <SearchAndFilters
-          searchQuery={searchQuery}
-          onSearchChange={handleSearchChange}
-          sortBy={sortBy}
-          onSortChange={handleSortChange}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          totalResults={filteredAndSortedDAOs.length}
-        />
+        {/* Search and Filters - Only show when more than one real DAO */}
+        {shouldShowSearchAndFilters && (
+          <SearchAndFilters
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            totalResults={filteredAndSortedDAOs.length}
+          />
+        )}
 
         {/* Content */}
         <div className="space-y-4 sm:space-y-6">
@@ -527,49 +524,22 @@ export default function AllDaos() {
             </div>
           ) : (
             <>
-              {viewMode === "grid" ? (
-                <div className="px-4">
-                  {(() => {
-                    const config = getGridConfig(paginatedDAOs.length);
-                    return (
-                      <div
-                        className={`grid gap-4 sm:gap-6 auto-rows-fr ${config.grid}`}
-                      >
-                        {paginatedDAOs.map((dao) => (
-                          <DAOCard
-                            key={dao.id}
-                            dao={dao}
-                            token={tokens?.find((t) => t.dao_id === dao.id)}
-                            tokenPrice={tokenPrices?.[dao.id]}
-                            isFetchingPrice={isFetchingTokenPrices}
-                            trades={tradesMap[dao.id]}
-                            holders={holdersMap[dao.id]}
-                            proposalCount={proposalCounts?.[dao.id]}
-                            heightClass={config.cardHeight}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })()}
+              <div className="border border-border/50 rounded-lg overflow-hidden bg-card/30 backdrop-blur-sm">
+                <ListHeader />
+                <div className="divide-y divide-border/50">
+                  {paginatedDAOs.map((dao) => (
+                    <DAOListItem
+                      key={dao.id}
+                      dao={dao}
+                      token={tokens?.find((t) => t.dao_id === dao.id)}
+                      tokenPrice={tokenPrices?.[dao.id]}
+                      isFetchingPrice={isFetchingTokenPrices}
+                      holders={holdersMap[dao.id]}
+                      proposalCount={proposalCounts?.[dao.id]}
+                    />
+                  ))}
                 </div>
-              ) : (
-                <div className="border border-border/50 rounded-lg overflow-hidden bg-card/30 backdrop-blur-sm">
-                  <ListHeader />
-                  <div className="divide-y divide-border/50">
-                    {paginatedDAOs.map((dao) => (
-                      <DAOListItem
-                        key={dao.id}
-                        dao={dao}
-                        token={tokens?.find((t) => t.dao_id === dao.id)}
-                        tokenPrice={tokenPrices?.[dao.id]}
-                        isFetchingPrice={isFetchingTokenPrices}
-                        holders={holdersMap[dao.id]}
-                        proposalCount={proposalCounts?.[dao.id]}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
 
               {/* Pagination */}
               {filteredAndSortedDAOs.length > itemsPerPage && (
