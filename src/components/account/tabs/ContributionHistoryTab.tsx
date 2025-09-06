@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  History,
-  TrendingUp,
-  TrendingDown,
-  ArrowUpDown,
-  ExternalLink,
-} from "lucide-react";
+import { History, ArrowUpDown, ExternalLink } from "lucide-react";
 import { fetchAgentContributionHistory } from "@/services/contribution.service";
 import { ContributionHistory } from "@/types/contribution";
 import { format } from "date-fns";
@@ -40,7 +34,7 @@ export function ContributionHistoryTab({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["contribution-history", agentAddress],
+    queryKey: ["earning-history", agentAddress],
     queryFn: () => fetchAgentContributionHistory(agentAddress!),
     enabled: !!agentAddress,
   });
@@ -114,11 +108,6 @@ export function ContributionHistoryTab({
           isGain ? "text-green-600" : "text-red-600"
         }`}
       >
-        {isGain ? (
-          <TrendingUp className="h-4 w-4" />
-        ) : (
-          <TrendingDown className="h-4 w-4" />
-        )}
         <span className="font-mono text-sm">
           {isGain ? "+" : "-"}
           {contribution.reward_amount.toLocaleString()} {symbol}
@@ -216,7 +205,6 @@ export function ContributionHistoryTab({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
               <span className="text-xs sm:text-sm font-medium">Successful</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold text-green-600">
@@ -225,7 +213,6 @@ export function ContributionHistoryTab({
           </div>
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-600" />
               <span className="text-xs sm:text-sm font-medium">Failed</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold text-red-600">
@@ -234,7 +221,6 @@ export function ContributionHistoryTab({
           </div>
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
               <span className="text-xs sm:text-sm font-medium">Rewards</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold text-green-600">
@@ -243,8 +229,7 @@ export function ContributionHistoryTab({
           </div>
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-red-600" />
-              <span className="text-xs sm:text-sm font-medium">Lost</span>
+              <span className="text-xs sm:text-sm font-medium">Lost Bond</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold text-red-600">
               -{totalLostBonds.toLocaleString()}

@@ -69,11 +69,11 @@ export function AccountTabs({
           </TabsTrigger>
 
           <TabsTrigger
-            value="contribution-history"
+            value="earning-history"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             <History className="h-4 w-4" />
-            <span className=" sm:inline">Contributions</span>
+            <span className=" sm:inline">Earning History</span>
           </TabsTrigger>
         </TabsList>
 
@@ -85,7 +85,7 @@ export function AccountTabs({
           <AgentSettingsTab />
         </TabsContent>
 
-        <TabsContent value="contribution-history" className="py-6">
+        <TabsContent value="earning-history" className="py-6">
           <ContributionHistoryTab agentAddress={userAgentAddress} />
         </TabsContent>
       </Tabs>
