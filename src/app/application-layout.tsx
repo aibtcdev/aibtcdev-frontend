@@ -33,6 +33,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 // import { ThemeToggle } from "@/components/reusables/ThemeToggle";
 import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
 import AssetTracker from "@/components/reusables/AssetTracker";
+import CustomInstructionsNotification from "@/components/reusables/CustomInstructionsNotification";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -356,6 +357,9 @@ export default function ApplicationLayout({
 
       {/* Asset Tracker Banner - Only shown when user is authenticated */}
       {isAuthenticated && <AssetTracker />}
+
+      {/* Custom Instructions Notification - Only shown when user has agent but no instructions */}
+      {isAuthenticated && <CustomInstructionsNotification />}
 
       {/* Main Content */}
       <div className="flex-1 flex min-w-0 max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
