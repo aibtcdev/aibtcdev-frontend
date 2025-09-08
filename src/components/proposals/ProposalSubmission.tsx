@@ -252,7 +252,7 @@ export function ProposalSubmission({
   const hasAccessToken = !!accessToken && !isSessionLoading;
 
   // State for DAO token balance
-  const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
+  // const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
   const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
     string | null
   >(null);
@@ -310,7 +310,7 @@ export function ProposalSubmission({
   const daoTokenExt = daoExtensions?.find(
     (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
   );
-  const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
+  // const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
   const hasAgentDaoTokens =
     agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
@@ -376,7 +376,7 @@ export function ProposalSubmission({
         !daoTokenExt?.contract_principal
       ) {
         console.log("BALANCE FETCH - Early return due to missing conditions");
-        setDaoTokenBalance(null);
+        // setDaoTokenBalance(null);
         setAgentDaoTokenBalance(null);
         return;
       }
@@ -398,10 +398,10 @@ export function ProposalSubmission({
           const userBalance =
             balance.fungible_tokens[daoTokenExt.contract_principal].balance;
           console.log("BALANCE FETCH - User DAO token balance:", userBalance);
-          setDaoTokenBalance(userBalance);
+          // setDaoTokenBalance(userBalance);
         } else {
           console.log("BALANCE FETCH - No user DAO tokens found, setting to 0");
-          setDaoTokenBalance("0");
+          // setDaoTokenBalance("0");
         }
 
         // Fetch balance for agent account contract if it exists
@@ -480,7 +480,7 @@ export function ProposalSubmission({
           "BALANCE FETCH - Error fetching DAO token balance:",
           error
         );
-        setDaoTokenBalance("0");
+        // setDaoTokenBalance("0");
         setAgentDaoTokenBalance("0");
       } finally {
         setIsLoadingBalance(false);
@@ -1047,7 +1047,7 @@ export function ProposalSubmission({
                 !isWithinLimit ||
                 isSubmitting ||
                 !hasAgentAccount ||
-                !hasDaoTokens ||
+                // !hasDaoTokens ||
                 !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
