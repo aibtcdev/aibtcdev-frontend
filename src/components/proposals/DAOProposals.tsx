@@ -9,9 +9,14 @@ import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
 interface DAOProposalsProps {
   proposals: Proposal[];
   tokenSymbol?: string;
+  daoName?: string;
 }
 
-const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
+const DAOProposals = ({
+  proposals,
+  tokenSymbol = "",
+  daoName = "",
+}: DAOProposalsProps) => {
   // Filter out draft proposals to prevent ProposalCard from returning null
   const deployedProposals = useMemo(() => {
     return proposals.filter((proposal) => proposal.status === "DEPLOYED");
@@ -19,8 +24,8 @@ const DAOProposals = ({ proposals, tokenSymbol = "" }: DAOProposalsProps) => {
 
   return (
     <DAOTabLayout
-      title="Contributions"
-      description="Active and concluded contributions to this DAO"
+      title={`${daoName}  Contribution History`}
+      description={`Explore all work submitted in pursuit of the ${daoName} mission`}
       icon={FileText}
       isEmpty={deployedProposals.length === 0}
       emptyTitle="No Contributions Found"

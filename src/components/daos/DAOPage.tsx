@@ -1,11 +1,17 @@
 "use client";
 
 import type React from "react";
-import { useParams, usePathname } from "next/navigation";
-import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { Building2, FileText, Users, BarChart3 } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Building2,
+  FileText,
+  Users,
+  BarChart3,
+  DollarSign,
+  TrendingUp,
+} from "lucide-react";
 import {
   fetchToken,
   fetchDAOExtensions,
@@ -19,15 +25,28 @@ import {
 import { Loader } from "@/components/reusables/Loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
+import { MissionContent } from "@/components/daos/MissionContent";
+import DAOExtensions from "@/components/daos/DaoExtensions";
+import DAOHolders from "@/components/daos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
 
 export function DAOPage({ children }: { children: React.ReactNode }) {
   const params = useParams();
-  const pathname = usePathname();
   const encodedName = params.name as string;
+
+  // State for modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("charter");
 
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
     queryKey: ["dao", encodedName],
@@ -156,90 +175,101 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const navItems = [
+  // Expandable tabs data
+  const expandableTabs = [
     {
-      href: `/daos/${encodedName}`,
-      label: "Contributions",
-      icon: FileText,
-      isActive: pathname === `/daos/${encodedName}`,
-      disabled: false,
-    },
-    {
-      href: `/daos/${encodedName}/charter`,
+      id: "charter",
       label: "Charter",
       icon: BarChart3,
-      isActive: pathname.startsWith(`/daos/${encodedName}/charter`),
-      disabled: false,
+      href: `/daos/${encodedName}/charter`,
     },
     {
-      href: `/daos/${encodedName}/holders`,
-      label: "Holders",
-      icon: Users,
-      isActive: pathname === `/daos/${encodedName}/holders`,
-      disabled: false,
-    },
-    {
-      href: `/daos/${encodedName}/extension`,
+      id: "extensions",
       label: "Extensions",
       icon: FileText,
-      isActive: pathname === `/daos/${encodedName}/extension`,
-      disabled: false,
+      href: `/daos/${encodedName}/extension`,
+    },
+    {
+      id: "holders",
+      label: "Holders",
+      icon: Users,
+      href: `/daos/${encodedName}/holders`,
     },
   ];
 
-  const defaultTabValue =
-    navItems.find((item) => item.isActive)?.href || `/daos/${encodedName}`;
+  // Handle modal open
+  const handleModalOpen = () => {
+    setIsModalOpen(true);
+    setActiveTab("charter"); // Default to charter when opening
+  };
 
   return (
     <div className="flex flex-col h-screen w-full">
       <main className="flex-1 overflow-y-auto">
-        <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 max-w-screen-xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
-              <AvatarImage
-                src={
-                  token?.image_url ||
-                  "/placeholder.svg?height=64&width=64&query=DAO logo"
-                }
-                alt={dao.name}
-              />
-              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-2xl rounded-lg">
-                {dao.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-4xl text-white">{dao.name}</h1>
-              <p className="text-zinc-400 mt-2 text-sm">
-                {extractMission(dao.mission)}
-              </p>
-            </div>
-          </div>
-
-          {/* Token Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-7">
-            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
-              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
-                <span className="text-xs">Price: </span>
-                {formatTokenPrice(enhancedMarketStats.price)}
-              </div>
-            </div>
-            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
-              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
-                <span className="text-xs">Market Cap: </span>$
-                {formatNumber(enhancedMarketStats.marketCap)}
-              </div>
-            </div>
-            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
-              <div className="min-w-0 flex items-center justify-center text-center">
-                <div className="text-xs">
-                  Holders: {Math.floor(enhancedMarketStats.holderCount)}
+        <div className="px-6 md:px-6 lg:px-8 py-4  max-w-screen-xl mx-auto">
+          <div className="bg-muted/10 p-6 rounded-lg mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
+                <AvatarImage
+                  src={
+                    token?.image_url ||
+                    "/placeholder.svg?height=64&width=64&query=DAO logo"
+                  }
+                  alt={dao.name}
+                />
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-2xl rounded-lg">
+                  {dao.name.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-4xl text-white">{dao.name}</h1>
+                    <p className="text-zinc-400 mt-2 text-sm">
+                      <span className="font-bold"> Mission: </span>
+                      {extractMission(dao.mission)}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleModalOpen}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 px-3 py-2 text-sm"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Details
+                  </Button>
                 </div>
               </div>
             </div>
-            <div className="bg-muted/30 rounded-md p-2 flex items-center justify-center text-center">
-              <div className="min-w-0 flex items-center justify-center text-center text-base truncate">
-                <span className="text-xs">Contributions: </span>
-                {totalProposals}
+
+            {/* Token Stats */}
+            <div className="flex flex-wrap items-center gap-6 text-sm">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-green-400" />
+                <span className="text-muted-foreground">Price:</span>
+                <span className="font-medium">
+                  {formatTokenPrice(enhancedMarketStats.price)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-400" />
+                <span className="text-muted-foreground">Market Cap:</span>
+                <span className="font-medium">
+                  ${formatNumber(enhancedMarketStats.marketCap)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-purple-400" />
+                <span className="text-muted-foreground">Holders:</span>
+                <span className="font-medium">
+                  {Math.floor(enhancedMarketStats.holderCount)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-orange-400" />
+                <span className="text-muted-foreground">Contributions:</span>
+                <span className="font-medium">{totalProposals}</span>
               </div>
             </div>
           </div>
@@ -280,52 +310,81 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Tabs outside the grid */}
-          <Tabs
-            defaultValue={defaultTabValue}
-            value={pathname}
-            className="w-full mt-0.5"
-          >
-            <TabsList className="grid w-full grid-cols-4 h-auto mb-3 sticky bottom-0 bg-muted/95  mt-0 backdrop-blur-sm ">
-              {navItems.map((item) => (
-                <TabsTrigger
-                  key={item.label}
-                  value={item.href}
-                  asChild
-                  disabled={item.disabled}
+          {/* Contributions Content */}
+          <div className="mt-6">{children}</div>
+
+          {/* Modal Dialog */}
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold">
+                  {dao.name} Details
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="flex-1 overflow-hidden">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="h-full flex flex-col"
                 >
-                  <Link
-                    href={item.disabled ? "#" : item.href}
-                    className="flex items-center justify-center gap-2 py-2 px-4"
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Link>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <TabsContent value={`/daos/${encodedName}`} className="mt-0">
-              {children}
-            </TabsContent>
-            <TabsContent
-              value={`/daos/${encodedName}/charter`}
-              className="mt-0"
-            >
-              {children}
-            </TabsContent>
-            <TabsContent
-              value={`/daos/${encodedName}/holders`}
-              className="mt-0"
-            >
-              {children}
-            </TabsContent>
-            <TabsContent
-              value={`/daos/${encodedName}/extension`}
-              className="mt-0"
-            >
-              {children}
-            </TabsContent>
-          </Tabs>
+                  <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50">
+                    {expandableTabs.map((tab) => (
+                      <TabsTrigger
+                        key={tab.id}
+                        value={tab.id}
+                        className="flex items-center justify-center gap-2   data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                      >
+                        <tab.icon className="h-4 w-4" />
+                        <span>{tab.label}</span>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  <div className="flex-1 overflow-y-auto">
+                    <TabsContent value="charter" className="mt-0 h-full">
+                      <div className="max-h-[60vh] overflow-y-auto pr-2">
+                        {dao ? (
+                          <MissionContent description={dao.description} />
+                        ) : (
+                          <div className="flex items-center justify-center h-full min-h-[300px]">
+                            <Loader />
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="extensions" className="mt-0 h-full">
+                      <div className="max-h-[60vh] overflow-y-auto pr-2">
+                        {extensions ? (
+                          <DAOExtensions extensions={extensions} />
+                        ) : (
+                          <div className="flex items-center justify-center h-full min-h-[300px]">
+                            <Loader />
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="holders" className="mt-0 h-full">
+                      <div className="max-h-[60vh] overflow-y-auto pr-2">
+                        {holdersData && token ? (
+                          <DAOHolders
+                            holders={holdersData.holders || []}
+                            tokenSymbol={token.symbol || ""}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full min-h-[300px]">
+                            <Loader />
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </div>
+                </Tabs>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
     </div>
