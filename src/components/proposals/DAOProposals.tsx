@@ -24,7 +24,7 @@ const DAOProposals = ({
 
   return (
     <DAOTabLayout
-      title={`${daoName} Contributions`}
+      title={`${daoName}  Contribution History`}
       description={`Explore all work submitted in pursuit of the ${daoName} mission`}
       icon={FileText}
       isEmpty={deployedProposals.length === 0}

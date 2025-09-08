@@ -754,7 +754,7 @@ export function ProposalSubmission({
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">
-                  Join {daoName} to unlock the earning
+                  Join {daoName} to unlock earning
                 </h3>
               </div>
             </div>
@@ -773,7 +773,7 @@ export function ProposalSubmission({
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">
-                    Join {daoName} to unlock the earning
+                    Join {daoName} to unlock earning
                   </h3>
                 </div>
               </div>

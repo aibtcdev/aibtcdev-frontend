@@ -11,7 +11,6 @@ import {
   BarChart3,
   DollarSign,
   TrendingUp,
-  MessageSquare,
 } from "lucide-react";
 import {
   fetchToken,
@@ -227,6 +226,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                   <div>
                     <h1 className="text-4xl text-white">{dao.name}</h1>
                     <p className="text-zinc-400 mt-2 text-sm">
+                      <span className="font-bold"> Mission: </span>
                       {extractMission(dao.mission)}
                     </p>
                   </div>
@@ -267,7 +267,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-orange-400" />
+                <FileText className="h-4 w-4 text-orange-400" />
                 <span className="text-muted-foreground">Contributions:</span>
                 <span className="font-medium">{totalProposals}</span>
               </div>
@@ -333,7 +333,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                       <TabsTrigger
                         key={tab.id}
                         value={tab.id}
-                        className="flex items-center justify-center gap-2 py-3 px-4"
+                        className="flex items-center justify-center gap-2   data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <tab.icon className="h-4 w-4" />
                         <span>{tab.label}</span>

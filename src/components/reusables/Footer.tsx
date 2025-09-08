@@ -55,7 +55,7 @@ export function Footer() {
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/80">
             <span>© {new Date().getFullYear()} AIBTC</span>
             <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-            <span>Powered by Bitcoin & AI</span>
+            <span>AI DAOs on Bitcoin</span>
           </div>
         </div>
       </div>
