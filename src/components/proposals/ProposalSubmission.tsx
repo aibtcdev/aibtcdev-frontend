@@ -310,7 +310,7 @@ export function ProposalSubmission({
   const daoTokenExt = daoExtensions?.find(
     (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
   );
-  const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
+  // const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
   const hasAgentDaoTokens =
     agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
@@ -1047,7 +1047,7 @@ export function ProposalSubmission({
                 !isWithinLimit ||
                 isSubmitting ||
                 !hasAgentAccount ||
-                !hasDaoTokens ||
+                // !hasDaoTokens ||
                 !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
