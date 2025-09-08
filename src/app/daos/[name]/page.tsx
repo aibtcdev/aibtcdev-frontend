@@ -70,6 +70,7 @@ function PageContent() {
       key={`${dao.id}-${proposals?.length || 0}`}
       proposals={proposals || []}
       tokenSymbol={token?.symbol || ""}
+      daoName={dao.name}
     />
   );
 }
