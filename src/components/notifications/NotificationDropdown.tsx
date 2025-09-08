@@ -17,7 +17,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { notifications, dismissNotification } = useNotifications();
+  const { notifications } = useNotifications();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
