@@ -70,13 +70,22 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     staleTime: 600000,
   });
 
-  const { dex, treasuryAddress, dexContract } = useMemo(() => {
+  const { dex, treasuryAddress, dexContract, tokenContract } = useMemo(() => {
     if (!extensions)
-      return { dex: undefined, treasuryAddress: undefined, dexContract: null };
+      return {
+        dex: undefined,
+        treasuryAddress: undefined,
+        dexContract: null,
+        tokenContract: null,
+      };
     const dexExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
     );
+    const tokenExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+    );
     const dexPrincipal = dexExtension?.contract_principal;
+    const tokenPrincipal = tokenExtension?.contract_principal;
     console.log(dexPrincipal);
 
     // const dexPrincipal =
@@ -86,6 +95,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       treasuryAddress: extensions.find((ext) => ext.type === "aibtc-treasury")
         ?.contract_principal,
       dexContract: dexPrincipal,
+      tokenContract: tokenPrincipal,
     };
   }, [extensions]);
 
@@ -304,7 +314,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 dexId={1}
                 dexContract={dexContract || ""}
                 daoName={dao.name}
-                tokenContract={dexContract || ""}
+                tokenContract={tokenContract || ""}
                 headerOffset={96}
               />
             </div>

@@ -21,7 +21,11 @@ interface AccountTabsProps {
 }
 
 export function AccountTabs({
+  userAgentWalletAddress,
   userAgentAddress,
+  userAgentContractBalance,
+  fetchWallets,
+  userId,
   initialTab = "wallets",
   onTabChange,
 }: AccountTabsProps) {
@@ -78,7 +82,12 @@ export function AccountTabs({
         </TabsList>
 
         <TabsContent value="wallets" className="py-6">
-          <ProfileTab agentAddress={userAgentAddress} />
+          <ProfileTab
+            userAgentWalletAddress={userAgentWalletAddress}
+            userAgentAddress={userAgentAddress}
+            userAgentContractBalance={userAgentContractBalance}
+            fetchWallets={userId ? () => fetchWallets(userId) : undefined}
+          />
         </TabsContent>
 
         <TabsContent value="agent-settings" className="py-6">
