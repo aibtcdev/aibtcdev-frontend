@@ -10,6 +10,7 @@ import { AccountCard } from "@/components/account/AccountCard";
 import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
 import { AgentTokensTable } from "@/components/account/AgentTokensTable";
+import { ConnectedWallet } from "@/components/account/ConnectedWallet";
 import { Wallet, Bot, Building2 } from "lucide-react";
 import {
   Dialog,
@@ -48,10 +49,18 @@ function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
 }
 
 interface ProfileTabProps {
-  agentAddress: string | null;
+  userAgentWalletAddress: string | null;
+  userAgentAddress: string | null;
+  userAgentContractBalance: WalletBalance | null;
+  fetchWallets?: () => Promise<void>;
 }
 
-export function ProfileTab({ agentAddress }: ProfileTabProps) {
+export function ProfileTab({
+  userAgentWalletAddress: propUserAgentWalletAddress,
+  userAgentAddress,
+  userAgentContractBalance,
+  fetchWallets,
+}: ProfileTabProps) {
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTokenForDeposit, setSelectedTokenForDeposit] = useState<{
@@ -117,26 +126,32 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
     walletBalance: agentWalletBalance,
   } = getAgentWalletInfo(userAgentId);
 
+  // Use prop value if available, otherwise use computed value
+  const finalUserAgentWalletAddress =
+    propUserAgentWalletAddress || userAgentWalletAddress;
+
   useEffect(() => {
     if (stacksAddress) {
       fetchSingleBalance(stacksAddress);
     }
-    if (agentAddress) {
-      fetchContractBalance(agentAddress);
+    if (userAgentAddress) {
+      fetchContractBalance(userAgentAddress);
     }
-    if (userAgentWalletAddress) {
-      fetchSingleBalance(userAgentWalletAddress);
+    if (finalUserAgentWalletAddress) {
+      fetchSingleBalance(finalUserAgentWalletAddress);
     }
   }, [
     stacksAddress,
-    agentAddress,
-    userAgentWalletAddress,
+    userAgentAddress,
+    finalUserAgentWalletAddress,
     fetchSingleBalance,
     fetchContractBalance,
   ]);
 
   const connectedWalletBalance = stacksAddress ? balances[stacksAddress] : null;
-  const agentAccountBalance = agentAddress ? balances[agentAddress] : null;
+  const agentAccountBalance = userAgentAddress
+    ? balances[userAgentAddress]
+    : null;
 
   const getAllBalances = (walletBalance: WalletBalance | null) => {
     if (!walletBalance) return undefined;
@@ -240,66 +255,21 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
       <div className="w-full">
         {/* Connected Wallet Section */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Connected Wallet</h3>
-          <AccountCard
-            title="Connected Wallet"
-            address={stacksAddress}
-            icon={Wallet}
-            isPrimary={true}
-            network={
-              stacksAddress?.startsWith("SP") || stacksAddress?.startsWith("SM")
-                ? "mainnet"
-                : "testnet"
-            }
-            helpText="Your login and primary funding source"
-            metadata={getLimitedBalances(connectedWalletBalance)}
-          />
-
-          {/* View All Assets Button - Hidden on mobile */}
-          {connectedWalletBalance && (
-            <div className="mt-3 hidden sm:flex justify-end">
-              <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    View All Assets
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg w-full max-h-[80vh] h-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>All Wallet Assets</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex-1 overflow-y-auto pr-2">
-                    <div className="space-y-3">
-                      {getAllBalances(connectedWalletBalance) &&
-                        Object.entries(
-                          getAllBalances(connectedWalletBalance)!
-                        ).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between items-center py-2 border-b"
-                          >
-                            <span className="font-medium">{key}</span>
-                            <div className="text-muted-foreground">{value}</div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+          <ConnectedWallet fetchWallets={fetchWallets} />
         </div>
 
         {/* Agent Voting Account Section */}
-        {agentAddress ? (
+        {userAgentAddress ? (
           <div className="mb-6 border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
             <AccountCard
               title="Agent Account"
-              address={agentAddress}
+              address={userAgentAddress}
               icon={Building2}
               isPrimary={false}
-              network={agentAddress?.startsWith("SP") ? "mainnet" : "testnet"}
+              network={
+                userAgentAddress?.startsWith("SP") ? "mainnet" : "testnet"
+              }
               helpText="Where your agent holds AI DAO tokens to power voting"
             />
 
@@ -307,10 +277,10 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
             <div className="mt-6">
               <AgentTokensTable
                 daos={daos}
-                agentAddress={agentAddress}
+                agentAddress={userAgentAddress}
                 agentAccountBalance={agentAccountBalance}
                 connectedWalletBalance={connectedWalletBalance}
-                userAgentWalletAddress={userAgentWalletAddress}
+                userAgentWalletAddress={finalUserAgentWalletAddress}
               />
             </div>
           </div>
@@ -327,16 +297,18 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         )}
 
         {/* Agent Wallet Section */}
-        {userAgentWalletAddress && (
+        {finalUserAgentWalletAddress && (
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">Agent Gas Wallet</h3>
             <AccountCard
               title="Agent Wallet"
-              address={userAgentWalletAddress}
+              address={finalUserAgentWalletAddress}
               icon={Bot}
               isPrimary={false}
               network={
-                userAgentWalletAddress?.startsWith("SP") ? "mainnet" : "testnet"
+                finalUserAgentWalletAddress?.startsWith("SP")
+                  ? "mainnet"
+                  : "testnet"
               }
               helpText="Where your agent stores STX to cover gas fees for voting"
               metadata={getAllBalances(agentWalletBalance)}
@@ -361,14 +333,14 @@ export function ProfileTab({ agentAddress }: ProfileTabProps) {
         )}
 
         {/* Token Withdraw Modal */}
-        {agentAddress && selectedTokenForWithdraw && (
+        {userAgentAddress && selectedTokenForWithdraw && (
           <TokenWithdrawModal
             isOpen={withdrawModalOpen}
             onClose={() => {
               setWithdrawModalOpen(false);
               setSelectedTokenForWithdraw(null);
             }}
-            agentAddress={agentAddress}
+            agentAddress={userAgentAddress}
             tokenData={selectedTokenForWithdraw}
           />
         )}

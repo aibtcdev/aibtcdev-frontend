@@ -4,25 +4,32 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
-import { fundTestnetSBTC, fundTestnetSTX } from "@/services/tool.service";
+import { request } from "@stacks/connect";
+import { useAuth } from "@/hooks/useAuth";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 
 interface TestnetFaucetProps {
-  accessToken: string | null;
-  userId: string | null;
-  fetchWallets: (userId: string) => Promise<void>;
+  fetchWallets?: () => Promise<void>;
 }
 
-export function TestnetFaucet({
-  accessToken,
-  userId,
-  fetchWallets,
-}: TestnetFaucetProps) {
+export function TestnetFaucet({ fetchWallets }: TestnetFaucetProps) {
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isRequestingSBTC, setIsRequestingSBTC] = useState(false);
-  const [isRequestingSTX, setIsRequestingSTX] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [currentTxId, setCurrentTxId] = useState<string | undefined>();
+
+  const {
+    transactionStatus,
+    transactionMessage,
+    startMonitoring,
+    stopMonitoring,
+    reset,
+  } = useTransactionVerification();
 
   const handleRequestSBTC = async () => {
-    if (!accessToken) {
+    if (!isAuthenticated) {
       toast({
         title: "Error",
         description: "Please connect your wallet first",
@@ -32,21 +39,37 @@ export function TestnetFaucet({
     }
 
     setIsRequestingSBTC(true);
+    reset(); // Reset transaction verification state
+
     try {
-      const result = await fundTestnetSBTC(accessToken);
-      if (result.success) {
+      const txResponse = await request("stx_callContract", {
+        contract:
+          "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token" as `${string}.${string}`,
+        functionName: "faucet",
+        functionArgs: [],
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK as
+          | "mainnet"
+          | "testnet",
+      });
+
+      console.log("sBTC faucet transaction initiated successfully", txResponse);
+
+      // Extract transaction ID from response
+      const txId = txResponse.txid || null;
+      if (txId) {
+        setCurrentTxId(txId);
+        setShowStatusModal(true);
+
+        // Start monitoring the transaction
+        await startMonitoring(txId);
+
         toast({
-          title: "Success",
-          description: "Testnet sBTC requested successfully",
+          title: "Transaction Submitted",
+          description: "sBTC faucet transaction submitted and being monitored",
           variant: "default",
         });
-        if (userId) fetchWallets(userId);
       } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to request testnet sBTC",
-          variant: "destructive",
-        });
+        throw new Error("No transaction ID received");
       }
     } catch (error) {
       console.error("Failed to request testnet sBTC:", error);
@@ -60,43 +83,19 @@ export function TestnetFaucet({
     }
   };
 
-  const handleRequestSTX = async () => {
-    if (!accessToken) {
-      toast({
-        title: "Error",
-        description: "Please connect your wallet first",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleCloseModal = () => {
+    setShowStatusModal(false);
+    stopMonitoring();
 
-    setIsRequestingSTX(true);
-    try {
-      const result = await fundTestnetSTX(accessToken);
-      if (result.success) {
-        toast({
-          title: "Success",
-          description: "Testnet STX requested successfully",
-          variant: "default",
-        });
-        if (userId) fetchWallets(userId);
-      } else {
-        toast({
-          title: "Error",
-          description: result.error || "Failed to request testnet STX",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Failed to request testnet STX:", error);
-      toast({
-        title: "Error",
-        description: "Failed to request testnet STX from faucet",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRequestingSTX(false);
+    // If transaction was successful, refresh wallets
+    if (transactionStatus === "success" && fetchWallets) {
+      fetchWallets();
     }
+  };
+
+  const handleRetry = () => {
+    setShowStatusModal(false);
+    handleRequestSBTC();
   };
 
   return (
@@ -114,51 +113,48 @@ export function TestnetFaucet({
           <p className="text-sm text-muted-foreground">
             Get free testnet tokens for development and testing purposes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleRequestSBTC}
-              disabled={isRequestingSBTC || !accessToken}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20 hover:scale-105 focus:ring-2 ring-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 motion-reduce:transition-none"
-            >
-              {isRequestingSBTC ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
-                  Requesting...
-                </>
-              ) : (
-                <>
-                  <Coins className="h-4 w-4" />
-                  Request Testnet sBTC
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleRequestSTX}
-              disabled={isRequestingSTX || !accessToken}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary/20 hover:scale-105 focus:ring-2 ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 motion-reduce:transition-none"
-            >
-              {isRequestingSTX ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  Requesting...
-                </>
-              ) : (
-                <>
-                  <Coins className="h-4 w-4" />
-                  Request Testnet STX
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={handleRequestSBTC}
+            disabled={isRequestingSBTC || !isAuthenticated}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20 hover:scale-105 focus:ring-2 ring-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 motion-reduce:transition-none"
+          >
+            {isRequestingSBTC ? (
+              <>
+                <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+                Requesting...
+              </>
+            ) : (
+              <>
+                <Coins className="h-4 w-4" />
+                Request Testnet sBTC
+              </>
+            )}
+          </button>
           <div className="text-xs text-muted-foreground bg-muted/10 p-3 rounded-lg">
             <p className="font-medium mb-1">Note:</p>
             <p>
-              Testnet tokens have no real value and are only for development
-              purposes. Faucet requests may have rate limits applied.
+              Calls the testnet sBTC contract faucet function directly. Testnet
+              tokens have no real value and are for development purposes only.
             </p>
           </div>
         </div>
       </CardContent>
+
+      <TransactionStatusModal
+        isOpen={showStatusModal}
+        onClose={handleCloseModal}
+        txId={currentTxId}
+        transactionStatus={transactionStatus}
+        transactionMessage={transactionMessage}
+        title="sBTC Faucet Transaction"
+        successTitle="sBTC Received!"
+        failureTitle="Faucet Request Failed"
+        successDescription="Your testnet sBTC has been successfully received from the faucet."
+        failureDescription="The sBTC faucet request could not be completed. Please try again."
+        pendingDescription="Your sBTC faucet request is being processed on the blockchain. This may take a few minutes."
+        onRetry={handleRetry}
+        showRetryButton={true}
+      />
     </Card>
   );
 }
