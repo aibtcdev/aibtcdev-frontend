@@ -6,7 +6,6 @@ import { Search, TrendingUp, Users, Calendar, Activity } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Pagination } from "@/components/reusables/Pagination";
 import { DAOListItem } from "@/components/daos/DaoCard";
 import type { DAO, Holder } from "@/types";
 import {
@@ -30,7 +29,6 @@ function SearchAndFilters({
   onSearchChange,
   sortBy,
   onSortChange,
-  totalResults,
 }: {
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -50,46 +48,46 @@ function SearchAndFilters({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => onSortChange("market_cap")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "market_cap"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20"
+                  : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-primary/10 hover:to-primary/5 hover:text-primary border border-border/50 hover:border-primary/30"
               }`}
             >
-              <TrendingUp className="h-3 w-3" />
+              <TrendingUp className="h-3.5 w-3.5" />
               Top Market Cap
             </button>
             <button
               onClick={() => onSortChange("created")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "created"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg shadow-secondary/25 ring-2 ring-secondary/20"
+                  : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-secondary/10 hover:to-secondary/5 hover:text-secondary border border-border/50 hover:border-secondary/30"
               }`}
             >
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-3.5 w-3.5" />
               Newest
             </button>
             <button
               onClick={() => onSortChange("holders")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "holders"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20"
+                  : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-primary/10 hover:to-primary/5 hover:text-primary border border-border/50 hover:border-primary/30"
               }`}
             >
-              <Users className="h-3 w-3" />
+              <Users className="h-3.5 w-3.5" />
               Most Holders
             </button>
             <button
               onClick={() => onSortChange("price_change")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "price_change"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg shadow-secondary/25 ring-2 ring-secondary/20"
+                  : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-secondary/10 hover:to-secondary/5 hover:text-secondary border border-border/50 hover:border-secondary/30"
               }`}
             >
-              <Activity className="h-3 w-3" />
+              <Activity className="h-3.5 w-3.5" />
               Most Active
             </button>
           </div>
@@ -101,21 +99,14 @@ function SearchAndFilters({
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors duration-300" />
             <Input
-              placeholder="Search DAOs..."
+              placeholder="Search AI DAOs..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 h-10 w-64 text-sm bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-border/80 transition-all duration-300"
-              aria-label="Search DAOs"
+              className="pl-9 h-10 w-64 bg-muted/10 border-none"
+              aria-label="Search AI DAOs"
             />
           </div>
         </div>
-      </div>
-
-      {/* Results Count */}
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-muted-foreground">
-          {totalResults} result{totalResults !== 1 ? "s" : ""}
-        </span>
       </div>
     </div>
   );
@@ -123,25 +114,24 @@ function SearchAndFilters({
 
 function ListHeader() {
   return (
-    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm">
-      <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[1fr_80px_100px_80px] lg:grid-cols-[1fr_80px_100px_80px_100px] items-center gap-x-2 sm:gap-x-4 h-12 px-4">
-        <div className="text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          DAO
+    <div className="sticky border-b top-0 z-10 bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md shadow-sm">
+      <div className="grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[2fr_100px_120px_100px] lg:grid-cols-[2fr_120px_140px_120px_120px] items-center gap-x-2 sm:gap-x-4 h-14 px-4">
+        <div className="text-left text-sm font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent  tracking-wider">
+          AI DAOs
         </div>
-        <div className="text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="text-right text-sm font-bold text-foreground/90 uppercase tracking-wider">
           Price
         </div>
-        <div className="hidden sm:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden sm:block text-right text-sm font-bold text-foreground/90 uppercase tracking-wider">
           Market Cap
         </div>
-        <div className="hidden md:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:block text-right text-sm font-bold text-foreground/90 uppercase tracking-wider">
           Holders
         </div>
-        <div className="hidden lg:block text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Proposals
+        <div className="hidden lg:block text-right text-sm font-bold text-foreground/90 uppercase tracking-wider">
+          Contributions
         </div>
       </div>
-      <div className="border-b border-border/50" />
     </div>
   );
 }
@@ -205,7 +195,7 @@ export default function AllDaos() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("market_cap");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [itemsPerPage] = useState(12);
 
   // Fetch DAOs with TanStack Query
   const { data: daos, isLoading: isLoadingDAOs } = useQuery({
@@ -371,11 +361,6 @@ export default function AllDaos() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  }, []);
-
   // Reset pagination when search or sort changes
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
@@ -491,9 +476,9 @@ export default function AllDaos() {
             </div>
           ) : (
             <>
-              <div className="border border-border/50 rounded-lg overflow-hidden bg-card/30 backdrop-blur-sm">
+              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-card/50 via-card/30 to-card/20 backdrop-blur-md shadow-lg">
                 <ListHeader />
-                <div className="divide-y divide-border/50">
+                <div className="divide-y divide-border/30">
                   {paginatedDAOs.map((dao) => (
                     <DAOListItem
                       key={dao.id}
@@ -508,19 +493,63 @@ export default function AllDaos() {
                 </div>
               </div>
 
-              {/* Pagination */}
+              {/* Pagination - Bottom Right */}
               {filteredAndSortedDAOs.length > itemsPerPage && (
-                <div className="mt-6 sm:mt-8">
-                  <div className="bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 p-2 sm:p-4 overflow-x-auto">
-                    <div className="min-w-[320px]">
-                      <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={filteredAndSortedDAOs.length}
-                        itemsPerPage={itemsPerPage}
-                        onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
-                      />
+                <div className="mt-6 flex justify-end">
+                  <div className="bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-md rounded-xl px-4 py-3 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      {/* Page Info */}
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Page {currentPage} of {totalPages}
+                      </span>
+
+                      {/* Navigation Buttons */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="p-1.5 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="p-1.5 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Items count */}
+                      <span className="text-xs text-muted-foreground font-medium border-l border-border/50 pl-3">
+                        {filteredAndSortedDAOs.length} DAOs
+                      </span>
                     </div>
                   </div>
                 </div>

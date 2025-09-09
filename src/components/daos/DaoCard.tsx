@@ -420,7 +420,7 @@ export const DAOListItem = ({
           router.push(`/daos/${encodeURIComponent(dao.name)}`);
         }
       }}
-      className={`group grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[1fr_80px_100px_80px] lg:grid-cols-[1fr_80px_100px_80px_100px] items-center gap-x-2 sm:gap-x-4 px-4 py-3 transition-colors ${
+      className={`group grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[2fr_100px_120px_100px] lg:grid-cols-[2fr_120px_140px_120px_120px] items-center gap-x-2 sm:gap-x-4 px-4 py-4 transition-all duration-300 ${
         isMockDAO
           ? "opacity-60 cursor-not-allowed"
           : "hover:bg-muted/30 cursor-pointer"
@@ -464,39 +464,51 @@ export const DAOListItem = ({
       </div>
 
       {/* Price Column */}
-      <div className="text-right text-sm font-medium">
+      <div className="text-right text-sm font-semibold">
         {isMockDAO ? (
           "—"
         ) : isFetchingPrice ? (
           <Loader />
         ) : tokenPrice?.price ? (
-          formatTokenPrice(tokenPrice.price)
+          <span className="text-primary font-bold">
+            {formatTokenPrice(tokenPrice.price)}
+          </span>
         ) : (
           "—"
         )}
       </div>
 
       {/* Market Cap Column */}
-      <div className="hidden sm:block text-right text-sm font-medium">
+      <div className="hidden sm:block text-right text-sm font-semibold">
         {isMockDAO ? (
           "—"
         ) : isFetchingPrice ? (
           <Loader />
         ) : tokenPrice?.marketCap ? (
-          `${formatNumber(tokenPrice.marketCap)}`
+          <span className="text-primary font-bold">
+            ${formatNumber(tokenPrice.marketCap)}
+          </span>
         ) : (
           "—"
         )}
       </div>
 
       {/* Holders Column */}
-      <div className="hidden md:block text-right text-sm font-medium">
-        {isMockDAO ? "—" : getHolderCount()}
+      <div className="hidden md:block text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : (
+          <span className=" font-bold">{getHolderCount()}</span>
+        )}
       </div>
 
-      {/* Proposals Column */}
-      <div className="hidden lg:block text-right text-sm font-medium">
-        {isMockDAO ? "—" : (proposalCount ?? "—")}
+      {/* Contributions Column */}
+      <div className="hidden lg:block text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : (
+          <span className="font-bold">{proposalCount ?? "—"}</span>
+        )}
       </div>
     </div>
   );
