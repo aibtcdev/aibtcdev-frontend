@@ -63,7 +63,7 @@ interface DepositFormProps {
   userAddress: string | null;
   dexId: number;
   targetStx?: number;
-  tokenContract?: string;
+  tokenContract: string;
   currentSlippage?: number;
   swapType: "aibtc" | "sbtc";
   poolId: string;
@@ -116,7 +116,7 @@ export default function DepositForm({
   daoName,
   dexId,
   targetStx = 0,
-  tokenContract = "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY.fake-faktory",
+  tokenContract,
   currentSlippage = 4,
   swapType,
   poolId,

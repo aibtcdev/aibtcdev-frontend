@@ -27,8 +27,8 @@ export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
+  tokenContract,
   // headerOffset = 96,
-  // tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
@@ -146,6 +146,7 @@ export default function BitcoinDeposit({
             daoName={daoName}
             userAddress={userAddress}
             dexId={dexId}
+            tokenContract={tokenContract}
             swapType="aibtc"
             poolId="aibtc"
             aiAccountReceiver={userAgentAddress || ""}

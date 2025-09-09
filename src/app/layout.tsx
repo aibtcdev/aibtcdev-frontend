@@ -99,6 +99,7 @@ const rocGroteskExtraWide = localFont({
 });
 
 import { Providers } from "./providers";
+import { UmamiScript } from "@/components/analytics/UmamiScript";
 
 export default function RootLayout({
   children,
@@ -119,6 +120,7 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col h-full">{children}</main>
           </AuthProvider>
         </Providers>
+        <UmamiScript />
       </body>
     </html>
   );
