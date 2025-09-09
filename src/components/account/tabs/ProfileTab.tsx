@@ -11,15 +11,7 @@ import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
 import { AgentTokensTable } from "@/components/account/AgentTokensTable";
 import { ConnectedWallet } from "@/components/account/ConnectedWallet";
-import { Wallet, Bot, Building2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Bot, Building2 } from "lucide-react";
 
 function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
   let num = typeof value === "string" ? parseFloat(value) : value;
@@ -58,11 +50,9 @@ interface ProfileTabProps {
 export function ProfileTab({
   userAgentWalletAddress: propUserAgentWalletAddress,
   userAgentAddress,
-  userAgentContractBalance,
   fetchWallets,
 }: ProfileTabProps) {
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTokenForDeposit, setSelectedTokenForDeposit] = useState<{
     tokenId: string;
     tokenSymbol: string;
@@ -196,52 +186,6 @@ export function ProfileTab({
 
           if (count > 0) {
             metadata[`${displaySymbol} NFTs`] = `${count} ${displaySymbol}`;
-          }
-        }
-      );
-    }
-
-    return Object.keys(metadata).length > 0 ? metadata : undefined;
-  };
-
-  const getLimitedBalances = (walletBalance: WalletBalance | null) => {
-    if (!walletBalance) return undefined;
-
-    const metadata: Record<string, string> = {};
-
-    // Add STX balance
-    if (walletBalance.stx?.balance) {
-      metadata["STX"] =
-        formatBalance(walletBalance.stx.balance, "stx") + " STX";
-    }
-
-    // Add only sBTC and fake tokens (limit to 3 total including STX)
-    if (walletBalance.fungible_tokens) {
-      let tokenCount = 1; // STX already added
-      Object.entries(walletBalance.fungible_tokens).forEach(
-        ([tokenId, token]) => {
-          if (tokenCount >= 3) return; // Limit to 3 tokens total
-
-          const [, tokenSymbol] = tokenId.split("::");
-          const isBtc = tokenId.includes("sbtc-token");
-          const isFakeToken =
-            tokenId.includes("fake") ||
-            tokenSymbol?.toLowerCase().includes("face");
-
-          if (isBtc || isFakeToken) {
-            const displaySymbol = isBtc ? "sBTC" : tokenSymbol || "Token";
-            const balance = token.balance;
-
-            if (balance && parseFloat(balance) > 0) {
-              if (isBtc) {
-                metadata[displaySymbol] =
-                  `${formatBalance(balance, "btc")} ${displaySymbol}`;
-              } else {
-                metadata[displaySymbol] =
-                  `${formatBalance(balance, "token")} ${displaySymbol}`;
-              }
-              tokenCount++;
-            }
           }
         }
       );

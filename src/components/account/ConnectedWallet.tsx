@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { getStacksAddress } from "@/lib/address";
 import { AccountCard } from "./AccountCard";
 import { useWalletStore, WalletBalance, TokenBalance } from "@/store/wallet";
-import { Wallet, Coins } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
@@ -57,7 +57,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
   const [currentTxId, setCurrentTxId] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { balances, userWallet } = useWalletStore();
+  const { balances } = useWalletStore();
 
   const { signOut, isAuthenticated } = useAuth();
   const { toast } = useToast();
