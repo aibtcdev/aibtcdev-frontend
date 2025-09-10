@@ -31,6 +31,7 @@ import {
   cvToJSON,
   Pc,
   contractPrincipalCV,
+  Cl,
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import {
@@ -99,7 +100,18 @@ interface UserData {
   addresses: AddressEntry[];
 }
 
-const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
+// Network configuration
+const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+
+// Network-specific configuration
+const NETWORK_CONFIG = {
+  HIRO_API_URL: isMainnet
+    ? "https://api.hiro.so"
+    : "https://api.testnet.hiro.so",
+  SBTC_CONTRACT: isMainnet
+    ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+    : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+};
 
 // Helper function to get token asset name
 const getTokenAssetName = (symbol: string): string => {
@@ -210,7 +222,7 @@ export default function DepositForm({
     queryFn: async () => {
       if (!userAddress) return null;
       const response = await fetch(
-        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+        `${NETWORK_CONFIG.HIRO_API_URL}/extended/v1/address/${userAddress}/balances`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch STX balance");
@@ -230,13 +242,13 @@ export default function DepositForm({
     queryFn: async () => {
       if (!userAddress) return null;
       const response = await fetch(
-        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+        `${NETWORK_CONFIG.HIRO_API_URL}/extended/v1/address/${userAddress}/balances`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch sBTC balance");
       }
       const data = await response.json();
-      const sbtcAssetIdentifier = `${SBTC_CONTRACT}::sbtc-token`;
+      const sbtcAssetIdentifier = `${NETWORK_CONFIG.SBTC_CONTRACT}::sbtc-token`;
       if (data.fungible_tokens && data.fungible_tokens[sbtcAssetIdentifier]) {
         const balance = data.fungible_tokens[sbtcAssetIdentifier].balance;
         return parseInt(balance) / 10 ** 8;
@@ -255,7 +267,7 @@ export default function DepositForm({
       const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = parseFloat(amount) * Math.pow(10, 8);
-        const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
           method: "POST",
@@ -342,7 +354,13 @@ export default function DepositForm({
     queryFn: async () => {
       if (!btcAddress) return null;
 
-      const blockstreamUrl = `https://blockstream.info/api/address/${btcAddress}/utxo`;
+      // Use testnet API for testnet, mainnet API for mainnet
+      const blockstreamUrl = isMainnet
+        ? `https://blockstream.info/api/address/${btcAddress}/utxo`
+        : `https://blockstream.info/testnet/api/address/${btcAddress}/utxo`;
+
+      // console.log("blockstreamUrl", blockstreamUrl);
+
       const response = await fetch(blockstreamUrl);
 
       if (!response.ok) {
@@ -648,7 +666,7 @@ export default function DepositForm({
 
       const [dexAddress, dexName] = dexContract.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
       const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
       const assetName = getTokenAssetName(daoName);
@@ -753,6 +771,244 @@ export default function DepositForm({
     handleWalletAuth,
   ]);
 
+  // TODO
+  const handleBuyWithBtcOnTestnet = useCallback(async () => {
+    console.log("CALLING BUY WITH BITOICN ON TESTNET...");
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const ustx = parseFloat(amount) * Math.pow(10, 8);
+    console.log("USTX: ", ustx);
+
+    if (!rawBuyQuote?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get quote for buy order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+    console.log("SBTC BALANCE", sbtcBalanceInSats);
+
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          ustx / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          (sbtcBalanceInSats || 0) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const clarityValue = hexToCV(rawBuyQuote.result);
+      const jsonValue = cvToJSON(clarityValue);
+
+      const quoteAmount = jsonValue.value.value["tokens-out"].value;
+      // const quoteAmount = 0;
+      const newStx = Number(jsonValue.value.value["new-stx"].value);
+      // const newStx = Number(0);
+      const tokenBalance = jsonValue.value.value["ft-balance"]?.value;
+      // const tokenBalance = 0;
+      const currentStxBalance = Number(
+        jsonValue.value.value["total-stx"]?.value || 0
+      );
+
+      if (!quoteAmount || !newStx || !tokenBalance) {
+        toast({
+          title: "Error",
+          description: "Invalid quote response",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check target limit logic (only if targetStx is provided)
+      if (targetStx > 0) {
+        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+        const bufferAmount = remainingToTarget * 1.15;
+
+        if (ustx > bufferAmount) {
+          const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+          const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
+
+          toast({
+            title: "Amount exceeds target limit",
+            description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // const [dexAddress, dexName] = dexContract.split(".");
+      // const [tokenAddress, tokenName] = tokenContract.split(".");
+      // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+
+      const tokenAddressTestnet: string =
+        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory";
+      const dexAddressTestnet: string =
+        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory-dex";
+      const sbtcTokenAddress: string =
+        "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      const preLaunch: string =
+        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-pre-faktory";
+      const pool: string =
+        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.xyk-pool-sbtc-visvasa1-v-1-1";
+
+      const args = [
+        Cl.uint(ustx),
+        Cl.uint(minTokensOut),
+        Cl.uint(1),
+        Cl.contractPrincipal(
+          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
+          "visvasa1-faktory"
+        ),
+        Cl.contractPrincipal(
+          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
+          "visvasa1-faktory-dex"
+        ),
+
+        Cl.contractPrincipal(
+          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
+          "visvasa1-pre-faktory"
+        ),
+        Cl.contractPrincipal(
+          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
+          "xyk-pool-sbtc-visvasa1-v-1-1"
+        ),
+        Cl.contractPrincipal(
+          "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2",
+          "sbtc-token"
+        ),
+      ];
+      console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
+      // const assetName = getTokenAssetName(daoName);
+
+      // const TARGET_STX = targetStx * Math.pow(10, 8);
+      // const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+
+      // const postConditions = isLastBuy
+      //   ? [
+      //       Pc.principal(userAddress)
+      //         .willSendLte(ustx)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(tokenBalance)
+      //         .ft(`${tokenAddress}.${tokenName}`, assetName),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(TARGET_STX)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //     ]
+      //   : [
+      //       Pc.principal(userAddress)
+      //         .willSendLte(ustx)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(minTokensOut)
+      //         .ft(`${tokenAddress}.${tokenName}`, assetName),
+      //     ];
+
+      const params = {
+        contract:
+          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation` as `${string}.${string}`,
+        functionName: "swap-btc-to-aibtc",
+        functionArgs: args,
+        // postConditions: PostConditionMode.Allow //
+      };
+
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                // Force status update if API shows different status
+                if (txData.tx_status === "success") {
+                  // Transaction is actually confirmed but WebSocket missed it
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during sBTC contract call:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit sBTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    rawBuyQuote,
+    sbtcBalance,
+    targetStx,
+    currentSlippage,
+    dexContract,
+    tokenContract,
+    daoName,
+    transactionStatus,
+    toast,
+    handleWalletAuth,
+  ]);
   // Memoized error handlers
   const isAddressTypeError = useCallback((error: Error): boolean => {
     return (
@@ -832,6 +1088,15 @@ export default function DepositForm({
       await handleBuyWithSbtc();
       return;
     }
+
+    // Network-specific BTC handling
+    if (!isMainnet) {
+      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet (acts as BTC)
+      await handleBuyWithBtcOnTestnet();
+      return;
+    }
+
+    // Mainnet: Regular L1 BTC handling continues below
 
     if (parseFloat(amount) <= 0) {
       toast({
@@ -1332,7 +1597,7 @@ export default function DepositForm({
         </div>
       )}
 
-      {buyWithSbtc && (
+      {(buyWithSbtc || (!isMainnet && !buyWithSbtc)) && (
         <TransactionStatusModal
           isOpen={isModalOpen}
           onClose={() => {
@@ -1343,13 +1608,13 @@ export default function DepositForm({
           txId={activeTxId ?? undefined}
           transactionStatus={transactionStatus}
           transactionMessage={transactionMessage}
-          title="sBTC Transaction"
+          title={buyWithSbtc ? "sBTC Transaction" : "BTC Transaction"}
           successTitle="Buy Order Confirmed"
           failureTitle="Buy Order Failed"
           successDescription={`Your transaction to buy ${daoName} tokens has been successfully confirmed.`}
           failureDescription="The transaction could not be completed. Please check your balance and try again."
           pendingDescription="Your transaction is being processed. This may take a few minutes."
-          onRetry={handleBuyWithSbtc}
+          onRetry={buyWithSbtc ? handleBuyWithSbtc : handleBuyWithBtcOnTestnet}
         />
       )}
 
