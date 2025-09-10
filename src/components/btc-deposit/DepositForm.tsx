@@ -869,16 +869,16 @@ export default function DepositForm({
       // const [tokenAddress, tokenName] = tokenContract.split(".");
       // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
 
-      const tokenAddressTestnet: string =
-        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory";
-      const dexAddressTestnet: string =
-        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory-dex";
-      const sbtcTokenAddress: string =
-        "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
-      const preLaunch: string =
-        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-pre-faktory";
-      const pool: string =
-        "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.xyk-pool-sbtc-visvasa1-v-1-1";
+      // const tokenAddressTestnet: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory";
+      // const dexAddressTestnet: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory-dex";
+      // const sbtcTokenAddress: string =
+      //   "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      // const preLaunch: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-pre-faktory";
+      // const pool: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.xyk-pool-sbtc-visvasa1-v-1-1";
 
       const args = [
         Cl.uint(ustx),
@@ -1002,9 +1002,6 @@ export default function DepositForm({
     sbtcBalance,
     targetStx,
     currentSlippage,
-    dexContract,
-    tokenContract,
-    daoName,
     transactionStatus,
     toast,
     handleWalletAuth,
@@ -1232,6 +1229,7 @@ export default function DepositForm({
     btcBalance,
     toast,
     handleBuyWithSbtc,
+    handleBuyWithBtcOnTestnet,
     handleWalletAuth,
     activeWalletProvider,
     minTokenOut,
