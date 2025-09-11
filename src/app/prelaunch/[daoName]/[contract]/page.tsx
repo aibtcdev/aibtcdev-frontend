@@ -10,10 +10,17 @@ import { getStacksAddress } from "@/lib/address";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { uintCV, Pc } from "@stacks/transactions";
+import { uintCV, Pc, Cl, PostConditionMode } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { fetchDAOByName, fetchDAOExtensions } from "@/services/dao.service";
 import { Building2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -24,8 +31,11 @@ const NETWORK_CONFIG = {
   SBTC_CONTRACT: isMainnet
     ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
     : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+  BRIDGE_CONTRACT:
+    "ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation",
 };
 
+// TODO: ON MAINNET HOW DO USER BUY VIA L1 BTC FOR PRELAUNCH
 const PrelaunchPage = () => {
   const params = useParams();
   const encodedDaoName = params.daoName as string;
@@ -35,6 +45,7 @@ const PrelaunchPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTxId, setActiveTxId] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"sbtc" | "btc">("sbtc");
   // const [transactionType, setTransactionType] = useState<"buy" | "refund">(
   //   "buy"
   // );
@@ -58,9 +69,21 @@ const PrelaunchPage = () => {
     staleTime: 600000,
   });
 
-  // Extract buy and deposit contract from extensions
+  // Extract contracts from extensions
   const buyAndDepositContract = extensions?.find(
     (ext) => ext.type === "TRADING" && ext.subtype === "FAKTORY_BUY_AND_DEPOSIT"
+  )?.contract_principal;
+
+  const dexContract = extensions?.find(
+    (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
+  )?.contract_principal;
+
+  const prelaunchContract = extensions?.find(
+    (ext) => ext.type === "TOKEN" && ext.subtype === "PRELAUNCH"
+  )?.contract_principal;
+
+  const poolContract = extensions?.find(
+    (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
   )?.contract_principal;
 
   // Validate that the contract parameter matches the extension
@@ -128,6 +151,147 @@ const PrelaunchPage = () => {
     return Math.min(maxSeats, MAX_SEATS_PER_USER);
   };
 
+  // Handle sBTC-based buying for testnet (when raw BTC not available)
+  const handleBuyWithSbtcOnTestnet = useCallback(async () => {
+    if (!accessToken || !userAddress || !buyAndDepositContract || !dao) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet and ensure valid contract.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedSeats <= 0 || selectedSeats > MAX_SEATS_PER_USER) {
+      toast({
+        title: "Invalid seat selection",
+        description: `Please select between 1 and ${MAX_SEATS_PER_USER} seats`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sbtcAmountInSats = selectedSeats * SEAT_PRICE_SATS;
+    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+
+    if (sbtcAmountInSats > sbtcBalanceInSats) {
+      const requiredSbtc = calculateSbtcAmount(selectedSeats);
+      const availableSbtc = (sbtcBalanceInSats || 0) / Math.pow(10, 8);
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC. Required: ${requiredSbtc.toFixed(8)} sBTC, Available: ${availableSbtc.toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Extract contract addresses for post conditions
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+      const [bridgeAddress, bridgeName] =
+        NETWORK_CONFIG.BRIDGE_CONTRACT.split(".");
+
+      // Get token contract from DAO extensions for prelaunch
+      const tokenExtension = extensions?.find(
+        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+      );
+
+      if (!tokenExtension) {
+        throw new Error("Token contract not found for this DAO");
+      }
+
+      if (!dexContract) {
+        throw new Error("DEX contract not found for this DAO");
+      }
+
+      if (!prelaunchContract) {
+        throw new Error("Prelaunch contract not found for this DAO");
+      }
+
+      if (!poolContract) {
+        throw new Error("Pool contract not found for this DAO");
+      }
+
+      const [tokenAddress, tokenName] =
+        tokenExtension.contract_principal.split(".");
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [prelaunchAddress, prelaunchName] = prelaunchContract.split(".");
+      const [poolAddress, poolName] = poolContract.split(".");
+
+      // Calculate minimum tokens out (with 5% slippage tolerance)
+      const slippageFactor = 0.95;
+      const estimatedTokensOut = sbtcAmountInSats * 1000; // Rough estimate, adjust based on your tokenomics
+      const minTokensOut = Math.floor(estimatedTokensOut * slippageFactor);
+
+      // Arguments for swap-btc-to-aibtc function
+      const args = [
+        Cl.uint(sbtcAmountInSats), // sBTC amount
+        Cl.uint(minTokensOut), // minimum tokens out
+        Cl.uint(1), // swap type (1 for prelaunch)
+        Cl.contractPrincipal(tokenAddress, tokenName), // token contract
+        Cl.contractPrincipal(dexAddress, dexName), // DEX contract
+        Cl.contractPrincipal(prelaunchAddress, prelaunchName), // prelaunch contract
+        Cl.contractPrincipal(poolAddress, poolName), // pool contract
+        Cl.contractPrincipal(sbtcAddress, sbtcName), // sBTC contract
+      ];
+
+      // Post conditions for prelaunch:
+      // 1. User sends sBTC to bridge contract
+      // 2. Bridge contract sends sBTC to prelaunch contract
+      // 3. Prelaunch contract sends tokens to user (if last buy, sends all remaining)
+      const postConditions = [
+        // User -> Bridge contract transfer
+        Pc.principal(userAddress)
+          .willSendEq(sbtcAmountInSats)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // Bridge contract -> Prelaunch contract transfer
+        Pc.principal(`${bridgeAddress}.${bridgeName}`)
+          .willSendEq(sbtcAmountInSats)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      ];
+
+      const params = {
+        contract: NETWORK_CONFIG.BRIDGE_CONTRACT as `${string}.${string}`,
+        functionName: "swap-btc-to-aibtc",
+        functionArgs: args,
+        postConditions,
+        postConditionMode: "deny" as const,
+      };
+
+      console.log("Prelaunch sBTC swap params:", params);
+
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during sBTC swap transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to buy seats with sBTC. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    selectedSeats,
+    sbtcBalance,
+    buyAndDepositContract,
+    dao,
+    extensions,
+    toast,
+  ]);
+
+  // Original handleBuySeats for direct prelaunch contract interaction
   const handleBuySeats = useCallback(async () => {
     if (!accessToken || !userAddress || !buyAndDepositContract) {
       toast({
@@ -162,7 +326,6 @@ const PrelaunchPage = () => {
     }
 
     setIsSubmitting(true);
-    // setTransactionType("buy");
 
     try {
       const [contractAddress, contractName] = buyAndDepositContract.split(".");
@@ -213,6 +376,17 @@ const PrelaunchPage = () => {
     buyAndDepositContract,
     toast,
   ]);
+
+  // Determine which buy function to use based on network and user preference
+  const handleBuyAction = useCallback(() => {
+    if (!isMainnet && paymentMethod === "btc") {
+      // On testnet, if user wants to use raw BTC, use the sBTC swap method
+      return handleBuyWithSbtcOnTestnet();
+    } else {
+      // Use direct prelaunch contract method
+      return handleBuySeats();
+    }
+  }, [isMainnet, paymentMethod, handleBuyWithSbtcOnTestnet, handleBuySeats]);
 
   // Loading states
   if (isLoadingDAO || isLoadingExtensions) {
@@ -339,12 +513,32 @@ const PrelaunchPage = () => {
                   </div>
                 </div>
 
-                {/* Seat Label */}
-                <div className="bg-primary hover:bg-primary/90 rounded px-4 py-2 text-primary-foreground font-medium">
-                  <div className="flex items-center gap-2">
-                    <span>SEATS</span>
-                  </div>
-                </div>
+                {/* Payment Method Selector */}
+                <Select
+                  value={paymentMethod}
+                  onValueChange={(value: "sbtc" | "btc") =>
+                    setPaymentMethod(value)
+                  }
+                  disabled={!accessToken}
+                >
+                  <SelectTrigger className="w-auto bg-primary hover:bg-primary/90 border-0 text-primary-foreground font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+                        <span className="text-primary-foreground text-xs font-bold">
+                          ₿
+                        </span>
+                      </div>
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sbtc">sBTC</SelectItem>
+                    {!isMainnet && (
+                      <SelectItem value="btc">BTC (via Bridge)</SelectItem>
+                    )}
+                    {isMainnet && <SelectItem value="btc">BTC (L1)</SelectItem>}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -439,9 +633,20 @@ const PrelaunchPage = () => {
               </div>
             </div>
 
+            {/* Payment Method Description */}
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-400">
+                {paymentMethod === "btc"
+                  ? !isMainnet
+                    ? "Uses bridge contract to swap BTC to tokens via prelaunch DEX"
+                    : "Direct L1 Bitcoin transaction"
+                  : "Direct sBTC transfer to prelaunch contract"}
+              </div>
+            </div>
+
             {/* Buy Seats Button */}
             <Button
-              onClick={handleBuySeats}
+              onClick={handleBuyAction}
               disabled={
                 selectedSeats <= 0 ||
                 selectedSeats > MAX_SEATS_PER_USER ||
@@ -466,6 +671,7 @@ const PrelaunchPage = () => {
                   </div>
                   <span>
                     Buy {selectedSeats} {selectedSeats === 1 ? "Seat" : "Seats"}
+                    {paymentMethod === "btc" && " (via Bridge)"}
                   </span>
                 </div>
               )}
@@ -513,7 +719,7 @@ const PrelaunchPage = () => {
         successDescription={`Your transaction to buy ${selectedSeats} ${selectedSeats === 1 ? "seat" : "seats"} for ${dao.name} has been successfully confirmed.`}
         failureDescription="The seat purchase could not be completed. Please check your balance and try again."
         pendingDescription="Your seat purchase is being processed. This may take a few minutes."
-        onRetry={handleBuySeats}
+        onRetry={handleBuyAction}
       />
     </div>
   );
