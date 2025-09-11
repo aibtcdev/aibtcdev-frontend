@@ -3,7 +3,7 @@
 import type React from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Building2,
   FileText,
@@ -39,6 +39,17 @@ import DAOHolders from "@/components/daos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
+import { hexToCV, cvToJSON } from "@stacks/transactions";
+import Link from "next/link";
+import { getStacksAddress } from "@/lib/address";
+
+// Network configuration
+const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+const NETWORK_CONFIG = {
+  HIRO_API_URL: isMainnet
+    ? "https://api.hiro.so"
+    : "https://api.testnet.hiro.so",
+};
 
 export function DAOPage({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -47,6 +58,100 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("charter");
+
+  // Helper function to check if the token is bonded
+  // const checkBonded = useCallback(
+  //   async (dexContract: string): Promise<boolean | null> => {
+  //     if (!dexContract) return null;
+
+  //     const senderAddress =
+  //       getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+  //     const [contractAddress, contractName] = dexContract.split(".");
+
+  //     try {
+  //       const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-bonded?tip=latest`;
+
+  //       const response = await fetch(url, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           sender: senderAddress,
+  //           arguments: [],
+  //         }),
+  //       });
+
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+
+  //       const data = await response.json();
+  //       console.log("bonded data", data);
+
+  //       if (data?.result) {
+  //         try {
+  //           const clarityValue = hexToCV(data.result);
+  //           const jsonValue = cvToJSON(clarityValue);
+  //           console.log("Bonded status decoded:", jsonValue);
+  //           console.log("json value", jsonValue.value);
+
+  //           return jsonValue.value === true;
+  //         } catch (error) {
+  //           console.error("Error parsing bonded status:", error);
+  //           return null;
+  //         }
+  //       }
+  //       return null;
+  //     } catch (error) {
+  //       console.error("Error fetching bonded status:", error);
+  //       return null;
+  //     }
+  //   },
+  //   []
+  // );
+
+  // Helper function to check if the market is open
+  const checkMarketOpen = useCallback(
+    async (prelaunchContract: string): Promise<boolean | null> => {
+      if (!prelaunchContract) return null;
+
+      const senderAddress =
+        getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+      const [contractAddress, contractName] = prelaunchContract.split(".");
+
+      try {
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/is-market-open?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: senderAddress,
+            arguments: [],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data?.okay && data?.result) {
+          const clarityValue = hexToCV(data.result);
+          const jsonValue = cvToJSON(clarityValue);
+          return jsonValue.value?.value === true;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
 
   const { data: dao, isLoading: isLoadingDAOByName } = useQuery({
     queryKey: ["dao", encodedName],
@@ -70,32 +175,60 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     staleTime: 600000,
   });
 
-  const { dex, treasuryAddress, dexContract, tokenContract } = useMemo(() => {
+  const {
+    dex,
+    treasuryAddress,
+    dexContract,
+    tokenContract,
+    prelaunchContract,
+    buyPrelaunchContract,
+    poolContract,
+  } = useMemo(() => {
     if (!extensions)
       return {
         dex: undefined,
         treasuryAddress: undefined,
         dexContract: null,
         tokenContract: null,
+        prelaunchContract: null,
+        buyPrelaunchContract: null,
+        poolContract: null,
       };
+
+    console.log("All extensions:", extensions);
+
     const dexExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
     );
     const tokenExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
     );
+    const prelaunchExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "PRELAUNCH"
+    );
+    const buyPrelaunchExtension = extensions.find(
+      (ext) =>
+        ext.type === "TRADING" && ext.subtype === "FAKTORY_BUY_AND_DEPOSIT"
+    );
+    const poolExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
+    );
+
     const dexPrincipal = dexExtension?.contract_principal;
     const tokenPrincipal = tokenExtension?.contract_principal;
-    console.log(dexPrincipal);
+    const prelaunchPrincipal = prelaunchExtension?.contract_principal;
+    const buyPrelaunchPrincipal = buyPrelaunchExtension?.contract_principal;
+    const poolPrincipal = poolExtension?.contract_principal;
 
-    // const dexPrincipal =
-    //   "SP2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5E4R0JRM.beast2-faktory-dex";
     return {
       dex: dexPrincipal,
       treasuryAddress: extensions.find((ext) => ext.type === "aibtc-treasury")
         ?.contract_principal,
       dexContract: dexPrincipal,
       tokenContract: tokenPrincipal,
+      prelaunchContract: prelaunchPrincipal,
+      buyPrelaunchContract: buyPrelaunchPrincipal,
+      poolContract: poolPrincipal,
     };
   }, [extensions]);
 
@@ -106,6 +239,32 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     staleTime: 300000,
   });
 
+  // Check if token is bonded
+  // const { data: isBonded } = useQuery({
+  //   queryKey: ["bonded", dexContract],
+  //   queryFn: () => checkBonded(dexContract!),
+  //   enabled: !!dexContract,
+  //   staleTime: 300000,
+  // });
+
+  // Check if market is open
+  const {
+    data: isMarketOpen,
+    error: marketOpenError,
+    isLoading: isMarketOpenLoading,
+  } = useQuery({
+    queryKey: ["marketOpen", prelaunchContract],
+
+    queryFn: () => checkMarketOpen(prelaunchContract!),
+    enabled: !!prelaunchContract,
+    staleTime: 300000,
+  });
+
+  console.log("Market open query status:");
+  console.log("- prelaunchContract:", prelaunchContract);
+  console.log("- isMarketOpen:", isMarketOpen);
+  console.log("- marketOpenError:", marketOpenError);
+  console.log("- isMarketOpenLoading:", isMarketOpenLoading);
   const { data: holdersData } = useQuery({
     queryKey: ["holders", id],
     queryFn: () => fetchHolders(id!),
@@ -284,6 +443,22 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
+          {/* Market Status */}
+          {buyPrelaunchContract && isMarketOpen === false && (
+            <div className="mb-6 text-center">
+              <p className="text-muted-foreground">
+                Buy seats{" "}
+                <Link
+                  href={`/prelaunch/${encodedName}/${buyPrelaunchContract}`}
+                  className="text-primary hover:text-primary/80 underline underline-offset-4 hover:no-underline transition-colors"
+                >
+                  via prelaunch
+                </Link>{" "}
+                to participate when the market opens.
+              </p>
+            </div>
+          )}
+
           {/* Two-column grid layout with viewport calculations */}
           <div
             className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-7 items-start"
@@ -316,6 +491,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 daoName={dao.name}
                 tokenContract={tokenContract || ""}
                 headerOffset={96}
+                isMarketOpen={isMarketOpen}
+                prelaunchContract={prelaunchContract || undefined}
+                poolContract={poolContract || undefined}
               />
             </div>
           </div>

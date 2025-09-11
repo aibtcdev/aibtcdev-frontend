@@ -31,6 +31,7 @@ import {
   cvToJSON,
   Pc,
   contractPrincipalCV,
+  Cl,
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import {
@@ -68,6 +69,9 @@ interface DepositFormProps {
   swapType: "aibtc" | "sbtc";
   poolId: string;
   aiAccountReceiver: string;
+  isMarketOpen?: boolean | null;
+  prelaunchContract?: string;
+  poolContract?: string;
 }
 
 interface HiroGetInResponse {
@@ -99,7 +103,18 @@ interface UserData {
   addresses: AddressEntry[];
 }
 
-const SBTC_CONTRACT = "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token";
+// Network configuration
+const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+
+// Network-specific configuration
+const NETWORK_CONFIG = {
+  HIRO_API_URL: isMainnet
+    ? "https://api.hiro.so"
+    : "https://api.testnet.hiro.so",
+  SBTC_CONTRACT: isMainnet
+    ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+    : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+};
 
 // Helper function to get token asset name
 const getTokenAssetName = (symbol: string): string => {
@@ -114,6 +129,7 @@ export default function DepositForm({
   activeWalletProvider,
   dexContract,
   daoName,
+  userAddress,
   dexId,
   targetStx = 0,
   tokenContract,
@@ -121,6 +137,9 @@ export default function DepositForm({
   swapType,
   poolId,
   aiAccountReceiver,
+  isMarketOpen,
+  prelaunchContract,
+  poolContract,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -137,7 +156,7 @@ export default function DepositForm({
     null
   );
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
-  const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(false);
+  const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(!isMainnet); // Default to sBTC on testnet, BTC on mainnet
   const [minTokenOut, setMinTokenOut] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -194,9 +213,12 @@ export default function DepositForm({
   // Get addresses from the lib - only if we have a session
   const { userAgentAddress } = useAgentAccount();
   const hasAgentAccount = Boolean(userAgentAddress);
-  const userAddress = getStacksAddress();
+  const connectedUserAddress = getStacksAddress();
 
-  const btcAddress = userAddress ? getBitcoinAddress() : null;
+  // Use prop userAddress if provided, otherwise use connected address
+  const effectiveUserAddress = userAddress || connectedUserAddress;
+
+  const btcAddress = effectiveUserAddress ? getBitcoinAddress() : null;
 
   useEffect(() => {
     if (btcAddress) {
@@ -206,11 +228,11 @@ export default function DepositForm({
 
   // Fetch STX balance for transaction fees
   const { data: stxBalance } = useQuery<number | null>({
-    queryKey: ["stxBalance", userAddress],
+    queryKey: ["stxBalance", effectiveUserAddress],
     queryFn: async () => {
       if (!userAddress) return null;
       const response = await fetch(
-        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+        `${NETWORK_CONFIG.HIRO_API_URL}/extended/v1/address/${userAddress}/balances`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch STX balance");
@@ -230,13 +252,13 @@ export default function DepositForm({
     queryFn: async () => {
       if (!userAddress) return null;
       const response = await fetch(
-        `https://api.hiro.so/extended/v1/address/${userAddress}/balances`
+        `${NETWORK_CONFIG.HIRO_API_URL}/extended/v1/address/${userAddress}/balances`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch sBTC balance");
       }
       const data = await response.json();
-      const sbtcAssetIdentifier = `${SBTC_CONTRACT}::sbtc-token`;
+      const sbtcAssetIdentifier = `${NETWORK_CONFIG.SBTC_CONTRACT}::sbtc-token`;
       if (data.fungible_tokens && data.fungible_tokens[sbtcAssetIdentifier]) {
         const balance = data.fungible_tokens[sbtcAssetIdentifier].balance;
         return parseInt(balance) / 10 ** 8;
@@ -255,7 +277,7 @@ export default function DepositForm({
       const [contractAddress, contractName] = dexContract.split(".");
       try {
         const btcAmount = parseFloat(amount) * Math.pow(10, 8);
-        const url = `https://api.hiro.so/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
           method: "POST",
@@ -334,6 +356,8 @@ export default function DepositForm({
     return () => clearTimeout(debounce);
   }, [amount, getBuyQuote, currentSlippage]);
 
+  //TODO: DISPLAY SEATS INSTEAD OF AMOUNT WHEN PRELAUNCH
+
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
     number | null
@@ -342,7 +366,13 @@ export default function DepositForm({
     queryFn: async () => {
       if (!btcAddress) return null;
 
-      const blockstreamUrl = `https://blockstream.info/api/address/${btcAddress}/utxo`;
+      // Use testnet API for testnet, mainnet API for mainnet
+      const blockstreamUrl = isMainnet
+        ? `https://blockstream.info/api/address/${btcAddress}/utxo`
+        : `https://blockstream.info/testnet/api/address/${btcAddress}/utxo`;
+
+      // console.log("blockstreamUrl", blockstreamUrl);
+
       const response = await fetch(blockstreamUrl);
 
       if (!response.ok) {
@@ -648,7 +678,7 @@ export default function DepositForm({
 
       const [dexAddress, dexName] = dexContract.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
       const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
       const assetName = getTokenAssetName(daoName);
@@ -753,6 +783,270 @@ export default function DepositForm({
     handleWalletAuth,
   ]);
 
+  // TODO
+  const handleBuyWithBtcOnTestnet = useCallback(async () => {
+    console.log("CALLING BUY WITH BITCOIN ON TESTNET...");
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const ustx = parseFloat(amount) * Math.pow(10, 8);
+    console.log("USTX: ", ustx);
+
+    if (!rawBuyQuote?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get quote for buy order.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+    console.log("SBTC BALANCE", sbtcBalanceInSats);
+
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          ustx / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          (sbtcBalanceInSats || 0) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const clarityValue = hexToCV(rawBuyQuote.result);
+      const jsonValue = cvToJSON(clarityValue);
+
+      const quoteAmount = jsonValue.value.value["tokens-out"].value;
+      // const quoteAmount = 0;
+      const newStx = Number(jsonValue.value.value["new-stx"].value);
+      // const newStx = Number(0);
+      const tokenBalance = jsonValue.value.value["ft-balance"]?.value;
+      // const tokenBalance = 0;
+      const currentStxBalance = Number(
+        jsonValue.value.value["total-stx"]?.value || 0
+      );
+
+      if (!quoteAmount || !newStx || !tokenBalance) {
+        toast({
+          title: "Error",
+          description: "Invalid quote response",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check target limit logic (only if targetStx is provided)
+      if (targetStx > 0) {
+        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+        const bufferAmount = remainingToTarget * 1.15;
+
+        if (ustx > bufferAmount) {
+          const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+          const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
+
+          toast({
+            title: "Amount exceeds target limit",
+            description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // const [dexAddress, dexName] = dexContract.split(".");
+      // const [tokenAddress, tokenName] = tokenContract.split(".");
+      // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
+
+      // const tokenAddressTestnet: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory";
+      // const dexAddressTestnet: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory-dex";
+      // const sbtcTokenAddress: string =
+      //   "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      // const preLaunch: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-pre-faktory";
+      // const pool: string =
+      //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.xyk-pool-sbtc-visvasa1-v-1-1";
+
+      // Use dynamic contract addresses from props
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [prelaunchAddress, prelaunchName] = (
+        prelaunchContract || dexContract
+      ).split(".");
+      const [poolAddress, poolName] = (poolContract || dexContract).split(".");
+
+      // Network-aware sBTC contract
+      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+      const sbtcContract = isMainnet
+        ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+        : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      const [sbtcAddress, sbtcName] = sbtcContract.split(".");
+
+      const args = [
+        Cl.uint(ustx),
+        Cl.uint(minTokensOut),
+        Cl.uint(1),
+        Cl.contractPrincipal(tokenAddress, tokenName), // token contract
+        Cl.contractPrincipal(dexAddress, dexName), // dex contract
+        Cl.contractPrincipal(prelaunchAddress, prelaunchName), // prelaunch contract
+        Cl.contractPrincipal(poolAddress, poolName), // pool contract
+        Cl.contractPrincipal(sbtcAddress, sbtcName), // sbtc contract
+      ];
+      console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
+      // const assetName = getTokenAssetName(daoName);
+
+      // HELPER FUNCTION TO DETERMINE IF THE TOKEN IS BONDED OR IN DEX
+      // IF BONDED USE POSTCONDITION FOR POOL IF IN DEX POST CONDITION FOR DEX OR ELSE USE THE POSTCONDITION FOR PRELAUNCH
+      // POST CONDITION FOR POOL
+      // 1. user sends sbtc, 2. A bridge contract sends sbtc, 3. bitflow contract send ft-amount, 4. bridge contract send ft-amount.
+
+      // POST CONDITION FOR DEX
+      // const TARGET_STX = targetStx * Math.pow(10, 8);
+      // const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+
+      // const postConditions = isLastBuy
+      //   ? [
+      //       Pc.principal(userAddress)
+      //         .willSendLte(ustx)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(tokenBalance)
+      //         .ft(`${tokenAddress}.${tokenName}`, assetName),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(TARGET_STX)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //     ]
+      //   : [
+      //       Pc.principal(userAddress)
+      //         .willSendLte(ustx)
+      //         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //       Pc.principal(`${dexAddress}.${dexName}`)
+      //         .willSendGte(minTokensOut)
+      //         .ft(`${tokenAddress}.${tokenName}`, assetName),
+      //     ];
+
+      // POST CONDITION FOR PRELAUNCH
+      // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
+
+      const assetName = getTokenAssetName(daoName);
+
+      // Post conditions for testnet BTC swap
+      const postConditions = [
+        // User sends sBTC to the bridge contract
+        Pc.principal(userAddress)
+          .willSendLte(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // Bridge contract will send tokens to user
+        Pc.principal(
+          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation`
+        )
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, assetName),
+      ];
+
+      const params = {
+        contract:
+          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation` as `${string}.${string}`,
+        functionName: "swap-btc-to-aibtc",
+        functionArgs: args,
+        postConditions,
+      };
+
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                // Force status update if API shows different status
+                if (txData.tx_status === "success") {
+                  // Transaction is actually confirmed but WebSocket missed it
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during sBTC contract call:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit sBTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    rawBuyQuote,
+    sbtcBalance,
+    targetStx,
+    currentSlippage,
+    daoName,
+    dexContract,
+    tokenContract,
+    prelaunchContract,
+    poolContract,
+    transactionStatus,
+    toast,
+    handleWalletAuth,
+  ]);
   // Memoized error handlers
   const isAddressTypeError = useCallback((error: Error): boolean => {
     return (
@@ -832,6 +1126,16 @@ export default function DepositForm({
       await handleBuyWithSbtc();
       return;
     }
+
+    // Network-specific BTC handling
+    if (!isMainnet) {
+      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet
+      // This handles different contract states (bonded, prelaunch, etc.)
+      await handleBuyWithBtcOnTestnet();
+      return;
+    }
+
+    // Mainnet: Regular L1 BTC handling continues below
 
     if (parseFloat(amount) <= 0) {
       toast({
@@ -967,6 +1271,7 @@ export default function DepositForm({
     btcBalance,
     toast,
     handleBuyWithSbtc,
+    handleBuyWithBtcOnTestnet,
     handleWalletAuth,
     activeWalletProvider,
     minTokenOut,
@@ -1165,7 +1470,7 @@ export default function DepositForm({
             </div>
           </div>
 
-          {/* Currency selector */}
+          {/* Currency selector - Network aware */}
           <Select
             value={buyWithSbtc ? "sbtc" : "btc"}
             onValueChange={(value) => setBuyWithSbtc(value === "sbtc")}
@@ -1182,8 +1487,20 @@ export default function DepositForm({
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="btc">BTC</SelectItem>
-              <SelectItem value="sbtc">sBTC</SelectItem>
+              {/* Testnet: Show BTC (testnet) and sBTC options */}
+              {!isMainnet && (
+                <>
+                  <SelectItem value="btc">BTC (Testnet)</SelectItem>
+                  <SelectItem value="sbtc">sBTC</SelectItem>
+                </>
+              )}
+              {/* Mainnet: Show L1 BTC and sBTC options */}
+              {isMainnet && (
+                <>
+                  <SelectItem value="btc">BTC (L1)</SelectItem>
+                  <SelectItem value="sbtc">sBTC</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -1199,7 +1516,7 @@ export default function DepositForm({
             className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
             disabled={!accessToken || BUY_DISABLED}
           >
-            0.0001 {buyWithSbtc ? "sBTC" : "BTC"}
+            0.0001 {buyWithSbtc ? "sBTC" : isMainnet ? "BTC" : "BTC (Testnet)"}
           </Button>
           <Button
             variant={selectedPreset === "0.0002" ? "default" : "secondary"}
@@ -1208,7 +1525,7 @@ export default function DepositForm({
             className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
             disabled={!accessToken || BUY_DISABLED}
           >
-            0.0002 {buyWithSbtc ? "sBTC" : "BTC"}
+            0.0002 {buyWithSbtc ? "sBTC" : isMainnet ? "BTC" : "BTC (Testnet)"}
           </Button>
         </div>
         <div className="flex gap-2">
@@ -1297,7 +1614,8 @@ export default function DepositForm({
           isAuthenticating ||
           BUY_DISABLED ||
           (hasAccessToken && buyWithSbtc && (stxBalance || 0) < 0.01) ||
-          (hasAccessToken && !hasAgentAccount)
+          (hasAccessToken && !hasAgentAccount) ||
+          isMarketOpen === false
         }
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
       >
@@ -1311,6 +1629,8 @@ export default function DepositForm({
             <Loader />
             <span>Connecting & Loading...</span>
           </div>
+        ) : isMarketOpen === false ? (
+          <span>Market Closed</span>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
@@ -1332,7 +1652,7 @@ export default function DepositForm({
         </div>
       )}
 
-      {buyWithSbtc && (
+      {(buyWithSbtc || (!isMainnet && !buyWithSbtc)) && (
         <TransactionStatusModal
           isOpen={isModalOpen}
           onClose={() => {
@@ -1343,13 +1663,13 @@ export default function DepositForm({
           txId={activeTxId ?? undefined}
           transactionStatus={transactionStatus}
           transactionMessage={transactionMessage}
-          title="sBTC Transaction"
+          title={buyWithSbtc ? "sBTC Transaction" : "BTC Transaction"}
           successTitle="Buy Order Confirmed"
           failureTitle="Buy Order Failed"
           successDescription={`Your transaction to buy ${daoName} tokens has been successfully confirmed.`}
           failureDescription="The transaction could not be completed. Please check your balance and try again."
           pendingDescription="Your transaction is being processed. This may take a few minutes."
-          onRetry={handleBuyWithSbtc}
+          onRetry={buyWithSbtc ? handleBuyWithSbtc : handleBuyWithBtcOnTestnet}
         />
       )}
 
