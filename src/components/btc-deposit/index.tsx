@@ -22,6 +22,8 @@ interface BitcoinDepositProps {
   tokenContract: string;
   headerOffset?: number;
   isMarketOpen?: boolean | null;
+  prelaunchContract?: string;
+  poolContract?: string;
 }
 
 export default function BitcoinDeposit({
@@ -30,6 +32,8 @@ export default function BitcoinDeposit({
   dexId,
   tokenContract,
   isMarketOpen,
+  prelaunchContract,
+  poolContract,
   // headerOffset = 96,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
@@ -153,6 +157,8 @@ export default function BitcoinDeposit({
             poolId="aibtc"
             aiAccountReceiver={userAgentAddress || ""}
             isMarketOpen={isMarketOpen}
+            prelaunchContract={prelaunchContract}
+            poolContract={poolContract}
           />
         )}
       </div>

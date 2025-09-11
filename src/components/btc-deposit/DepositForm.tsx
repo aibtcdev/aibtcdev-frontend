@@ -70,6 +70,8 @@ interface DepositFormProps {
   poolId: string;
   aiAccountReceiver: string;
   isMarketOpen?: boolean | null;
+  prelaunchContract?: string;
+  poolContract?: string;
 }
 
 interface HiroGetInResponse {
@@ -127,6 +129,7 @@ export default function DepositForm({
   activeWalletProvider,
   dexContract,
   daoName,
+  userAddress,
   dexId,
   targetStx = 0,
   tokenContract,
@@ -135,6 +138,8 @@ export default function DepositForm({
   poolId,
   aiAccountReceiver,
   isMarketOpen,
+  prelaunchContract,
+  poolContract,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -208,9 +213,12 @@ export default function DepositForm({
   // Get addresses from the lib - only if we have a session
   const { userAgentAddress } = useAgentAccount();
   const hasAgentAccount = Boolean(userAgentAddress);
-  const userAddress = getStacksAddress();
+  const connectedUserAddress = getStacksAddress();
 
-  const btcAddress = userAddress ? getBitcoinAddress() : null;
+  // Use prop userAddress if provided, otherwise use connected address
+  const effectiveUserAddress = userAddress || connectedUserAddress;
+
+  const btcAddress = effectiveUserAddress ? getBitcoinAddress() : null;
 
   useEffect(() => {
     if (btcAddress) {
@@ -220,7 +228,7 @@ export default function DepositForm({
 
   // Fetch STX balance for transaction fees
   const { data: stxBalance } = useQuery<number | null>({
-    queryKey: ["stxBalance", userAddress],
+    queryKey: ["stxBalance", effectiveUserAddress],
     queryFn: async () => {
       if (!userAddress) return null;
       const response = await fetch(
@@ -884,31 +892,30 @@ export default function DepositForm({
       // const pool: string =
       //   "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.xyk-pool-sbtc-visvasa1-v-1-1";
 
+      // Use dynamic contract addresses from props
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [prelaunchAddress, prelaunchName] = (
+        prelaunchContract || dexContract
+      ).split(".");
+      const [poolAddress, poolName] = (poolContract || dexContract).split(".");
+
+      // Network-aware sBTC contract
+      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+      const sbtcContract = isMainnet
+        ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+        : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      const [sbtcAddress, sbtcName] = sbtcContract.split(".");
+
       const args = [
         Cl.uint(ustx),
         Cl.uint(minTokensOut),
         Cl.uint(1),
-        Cl.contractPrincipal(
-          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
-          "visvasa1-faktory"
-        ),
-        Cl.contractPrincipal(
-          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
-          "visvasa1-faktory-dex"
-        ),
-
-        Cl.contractPrincipal(
-          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
-          "visvasa1-pre-faktory"
-        ),
-        Cl.contractPrincipal(
-          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW",
-          "xyk-pool-sbtc-visvasa1-v-1-1"
-        ),
-        Cl.contractPrincipal(
-          "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2",
-          "sbtc-token"
-        ),
+        Cl.contractPrincipal(tokenAddress, tokenName), // token contract
+        Cl.contractPrincipal(dexAddress, dexName), // dex contract
+        Cl.contractPrincipal(prelaunchAddress, prelaunchName), // prelaunch contract
+        Cl.contractPrincipal(poolAddress, poolName), // pool contract
+        Cl.contractPrincipal(sbtcAddress, sbtcName), // sbtc contract
       ];
       console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
       // const assetName = getTokenAssetName(daoName);
@@ -945,12 +952,29 @@ export default function DepositForm({
 
       // POST CONDITION FOR PRELAUNCH
       // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
+
+      const assetName = getTokenAssetName(daoName);
+
+      // Post conditions for testnet BTC swap
+      const postConditions = [
+        // User sends sBTC to the bridge contract
+        Pc.principal(userAddress)
+          .willSendLte(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // Bridge contract will send tokens to user
+        Pc.principal(
+          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation`
+        )
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, assetName),
+      ];
+
       const params = {
         contract:
           `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
-        // postConditions: PostConditionMode.Allow //
+        postConditions,
       };
 
       const response = await request("stx_callContract", params);

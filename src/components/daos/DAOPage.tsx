@@ -194,6 +194,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     tokenContract,
     prelaunchContract,
     buyPrelaunchContract,
+    poolContract,
   } = useMemo(() => {
     if (!extensions)
       return {
@@ -203,6 +204,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         tokenContract: null,
         prelaunchContract: null,
         buyPrelaunchContract: null,
+        poolContract: null,
       };
     const dexExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
@@ -217,10 +219,14 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       (ext) =>
         ext.type === "TRADING" && ext.subtype === "FAKTORY_BUY_AND_DEPOSIT"
     );
+    const poolExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
+    );
     const dexPrincipal = dexExtension?.contract_principal;
     const tokenPrincipal = tokenExtension?.contract_principal;
     const prelaunchPrincipal = prelaunchExtension?.contract_principal;
     const buyPrelaunchPrincipal = buyPrelaunchExtension?.contract_principal;
+    const poolPrincipal = poolExtension?.contract_principal;
     console.log(dexPrincipal);
 
     return {
@@ -231,6 +237,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       tokenContract: tokenPrincipal,
       prelaunchContract: prelaunchPrincipal,
       buyPrelaunchContract: buyPrelaunchPrincipal,
+      poolContract: poolPrincipal,
     };
   }, [extensions]);
 
@@ -435,22 +442,19 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Market Status Alert */}
+          {/* Market Status */}
           {buyPrelaunchContract && isMarketOpen === false && (
-            <div className="mb-6">
-              <Alert className="border-orange-500/50 bg-orange-500/10">
-                <AlertCircle className="h-4 w-4 text-orange-500" />
-                <AlertDescription className="text-orange-200">
-                  Market Closed. You can{" "}
-                  <Link
-                    href={`/prelaunch/${encodedName}/${buyPrelaunchContract}`}
-                    className="font-medium underline hover:no-underline text-orange-300"
-                  >
-                    buy seats via prelaunch
-                  </Link>{" "}
-                  to participate when the market opens.
-                </AlertDescription>
-              </Alert>
+            <div className="mb-6 text-center">
+              <p className="text-muted-foreground">
+                Buy seats{" "}
+                <Link
+                  href={`/prelaunch/${encodedName}/${buyPrelaunchContract}`}
+                  className="text-primary hover:text-primary/80 underline underline-offset-4 hover:no-underline transition-colors"
+                >
+                  via prelaunch
+                </Link>{" "}
+                to participate when the market opens.
+              </p>
             </div>
           )}
 
@@ -487,6 +491,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 tokenContract={tokenContract || ""}
                 headerOffset={96}
                 isMarketOpen={isMarketOpen}
+                prelaunchContract={prelaunchContract || undefined}
+                poolContract={poolContract || undefined}
               />
             </div>
           </div>
