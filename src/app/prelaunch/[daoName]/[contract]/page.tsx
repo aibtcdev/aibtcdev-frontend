@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+export const runtime = "edge";
+
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
 const NETWORK_CONFIG = {
