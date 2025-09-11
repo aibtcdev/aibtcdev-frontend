@@ -139,24 +139,14 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         }
 
         const data = await response.json();
-        console.log("marketopen data", data);
 
-        if (data?.result) {
-          try {
-            const clarityValue = hexToCV(data.result);
-            const jsonValue = cvToJSON(clarityValue);
-            console.log("Market open status decoded:", jsonValue);
-            console.log("json value", jsonValue.value);
-
-            return jsonValue.value === true;
-          } catch (error) {
-            console.error("Error parsing market open status:", error);
-            return null;
-          }
+        if (data?.okay && data?.result) {
+          const clarityValue = hexToCV(data.result);
+          const jsonValue = cvToJSON(clarityValue);
+          return jsonValue.value?.value === true;
         }
         return null;
-      } catch (error) {
-        console.error("Error fetching market open status:", error);
+      } catch {
         return null;
       }
     },
@@ -204,6 +194,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         buyPrelaunchContract: null,
         poolContract: null,
       };
+
+    console.log("All extensions:", extensions);
+
     const dexExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "DEX"
     );
@@ -220,12 +213,12 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     const poolExtension = extensions.find(
       (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
     );
+
     const dexPrincipal = dexExtension?.contract_principal;
     const tokenPrincipal = tokenExtension?.contract_principal;
     const prelaunchPrincipal = prelaunchExtension?.contract_principal;
     const buyPrelaunchPrincipal = buyPrelaunchExtension?.contract_principal;
     const poolPrincipal = poolExtension?.contract_principal;
-    console.log(dexPrincipal);
 
     return {
       dex: dexPrincipal,
@@ -255,13 +248,23 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   // });
 
   // Check if market is open
-  const { data: isMarketOpen } = useQuery({
+  const {
+    data: isMarketOpen,
+    error: marketOpenError,
+    isLoading: isMarketOpenLoading,
+  } = useQuery({
     queryKey: ["marketOpen", prelaunchContract],
+
     queryFn: () => checkMarketOpen(prelaunchContract!),
     enabled: !!prelaunchContract,
     staleTime: 300000,
   });
 
+  console.log("Market open query status:");
+  console.log("- prelaunchContract:", prelaunchContract);
+  console.log("- isMarketOpen:", isMarketOpen);
+  console.log("- marketOpenError:", marketOpenError);
+  console.log("- isMarketOpenLoading:", isMarketOpenLoading);
   const { data: holdersData } = useQuery({
     queryKey: ["holders", id],
     queryFn: () => fetchHolders(id!),
