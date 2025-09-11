@@ -10,7 +10,7 @@ import { getStacksAddress } from "@/lib/address";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { uintCV, Pc, Cl, PostConditionMode } from "@stacks/transactions";
+import { uintCV, Pc, Cl } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { fetchDAOByName, fetchDAOExtensions } from "@/services/dao.service";
 import { Building2 } from "lucide-react";
@@ -288,6 +288,9 @@ const PrelaunchPage = () => {
     buyAndDepositContract,
     dao,
     extensions,
+    dexContract,
+    prelaunchContract,
+    poolContract,
     toast,
   ]);
 
@@ -386,7 +389,7 @@ const PrelaunchPage = () => {
       // Use direct prelaunch contract method
       return handleBuySeats();
     }
-  }, [isMainnet, paymentMethod, handleBuyWithSbtcOnTestnet, handleBuySeats]);
+  }, [paymentMethod, handleBuyWithSbtcOnTestnet, handleBuySeats]);
 
   // Loading states
   if (isLoadingDAO || isLoadingExtensions) {
