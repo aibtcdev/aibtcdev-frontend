@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/useToast";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { getStacksAddress } from "@/lib/address";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import { uintCV, Pc } from "@stacks/transactions";
@@ -36,9 +35,9 @@ const PrelaunchPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTxId, setActiveTxId] = useState<string | null>(null);
-  const [transactionType, setTransactionType] = useState<"buy" | "refund">(
-    "buy"
-  );
+  // const [transactionType, setTransactionType] = useState<"buy" | "refund">(
+  //   "buy"
+  // );
 
   // Constants for seat pricing
   const SEAT_PRICE_SATS = 20000;
@@ -66,15 +65,6 @@ const PrelaunchPage = () => {
 
   // Validate that the contract parameter matches the extension
   const isValidContract = buyAndDepositContract === contractParam;
-
-  // Format balance to avoid unnecessary decimal places
-  const formatBalance = (balance: number): string => {
-    if (balance % 1 === 0) {
-      return balance.toString();
-    }
-    const formatted = balance.toFixed(8).replace(/\.?0+$/, "");
-    return formatted === "" ? "0" : formatted;
-  };
 
   const { accessToken } = useAuth();
   const { toast } = useToast();
@@ -172,7 +162,7 @@ const PrelaunchPage = () => {
     }
 
     setIsSubmitting(true);
-    setTransactionType("buy");
+    // setTransactionType("buy");
 
     try {
       const [contractAddress, contractName] = buyAndDepositContract.split(".");

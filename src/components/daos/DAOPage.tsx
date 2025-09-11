@@ -40,7 +40,7 @@ import DAOHolders from "@/components/daos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
-import { cvToHex, uintCV, hexToCV, cvToJSON } from "@stacks/transactions";
+import { hexToCV, cvToJSON } from "@stacks/transactions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
@@ -62,56 +62,56 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const [activeTab, setActiveTab] = useState("charter");
 
   // Helper function to check if the token is bonded
-  const checkBonded = useCallback(
-    async (dexContract: string): Promise<boolean | null> => {
-      if (!dexContract) return null;
+  // const checkBonded = useCallback(
+  //   async (dexContract: string): Promise<boolean | null> => {
+  //     if (!dexContract) return null;
 
-      const senderAddress =
-        getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
-      const [contractAddress, contractName] = dexContract.split(".");
+  //     const senderAddress =
+  //       getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+  //     const [contractAddress, contractName] = dexContract.split(".");
 
-      try {
-        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-bonded?tip=latest`;
+  //     try {
+  //       const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-bonded?tip=latest`;
 
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sender: senderAddress,
-            arguments: [],
-          }),
-        });
+  //       const response = await fetch(url, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           sender: senderAddress,
+  //           arguments: [],
+  //         }),
+  //       });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
 
-        const data = await response.json();
-        console.log("bonded data", data);
+  //       const data = await response.json();
+  //       console.log("bonded data", data);
 
-        if (data?.result) {
-          try {
-            const clarityValue = hexToCV(data.result);
-            const jsonValue = cvToJSON(clarityValue);
-            console.log("Bonded status decoded:", jsonValue);
-            console.log("json value", jsonValue.value);
+  //       if (data?.result) {
+  //         try {
+  //           const clarityValue = hexToCV(data.result);
+  //           const jsonValue = cvToJSON(clarityValue);
+  //           console.log("Bonded status decoded:", jsonValue);
+  //           console.log("json value", jsonValue.value);
 
-            return jsonValue.value === true;
-          } catch (error) {
-            console.error("Error parsing bonded status:", error);
-            return null;
-          }
-        }
-        return null;
-      } catch (error) {
-        console.error("Error fetching bonded status:", error);
-        return null;
-      }
-    },
-    []
-  );
+  //           return jsonValue.value === true;
+  //         } catch (error) {
+  //           console.error("Error parsing bonded status:", error);
+  //           return null;
+  //         }
+  //       }
+  //       return null;
+  //     } catch (error) {
+  //       console.error("Error fetching bonded status:", error);
+  //       return null;
+  //     }
+  //   },
+  //   []
+  // );
 
   // Helper function to check if the market is open
   const checkMarketOpen = useCallback(
