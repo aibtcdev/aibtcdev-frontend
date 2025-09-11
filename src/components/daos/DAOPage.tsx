@@ -11,7 +11,6 @@ import {
   BarChart3,
   DollarSign,
   TrendingUp,
-  AlertCircle,
 } from "lucide-react";
 import {
   fetchToken,
@@ -41,7 +40,6 @@ import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
 import { hexToCV, cvToJSON } from "@stacks/transactions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
 
