@@ -6,10 +6,10 @@ const page = () => {
       <BitcoinDeposit
         dexId={1}
         dexContract={
-          "ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory-dex"
+          "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.facemelt-faktory-dex"
         }
-        daoName="visvasa"
-        tokenContract="ST2HH7PR5SENEXCGDHSHGS5RFPMACEDRN5EWQWKRW.visvasa1-faktory"
+        daoName="FACEMELT"
+        tokenContract="ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.facemelt-faktory"
       />
     </div>
   );

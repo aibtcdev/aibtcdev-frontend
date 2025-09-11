@@ -69,6 +69,7 @@ interface DepositFormProps {
   swapType: "aibtc" | "sbtc";
   poolId: string;
   aiAccountReceiver: string;
+  isMarketOpen?: boolean | null;
 }
 
 interface HiroGetInResponse {
@@ -133,6 +134,7 @@ export default function DepositForm({
   swapType,
   poolId,
   aiAccountReceiver,
+  isMarketOpen,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -149,7 +151,7 @@ export default function DepositForm({
     null
   );
   const [loadingQuote, setLoadingQuote] = useState<boolean>(false);
-  const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(false);
+  const [buyWithSbtc, setBuyWithSbtc] = useState<boolean>(!isMainnet); // Default to sBTC on testnet, BTC on mainnet
   const [minTokenOut, setMinTokenOut] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -345,6 +347,8 @@ export default function DepositForm({
 
     return () => clearTimeout(debounce);
   }, [amount, getBuyQuote, currentSlippage]);
+
+  //TODO: DISPLAY SEATS INSTEAD OF AMOUNT WHEN PRELAUNCH
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -773,7 +777,7 @@ export default function DepositForm({
 
   // TODO
   const handleBuyWithBtcOnTestnet = useCallback(async () => {
-    console.log("CALLING BUY WITH BITOICN ON TESTNET...");
+    console.log("CALLING BUY WITH BITCOIN ON TESTNET...");
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -909,6 +913,12 @@ export default function DepositForm({
       console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
       // const assetName = getTokenAssetName(daoName);
 
+      // HELPER FUNCTION TO DETERMINE IF THE TOKEN IS BONDED OR IN DEX
+      // IF BONDED USE POSTCONDITION FOR POOL IF IN DEX POST CONDITION FOR DEX OR ELSE USE THE POSTCONDITION FOR PRELAUNCH
+      // POST CONDITION FOR POOL
+      // 1. user sends sbtc, 2. A bridge contract sends sbtc, 3. bitflow contract send ft-amount, 4. bridge contract send ft-amount.
+
+      // POST CONDITION FOR DEX
       // const TARGET_STX = targetStx * Math.pow(10, 8);
       // const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
 
@@ -933,6 +943,8 @@ export default function DepositForm({
       //         .ft(`${tokenAddress}.${tokenName}`, assetName),
       //     ];
 
+      // POST CONDITION FOR PRELAUNCH
+      // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
       const params = {
         contract:
           `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation` as `${string}.${string}`,
@@ -1088,7 +1100,8 @@ export default function DepositForm({
 
     // Network-specific BTC handling
     if (!isMainnet) {
-      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet (acts as BTC)
+      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet
+      // This handles different contract states (bonded, prelaunch, etc.)
       await handleBuyWithBtcOnTestnet();
       return;
     }
@@ -1428,7 +1441,7 @@ export default function DepositForm({
             </div>
           </div>
 
-          {/* Currency selector */}
+          {/* Currency selector - Network aware */}
           <Select
             value={buyWithSbtc ? "sbtc" : "btc"}
             onValueChange={(value) => setBuyWithSbtc(value === "sbtc")}
@@ -1445,8 +1458,20 @@ export default function DepositForm({
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="btc">BTC</SelectItem>
-              <SelectItem value="sbtc">sBTC</SelectItem>
+              {/* Testnet: Show BTC (testnet) and sBTC options */}
+              {!isMainnet && (
+                <>
+                  <SelectItem value="btc">BTC (Testnet)</SelectItem>
+                  <SelectItem value="sbtc">sBTC</SelectItem>
+                </>
+              )}
+              {/* Mainnet: Show L1 BTC and sBTC options */}
+              {isMainnet && (
+                <>
+                  <SelectItem value="btc">BTC (L1)</SelectItem>
+                  <SelectItem value="sbtc">sBTC</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -1462,7 +1487,7 @@ export default function DepositForm({
             className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
             disabled={!accessToken || BUY_DISABLED}
           >
-            0.0001 {buyWithSbtc ? "sBTC" : "BTC"}
+            0.0001 {buyWithSbtc ? "sBTC" : isMainnet ? "BTC" : "BTC (Testnet)"}
           </Button>
           <Button
             variant={selectedPreset === "0.0002" ? "default" : "secondary"}
@@ -1471,7 +1496,7 @@ export default function DepositForm({
             className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
             disabled={!accessToken || BUY_DISABLED}
           >
-            0.0002 {buyWithSbtc ? "sBTC" : "BTC"}
+            0.0002 {buyWithSbtc ? "sBTC" : isMainnet ? "BTC" : "BTC (Testnet)"}
           </Button>
         </div>
         <div className="flex gap-2">
@@ -1560,7 +1585,8 @@ export default function DepositForm({
           isAuthenticating ||
           BUY_DISABLED ||
           (hasAccessToken && buyWithSbtc && (stxBalance || 0) < 0.01) ||
-          (hasAccessToken && !hasAgentAccount)
+          (hasAccessToken && !hasAgentAccount) ||
+          isMarketOpen === false
         }
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
       >
@@ -1574,6 +1600,8 @@ export default function DepositForm({
             <Loader />
             <span>Connecting & Loading...</span>
           </div>
+        ) : isMarketOpen === false ? (
+          <span>Market Closed</span>
         ) : (
           <div className="flex items-center justify-center gap-2">
             <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
