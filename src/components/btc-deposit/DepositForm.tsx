@@ -963,7 +963,7 @@ export default function DepositForm({
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
         // Bridge contract will send tokens to user
         Pc.principal(
-          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation`
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
         )
           .willSendGte(minTokensOut)
           .ft(`${tokenAddress}.${tokenName}`, assetName),
@@ -971,7 +971,7 @@ export default function DepositForm({
 
       const params = {
         contract:
-          `ST29D6YMDNAKN1P045T6Z817RTE1AC0JAAAG2EQZZ.btc2aibtc-simulation` as `${string}.${string}`,
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
         postConditions,
