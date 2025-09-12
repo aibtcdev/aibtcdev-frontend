@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TestnetFaucet } from "@/components/account/TestnetFaucet";
 
 export const runtime = "edge";
 
@@ -250,7 +251,7 @@ const PrelaunchPage = () => {
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
         // Bridge contract -> Prelaunch contract transfer
         Pc.principal(`${bridgeAddress}.${bridgeName}`)
-          .willSendEq(sbtcAmountInSats)
+          .willSendLte(sbtcAmountInSats)
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
       ];
 
@@ -343,7 +344,7 @@ const PrelaunchPage = () => {
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
         // Adapter contract -> DEX transfer (same amount)
         Pc.principal(`${contractAddress}.${contractName}`)
-          .willSendEq(sbtcAmountInSats)
+          .willSendLte(sbtcAmountInSats)
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
       ];
 
@@ -694,6 +695,13 @@ const PrelaunchPage = () => {
                   </p>
                 </div>
               )}
+
+            {/* Show testnet faucet always in testnet environment */}
+            {!isMainnet && accessToken && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <TestnetFaucet />
+              </div>
+            )}
 
             {accessToken && getMaxAffordableSeats() === 0 && (
               <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-lg">
