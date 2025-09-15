@@ -273,15 +273,47 @@ export default function DepositForm({
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
-      // CALCULATE THE FEE(SATS) IF ITS BRIDGE --> MAX 3K SATS AND  1% OF SBTC(SATS)
-      // IF IT'S BRDIGE--> AMOUNT - FEE
       console.log("buyquotedexcontract", dexContract);
+
       // Use a default address for quote calculation when not authenticated
       const senderAddress =
         userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
       const [contractAddress, contractName] = dexContract.split(".");
+
       try {
         const btcAmount = parseFloat(amount) * Math.pow(10, 8);
+
+        // Calculate bridge fee for testnet BTC purchases
+        let finalAmount = btcAmount;
+        if (!buyWithSbtc) {
+          // Only apply bridge fee for BTC (not sBTC)
+          const calculateBridgeFee = (amountSats: number): number => {
+            if (amountSats <= 300000) {
+              return 3000; // 3000 sats for amounts up to 300,000 sats
+            } else {
+              return Math.floor(amountSats * 0.01); // 1% of the amount for amounts above 300,000 sats
+            }
+          };
+
+          const bridgeFee = calculateBridgeFee(btcAmount);
+          finalAmount = btcAmount - bridgeFee;
+
+          console.log(
+            "Quote calculation - Original:",
+            btcAmount,
+            "Bridge fee:",
+            bridgeFee,
+            "Final:",
+            finalAmount
+          );
+
+          // If amount after fee is too small, return null
+          if (finalAmount <= 0) {
+            console.log("Amount after bridge fee is too small");
+            return null;
+          }
+        }
+
         const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
 
         const response = await fetch(url, {
@@ -291,7 +323,7 @@ export default function DepositForm({
           },
           body: JSON.stringify({
             sender: senderAddress,
-            arguments: [cvToHex(uintCV(btcAmount))],
+            arguments: [cvToHex(uintCV(finalAmount))],
           }),
         });
 
@@ -306,7 +338,7 @@ export default function DepositForm({
         return null;
       }
     },
-    [userAddress, dexContract]
+    [userAddress, dexContract, buyWithSbtc]
   );
 
   useEffect(() => {
@@ -794,7 +826,6 @@ export default function DepositForm({
     handleWalletAuth,
   ]);
 
-  // TODO
   const handleBuyWithBtcOnTestnet = useCallback(async () => {
     console.log("CALLING BUY WITH BITCOIN ON TESTNET...");
     // If wallet not connected, trigger auth and set pending order flag
@@ -813,100 +844,114 @@ export default function DepositForm({
       return;
     }
 
-    const getBuyQuote = useCallback(
-      async (amount: string): Promise<HiroGetInResponse | null> => {
-        if (!dexContract) return null;
-        console.log("buyquotedexcontract", dexContract);
-        // Use a default address for quote calculation when not authenticated
-        const senderAddress =
-          userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
-        const [contractAddress, contractName] = dexContract.split(".");
-        try {
-          const btcAmount = parseFloat(amount) * Math.pow(10, 8);
-          const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+    const ustx = parseFloat(amount) * Math.pow(10, 8);
+    console.log("Original USTX: ", ustx);
 
-          const response = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              sender: senderAddress,
-              arguments: [cvToHex(uintCV(btcAmount))],
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = (await response.json()) as HiroGetInResponse;
-          return data;
-        } catch (error) {
-          console.error("Error fetching buy quote:", error);
-          return null;
-        }
-      },
-      [userAddress, dexContract]
-    );
-
-    const fetchQuote = async () => {
-      if (amount && Number.parseFloat(amount) > 0) {
-        setLoadingQuote(true);
-        const quoteData = await getBuyQuote(amount);
-        console.log("buyquote", dexContract, quoteData);
-        setRawBuyQuote(quoteData);
-
-        if (quoteData?.result) {
-          try {
-            const clarityValue = hexToCV(quoteData.result);
-            console.log("clarityvalueofbuyquote", clarityValue);
-            const jsonValue = cvToJSON(clarityValue);
-            console.log("jsonvalueofbuyquote", jsonValue);
-            if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
-              const rawAmount = jsonValue.value.value["tokens-out"].value;
-              const slippageFactor = 1 - currentSlippage / 100;
-              const amountAfterSlippage = Math.floor(
-                Number(rawAmount) * slippageFactor
-              );
-              setMinTokenOut(amountAfterSlippage);
-              setBuyQuote(
-                (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })
-              );
-            } else {
-              setBuyQuote(null);
-              setMinTokenOut(0);
-            }
-          } catch (error) {
-            console.error("Error parsing quote result:", error);
-            setBuyQuote(null);
-            setMinTokenOut(0);
-          }
-        } else {
-          setBuyQuote(null);
-          setMinTokenOut(0);
-        }
-        setLoadingQuote(false);
+    // Calculate bridge fee
+    const calculateBridgeFee = (amountSats: number): number => {
+      if (amountSats <= 300000) {
+        return 3000; // 3000 sats for amounts up to 300,000 sats
       } else {
-        setBuyQuote(null);
-        setRawBuyQuote(null);
-        setMinTokenOut(0);
+        return Math.floor(amountSats * 0.01); // 1% of the amount for amounts above 300,000 sats
       }
     };
 
-    const ustx = parseFloat(amount) * Math.pow(10, 8);
-    console.log("USTX: ", ustx);
+    const bridgeFee = calculateBridgeFee(ustx);
+    const amountAfterFee = ustx - bridgeFee;
 
-    if (!rawBuyQuote?.result) {
+    console.log("Bridge fee:", bridgeFee, "sats");
+    console.log("Amount after fee:", amountAfterFee, "sats");
+
+    if (amountAfterFee <= 0) {
       toast({
-        title: "Error",
-        description: "Failed to get quote for buy order.",
+        title: "Amount too small",
+        description: `Amount after bridge fee (${bridgeFee} sats) would be ${amountAfterFee} sats. Please enter a larger amount.`,
         variant: "destructive",
       });
       return;
+    }
+
+    // Fetch quote for the amount after deducting the bridge fee
+    const getBuyQuoteAfterFee = async (
+      amountAfterFeeSats: number
+    ): Promise<HiroGetInResponse | null> => {
+      if (!dexContract) return null;
+      console.log("Fetching quote for amount after fee:", amountAfterFeeSats);
+
+      const senderAddress =
+        userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+      const [contractAddress, contractName] = dexContract.split(".");
+
+      try {
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: senderAddress,
+            arguments: [cvToHex(uintCV(amountAfterFeeSats))],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = (await response.json()) as HiroGetInResponse;
+        return data;
+      } catch (error) {
+        console.error("Error fetching buy quote after fee:", error);
+        return null;
+      }
+    };
+
+    // Fetch the quote with the amount after fee deduction
+    const quoteAfterFee = await getBuyQuoteAfterFee(amountAfterFee);
+
+    if (!quoteAfterFee?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get quote for buy order after fee deduction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update the UI state with the new quote after fee deduction
+    setRawBuyQuote(quoteAfterFee);
+
+    // Parse and update the displayed quote
+    try {
+      const clarityValue = hexToCV(quoteAfterFee.result);
+      const jsonValue = cvToJSON(clarityValue);
+
+      if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
+        const rawAmount = jsonValue.value.value["tokens-out"].value;
+        const slippageFactor = 1 - currentSlippage / 100;
+        const amountAfterSlippage = Math.floor(
+          Number(rawAmount) * slippageFactor
+        );
+
+        setMinTokenOut(amountAfterSlippage);
+        setBuyQuote(
+          (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        );
+
+        console.log("Updated quote after bridge fee deduction:", {
+          originalAmount: ustx,
+          bridgeFee,
+          amountAfterFee,
+          tokensOut: amountAfterSlippage,
+        });
+      }
+    } catch (error) {
+      console.error("Error parsing quote after fee deduction:", error);
     }
 
     const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
@@ -928,7 +973,7 @@ export default function DepositForm({
     setIsSubmitting(true);
 
     try {
-      const clarityValue = hexToCV(rawBuyQuote.result);
+      const clarityValue = hexToCV(quoteAfterFee.result);
       const jsonValue = cvToJSON(clarityValue);
 
       const quoteAmount = jsonValue.value.value["tokens-out"].value;
@@ -1003,7 +1048,7 @@ export default function DepositForm({
       const [sbtcAddress, sbtcName] = sbtcContract.split(".");
 
       const args = [
-        Cl.uint(ustx),
+        Cl.uint(amountAfterFee), // Use amount after bridge fee deduction
         Cl.uint(minTokensOut),
         Cl.uint(1),
         Cl.contractPrincipal(tokenAddress, tokenName), // token contract
