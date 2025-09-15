@@ -118,9 +118,9 @@ const NETWORK_CONFIG = {
 };
 
 // Helper function to get token asset name
-const getTokenAssetName = (symbol: string): string => {
-  return symbol.toLowerCase();
-};
+// const getTokenAssetName = (symbol: string): string => {
+//   return symbol.toLowerCase();
+// };
 
 export default function DepositForm({
   btcUsdPrice,
@@ -859,7 +859,7 @@ export default function DepositForm({
         minTokensOut,
       });
 
-      const assetName = getTokenAssetName(daoName);
+      // const assetName = getTokenAssetName(daoName);
 
       // Post conditions for adapter contract based on actual contract behavior
       // const postConditions = [
@@ -876,9 +876,8 @@ export default function DepositForm({
 
       // Add additional post conditions for last buy scenario
       if (targetStx > 0) {
-        const TARGET_STX = targetStx * Math.pow(10, 8);
-        const isLastBuy = currentStxBalance + ustx >= TARGET_STX;
-
+        // const TARGET_STX = targetStx * Math.pow(10, 8);
+        // const isLastBuy = currentStxBalance + ustx >= TARGET_STX;
         // if (isLastBuy) {
         //   postConditions.push(
         //     Pc.principal(`${dexAddress}.${dexName}`)
@@ -962,7 +961,7 @@ export default function DepositForm({
     dexContract,
     tokenContract,
     adapterContract,
-    daoName,
+    // daoName,
     transactionStatus,
     toast,
     handleWalletAuth,
@@ -1245,7 +1244,7 @@ export default function DepositForm({
       // POST CONDITION FOR PRELAUNCH
       // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
 
-      const assetName = getTokenAssetName(daoName);
+      // const assetName = getTokenAssetName(daoName);
 
       // Post conditions for testnet BTC swap
       console.log("=== POST CONDITION AMOUNTS ===");
@@ -1348,7 +1347,7 @@ export default function DepositForm({
     sbtcBalance,
     targetStx,
     currentSlippage,
-    daoName,
+    // daoName,
     dexContract,
     tokenContract,
     prelaunchContract,

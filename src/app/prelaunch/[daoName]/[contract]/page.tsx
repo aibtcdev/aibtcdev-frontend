@@ -490,8 +490,8 @@ const PrelaunchPage = () => {
     try {
       // Extract contract addresses for post conditions
       const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
-      const [bridgeAddress, bridgeName] =
-        NETWORK_CONFIG.BRIDGE_CONTRACT.split(".");
+      // const [bridgeAddress, bridgeName] =
+      //   NETWORK_CONFIG.BRIDGE_CONTRACT.split(".");
 
       // Get token contract from DAO extensions for prelaunch
       const tokenExtension = extensions?.find(
@@ -703,8 +703,8 @@ const PrelaunchPage = () => {
     }
 
     const [adapterAddress, adapterName] = buyAndDepositContract.split(".");
-    const [preContractAddress, preContractName] = prelaunchContract.split(".");
-    const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+    // const [preContractAddress, preContractName] = prelaunchContract.split(".");
+    // const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
     const args = [
       uintCV(totalBtcAmount), // Total sBTC amount user is sending
