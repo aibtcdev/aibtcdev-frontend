@@ -12,7 +12,7 @@ import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import {
   uintCV,
-  Pc,
+  // Pc,
   Cl,
   hexToCV,
   cvToJSON,
@@ -538,37 +538,37 @@ const PrelaunchPage = () => {
       ];
 
       // FIXED POST CONDITIONS for bridge contract
-      const postConditions = [
-        // User -> Bridge contract transfer
-        Pc.principal(userAddress)
-          .willSendEq(sbtcAmountInSats)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      ];
+      // const postConditions = [
+      //   // User -> Bridge contract transfer
+      //   Pc.principal(userAddress)
+      //     .willSendEq(sbtcAmountInSats)
+      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      // ];
 
       // Bridge -> Prelaunch contract transfer (only actual seats amount)
-      if (actualSeatsToBuy > 0) {
-        postConditions.push(
-          Pc.principal(`${bridgeAddress}.${bridgeName}`)
-            .willSendLte(actualBtcAmount)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-        );
-      }
+      // if (actualSeatsToBuy > 0) {
+      //   postConditions.push(
+      //     Pc.principal(`${bridgeAddress}.${bridgeName}`)
+      //       .willSendLte(actualBtcAmount)
+      //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+      //   );
+      // }
 
-      // FIXED: Bridge sends exact change back to user
-      if (userChangeAmount > 0) {
-        postConditions.push(
-          Pc.principal(`${bridgeAddress}.${bridgeName}`)
-            .willSendEq(userChangeAmount)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-        );
-      }
+      // // FIXED: Bridge sends exact change back to user
+      // if (userChangeAmount > 0) {
+      //   postConditions.push(
+      //     Pc.principal(`${bridgeAddress}.${bridgeName}`)
+      //       .willSendEq(userChangeAmount)
+      //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+      //   );
+      // }
 
       const params = {
         contract: NETWORK_CONFIG.BRIDGE_CONTRACT as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
-        postConditions,
-        postConditionMode: "deny" as const,
+        // postConditions,
+        postConditionMode: "allow" as const,
       };
 
       console.log("Prelaunch sBTC swap params:", params);
@@ -711,30 +711,30 @@ const PrelaunchPage = () => {
     ];
 
     // FIXED POST CONDITIONS
-    const postConditions = [
-      // 1. User sends total sBTC amount to adapter contract
-      Pc.principal(userAddress)
-        .willSendEq(totalBtcAmount)
-        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-    ];
+    // const postConditions = [
+    //   // 1. User sends total sBTC amount to adapter contract
+    //   Pc.principal(userAddress)
+    //     .willSendEq(totalBtcAmount)
+    //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+    // ];
 
     // 2. If user can actually buy seats, adapter sends that amount to prelaunch
-    if (actualSeatsToBuy > 0) {
-      postConditions.push(
-        Pc.principal(`${adapterAddress}.${adapterName}`)
-          .willSendEq(actualBtcAmount)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-      );
-    }
+    // if (actualSeatsToBuy > 0) {
+    //   postConditions.push(
+    //     Pc.principal(`${adapterAddress}.${adapterName}`)
+    //       .willSendEq(actualBtcAmount)
+    //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+    //   );
+    // }
 
-    // 3. FIXED: If there's user change, adapter sends exact change back to user
-    if (userChangeAmount > 0) {
-      postConditions.push(
-        Pc.principal(`${adapterAddress}.${adapterName}`)
-          .willSendLte(userChangeAmount)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-      );
-    }
+    // // 3. FIXED: If there's user change, adapter sends exact change back to user
+    // if (userChangeAmount > 0) {
+    //   postConditions.push(
+    //     Pc.principal(`${adapterAddress}.${adapterName}`)
+    //       .willSendLte(userChangeAmount)
+    //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+    //   );
+    // }
 
     // 4. Check if this purchase will complete the pre-launch
     const willCompleteLaunch =
@@ -742,16 +742,16 @@ const PrelaunchPage = () => {
       seatsRemaining !== undefined &&
       actualSeatsToBuy === seatsRemaining; // Use actualSeatsToBuy, not selectedSeats
 
-    if (willCompleteLaunch) {
-      // Calculate total accumulated sBTC (total seats * price per seat)
-      const totalAccumulatedBtc = TOTAL_SEATS * SEAT_PRICE_SATS;
+    // if (willCompleteLaunch) {
+    //   // Calculate total accumulated sBTC (total seats * price per seat)
+    //   const totalAccumulatedBtc = TOTAL_SEATS * SEAT_PRICE_SATS;
 
-      postConditions.push(
-        Pc.principal(`${preContractAddress}.${preContractName}`)
-          .willSendGte(totalAccumulatedBtc)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-      );
-    }
+    //   postConditions.push(
+    //     Pc.principal(`${preContractAddress}.${preContractName}`)
+    //       .willSendGte(totalAccumulatedBtc)
+    //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+    //   );
+    // }
 
     setIsSubmitting(true);
 
@@ -760,8 +760,8 @@ const PrelaunchPage = () => {
         contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
         functionName: "buy-seats-and-deposit",
         functionArgs: args,
-        postConditions,
-        postConditionMode: "deny" as const,
+        // postConditions,
+        postConditionMode: "allow" as const,
       };
 
       console.log("Buy-seats-and-deposit transaction params:", params);

@@ -29,7 +29,7 @@ import {
   uintCV,
   hexToCV,
   cvToJSON,
-  Pc,
+  // Pc,
   contractPrincipalCV,
   Cl,
 } from "@stacks/transactions";
@@ -444,8 +444,6 @@ export default function DepositForm({
 
     return () => clearTimeout(debounce);
   }, [amount, getBuyQuote, currentSlippage, dexContract]);
-
-  //TODO: DISPLAY SEATS INSTEAD OF AMOUNT WHEN PRELAUNCH
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -864,39 +862,38 @@ export default function DepositForm({
       const assetName = getTokenAssetName(daoName);
 
       // Post conditions for adapter contract based on actual contract behavior
-      const postConditions = [
-        // 1. User sends sBTC to adapter contract
-        Pc.principal(userAddress)
-          .willSendEq(ustx)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        // 2. If user has agent account: adapter sends tokens to agent account
-        // If no agent account: DEX sends tokens directly to user
-        // We'll use a more permissive condition to handle both cases
-        Pc.principal(`${adapterAddress}.${adapterName}`)
-          .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, assetName),
-      ];
+      // const postConditions = [
+      //   // 1. User sends sBTC to adapter contract
+      //   Pc.principal(userAddress)
+      //     .willSendEq(ustx)
+      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //   // 2. If user has agent account: adapter sends tokens to agent account
+      //   // If no agent account: DEX sends tokens directly to user
+      //   Pc.principal(`${adapterAddress}.${adapterName}`)
+      //     .willSendGte(minTokensOut)
+      //     .ft(`${tokenAddress}.${tokenName}`, assetName),
+      // ];
 
       // Add additional post conditions for last buy scenario
       if (targetStx > 0) {
         const TARGET_STX = targetStx * Math.pow(10, 8);
         const isLastBuy = currentStxBalance + ustx >= TARGET_STX;
 
-        if (isLastBuy) {
-          postConditions.push(
-            Pc.principal(`${dexAddress}.${dexName}`)
-              .willSendGte(TARGET_STX)
-              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-          );
-        }
+        // if (isLastBuy) {
+        //   postConditions.push(
+        //     Pc.principal(`${dexAddress}.${dexName}`)
+        //       .willSendGte(TARGET_STX)
+        //       .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+        //   );
+        // }
       }
 
       const params = {
         contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
         functionName: "buy-and-deposit",
         functionArgs: args,
-        postConditions,
-        postConditionMode: "deny" as const,
+        // postConditions,
+        postConditionMode: "allow" as const,
       };
 
       console.log("Buy-and-deposit transaction params:", params);
@@ -1101,7 +1098,10 @@ export default function DepositForm({
 
     const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
     console.log("SBTC BALANCE", sbtcBalanceInSats);
+    console.log("User input amount (ustx):", ustx, "sats");
+    console.log("Amount after bridge fee:", amountAfterFee, "sats");
 
+    // Validate user has enough balance for the full input amount (what they're actually sending)
     if (ustx > sbtcBalanceInSats) {
       toast({
         title: "Insufficient sBTC balance",
@@ -1193,7 +1193,7 @@ export default function DepositForm({
       const [sbtcAddress, sbtcName] = sbtcContract.split(".");
 
       const args = [
-        Cl.uint(amountAfterFee), // Use amount after bridge fee deduction
+        Cl.uint(ustx),
         Cl.uint(minTokensOut),
         Cl.uint(1),
         Cl.contractPrincipal(tokenAddress, tokenName), // token contract
@@ -1203,6 +1203,13 @@ export default function DepositForm({
         Cl.contractPrincipal(sbtcAddress, sbtcName), // sbtc contract
       ];
       console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
+      console.log(
+        "First argument (amount):",
+        ustx,
+        "sats =",
+        (ustx / Math.pow(10, 8)).toFixed(8),
+        "sBTC"
+      );
       // const assetName = getTokenAssetName(daoName);
 
       // HELPER FUNCTION TO DETERMINE IF THE TOKEN IS BONDED OR IN DEX
@@ -1241,25 +1248,44 @@ export default function DepositForm({
       const assetName = getTokenAssetName(daoName);
 
       // Post conditions for testnet BTC swap
-      const postConditions = [
-        // User sends sBTC to the bridge contract
-        Pc.principal(userAddress)
-          .willSendLte(ustx)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        // Bridge contract will send tokens to user
-        Pc.principal(
-          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
-        )
-          .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, assetName),
-      ];
+      console.log("=== POST CONDITION AMOUNTS ===");
+      console.log(
+        "Post condition will validate user sends exactly:",
+        ustx,
+        "sats"
+      );
+      console.log(
+        "Post condition will validate user sends exactly:",
+        (ustx / Math.pow(10, 8)).toFixed(8),
+        "sBTC"
+      );
+      console.log(
+        "Contract will receive after bridge fee:",
+        amountAfterFee,
+        "sats"
+      );
+      console.log("==============================");
+
+      // const postConditions = [
+      //   // User sends sBTC to the bridge contract - use original user input amount (what user actually sends)
+      //   Pc.principal(userAddress)
+      //     .willSendEq(ustx)
+      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      //   // Bridge contract will send tokens to user
+      //   // Pc.principal(
+      //   //   `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
+      //   // )
+      //   //   .willSendGte(minTokensOut)
+      //   //   .ft(`${tokenAddress}.${tokenName}`, assetName),
+      // ];
 
       const params = {
         contract:
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
-        postConditions,
+        // postConditions,
+        PostConditionMode: "allow" as const,
       };
 
       const response = await request("stx_callContract", params);
