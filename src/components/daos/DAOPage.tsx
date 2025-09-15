@@ -494,6 +494,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 isMarketOpen={isMarketOpen}
                 prelaunchContract={prelaunchContract || undefined}
                 poolContract={poolContract || undefined}
+                adapterContract={buyPrelaunchContract || undefined}
               />
             </div>
           </div>

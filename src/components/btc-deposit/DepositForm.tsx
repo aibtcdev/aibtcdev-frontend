@@ -72,6 +72,7 @@ interface DepositFormProps {
   isMarketOpen?: boolean | null;
   prelaunchContract?: string;
   poolContract?: string;
+  adapterContract?: string;
 }
 
 interface HiroGetInResponse {
@@ -140,6 +141,7 @@ export default function DepositForm({
   isMarketOpen,
   prelaunchContract,
   poolContract,
+  adapterContract,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -312,9 +314,20 @@ export default function DepositForm({
             console.log("Amount after bridge fee is too small");
             return null;
           }
+        } else {
+          // sBTC purchase - no bridge fee
+          console.log("=== sBTC QUOTE CALCULATION ===");
+          console.log("Original sBTC amount:", btcAmount);
+          console.log("Final amount (no bridge fee):", finalAmount);
         }
 
         const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+
+        console.log("Quote request URL:", url);
+        console.log("Quote request body:", {
+          sender: senderAddress,
+          arguments: [cvToHex(uintCV(finalAmount))],
+        });
 
         const response = await fetch(url, {
           method: "POST",
@@ -332,6 +345,39 @@ export default function DepositForm({
         }
 
         const data = (await response.json()) as HiroGetInResponse;
+
+        if (buyWithSbtc) {
+          console.log("=== sBTC QUOTE RESPONSE ===");
+          console.log("Raw response:", data);
+          if (data?.result) {
+            try {
+              const clarityValue = hexToCV(data.result);
+              const jsonValue = cvToJSON(clarityValue);
+              console.log("Parsed quote response:", jsonValue);
+
+              // Show tokens-out before slippage
+              if (
+                jsonValue.value?.value &&
+                jsonValue.value.value["tokens-out"]
+              ) {
+                const tokensOutBeforeSlippage =
+                  jsonValue.value.value["tokens-out"].value;
+                console.log(
+                  "Tokens out (BEFORE slippage):",
+                  tokensOutBeforeSlippage
+                );
+                console.log(
+                  "Tokens out (BEFORE slippage, formatted):",
+                  (Number(tokensOutBeforeSlippage) / 10 ** 8).toFixed(8)
+                );
+              }
+            } catch (parseError) {
+              console.error("Error parsing sBTC quote response:", parseError);
+            }
+          }
+          console.log("=============================");
+        }
+
         return data;
       } catch (error) {
         console.error("Error fetching buy quote:", error);
@@ -397,7 +443,7 @@ export default function DepositForm({
     }, 500);
 
     return () => clearTimeout(debounce);
-  }, [amount, getBuyQuote, currentSlippage]);
+  }, [amount, getBuyQuote, currentSlippage, dexContract]);
 
   //TODO: DISPLAY SEATS INSTEAD OF AMOUNT WHEN PRELAUNCH
 
@@ -649,6 +695,16 @@ export default function DepositForm({
       return;
     }
 
+    // Check if adapter contract is provided
+    if (!adapterContract) {
+      toast({
+        title: "Configuration Error",
+        description: "Adapter contract not configured for sBTC purchases.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const ustx = parseFloat(amount) * Math.pow(10, 8);
 
     if (!rawBuyQuote?.result) {
@@ -719,43 +775,131 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
+      console.log("=== SLIPPAGE CALCULATION ===");
+      console.log("Tokens out (BEFORE slippage):", quoteAmount);
+      console.log(
+        "Tokens out (BEFORE slippage, formatted):",
+        (Number(quoteAmount) / 10 ** 8).toFixed(8)
+      );
+      console.log("Current slippage %:", currentSlippage);
+      console.log("Slippage factor:", slippageFactor);
+      console.log("Min tokens out (AFTER slippage):", minTokensOut);
+      console.log(
+        "Min tokens out (AFTER slippage, formatted):",
+        (minTokensOut / 10 ** 8).toFixed(8)
+      );
+      console.log("============================");
+
+      // Use adapter contract instead of direct DEX contract
+      const [adapterAddress, adapterName] = adapterContract.split(".");
       const [dexAddress, dexName] = dexContract.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
       const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
-      const args = [contractPrincipalCV(tokenAddress, tokenName), uintCV(ustx)];
+      console.log("=== ADAPTER CONTRACT DEBUG ===");
+      console.log("Raw contracts:", {
+        adapterContract,
+        dexContract,
+        tokenContract,
+        sbtcContract: NETWORK_CONFIG.SBTC_CONTRACT,
+      });
+      console.log("Parsed contract parts:", {
+        adapterAddress,
+        adapterName,
+        dexAddress,
+        dexName,
+        tokenAddress,
+        tokenName,
+        sbtcAddress,
+        sbtcName,
+      });
+      console.log("Transaction amounts:", {
+        ustx,
+        minTokensOut,
+        slippageFactor: 1 - currentSlippage / 100,
+        currentSlippage,
+      });
+
+      // Validate all required contract parts are available
+      if (
+        !adapterAddress ||
+        !adapterName ||
+        !dexAddress ||
+        !dexName ||
+        !tokenAddress ||
+        !tokenName
+      ) {
+        console.error("Missing contract information:", {
+          adapterAddress: !!adapterAddress,
+          adapterName: !!adapterName,
+          dexAddress: !!dexAddress,
+          dexName: !!dexName,
+          tokenAddress: !!tokenAddress,
+          tokenName: !!tokenName,
+        });
+        toast({
+          title: "Configuration Error",
+          description:
+            "Missing required contract information for adapter transaction.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Arguments for buy-and-deposit function
+      const args = [
+        contractPrincipalCV(tokenAddress, tokenName), // daoToken <sip010-trait>
+        uintCV(ustx), // amount uint - sBTC amount to spend
+        Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - minimum tokens out for slippage protection
+      ];
+
+      console.log("Function arguments:", args);
+      console.log("Function arguments decoded:", {
+        sbtcAmount: ustx,
+        tokenContract: `${tokenAddress}.${tokenName}`,
+        dexContract: `${dexAddress}.${dexName}`,
+        minTokensOut,
+      });
+
       const assetName = getTokenAssetName(daoName);
 
-      const TARGET_STX = targetStx * Math.pow(10, 8);
-      const isLastBuy = targetStx > 0 && currentStxBalance + ustx >= TARGET_STX;
+      // Post conditions for adapter contract based on actual contract behavior
+      const postConditions = [
+        // 1. User sends sBTC to adapter contract
+        Pc.principal(userAddress)
+          .willSendEq(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // 2. If user has agent account: adapter sends tokens to agent account
+        // If no agent account: DEX sends tokens directly to user
+        // We'll use a more permissive condition to handle both cases
+        Pc.principal(`${adapterAddress}.${adapterName}`)
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, assetName),
+      ];
 
-      const postConditions = isLastBuy
-        ? [
-            Pc.principal(userAddress)
-              .willSendLte(ustx)
-              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-            Pc.principal(`${dexAddress}.${dexName}`)
-              .willSendGte(tokenBalance)
-              .ft(`${tokenAddress}.${tokenName}`, assetName),
+      // Add additional post conditions for last buy scenario
+      if (targetStx > 0) {
+        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const isLastBuy = currentStxBalance + ustx >= TARGET_STX;
+
+        if (isLastBuy) {
+          postConditions.push(
             Pc.principal(`${dexAddress}.${dexName}`)
               .willSendGte(TARGET_STX)
-              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-          ]
-        : [
-            Pc.principal(userAddress)
-              .willSendLte(ustx)
-              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-            Pc.principal(`${dexAddress}.${dexName}`)
-              .willSendGte(minTokensOut)
-              .ft(`${tokenAddress}.${tokenName}`, assetName),
-          ];
+              .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+          );
+        }
+      }
 
       const params = {
-        contract: `${dexAddress}.${dexName}` as `${string}.${string}`,
-        functionName: "buy",
+        contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
+        functionName: "buy-and-deposit",
         functionArgs: args,
         postConditions,
+        postConditionMode: "deny" as const,
       };
+
+      console.log("Buy-and-deposit transaction params:", params);
 
       const response = await request("stx_callContract", params);
 
@@ -801,10 +945,10 @@ export default function DepositForm({
         throw new Error("Transaction failed or was rejected.");
       }
     } catch (error) {
-      console.error("Error during sBTC contract call:", error);
+      console.error("Error during sBTC adapter contract call:", error);
       toast({
         title: "Error",
-        description: "Failed to submit sBTC buy order.",
+        description: "Failed to submit sBTC buy order via adapter contract.",
         variant: "destructive",
       });
     } finally {
@@ -820,6 +964,7 @@ export default function DepositForm({
     currentSlippage,
     dexContract,
     tokenContract,
+    adapterContract,
     daoName,
     transactionStatus,
     toast,
@@ -1174,7 +1319,6 @@ export default function DepositForm({
     accessToken,
     userAddress,
     amount,
-    rawBuyQuote,
     sbtcBalance,
     targetStx,
     currentSlippage,
