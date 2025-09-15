@@ -56,6 +56,8 @@ import {
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
 import { useWalletStore } from "@/store/wallet";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -267,6 +269,18 @@ export function ProposalSubmission({
     },
     {} as Record<number, (typeof errorDetailsArray)[0]> // Explicitly type the accumulator
   );
+
+  // Contract approval state
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalTxId, setApprovalTxId] = useState<string | null>(null);
+
+  const {
+    transactionMessage: approvalTransactionMessage,
+    transactionStatus: approvalTransactionStatus,
+    startMonitoring: startApprovalMonitoring,
+    reset: resetApprovalVerification,
+  } = useTransactionVerification();
 
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
     queryKey: ["daoExtensions", daoId],
@@ -727,6 +741,67 @@ export function ProposalSubmission({
     // Clean up any existing connections
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe?.();
+    }
+  };
+
+  const handleApproveContract = async () => {
+    if (!accessToken || !userAgent?.account_contract || !daoExtensions) {
+      console.error("Missing required data for contract approval");
+      return;
+    }
+
+    const actionProposalsVotingExt = daoExtensions.find(
+      (ext) =>
+        ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
+    );
+
+    if (!actionProposalsVotingExt) {
+      console.error("Could not find ACTION_PROPOSAL_VOTING extension");
+      return;
+    }
+
+    setIsApproving(true);
+    setShowApprovalModal(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/tools/agent_account/approve_contract?token=${accessToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_account_contract: userAgent.account_contract,
+            contract_to_approve: actionProposalsVotingExt.contract_principal,
+            approval_type: "VOTING",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API Error: ${res.status} - ${errorText}`);
+      }
+
+      const result = await res.json();
+      const parsed =
+        typeof result.output === "string"
+          ? JSON.parse(result.output)
+          : result.output;
+
+      // Extract transaction ID from the response
+      const txId = parsed?.data?.txid || parsed?.txid || result?.txid;
+      if (txId) {
+        setApprovalTxId(txId);
+        // Start monitoring the transaction
+        await startApprovalMonitoring(txId);
+      }
+    } catch (error) {
+      console.error("Contract approval error:", error);
+      setShowApprovalModal(false);
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -1287,9 +1362,12 @@ export function ProposalSubmission({
                                 return (
                                   <Button
                                     variant="outline"
-                                    onClick={handleRetry}
+                                    onClick={handleApproveContract}
+                                    disabled={isApproving}
                                   >
-                                    Approve Contract & Retry
+                                    {isApproving
+                                      ? "Approving..."
+                                      : "Approve Contract & Retry"}
                                   </Button>
                                 );
                               }
@@ -1386,8 +1464,14 @@ export function ProposalSubmission({
 
                     if (needsApproval) {
                       return (
-                        <Button variant="outline" onClick={handleRetry}>
-                          Approve Contract & Retry
+                        <Button
+                          variant="outline"
+                          onClick={handleApproveContract}
+                          disabled={isApproving}
+                        >
+                          {isApproving
+                            ? "Approving..."
+                            : "Approve Contract & Retry"}
                         </Button>
                       );
                     }
@@ -1411,6 +1495,34 @@ export function ProposalSubmission({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Contract Approval Status Modal */}
+      <TransactionStatusModal
+        isOpen={showApprovalModal}
+        onClose={() => {
+          setShowApprovalModal(false);
+          if (approvalTransactionStatus === "success") {
+            // After successful approval, retry the original submission
+            handleRetry();
+          }
+        }}
+        txId={approvalTxId || undefined}
+        transactionStatus={approvalTransactionStatus}
+        transactionMessage={approvalTransactionMessage}
+        title="Contract Approval Status"
+        successTitle="Approval Confirmed"
+        failureTitle="Approval Failed"
+        successDescription="The contract has been successfully approved for voting operations. You can now retry your submission."
+        failureDescription="The contract approval could not be completed. Please try again."
+        pendingDescription="The contract approval is being processed on the blockchain. This may take a few minutes."
+        onRetry={() => {
+          setShowApprovalModal(false);
+          resetApprovalVerification();
+          setApprovalTxId(null);
+          handleApproveContract();
+        }}
+        showRetryButton={true}
+      />
     </>
   );
 }
