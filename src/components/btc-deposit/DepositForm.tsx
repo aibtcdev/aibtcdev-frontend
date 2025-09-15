@@ -171,6 +171,8 @@ export default function DepositForm({
   const { transactionStatus, transactionMessage, reset, startMonitoring } =
     useTransactionVerification();
 
+  console.log("contract", dexContract);
+
   // Start monitoring when modal opens with transaction ID
   useEffect(() => {
     if (isModalOpen && activeTxId) {
@@ -271,6 +273,9 @@ export default function DepositForm({
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
+      // CALCULATE THE FEE(SATS) IF ITS BRIDGE --> MAX 3K SATS AND  1% OF SBTC(SATS)
+      // IF IT'S BRDIGE--> AMOUNT - FEE
+      console.log("buyquotedexcontract", dexContract);
       // Use a default address for quote calculation when not authenticated
       const senderAddress =
         userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
@@ -309,18 +314,24 @@ export default function DepositForm({
       if (amount && Number.parseFloat(amount) > 0) {
         setLoadingQuote(true);
         const quoteData = await getBuyQuote(amount);
+        console.log("buyquote", dexContract, quoteData);
         setRawBuyQuote(quoteData);
 
         if (quoteData?.result) {
           try {
             const clarityValue = hexToCV(quoteData.result);
+            console.log("clarityvalueofbuyquote", clarityValue);
             const jsonValue = cvToJSON(clarityValue);
+            console.log("jsonvalueofbuyquote", jsonValue);
             if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
               const rawAmount = jsonValue.value.value["tokens-out"].value;
+
               const slippageFactor = 1 - currentSlippage / 100;
+
               const amountAfterSlippage = Math.floor(
                 Number(rawAmount) * slippageFactor
               );
+
               setMinTokenOut(amountAfterSlippage);
               setBuyQuote(
                 (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
@@ -801,6 +812,90 @@ export default function DepositForm({
       });
       return;
     }
+
+    const getBuyQuote = useCallback(
+      async (amount: string): Promise<HiroGetInResponse | null> => {
+        if (!dexContract) return null;
+        console.log("buyquotedexcontract", dexContract);
+        // Use a default address for quote calculation when not authenticated
+        const senderAddress =
+          userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+        const [contractAddress, contractName] = dexContract.split(".");
+        try {
+          const btcAmount = parseFloat(amount) * Math.pow(10, 8);
+          const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
+
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              sender: senderAddress,
+              arguments: [cvToHex(uintCV(btcAmount))],
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = (await response.json()) as HiroGetInResponse;
+          return data;
+        } catch (error) {
+          console.error("Error fetching buy quote:", error);
+          return null;
+        }
+      },
+      [userAddress, dexContract]
+    );
+
+    const fetchQuote = async () => {
+      if (amount && Number.parseFloat(amount) > 0) {
+        setLoadingQuote(true);
+        const quoteData = await getBuyQuote(amount);
+        console.log("buyquote", dexContract, quoteData);
+        setRawBuyQuote(quoteData);
+
+        if (quoteData?.result) {
+          try {
+            const clarityValue = hexToCV(quoteData.result);
+            console.log("clarityvalueofbuyquote", clarityValue);
+            const jsonValue = cvToJSON(clarityValue);
+            console.log("jsonvalueofbuyquote", jsonValue);
+            if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
+              const rawAmount = jsonValue.value.value["tokens-out"].value;
+              const slippageFactor = 1 - currentSlippage / 100;
+              const amountAfterSlippage = Math.floor(
+                Number(rawAmount) * slippageFactor
+              );
+              setMinTokenOut(amountAfterSlippage);
+              setBuyQuote(
+                (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              );
+            } else {
+              setBuyQuote(null);
+              setMinTokenOut(0);
+            }
+          } catch (error) {
+            console.error("Error parsing quote result:", error);
+            setBuyQuote(null);
+            setMinTokenOut(0);
+          }
+        } else {
+          setBuyQuote(null);
+          setMinTokenOut(0);
+        }
+        setLoadingQuote(false);
+      } else {
+        setBuyQuote(null);
+        setRawBuyQuote(null);
+        setMinTokenOut(0);
+      }
+    };
 
     const ustx = parseFloat(amount) * Math.pow(10, 8);
     console.log("USTX: ", ustx);

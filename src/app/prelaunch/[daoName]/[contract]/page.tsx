@@ -10,9 +10,17 @@ import { getStacksAddress } from "@/lib/address";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/reusables/Loader";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
-import { uintCV, Pc, Cl, hexToCV, cvToJSON } from "@stacks/transactions";
+import {
+  uintCV,
+  Pc,
+  Cl,
+  hexToCV,
+  cvToJSON,
+  cvToHex,
+} from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import { fetchDAOByName, fetchDAOExtensions } from "@/services/dao.service";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { Building2 } from "lucide-react";
 import {
   Select,
@@ -97,6 +105,7 @@ const PrelaunchPage = () => {
   const { toast } = useToast();
   const { transactionStatus, transactionMessage, reset, startMonitoring } =
     useTransactionVerification();
+  const { userAgentAddress } = useAgentAccount();
 
   const userAddress = getStacksAddress();
 
@@ -152,6 +161,98 @@ const PrelaunchPage = () => {
       throw new Error("Invalid response from contract");
     },
     enabled: !!userAddress && !!prelaunchContract,
+    staleTime: 300000, // 5 minutes
+    retry: 3,
+  });
+
+  // Fetch user's current seat ownership from prelaunch contract
+  const {
+    data: userSeatsOwned,
+    isLoading: isUserSeatsLoading,
+    error: userSeatsError,
+  } = useQuery<number | null>({
+    queryKey: ["userSeatsOwned", userAgentAddress, prelaunchContract],
+    queryFn: async () => {
+      if (!userAgentAddress || !prelaunchContract)
+        throw new Error("Missing agent address or prelaunch contract");
+
+      const [contractAddress, contractName] = prelaunchContract.split(".");
+      const response = await fetch(
+        `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-seats-owned`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: userAddress || "SP000000000000000000002Q6VF78",
+            arguments: [cvToHex(Cl.principal(userAgentAddress))],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user seats owned: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data?.okay && data?.result) {
+        const clarityValue = hexToCV(data.result);
+        console.log("user seats owned clarity value", clarityValue);
+        const jsonValue = cvToJSON(clarityValue);
+        console.log("user seats owned json value", jsonValue);
+
+        // Handle response type wrapping a tuple with "seats-owned" field
+        if (
+          jsonValue.value &&
+          jsonValue.value.value &&
+          jsonValue.value.value["seats-owned"]
+        ) {
+          const seatsOwned = parseInt(
+            jsonValue.value.value["seats-owned"].value
+          );
+          console.log(
+            "Seats owned by user/agent (nested):",
+            seatsOwned,
+            "Raw result:",
+            data.result
+          );
+          return seatsOwned;
+        }
+
+        // Handle direct tuple response with "seats-owned" field
+        if (jsonValue.value && jsonValue.value["seats-owned"]) {
+          const seatsOwned = parseInt(jsonValue.value["seats-owned"].value);
+          console.log(
+            "Seats owned by user/agent (direct tuple):",
+            seatsOwned,
+            "Raw result:",
+            data.result
+          );
+          return seatsOwned;
+        }
+
+        // Fallback for direct uint response
+        if (typeof jsonValue.value === "number") {
+          return jsonValue.value;
+        }
+
+        // Handle string numbers
+        if (
+          typeof jsonValue.value === "string" &&
+          !isNaN(parseInt(jsonValue.value))
+        ) {
+          return parseInt(jsonValue.value);
+        }
+
+        console.log("Unable to parse seats owned from response:", jsonValue);
+        return 0; // Default to 0 if parsing fails
+      }
+
+      throw new Error("Invalid response from contract");
+    },
+    enabled: !!userAgentAddress && !!prelaunchContract,
     staleTime: 300000, // 5 minutes
     retry: 3,
   });
@@ -281,26 +382,40 @@ const PrelaunchPage = () => {
   };
 
   const handleSeatChange = (seats: number): void => {
-    if (
-      seats >= 1 &&
-      seats <= MAX_SEATS_PER_USER &&
-      seats <= getMaxAffordableSeats()
-    ) {
+    if (seats >= 1 && seats <= MAX_SEATS_PER_USER) {
       setSelectedSeats(seats);
     }
   };
 
-  const getMaxAffordableSeats = (): number => {
+  // Calculate actual seats user can buy based on ownership and limits
+  const getActualBuyableSeats = (): number => {
     if (
       !sbtcBalance ||
       maxSeatsAllowed === null ||
-      maxSeatsAllowed === undefined
+      maxSeatsAllowed === undefined ||
+      userSeatsOwned === null ||
+      userSeatsOwned === undefined
     )
       return 0;
+
+    // Calculate actual seats buyable = MAX_ALLOWED - USER_OWNED
+    const actualSeatsBuyable = Math.max(0, maxSeatsAllowed - userSeatsOwned);
+
+    // Calculate max affordable based on balance
+    const maxAffordable = Math.floor(
+      (sbtcBalance * Math.pow(10, 8)) / SEAT_PRICE_SATS
+    );
+
+    // Return minimum of what user can afford and what they're allowed to buy
+    return Math.min(maxAffordable, actualSeatsBuyable);
+  };
+
+  const getMaxAffordableSeats = (): number => {
+    if (!sbtcBalance) return 0;
     const maxSeats = Math.floor(
       (sbtcBalance * Math.pow(10, 8)) / SEAT_PRICE_SATS
     );
-    return Math.min(maxSeats, maxSeatsAllowed);
+    return Math.min(maxSeats, MAX_SEATS_PER_USER);
   };
 
   // Handle sBTC-based buying for testnet (when raw BTC not available)
@@ -323,8 +438,41 @@ const PrelaunchPage = () => {
       return;
     }
 
+    // Validate that we can fetch seat ownership for post conditions
+    if (userSeatsOwned === null || userSeatsOwned === undefined) {
+      toast({
+        title: "Error",
+        description:
+          "Unable to verify your current seat ownership. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // FIXED CALCULATION LOGIC
+    const actualSeatsBuyable = Math.max(
+      0,
+      (maxSeatsAllowed || 0) - userSeatsOwned
+    );
+    const actualSeatsToBuy = Math.min(selectedSeats, actualSeatsBuyable);
+    const userChangeAmount =
+      (selectedSeats - actualSeatsToBuy) * SEAT_PRICE_SATS;
+
     const sbtcAmountInSats = selectedSeats * SEAT_PRICE_SATS;
+    const actualBtcAmount = actualSeatsToBuy * SEAT_PRICE_SATS;
     const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+
+    console.log("Bridge contract calculation:", {
+      selectedSeats,
+      maxSeatsAllowed,
+      userSeatsOwned,
+      actualSeatsBuyable,
+      actualSeatsToBuy,
+      userChangeAmount,
+      sbtcAmountInSats,
+      actualBtcAmount,
+      SEAT_PRICE_SATS,
+    });
 
     if (sbtcAmountInSats > sbtcBalanceInSats) {
       const requiredSbtc = calculateSbtcAmount(selectedSeats);
@@ -389,20 +537,31 @@ const PrelaunchPage = () => {
         Cl.contractPrincipal(sbtcAddress, sbtcName), // sBTC contract
       ];
 
-      // Post conditions for prelaunch:
-      // 1. User sends sBTC to bridge contract
-      // 2. Bridge contract sends sBTC to prelaunch contract
-      // 3. Prelaunch contract sends tokens to user (if last buy, sends all remaining)
+      // FIXED POST CONDITIONS for bridge contract
       const postConditions = [
         // User -> Bridge contract transfer
         Pc.principal(userAddress)
           .willSendEq(sbtcAmountInSats)
           .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        // Bridge contract -> Prelaunch contract transfer
-        Pc.principal(`${bridgeAddress}.${bridgeName}`)
-          .willSendLte(sbtcAmountInSats)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
       ];
+
+      // Bridge -> Prelaunch contract transfer (only actual seats amount)
+      if (actualSeatsToBuy > 0) {
+        postConditions.push(
+          Pc.principal(`${bridgeAddress}.${bridgeName}`)
+            .willSendLte(actualBtcAmount)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+        );
+      }
+
+      // FIXED: Bridge sends exact change back to user
+      if (userChangeAmount > 0) {
+        postConditions.push(
+          Pc.principal(`${bridgeAddress}.${bridgeName}`)
+            .willSendEq(userChangeAmount)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+        );
+      }
 
       const params = {
         contract: NETWORK_CONFIG.BRIDGE_CONTRACT as `${string}.${string}`,
@@ -443,6 +602,8 @@ const PrelaunchPage = () => {
     dexContract,
     prelaunchContract,
     poolContract,
+    maxSeatsAllowed,
+    userSeatsOwned,
     toast,
   ]);
 
@@ -493,9 +654,41 @@ const PrelaunchPage = () => {
 
     console.log("✅ Validation passed - proceeding with transaction");
 
-    // Calculate total BTC amount needed in satoshis
+    // Validate that we can fetch seat ownership for post conditions
+    if (userSeatsOwned === null || userSeatsOwned === undefined) {
+      toast({
+        title: "Error",
+        description:
+          "Unable to verify your current seat ownership. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // FIXED CALCULATION LOGIC
+    const actualSeatsBuyable = Math.max(
+      0,
+      (maxSeatsAllowed || 0) - userSeatsOwned
+    );
+    const actualSeatsToBuy = Math.min(selectedSeats, actualSeatsBuyable);
+    const userChangeAmount =
+      (selectedSeats - actualSeatsToBuy) * SEAT_PRICE_SATS;
+
     const totalBtcAmount = selectedSeats * SEAT_PRICE_SATS;
+    const actualBtcAmount = actualSeatsToBuy * SEAT_PRICE_SATS;
     const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+
+    console.log("Adapter seat purchase calculation:", {
+      selectedSeats,
+      maxSeatsAllowed,
+      userSeatsOwned,
+      actualSeatsBuyable,
+      actualSeatsToBuy,
+      userChangeAmount,
+      totalBtcAmount,
+      actualBtcAmount,
+      SEAT_PRICE_SATS,
+    });
 
     // Check if user has enough balance
     if (totalBtcAmount > sbtcBalanceInSats) {
@@ -514,28 +707,40 @@ const PrelaunchPage = () => {
     const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
     const args = [
-      uintCV(totalBtcAmount), // sBTC amount to transfer
+      uintCV(totalBtcAmount), // Total sBTC amount user is sending
     ];
 
-    // Post conditions for adapter flow:
-    // 1. User sends sBTC to adapter contract
-    // 2. Adapter acts like a user and sends sBTC to prelaunch contract
+    // FIXED POST CONDITIONS
     const postConditions = [
-      // User -> Adapter contract transfer
+      // 1. User sends total sBTC amount to adapter contract
       Pc.principal(userAddress)
         .willSendEq(totalBtcAmount)
         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      // Adapter -> Prelaunch contract transfer (adapter acts like a user)
-      Pc.principal(`${adapterAddress}.${adapterName}`)
-        .willSendLte(totalBtcAmount)
-        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
     ];
 
-    // Check if this purchase will complete the pre-launch
+    // 2. If user can actually buy seats, adapter sends that amount to prelaunch
+    if (actualSeatsToBuy > 0) {
+      postConditions.push(
+        Pc.principal(`${adapterAddress}.${adapterName}`)
+          .willSendEq(actualBtcAmount)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+      );
+    }
+
+    // 3. FIXED: If there's user change, adapter sends exact change back to user
+    if (userChangeAmount > 0) {
+      postConditions.push(
+        Pc.principal(`${adapterAddress}.${adapterName}`)
+          .willSendLte(userChangeAmount)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+      );
+    }
+
+    // 4. Check if this purchase will complete the pre-launch
     const willCompleteLaunch =
       seatsRemaining !== null &&
       seatsRemaining !== undefined &&
-      seatsRemaining === selectedSeats;
+      actualSeatsToBuy === seatsRemaining; // Use actualSeatsToBuy, not selectedSeats
 
     if (willCompleteLaunch) {
       // Calculate total accumulated sBTC (total seats * price per seat)
@@ -596,6 +801,8 @@ const PrelaunchPage = () => {
     buyAndDepositContract,
     prelaunchContract,
     seatsRemaining,
+    maxSeatsAllowed,
+    userSeatsOwned,
     toast,
   ]);
 
@@ -769,11 +976,8 @@ const PrelaunchPage = () => {
                           size="sm"
                           onClick={() => handleSeatChange(selectedSeats + 1)}
                           disabled={
-                            !maxSeatsAllowed ||
-                            selectedSeats >= maxSeatsAllowed ||
-                            selectedSeats >= getMaxAffordableSeats() ||
+                            selectedSeats >= MAX_SEATS_PER_USER ||
                             !accessToken ||
-                            isMaxSeatsLoading ||
                             (seatsRemaining !== null &&
                               seatsRemaining !== undefined &&
                               selectedSeats >= seatsRemaining)
@@ -827,7 +1031,7 @@ const PrelaunchPage = () => {
                       size="sm"
                       onClick={() => setSelectedSeats(1)}
                       className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
-                      disabled={!accessToken || 1 > getMaxAffordableSeats()}
+                      disabled={!accessToken}
                     >
                       1 Seat
                     </Button>
@@ -836,7 +1040,7 @@ const PrelaunchPage = () => {
                       size="sm"
                       onClick={() => setSelectedSeats(2)}
                       className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
-                      disabled={!accessToken || 2 > getMaxAffordableSeats()}
+                      disabled={!accessToken}
                     >
                       2 Seats
                     </Button>
@@ -844,16 +1048,16 @@ const PrelaunchPage = () => {
                   <div className="flex gap-2">
                     <Button
                       variant={
-                        selectedSeats === getMaxAffordableSeats()
+                        selectedSeats === MAX_SEATS_PER_USER
                           ? "default"
                           : "secondary"
                       }
                       size="sm"
-                      onClick={() => setSelectedSeats(getMaxAffordableSeats())}
+                      onClick={() => setSelectedSeats(MAX_SEATS_PER_USER)}
                       className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-600"
-                      disabled={!accessToken || getMaxAffordableSeats() === 0}
+                      disabled={!accessToken}
                       tabIndex={0}
-                      aria-label="Set seats to maximum affordable amount"
+                      aria-label="Set seats to maximum (7 seats)"
                     >
                       MAX
                     </Button>
@@ -898,11 +1102,46 @@ const PrelaunchPage = () => {
                   )}
                 </div>
 
+                {/* Current Seat Ownership */}
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-zinc-300">
+                      Your Current Seats
+                    </span>
+                    {accessToken && userAgentAddress ? (
+                      <span className="text-white font-bold">
+                        {isUserSeatsLoading
+                          ? "Loading..."
+                          : userSeatsError
+                            ? "Error loading"
+                            : userSeatsOwned !== null &&
+                                userSeatsOwned !== undefined
+                              ? `${userSeatsOwned} owned`
+                              : "Unable to load"}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500 font-bold">
+                        {!userAgentAddress ? "No agent account" : "N/A"}
+                      </span>
+                    )}
+                  </div>
+                  {accessToken && userSeatsError && (
+                    <div className="text-xs text-red-400 mt-1">
+                      Failed to fetch seat ownership. Please refresh.
+                    </div>
+                  )}
+                  {accessToken && !userAgentAddress && (
+                    <div className="text-xs text-yellow-400 mt-1">
+                      Deploy an agent account to participate in prelaunch.
+                    </div>
+                  )}
+                </div>
+
                 {/* Contract Seat Limits */}
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-zinc-300">
-                      Contract Seat Limit
+                      Max Seats Allowed
                     </span>
                     {accessToken ? (
                       <span className="text-white font-bold">
@@ -912,7 +1151,7 @@ const PrelaunchPage = () => {
                             ? "Error loading"
                             : maxSeatsAllowed !== null &&
                                 maxSeatsAllowed !== undefined
-                              ? `${maxSeatsAllowed} seats max`
+                              ? `${maxSeatsAllowed} max`
                               : "Unable to load"}
                       </span>
                     ) : (
@@ -925,6 +1164,27 @@ const PrelaunchPage = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Actual Buyable Seats */}
+                {accessToken && userAgentAddress && (
+                  <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-300">
+                        Available to Buy
+                      </span>
+                      <span className="text-blue-200 font-bold">
+                        {isUserSeatsLoading || isMaxSeatsLoading
+                          ? "Loading..."
+                          : userSeatsError || maxSeatsError
+                            ? "Error"
+                            : `${getActualBuyableSeats()} seats`}
+                      </span>
+                    </div>
+                    <div className="text-xs text-blue-400 mt-1">
+                      Based on your current ownership and balance
+                    </div>
+                  </div>
+                )}
 
                 {/* Seat info display */}
                 <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
@@ -954,13 +1214,11 @@ const PrelaunchPage = () => {
                   onClick={handleBuyAction}
                   disabled={
                     selectedSeats <= 0 ||
-                    !maxSeatsAllowed ||
-                    selectedSeats > maxSeatsAllowed ||
+                    !userAgentAddress ||
                     isSubmitting ||
                     !accessToken ||
                     isSbtcBalanceLoading ||
-                    isMaxSeatsLoading ||
-                    selectedSeats > getMaxAffordableSeats() ||
+                    isUserSeatsLoading ||
                     (seatsRemaining !== null &&
                       seatsRemaining !== undefined &&
                       selectedSeats > seatsRemaining)
