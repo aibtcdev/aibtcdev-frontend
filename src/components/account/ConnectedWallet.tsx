@@ -59,9 +59,9 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
 
   const { balances } = useWalletStore();
 
-  const { signOut, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+  // const router = useRouter();
 
   const {
     transactionStatus,
@@ -137,10 +137,10 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
-  };
+  // const handleSignOut = async () => {
+  //   await signOut();
+  //   router.push("/");
+  // };
 
   const handleRequestSBTC = async () => {
     if (!isAuthenticated) {
