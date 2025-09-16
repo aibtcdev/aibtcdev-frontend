@@ -124,7 +124,7 @@ const NETWORK_CONFIG = {
 
 export default function DepositForm({
   btcUsdPrice,
-  poolStatus,
+  // poolStatus,
   setConfirmationData,
   setShowConfirmation,
   activeWalletProvider,
@@ -715,7 +715,7 @@ export default function DepositForm({
       const [adapterAddress, adapterName] = adapterContract.split(".");
       const [dexAddress, dexName] = dexContract.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+      // const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
       // Validate all required contract parts are available
       if (
