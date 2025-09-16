@@ -5,10 +5,10 @@ import { AgentConfigTable } from "../AgentConfigTable";
 import { AgentConfigDrawer } from "../AgentConfigDrawer";
 import { AgentPermissions } from "../AgentPermissions";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDAOs } from "@/services/dao.service";
+import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
 import { fetchDAOsWithExtension } from "@/services/dao.service";
 import { fetchAgentPrompts } from "@/services/agent-prompt.service";
-import { fetchAgents } from "@/services/agent.service";
 import { useWalletStore } from "@/store/wallet";
 
 export function AgentSettingsTab() {
@@ -16,8 +16,8 @@ export function AgentSettingsTab() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const { data: daos = [] } = useQuery({
-    queryKey: ["daos"],
-    queryFn: fetchDAOs,
+    queryKey: ["daosWithExtensions"],
+    queryFn: fetchDAOsWithExtension,
   });
 
   const { data: daosWithExtensions = [] } = useQuery({
@@ -32,9 +32,12 @@ export function AgentSettingsTab() {
     queryFn: fetchAgentPrompts,
   });
 
+  const { userId, isAuthenticated } = useAuth();
+
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   const userAgent = agents[0] || null;

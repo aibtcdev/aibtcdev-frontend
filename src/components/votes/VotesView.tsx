@@ -67,6 +67,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/useToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
 import { getProposalStatus } from "@/utils/proposal";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 
@@ -228,9 +229,12 @@ function VoteCard({ vote }: VoteCardProps) {
     useProposalStatus(proposalLike);
 
   // Fetch agents to get the DAO manager agent ID
+  const { userId, isAuthenticated } = useAuth();
+
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   // Get agent account address for veto checking

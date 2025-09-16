@@ -5,15 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useWalletStore } from "@/store/wallet";
 import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/useToast";
 import { fetchAgents } from "@/services/agent.service";
+import { useToast } from "@/hooks/useToast";
 import { AccountTabs } from "@/components/account/AccountTabs";
 import { Loader } from "@/components/reusables/Loader";
 
 function AccountPageContent() {
   const { agentWallets, balances, fetchWallets, fetchContractBalance } =
     useWalletStore();
-  const { userId, accessToken } = useAuth();
+  const { userId, accessToken, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
@@ -23,8 +23,9 @@ function AccountPageContent() {
   const initialTab = searchParams.get("tab") || "profile";
 
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   const userAgent = agents[0] || null;
