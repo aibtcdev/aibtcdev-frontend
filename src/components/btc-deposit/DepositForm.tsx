@@ -1120,16 +1120,16 @@ export default function DepositForm({
       //   //   .ft(`${tokenAddress}.${tokenName}`, assetName),
       // ];
 
-      const params = {
+      const contractCallOptions = {
         contract:
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
         // postConditions,
-        PostConditionMode: "allow" as const,
+        postConditionMode: "allow" as const,
       };
 
-      const response = await request("stx_callContract", params);
+      const response = await request("stx_callContract", contractCallOptions);
 
       if (response && response.txid) {
         setActiveTxId(response.txid);
