@@ -7,7 +7,7 @@ import { useWalletStore, WalletBalance, TokenBalance } from "@/store/wallet";
 import { Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { request } from "@stacks/connect";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
