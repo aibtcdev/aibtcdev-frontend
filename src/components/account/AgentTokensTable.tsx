@@ -102,9 +102,30 @@ export function AgentTokensTable({
     reset: resetApprovalVerification,
   } = useTransactionVerification();
 
-  // Get contract principals for token and swap approvals
+  // Get contract principals for token and swap approvals (only for tokens with balance > 0)
   const tokenContractIds = useMemo(() => {
-    return daos
+    const tokensWithBalance = daos.filter((dao) => {
+      const tokenExtension = dao.extensions?.find(
+        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+      );
+
+      if (!tokenExtension?.contract_principal) return false;
+
+      // Check if agent has balance for this token
+      let agentBalance = "0";
+      if (agentAccountBalance?.fungible_tokens) {
+        const agentTokenEntry = Object.entries(
+          agentAccountBalance.fungible_tokens
+        ).find(([tokenId]) =>
+          tokenId.startsWith(tokenExtension.contract_principal!)
+        );
+        agentBalance = agentTokenEntry?.[1]?.balance || "0";
+      }
+
+      return parseFloat(agentBalance) > 0;
+    });
+
+    return tokensWithBalance
       .map(
         (dao) =>
           dao.extensions?.find(
@@ -112,11 +133,32 @@ export function AgentTokensTable({
           )?.contract_principal
       )
       .filter(Boolean) as string[];
-  }, [daos]);
+  }, [daos, agentAccountBalance]);
 
-  // Get contract principals for voting approvals (EXTENSIONS type with ACTION_PROPOSAL_VOTING subtype)
+  // Get contract principals for voting approvals (only for tokens with balance > 0)
   const votingContractIds = useMemo(() => {
-    return daos
+    const daosWithBalance = daos.filter((dao) => {
+      const tokenExtension = dao.extensions?.find(
+        (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+      );
+
+      if (!tokenExtension?.contract_principal) return false;
+
+      // Check if agent has balance for this token
+      let agentBalance = "0";
+      if (agentAccountBalance?.fungible_tokens) {
+        const agentTokenEntry = Object.entries(
+          agentAccountBalance.fungible_tokens
+        ).find(([tokenId]) =>
+          tokenId.startsWith(tokenExtension.contract_principal!)
+        );
+        agentBalance = agentTokenEntry?.[1]?.balance || "0";
+      }
+
+      return parseFloat(agentBalance) > 0;
+    });
+
+    return daosWithBalance
       .map(
         (dao) =>
           dao.extensions?.find(
@@ -126,7 +168,7 @@ export function AgentTokensTable({
           )?.contract_principal
       )
       .filter(Boolean) as string[];
-  }, [daos]);
+  }, [daos, agentAccountBalance]);
 
   // Fetch approvals for all types
   const tokenApprovals = useBatchContractApprovals(
@@ -413,71 +455,75 @@ export function AgentTokensTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tokensData.map(({ dao, agentBalance, userBalance, tokenData }) => {
-              const hasAgentBalance = parseFloat(agentBalance) > 0;
-              const hasUserBalance = parseFloat(userBalance) > 0;
-              const contractPrincipal = tokenData.contractPrincipal;
+            {tokensData
+              .filter(({ agentBalance }) => parseFloat(agentBalance) > 0)
+              .map(({ dao, agentBalance, userBalance, tokenData }) => {
+                const hasAgentBalance = parseFloat(agentBalance) > 0;
+                const hasUserBalance = parseFloat(userBalance) > 0;
+                const contractPrincipal = tokenData.contractPrincipal;
 
-              // Get voting contract principal (different from token contract)
-              const votingContractPrincipal = dao.extensions?.find(
-                (ext) =>
-                  ext.type === "EXTENSIONS" &&
-                  ext.subtype === "ACTION_PROPOSAL_VOTING"
-              )?.contract_principal;
+                // Get voting contract principal (different from token contract)
+                const votingContractPrincipal = dao.extensions?.find(
+                  (ext) =>
+                    ext.type === "EXTENSIONS" &&
+                    ext.subtype === "ACTION_PROPOSAL_VOTING"
+                )?.contract_principal;
 
-              // Get approval statuses
-              const isTokenApproved =
-                tokenApprovals.data?.[contractPrincipal] || false;
-              const isSwapApproved =
-                swapApprovals.data?.[contractPrincipal] || false;
-              const isVotingApproved = votingContractPrincipal
-                ? votingApprovals.data?.[votingContractPrincipal] || false
-                : false;
+                // Get approval statuses
+                const isTokenApproved =
+                  tokenApprovals.data?.[contractPrincipal] || false;
+                const isSwapApproved =
+                  swapApprovals.data?.[contractPrincipal] || false;
+                const isVotingApproved = votingContractPrincipal
+                  ? votingApprovals.data?.[votingContractPrincipal] || false
+                  : false;
 
-              // Get loading states
-              const isTokenLoading = tokenApprovals.isLoading;
-              const isSwapLoading = swapApprovals.isLoading;
-              const isVotingLoading = votingApprovals.isLoading;
+                // Get loading states
+                const isTokenLoading = tokenApprovals.isLoading;
+                const isSwapLoading = swapApprovals.isLoading;
+                const isVotingLoading = votingApprovals.isLoading;
 
-              const ApprovalToggle = ({
-                type,
-                isApproved,
-                isLoading,
-                targetContractPrincipal,
-              }: {
-                type: keyof typeof AGENT_ACCOUNT_APPROVAL_TYPES;
-                isApproved: boolean;
-                isLoading: boolean;
-                targetContractPrincipal?: string;
-              }) => {
-                // Don't show toggle if no contract principal available (e.g., voting extension not found)
-                if (!targetContractPrincipal) {
+                const ApprovalToggle = ({
+                  type,
+                  isApproved,
+                  isLoading,
+                  targetContractPrincipal,
+                }: {
+                  type: keyof typeof AGENT_ACCOUNT_APPROVAL_TYPES;
+                  isApproved: boolean;
+                  isLoading: boolean;
+                  targetContractPrincipal?: string;
+                }) => {
+                  // Don't show toggle if no contract principal available (e.g., voting extension not found)
+                  if (!targetContractPrincipal) {
+                    return (
+                      <div className="flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">
+                          N/A
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // Check if this specific approval is being updated
+                  const approvalKey = `${targetContractPrincipal}-${type}`;
+                  const isUpdating = updatingApprovals.has(approvalKey);
+
                   return (
                     <div className="flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">N/A</span>
-                    </div>
-                  );
-                }
-
-                // Check if this specific approval is being updated
-                const approvalKey = `${targetContractPrincipal}-${type}`;
-                const isUpdating = updatingApprovals.has(approvalKey);
-
-                return (
-                  <div className="flex items-center justify-center">
-                    {isLoading || isUpdating ? (
-                      <RotateCcw className="w-4 h-4 animate-spin text-muted-foreground" />
-                    ) : (
-                      <button
-                        onClick={() =>
-                          updateApprovalMutation.mutate({
-                            enabled: !isApproved,
-                            type,
-                            contractPrincipal: targetContractPrincipal,
-                          })
-                        }
-                        disabled={isUpdating}
-                        className={`
+                      {isLoading || isUpdating ? (
+                        <RotateCcw className="w-4 h-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <button
+                          onClick={() =>
+                            updateApprovalMutation.mutate({
+                              enabled: !isApproved,
+                              type,
+                              contractPrincipal: targetContractPrincipal,
+                            })
+                          }
+                          disabled={isUpdating}
+                          className={`
                           flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors
                           ${
                             isApproved
@@ -486,85 +532,87 @@ export function AgentTokensTable({
                           }
                           ${isUpdating ? "opacity-50 cursor-not-allowed" : "hover:opacity-80 cursor-pointer"}
                         `}
-                      >
-                        {isApproved ? (
-                          <CheckCircle className="w-3 h-3" />
-                        ) : (
-                          <XCircle className="w-3 h-3" />
-                        )}
-                        <span>{isApproved ? "On" : "Off"}</span>
-                      </button>
-                    )}
-                  </div>
+                        >
+                          {isApproved ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <XCircle className="w-3 h-3" />
+                          )}
+                          <span>{isApproved ? "On" : "Off"}</span>
+                        </button>
+                      )}
+                    </div>
+                  );
+                };
+
+                return (
+                  <TableRow key={dao.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs">
+                          {dao.name}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {formatBalance(agentBalance, 8)}
+                    </TableCell>
+                    <TableCell>
+                      <ApprovalToggle
+                        type="TOKEN"
+                        isApproved={isTokenApproved}
+                        isLoading={isTokenLoading}
+                        targetContractPrincipal={contractPrincipal}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ApprovalToggle
+                        type="SWAP"
+                        isApproved={isSwapApproved}
+                        isLoading={isSwapLoading}
+                        targetContractPrincipal={contractPrincipal}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ApprovalToggle
+                        type="VOTING"
+                        isApproved={isVotingApproved}
+                        isLoading={isVotingLoading}
+                        targetContractPrincipal={votingContractPrincipal}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center space-x-2">
+                        {/* Deposit to Agent Account */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            handleDeposit(tokenData, agentAddress, "agent")
+                          }
+                          disabled={!hasUserBalance}
+                          className="text-xs"
+                        >
+                          Deposit
+                        </Button>
+
+                        {/* Withdraw from Agent Account */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            handleWithdraw(tokenData, agentBalance)
+                          }
+                          disabled={!hasAgentBalance || !isTokenApproved}
+                          className="text-xs"
+                        >
+                          Withdraw
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 );
-              };
-
-              return (
-                <TableRow key={dao.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className="text-xs">
-                        {dao.name}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatBalance(agentBalance, 8)}
-                  </TableCell>
-                  <TableCell>
-                    <ApprovalToggle
-                      type="TOKEN"
-                      isApproved={isTokenApproved}
-                      isLoading={isTokenLoading}
-                      targetContractPrincipal={contractPrincipal}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ApprovalToggle
-                      type="SWAP"
-                      isApproved={isSwapApproved}
-                      isLoading={isSwapLoading}
-                      targetContractPrincipal={contractPrincipal}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ApprovalToggle
-                      type="VOTING"
-                      isApproved={isVotingApproved}
-                      isLoading={isVotingLoading}
-                      targetContractPrincipal={votingContractPrincipal}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center justify-center space-x-2">
-                      {/* Deposit to Agent Account */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          handleDeposit(tokenData, agentAddress, "agent")
-                        }
-                        disabled={!hasUserBalance}
-                        className="text-xs"
-                      >
-                        Deposit
-                      </Button>
-
-                      {/* Withdraw from Agent Account */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleWithdraw(tokenData, agentBalance)}
-                        disabled={!hasAgentBalance || !isTokenApproved}
-                        className="text-xs"
-                      >
-                        Withdraw
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+              })}
           </TableBody>
         </Table>
       </div>
