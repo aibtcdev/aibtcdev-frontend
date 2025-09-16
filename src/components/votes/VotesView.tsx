@@ -67,6 +67,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/useToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
 import { getProposalStatus } from "@/utils/proposal";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 
@@ -228,9 +229,12 @@ function VoteCard({ vote }: VoteCardProps) {
     useProposalStatus(proposalLike);
 
   // Fetch agents to get the DAO manager agent ID
+  const { userId, isAuthenticated } = useAuth();
+
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   // Get agent account address for veto checking
@@ -393,26 +397,26 @@ function VoteCard({ vote }: VoteCardProps) {
     );
   };
 
-  const renderAgentVoteBadge = (confidenceText: string) => {
+  const renderAgentVoteBadge = () => {
     return (
       <Badge
-        className={
-          vote.answer
-            ? "bg-primary/10 text-primary border-primary/20 hover:bg-muted"
-            : "bg-muted text-muted-foreground border-muted hover:bg-muted"
-        }
+        className={`text-xs px-2 py-1 ${
+          vote.answer ? "text-white " : " text-white bg-muted"
+        }`}
       >
-        {vote.answer ? (
-          <>
-            <ThumbsUp className="h-3 w-3 mr-1" />
-            Your agent voted Yes{confidenceText}
-          </>
-        ) : (
-          <>
-            <ThumbsDown className="h-3 w-3 mr-1" />
-            Your agent voted No{confidenceText}
-          </>
-        )}
+        <div className="flex items-center gap-1">
+          {vote.answer ? (
+            <>
+              <ThumbsUp className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Yes</span>
+            </>
+          ) : (
+            <>
+              <ThumbsDown className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">No</span>
+            </>
+          )}
+        </div>
       </Badge>
     );
   };
@@ -427,33 +431,29 @@ function VoteCard({ vote }: VoteCardProps) {
     if (proposalStatus === "ACTIVE") {
       if (vote.voted === false) {
         return (
-          <Badge className="bg-muted/30">
-            <Clock className="h-3 w-3 mr-1" />
-            Awaiting Agent Vote
+          <Badge className="bg-orange-50 text-orange-700 border-orange-200 text-xs px-2 py-1">
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Pending</span>
+            </div>
           </Badge>
         );
       } else {
-        const confidenceText =
-          vote.confidence !== null
-            ? ` (${Math.round(vote.confidence * 100)}%)`
-            : "";
-        return renderAgentVoteBadge(confidenceText);
+        return renderAgentVoteBadge();
       }
     }
 
     // For other statuses (VETO_PERIOD, EXECUTION_WINDOW, PASSED, FAILED), show final vote if available
     if (vote.voted === true) {
-      const confidenceText =
-        vote.confidence !== null
-          ? ` (${Math.round(vote.confidence * 100)}%)`
-          : "";
-      return renderAgentVoteBadge(confidenceText);
+      return renderAgentVoteBadge();
     }
 
     return (
-      <Badge className="bg-muted/30 text-muted-foreground">
-        <Clock className="h-3 w-3 mr-1" />
-        No Vote Cast
+      <Badge className="bg-gray-50 text-gray-600 border-gray-200 text-xs px-2 py-1">
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 flex-shrink-0" />
+          <span className="font-medium">No Vote</span>
+        </div>
       </Badge>
     );
   };
@@ -667,14 +667,16 @@ function VoteCard({ vote }: VoteCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <Link href={`/daos/${encodeURIComponent(vote.dao_name)}`}>
-                    <span className="font-bold  hover:text-primary cursor-pointer transition-colors">
+                    <span className="font-bold hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       {vote.dao_name}
+                      <ExternalLink className="h-3 w-3" />
                     </span>
                   </Link>
                   <Link href={`/proposals/${vote.proposal_id}`}>
-                    <span className="text-base font-semibold text-foreground hover:text-primary cursor-pointer transition-colors">
+                    <span className="text-base font-semibold text-foreground hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       Contribution #
                       {vote.blockchain_proposal_id || vote.proposal_id}
+                      <ExternalLink className="h-3 w-3" />
                     </span>
                   </Link>
                 </div>
@@ -904,7 +906,9 @@ function VoteCard({ vote }: VoteCardProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">
-                    Agent Evaluation {getAgentVotingBadge()}
+                    <span className="hidden sm:inline">Agent Evaluation</span>
+                    <span className="sm:hidden">Expand Evaluation</span>
+                    {getAgentVotingBadge()}
                   </span>
                   <div className="flex items-center gap-2">
                     <Link href={`/proposals/${vote.proposal_id}`}>
@@ -914,7 +918,7 @@ function VoteCard({ vote }: VoteCardProps) {
                         className="text-xs h-6 px-2"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
-                        View Proposal
+                        View Contribution
                       </Button>
                     </Link>
                     <Button
@@ -1039,7 +1043,7 @@ function VoteCard({ vote }: VoteCardProps) {
                 Training Feedback
               </h5>
               <p className="text-base text-muted-foreground mt-2 mb-3">
-                Are you satisfied with the agent's vote in this contribuiton for{" "}
+                Are you satisfied with the agent's vote in this contribution for{" "}
                 {vote.dao_name}?
               </p>
               <div className="flex gap-2">

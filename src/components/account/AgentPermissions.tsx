@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/useToast";
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { useAgentPermissions } from "@/hooks/useAgentPermissions";
+import { RotateCcw } from "lucide-react";
 
 interface Props {
   agentAddress: string | null;
@@ -92,16 +93,8 @@ export function AgentPermissions({ agentAddress }: Props) {
     });
   };
 
-  if (isLoading || !permissions) {
-    return (
-      <div className="p-4 text-sm text-muted-foreground">
-        Loading permissions...
-      </div>
-    );
-  }
-
   const { canUseProposals, canApproveRevokeContracts, canBuySell, canDeposit } =
-    permissions;
+    permissions || {};
 
   return (
     <div className="space-y-2 md:space-y-2 w-full">
@@ -111,59 +104,94 @@ export function AgentPermissions({ agentAddress }: Props) {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">Vote on contributions</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Vote on Contributions</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to vote with tokens in the agent voting account
+            </p>
           </div>
-          <Switch
-            checked={canUseProposals}
-            onCheckedChange={() =>
-              handleToggle("set-agent-can-use-proposals", canUseProposals)
-            }
-            disabled={isLoading || updatePermissionMutation.isPending}
-          />
+          {isLoading ? (
+            <RotateCcw className="w-5 h-5 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={canUseProposals || false}
+              onCheckedChange={() =>
+                handleToggle(
+                  "set-agent-can-use-proposals",
+                  canUseProposals || false
+                )
+              }
+              disabled={updatePermissionMutation.isPending}
+            />
+          )}
         </div>
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Manage approved contracts</p>
-          </div>
-          <Switch
-            checked={canApproveRevokeContracts}
-            onCheckedChange={() =>
-              handleToggle(
-                "set-agent-can-approve-revoke-contracts",
-                canApproveRevokeContracts
-              )
-            }
-            disabled={isLoading || updatePermissionMutation.isPending}
-          />
-        </div>
-        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">
-              Trade sBTC and DAO tokens in contract
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to approve and revoke contracts for use with agent
+              voting account
             </p>
           </div>
-          <Switch
-            checked={canBuySell}
-            onCheckedChange={() =>
-              handleToggle("set-agent-can-buy-sell-assets", canBuySell)
-            }
-            disabled={isLoading || updatePermissionMutation.isPending}
-          />
+          {isLoading ? (
+            <RotateCcw className="w-5 h-5 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={canApproveRevokeContracts || false}
+              onCheckedChange={() =>
+                handleToggle(
+                  "set-agent-can-approve-revoke-contracts",
+                  canApproveRevokeContracts || false
+                )
+              }
+              disabled={updatePermissionMutation.isPending}
+            />
+          )}
         </div>
         <div className="flex items-center justify-between p-3 rounded-md border bg-background">
-          <div>
-            <p className="text-sm font-medium">
-              Deposit tokens into the agent account
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Trade sBTC and DAO tokens</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to buy and sell within the agent voting account
             </p>
           </div>
-          <Switch
-            checked={canDeposit}
-            onCheckedChange={() =>
-              handleToggle("set-agent-can-deposit-assets", canDeposit)
-            }
-            disabled={isLoading || updatePermissionMutation.isPending}
-          />
+          {isLoading ? (
+            <RotateCcw className="w-5 h-5 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={canBuySell || false}
+              onCheckedChange={() =>
+                handleToggle(
+                  "set-agent-can-buy-sell-assets",
+                  canBuySell || false
+                )
+              }
+              disabled={updatePermissionMutation.isPending}
+            />
+          )}
+        </div>
+        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Initiate deposit or withdraw</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Allows agent to deposit or withdraw from the agent voting account.
+              *funds always go to owner / connected wallet
+            </p>
+          </div>
+          {isLoading ? (
+            <RotateCcw className="w-5 h-5 animate-spin text-muted-foreground" />
+          ) : (
+            <Switch
+              checked={canDeposit || false}
+              onCheckedChange={() =>
+                handleToggle(
+                  "set-agent-can-deposit-assets",
+                  canDeposit || false
+                )
+              }
+              disabled={updatePermissionMutation.isPending}
+            />
+          )}
         </div>
       </div>
     </div>

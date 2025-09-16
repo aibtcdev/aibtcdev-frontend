@@ -179,16 +179,26 @@ export const DAOCard = ({
   };
 
   const router = useRouter();
+  const isMockDAO = (dao as DAO & { is_mock?: boolean }).is_mock;
+
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
-            className="block h-full"
+            onClick={() => {
+              if (!isMockDAO) {
+                router.push(`/daos/${encodeURIComponent(dao.name)}`);
+              }
+            }}
+            className={`block h-full ${isMockDAO ? "cursor-not-allowed" : ""}`}
           >
             <Card
-              className={`group h-full flex flex-col ${heightClass} hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/40 cursor-pointer hover:bg-card/80 hover:scale-[1.03] active:scale-[0.97] hover:-translate-y-2 hover:ring-2 hover:ring-primary/30`}
+              className={`group h-full flex flex-col ${heightClass} transition-all duration-300 bg-card/50 backdrop-blur-sm border-border/50 ${
+                isMockDAO
+                  ? "opacity-60 cursor-not-allowed border-dashed"
+                  : "hover:shadow-2xl hover:shadow-primary/20 hover:border-primary/40 cursor-pointer hover:bg-card/80 hover:scale-[1.03] active:scale-[0.97] hover:-translate-y-2 hover:ring-2 hover:ring-primary/30"
+              }`}
             >
               <CardHeader className="p-4 sm:p-5 pb-3 flex-shrink-0">
                 <div className="flex items-start gap-3">
@@ -214,9 +224,16 @@ export const DAOCard = ({
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors duration-300 truncate leading-tight mb-1">
-                        {dao.name}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors duration-300 truncate leading-tight">
+                          {dao.name}
+                        </h3>
+                        {isMockDAO && (
+                          <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full border border-border/50">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
                       {/* Mission Tagline */}
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         {extractMission(dao.description)}
@@ -249,7 +266,7 @@ export const DAOCard = ({
                               {isFetchingPrice ? (
                                 <Loader />
                               ) : tokenPrice?.marketCap ? (
-                                `${formatNumber(tokenPrice.marketCap)}`
+                                "$" + `${formatNumber(tokenPrice.marketCap)}`
                               ) : (
                                 "—"
                               )}
@@ -394,10 +411,20 @@ export const DAOListItem = ({
     );
   };
 
+  const isMockDAO = (dao as DAO & { is_mock?: boolean }).is_mock;
+
   return (
     <div
-      onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
-      className="group grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[1fr_80px_100px_80px] lg:grid-cols-[1fr_80px_100px_80px_100px] items-center gap-x-2 sm:gap-x-4 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+      onClick={() => {
+        if (!isMockDAO) {
+          router.push(`/daos/${encodeURIComponent(dao.name)}`);
+        }
+      }}
+      className={`group grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[2fr_100px_120px_100px] lg:grid-cols-[2fr_120px_140px_120px_120px] items-center gap-x-2 sm:gap-x-4 px-4 py-4 transition-all duration-300 ${
+        isMockDAO
+          ? "opacity-60 cursor-not-allowed"
+          : "hover:bg-muted/30 cursor-pointer"
+      }`}
     >
       {/* DAO Info Column */}
       <div className="flex items-center gap-3 min-w-0">
@@ -421,8 +448,13 @@ export const DAOListItem = ({
             <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors duration-300 truncate">
               {dao.name}
             </h3>
+            {isMockDAO && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full border border-border/50">
+                Coming Soon
+              </span>
+            )}
             <div className="hidden sm:block">
-              {renderPriceChange(tokenPrice?.price24hChanges)}
+              {!isMockDAO && renderPriceChange(tokenPrice?.price24hChanges)}
             </div>
           </div>
           <p className="text-xs text-muted-foreground truncate">
@@ -432,35 +464,51 @@ export const DAOListItem = ({
       </div>
 
       {/* Price Column */}
-      <div className="text-right text-sm font-medium">
-        {isFetchingPrice ? (
+      <div className="text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : isFetchingPrice ? (
           <Loader />
         ) : tokenPrice?.price ? (
-          formatTokenPrice(tokenPrice.price)
+          <span className="text-primary font-bold">
+            {formatTokenPrice(tokenPrice.price)}
+          </span>
         ) : (
           "—"
         )}
       </div>
 
       {/* Market Cap Column */}
-      <div className="hidden sm:block text-right text-sm font-medium">
-        {isFetchingPrice ? (
+      <div className="hidden sm:block text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : isFetchingPrice ? (
           <Loader />
         ) : tokenPrice?.marketCap ? (
-          `${formatNumber(tokenPrice.marketCap)}`
+          <span className="text-primary font-bold">
+            ${formatNumber(tokenPrice.marketCap)}
+          </span>
         ) : (
           "—"
         )}
       </div>
 
       {/* Holders Column */}
-      <div className="hidden md:block text-right text-sm font-medium">
-        {getHolderCount()}
+      <div className="hidden md:block text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : (
+          <span className=" font-bold">{getHolderCount()}</span>
+        )}
       </div>
 
-      {/* Proposals Column */}
-      <div className="hidden lg:block text-right text-sm font-medium">
-        {proposalCount ?? "—"}
+      {/* Contributions Column */}
+      <div className="hidden lg:block text-right text-sm font-semibold">
+        {isMockDAO ? (
+          "—"
+        ) : (
+          <span className="font-bold">{proposalCount ?? "—"}</span>
+        )}
       </div>
     </div>
   );

@@ -1023,7 +1023,8 @@ export default function TransactionConfirmation({
                     {loadingQuote ? (
                       <Loader />
                     ) : computedMinTokenOut !== undefined ? (
-                      `${computedMinTokenOut} ${swapType?.toUpperCase() || "tokens"}`
+                      // FORMAT TO 8 DECIMALS
+                      `${computedMinTokenOut / 1_000_000_00} ${swapType?.toUpperCase() || "tokens"}`
                     ) : (
                       "N/A"
                     )}

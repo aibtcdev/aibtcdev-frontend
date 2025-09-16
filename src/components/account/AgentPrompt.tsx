@@ -3,12 +3,12 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { Settings } from "lucide-react";
-import { Loader } from "@/components/reusables/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader } from "@/components/reusables/Loader";
 import { useToast } from "@/hooks/useToast";
 import { fetchDAOs } from "@/services/dao.service";
-import { fetchAgents } from "@/services/agent.service";
 import {
   fetchAgentPrompts,
   createAgentPrompt,
@@ -16,9 +16,9 @@ import {
   deleteAgentPrompt,
 } from "@/services/agent-prompt.service";
 import { useWalletStore } from "@/store/wallet";
-import { useAuth } from "@/hooks/useAuth";
 import { MobileConfigCard } from "./MobileConfig";
 import { DesktopConfigTable } from "./DesktopConfig";
+import { Settings } from "lucide-react";
 
 export interface AgentPrompt {
   id: string;
@@ -71,9 +71,12 @@ export function AgentPromptForm() {
     queryFn: fetchDAOs,
   });
 
+  const { isAuthenticated } = useAuth();
+
   const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   const [daoManagerAgentId, setDaoManagerAgentId] = useState<string>("");

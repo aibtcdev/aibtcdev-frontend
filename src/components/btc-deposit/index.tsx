@@ -21,14 +21,22 @@ interface BitcoinDepositProps {
   daoName: string;
   tokenContract: string;
   headerOffset?: number;
+  isMarketOpen?: boolean | null;
+  prelaunchContract?: string;
+  poolContract?: string;
+  adapterContract?: string;
 }
 
 export default function BitcoinDeposit({
   dexContract,
   daoName,
   dexId,
+  tokenContract,
+  isMarketOpen,
+  prelaunchContract,
+  poolContract,
+  adapterContract,
   // headerOffset = 96,
-  // tokenContract,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
   const { accessToken } = useAuth();
@@ -146,9 +154,14 @@ export default function BitcoinDeposit({
             daoName={daoName}
             userAddress={userAddress}
             dexId={dexId}
+            tokenContract={tokenContract}
             swapType="aibtc"
             poolId="aibtc"
             aiAccountReceiver={userAgentAddress || ""}
+            isMarketOpen={isMarketOpen}
+            prelaunchContract={prelaunchContract}
+            poolContract={poolContract}
+            adapterContract={adapterContract}
           />
         )}
       </div>

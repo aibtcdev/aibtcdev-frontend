@@ -10,6 +10,7 @@ import {
   ExternalLink,
   AlertCircle,
   Gift,
+  Lock,
   // X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,9 @@ import {
   isTwitterOEmbedError,
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
-import { ApproveContractButton } from "@/components/account/ApproveContract";
+import { useWalletStore } from "@/store/wallet";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -247,6 +250,16 @@ export function ProposalSubmission({
 
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
 
+  // Determine if user has access token
+  const hasAccessToken = !!accessToken && !isSessionLoading;
+
+  // State for DAO token balance
+  // const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
+  const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
+    string | null
+  >(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
   // Error code mapping
   const errorDetailsArray = getAllErrorDetails();
   const errorCodeMap = errorDetailsArray.reduce(
@@ -257,26 +270,73 @@ export function ProposalSubmission({
     {} as Record<number, (typeof errorDetailsArray)[0]> // Explicitly type the accumulator
   );
 
+  // Contract approval state
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalTxId, setApprovalTxId] = useState<string | null>(null);
+
+  const {
+    transactionMessage: approvalTransactionMessage,
+    transactionStatus: approvalTransactionStatus,
+    startMonitoring: startApprovalMonitoring,
+    reset: resetApprovalVerification,
+  } = useTransactionVerification();
+
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
     queryKey: ["daoExtensions", daoId],
     queryFn: () => fetchDAOExtensions(daoId),
+    enabled: hasAccessToken, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Fetch user's DAO Manager agent
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: hasAccessToken && !!userId, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
+
+  // Find the user's agent based on profile_id
+  const userAgent = agents?.find((agent) => agent.profile_id === userId);
+  const hasAgentAccount = !!userAgent?.account_contract;
+
+  // Debug logs - these will show immediately when component renders
+  console.log("DEBUG - ProposalSubmission Agent Validation:");
+  console.log("  - userId:", userId);
+  console.log("  - agents array:", agents);
+  console.log("  - userAgent found:", userAgent);
+  console.log("  - userAgent.account_contract:", userAgent?.account_contract);
+  console.log("  - hasAgentAccount:", hasAgentAccount);
+  console.log("  - isLoadingAgents:", isLoadingAgents);
+  console.log("  - hasAccessToken:", hasAccessToken);
+  console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
+  console.log(
+    "  - hasAgentDaoTokens:",
+    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
+  );
+
+  // Check DAO token balance (simplified - checking if user has any DAO tokens)
+  const daoTokenExt = daoExtensions?.find(
+    (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
+  );
+  // const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
+  const hasAgentDaoTokens =
+    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
     queryKey: ["airdrops", "sender", stacksAddress],
     queryFn: () => fetchAirdropsBySender(stacksAddress!),
     // queryFn: () => fetchAirdropsBySender(),
-    enabled: !!stacksAddress,
+    enabled: hasAccessToken && !!stacksAddress, // Only fetch when authenticated and address available
     staleTime: 5 * 60 * 1000, // 5 min
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   // Twitter URL validation
@@ -302,8 +362,154 @@ export function ProposalSubmission({
 
   // Get connected wallet address
   useEffect(() => {
-    setStacksAddress(getStacksAddress());
-  }, []);
+    if (hasAccessToken) {
+      setStacksAddress(getStacksAddress());
+    } else {
+      setStacksAddress(null); // Clear address when not authenticated
+    }
+  }, [hasAccessToken]); // Re-run when authentication state changes
+
+  // Fetch DAO token balance when we have the necessary data
+  useEffect(() => {
+    const fetchDaoTokenBalance = async () => {
+      console.log("BALANCE FETCH - Starting fetch with conditions:");
+      console.log("  hasAccessToken:", hasAccessToken);
+      console.log("  stacksAddress:", stacksAddress);
+      console.log(
+        "  daoTokenExt?.contract_principal:",
+        daoTokenExt?.contract_principal
+      );
+      console.log(
+        "  userAgent?.account_contract:",
+        userAgent?.account_contract
+      );
+
+      if (
+        !hasAccessToken ||
+        !stacksAddress ||
+        !daoTokenExt?.contract_principal
+      ) {
+        console.log("BALANCE FETCH - Early return due to missing conditions");
+        // setDaoTokenBalance(null);
+        setAgentDaoTokenBalance(null);
+        return;
+      }
+
+      setIsLoadingBalance(true);
+      console.log("BALANCE FETCH - Starting balance fetch...");
+
+      try {
+        // Use the wallet store to fetch balance for user wallet
+        const { fetchSingleBalance } = useWalletStore.getState();
+        console.log(
+          "BALANCE FETCH - Fetching user wallet balance for:",
+          stacksAddress
+        );
+        const balance = await fetchSingleBalance(stacksAddress);
+        console.log("BALANCE FETCH - User wallet balance response:", balance);
+
+        if (balance?.fungible_tokens?.[daoTokenExt.contract_principal]) {
+          const userBalance =
+            balance.fungible_tokens[daoTokenExt.contract_principal].balance;
+          console.log("BALANCE FETCH - User DAO token balance:", userBalance);
+          // setDaoTokenBalance(userBalance);
+        } else {
+          console.log("BALANCE FETCH - No user DAO tokens found, setting to 0");
+          // setDaoTokenBalance("0");
+        }
+
+        // Fetch balance for agent account contract if it exists
+        if (userAgent?.account_contract) {
+          console.log(
+            "BALANCE FETCH - Fetching agent account balance for:",
+            userAgent.account_contract
+          );
+          const agentBalance = await fetchSingleBalance(
+            userAgent.account_contract
+          );
+          console.log(
+            "BALANCE FETCH - Agent account balance response:",
+            agentBalance
+          );
+          console.log(
+            "BALANCE FETCH - Looking for DAO token contract:",
+            daoTokenExt.contract_principal
+          );
+          console.log(
+            "BALANCE FETCH - Available fungible tokens:",
+            Object.keys(agentBalance?.fungible_tokens || {})
+          );
+          console.log("BALANCE FETCH - Looking for daoName:", daoName);
+
+          // First try exact match
+          if (agentBalance?.fungible_tokens?.[daoTokenExt.contract_principal]) {
+            const agentTokenBalance =
+              agentBalance.fungible_tokens[daoTokenExt.contract_principal]
+                .balance;
+            console.log(
+              "BALANCE FETCH - Agent DAO token balance (exact match):",
+              agentTokenBalance
+            );
+            setAgentDaoTokenBalance(agentTokenBalance);
+          } else {
+            // Try to find token by matching daoName after ::
+            const matchingTokenContract = Object.keys(
+              agentBalance?.fungible_tokens || {}
+            ).find((contract) => {
+              const tokenName = contract.split("::")[1];
+              return tokenName === daoName?.toLowerCase();
+            });
+
+            if (matchingTokenContract && agentBalance?.fungible_tokens) {
+              const agentTokenBalance =
+                agentBalance.fungible_tokens[matchingTokenContract].balance;
+              console.log(
+                "BALANCE FETCH - Agent DAO token balance (name match):",
+                agentTokenBalance,
+                "for contract:",
+                matchingTokenContract
+              );
+              setAgentDaoTokenBalance(agentTokenBalance);
+            } else {
+              console.log(
+                "BALANCE FETCH - No agent DAO tokens found for contract:",
+                daoTokenExt.contract_principal
+              );
+              console.log(
+                "BALANCE FETCH - No matching token name found for:",
+                daoName
+              );
+              console.log("BALANCE FETCH - Setting to 0");
+              setAgentDaoTokenBalance("0");
+            }
+          }
+        } else {
+          console.log(
+            "BALANCE FETCH - No agent account contract, setting agent balance to null"
+          );
+          setAgentDaoTokenBalance(null);
+        }
+      } catch (error) {
+        console.error(
+          "BALANCE FETCH - Error fetching DAO token balance:",
+          error
+        );
+        // setDaoTokenBalance("0");
+        setAgentDaoTokenBalance("0");
+      } finally {
+        setIsLoadingBalance(false);
+        console.log("BALANCE FETCH - Finished loading");
+      }
+    };
+
+    fetchDaoTokenBalance();
+  }, [
+    hasAccessToken,
+    stacksAddress,
+    daoTokenExt?.contract_principal,
+    userAgent?.account_contract,
+    daoName,
+  ]);
 
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
@@ -435,7 +641,9 @@ export function ProposalSubmission({
 
     // Simple message construction - just trim
     const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
-
+    console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
+    console.log("userAgent:", userAgent);
+    console.log("userAgent.account_contract:", userAgent?.account_contract);
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -536,7 +744,66 @@ export function ProposalSubmission({
     }
   };
 
-  const hasAccessToken = !!accessToken && !isSessionLoading;
+  const handleApproveContract = async () => {
+    if (!accessToken || !userAgent?.account_contract || !daoExtensions) {
+      console.error("Missing required data for contract approval");
+      return;
+    }
+
+    const actionProposalsVotingExt = daoExtensions.find(
+      (ext) =>
+        ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
+    );
+
+    if (!actionProposalsVotingExt) {
+      console.error("Could not find ACTION_PROPOSAL_VOTING extension");
+      return;
+    }
+
+    setIsApproving(true);
+    setShowApprovalModal(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/tools/agent_account/approve_contract?token=${accessToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_account_contract: userAgent.account_contract,
+            contract_to_approve: actionProposalsVotingExt.contract_principal,
+            approval_type: "VOTING",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API Error: ${res.status} - ${errorText}`);
+      }
+
+      const result = await res.json();
+      const parsed =
+        typeof result.output === "string"
+          ? JSON.parse(result.output)
+          : result.output;
+
+      // Extract transaction ID from the response
+      const txId = parsed?.data?.txid || parsed?.txid || result?.txid;
+      if (txId) {
+        setApprovalTxId(txId);
+        // Start monitoring the transaction
+        await startApprovalMonitoring(txId);
+      }
+    } catch (error) {
+      console.error("Contract approval error:", error);
+      setShowApprovalModal(false);
+    } finally {
+      setIsApproving(false);
+    }
+  };
 
   // Parse the backend output for inner success and message
   const parsedApiResponse = apiResponse
@@ -548,18 +815,53 @@ export function ProposalSubmission({
   return (
     <>
       <div
-        className="rounded-2xl bg-muted/10 border-white/10 p-4  sm:p-6 lg:p-7 flex flex-col"
+        className="rounded-2xl bg-muted/10 border-white/10 p-4  sm:p-6 lg:p-7 flex flex-col relative"
         style={{
           maxHeight: "var(--available-height)",
         }}
       >
+        {/* Locked Overlay for Unauthenticated Users */}
+        {!hasAccessToken && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
+            <div className="text-center space-y-4 max-w-md mx-auto px-6">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Lock className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold mb-2">
+                  Join {daoName} to unlock earning
+                </h3>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Locked Overlay for Users without Agent DAO Tokens */}
+        {hasAccessToken &&
+          hasAgentAccount &&
+          !isLoadingBalance &&
+          !hasAgentDaoTokens && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Join {daoName} to unlock earning
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
         {/* Header */}
         <div className="mb-4">
-          <h2 className="text-xl font-bold text-white mb-1">
-            Submit Contribution
-          </h2>
-          <p className="text-zinc-400 text-sm">
-            Share your work and get rewarded with DAO tokens
+          <h2 className="text-2xl font-bold mb-1">Earn ${daoName}</h2>
+          <p className="text-sm">
+            Earn{" "}
+            <span className="text-primary font-semibold">1000 ${daoName}</span>{" "}
+            for contributing work that advances the mission. <br />
+            Submit proof below. Agents will vote and grant rewards if approved.
           </p>
         </div>
 
@@ -571,31 +873,50 @@ export function ProposalSubmission({
               "calc(var(--submit-cta-height) + var(--cta-spacing))",
           }}
         >
-          {/* Airdrop Notification */}
-          {showAirdropNotification && senderAirdrops.length > 0 && (
+          {/* Airdrop Notification - Only show when authenticated */}
+          {hasAccessToken ? (
             <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-300 flex-shrink-0" />
                   <div className="text-sm text-green-100">
-                    You've sent{" "}
-                    <span className="font-medium">{senderAirdrops.length}</span>{" "}
-                    airdrop
-                    {senderAirdrops.length > 1 ? "s" : ""};{" "}
-                    <span className="font-medium">
-                      {senderAirdrops.reduce(
-                        (total, airdrop) => total + airdrop.recipients.length,
-                        0
-                      )}
-                    </span>{" "}
-                    recipient
-                    {senderAirdrops.reduce(
-                      (total, airdrop) => total + airdrop.recipients.length,
-                      0
-                    ) === 1
-                      ? ""
-                      : "s"}{" "}
-                    received.
+                    {senderAirdrops.length > 0 ? (
+                      <>
+                        You've sent{" "}
+                        <span className="font-medium">
+                          {senderAirdrops.length}
+                        </span>{" "}
+                        boost
+                        {senderAirdrops.length > 1 ? "s" : ""};{" "}
+                        <span className="font-medium">
+                          {senderAirdrops.reduce(
+                            (total, airdrop) =>
+                              total + airdrop.recipients.length,
+                            0
+                          )}
+                        </span>{" "}
+                        recipient
+                        {senderAirdrops.reduce(
+                          (total, airdrop) => total + airdrop.recipients.length,
+                          0
+                        ) === 1
+                          ? ""
+                          : "s"}{" "}
+                        received.
+                      </>
+                    ) : (
+                      <>
+                        Send boosts to enhance your contribution or{" "}
+                        <a
+                          href="https://faktory.fun/airdrop"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline font-medium"
+                        >
+                          create one here
+                        </a>
+                      </>
+                    )}
                   </div>
                 </div>
                 {/* <button
@@ -607,7 +928,7 @@ export function ProposalSubmission({
                 </button> */}
               </div>
             </div>
-          )}
+          ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="relative">
@@ -616,14 +937,9 @@ export function ProposalSubmission({
                 onChange={(e) => {
                   setContribution(e.target.value);
                 }}
-                placeholder={
-                  hasAccessToken
-                    ? "Describe what you contributed. What did you create or share? Why does it matter?"
-                    : "Connect your wallet to create a contribution"
-                }
+                placeholder={`Describe the work you've done that pushes the ${daoName} mission.`}
                 className={`w-full min-h-[100px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
                 disabled={
-                  !hasAccessToken ||
                   isSubmitting ||
                   // isGenerating ||
                   isLoadingExtensions ||
@@ -653,10 +969,9 @@ export function ProposalSubmission({
                   const cleaned = cleanTwitterUrl(twitterUrl);
                   if (cleaned) setTwitterUrl(cleaned);
                 }}
-                placeholder="Paste the X.com (Twitter) post that shows your work"
+                placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
                 disabled={
-                  !hasAccessToken ||
                   isSubmitting ||
                   // isGenerating ||
                   isLoadingExtensions ||
@@ -672,29 +987,26 @@ export function ProposalSubmission({
               )}
             </div>
 
-            {/* Airdrop Selector */}
-            {senderAirdrops.length > 0 && (
+            {/* Airdrop Selector - Show disabled version when not authenticated */}
+            {(senderAirdrops.length > 0 || !hasAccessToken) && (
               <div className="space-y-1">
-                <label
-                  htmlFor="airdrop-select"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Attach an Airdrop (Optional)
-                </label>
                 <Select
                   onValueChange={(value) =>
                     setSelectedAirdropTxHash(value === "none" ? null : value)
                   }
                   value={selectedAirdropTxHash || "none"}
+                  disabled={false}
                 >
                   <SelectTrigger
                     id="airdrop-select"
                     className="w-full bg-background/60 border border-white/10 h-10"
                   >
-                    <SelectValue placeholder="Select an airdrop to reference" />
+                    <SelectValue placeholder="Select a boost to reference" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">
+                      Attach boost (optional)
+                    </SelectItem>
                     {senderAirdrops.map((airdrop) => (
                       <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
                         <div className="flex items-center justify-between w-full">
@@ -719,7 +1031,7 @@ export function ProposalSubmission({
                       className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      View selected airdrop on explorer
+                      View selected boost on explorer
                     </a>
                   </div>
                 )}
@@ -752,13 +1064,17 @@ export function ProposalSubmission({
               </div>
             )}
 
-            {/* Error/Status Messages */}
-            {!hasAccessToken && (
-              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
-                💡 <strong>Note:</strong> Connect your wallet to submit
-                contributions to the DAO.
-              </div>
-            )}
+            {/* Error/Status Messages - Only show when authenticated */}
+
+            {/* Agent Account Validation - Only show if we have actually loaded agents data */}
+            {hasAccessToken &&
+              !isLoadingAgents &&
+              agents &&
+              !hasAgentAccount && (
+                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-lg p-3">
+                  <strong>⏳ Your agent account is being deployed</strong>
+                </div>
+              )}
 
             {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
               <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
@@ -805,8 +1121,12 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
+                !hasAgentAccount ||
+                // !hasDaoTokens ||
+                !hasAgentDaoTokens ||
                 isLoadingExtensions ||
-                isLoadingAgents
+                isLoadingAgents ||
+                isLoadingBalance
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
               style={{ height: "var(--submit-cta-height)" }}
@@ -1038,44 +1358,18 @@ export function ProposalSubmission({
                               const needsApproval =
                                 requiresContractApproval(errorCode);
 
-                              if (
-                                needsApproval &&
-                                hasAccessToken &&
-                                agents &&
-                                daoExtensions
-                              ) {
-                                const userAgent = agents.find(
-                                  (a) => a.profile_id === userId
+                              if (needsApproval) {
+                                return (
+                                  <Button
+                                    variant="outline"
+                                    onClick={handleApproveContract}
+                                    disabled={isApproving}
+                                  >
+                                    {isApproving
+                                      ? "Approving..."
+                                      : "Approve Contract & Retry"}
+                                  </Button>
                                 );
-                                const votingExt = daoExtensions.find(
-                                  (ext) =>
-                                    ext.type === "EXTENSIONS" &&
-                                    ext.subtype === "ACTION_PROPOSAL_VOTING"
-                                );
-
-                                if (
-                                  userAgent?.account_contract &&
-                                  votingExt?.contract_principal
-                                ) {
-                                  return (
-                                    <ApproveContractButton
-                                      contractToApprove={
-                                        votingExt.contract_principal
-                                      }
-                                      agentAccountContract={
-                                        userAgent.account_contract
-                                      }
-                                      onSuccess={() => {
-                                        console.log(
-                                          "Contract approved successfully"
-                                        );
-                                        // Optionally close the modal and allow user to retry
-                                        setShowResultDialog(false);
-                                        setTxStatusView("initial");
-                                      }}
-                                    />
-                                  );
-                                }
                               }
                               return null;
                             })()}
@@ -1169,31 +1463,17 @@ export function ProposalSubmission({
                         parsedApiResponse?.message?.includes("1101"));
 
                     if (needsApproval) {
-                      const userAgent = agents.find(
-                        (a) => a.profile_id === userId
+                      return (
+                        <Button
+                          variant="outline"
+                          onClick={handleApproveContract}
+                          disabled={isApproving}
+                        >
+                          {isApproving
+                            ? "Approving..."
+                            : "Approve Contract & Retry"}
+                        </Button>
                       );
-                      const votingExt = daoExtensions.find(
-                        (ext) =>
-                          ext.type === "EXTENSIONS" &&
-                          ext.subtype === "ACTION_PROPOSAL_VOTING"
-                      );
-
-                      if (
-                        userAgent?.account_contract &&
-                        votingExt?.contract_principal
-                      ) {
-                        return (
-                          <ApproveContractButton
-                            contractToApprove={votingExt.contract_principal}
-                            agentAccountContract={userAgent.account_contract}
-                            onSuccess={() => {
-                              console.log("Contract approved successfully");
-                              setShowResultDialog(false);
-                              setTxStatusView("initial");
-                            }}
-                          />
-                        );
-                      }
                     }
                     return null;
                   })()}
@@ -1215,6 +1495,34 @@ export function ProposalSubmission({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Contract Approval Status Modal */}
+      <TransactionStatusModal
+        isOpen={showApprovalModal}
+        onClose={() => {
+          setShowApprovalModal(false);
+          if (approvalTransactionStatus === "success") {
+            // After successful approval, retry the original submission
+            handleRetry();
+          }
+        }}
+        txId={approvalTxId || undefined}
+        transactionStatus={approvalTransactionStatus}
+        transactionMessage={approvalTransactionMessage}
+        title="Contract Approval Status"
+        successTitle="Approval Confirmed"
+        failureTitle="Approval Failed"
+        successDescription="The contract has been successfully approved for voting operations. You can now retry your submission."
+        failureDescription="The contract approval could not be completed. Please try again."
+        pendingDescription="The contract approval is being processed on the blockchain. This may take a few minutes."
+        onRetry={() => {
+          setShowApprovalModal(false);
+          resetApprovalVerification();
+          setApprovalTxId(null);
+          handleApproveContract();
+        }}
+        showRetryButton={true}
+      />
     </>
   );
 }

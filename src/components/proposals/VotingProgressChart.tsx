@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-// import { getProposalVotes } from "@/services/vote.service";
-import { getProposalVotes } from "@/lib/vote-utils";
 import { fetchLatestChainState } from "@/services/chain-state.service";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import {
@@ -21,11 +19,14 @@ import {
   Target,
   Zap,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
+import { useProposalVote } from "@/hooks/useProposalVote";
+import { Button } from "@/components/ui/button";
 
 interface VotingProgressChartProps {
   proposal: Proposal | ProposalWithDAO;
@@ -48,53 +49,29 @@ const VotingProgressChart = ({
   const { status, statusConfig, isActive, isEnded, isPassed, isFailed } =
     useProposalStatus(proposal);
 
+  // Use the consolidated vote hook
+  const {
+    voteDisplayData,
+    calculations,
+    isLoading: isLoadingVotes,
+    error: voteDataError,
+    hasData,
+    refreshVoteData,
+  } = useProposalVote({
+    proposal,
+    contractPrincipal,
+    fallbackVotesFor: proposal.votes_for,
+    fallbackVotesAgainst: proposal.votes_against,
+  });
+
   console.log("Proposal status:", {
     status,
     isActive,
     isEnded,
     isPassed,
     isFailed,
-  });
-
-  // Helper function to safely parse vote values
-  const parseVoteValue = (value: string | null | undefined): string => {
-    if (!value) return "0";
-    // Remove 'n' suffix if present and ensure it's a valid number
-    const cleaned = value.replace(/n$/, "");
-    return isNaN(Number(cleaned)) ? "0" : cleaned;
-  };
-
-  // State to store parsed vote values from live data
-  const [parsedVotes, setParsedVotes] = useState({
-    votesFor: parseVoteValue(proposal.votes_for),
-    votesAgainst: parseVoteValue(proposal.votes_against),
-  });
-  console.log(proposal.votes_for, proposal.votes_against);
-  console.log("parsedVotes state:", parsedVotes);
-
-  // Fetch live vote data with real-time updates using getProposalVotes
-  const proposalId = Number(proposal.proposal_id);
-
-  const { data: proposalVoteData, isLoading: isLoadingVotes } = useQuery({
-    queryKey: ["proposalVotes", proposalId, contractPrincipal],
-    queryFn: async () => {
-      if (proposalId && contractPrincipal) {
-        const result = await getProposalVotes(
-          contractPrincipal,
-          proposalId,
-          isActive
-        );
-        console.log("getProposalVotes result:", result);
-        return result;
-      }
-      return null;
-    },
-    enabled: !!proposalId && !!contractPrincipal,
-    refetchOnWindowFocus: true,
-
-    staleTime: 5000, // Consider data stale after 5 seconds
-    refetchInterval: isActive ? 10000 : false, // Refetch every 10 seconds if voting is active
-    retry: 3,
+    hasData,
+    voteDataError,
   });
 
   // Fetch current chain state to check execution deadline
@@ -105,72 +82,21 @@ const VotingProgressChart = ({
     refetchInterval: 60000, // 1 minute
   });
 
-  // Update vote totals from the getProposalVotes response
-  useEffect(() => {
-    console.log("proposalVoteData update:", proposalVoteData);
-    if (proposalVoteData) {
-      const newVotesFor = parseVoteValue(proposalVoteData.votesFor);
-      const newVotesAgainst = parseVoteValue(proposalVoteData.votesAgainst);
+  // Enhanced calculations with proposal-specific logic
+  const enhancedCalculations = useMemo(() => {
+    if (!calculations) return null;
 
-      console.log("Setting parsed votes from API:", {
-        newVotesFor,
-        newVotesAgainst,
-      });
-
-      setParsedVotes({
-        votesFor: newVotesFor,
-        votesAgainst: newVotesAgainst,
-      });
-    } else {
-      // Fallback to proposal data if no live data available
-      const fallbackVotesFor = parseVoteValue(proposal.votes_for);
-      const fallbackVotesAgainst = parseVoteValue(proposal.votes_against);
-
-      console.log("Setting parsed votes from proposal:", {
-        fallbackVotesFor,
-        fallbackVotesAgainst,
-      });
-
-      setParsedVotes({
-        votesFor: fallbackVotesFor,
-        votesAgainst: fallbackVotesAgainst,
-      });
-    }
-  }, [proposalVoteData, proposal.votes_for, proposal.votes_against]);
-
-  const calculations = useMemo(() => {
-    const votesFor = Number(parsedVotes.votesFor || 0);
-    const votesAgainst = Number(parsedVotes.votesAgainst || 0);
-    const totalVotes = votesFor + votesAgainst;
-    const liquidTokens = Number(proposal.liquid_tokens || 0);
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
-    // Calculate percentages based on liquid tokens
-    const participationRate =
-      liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
-    const quorumRate = quorumPercentage;
+    // Calculate if requirements are met
+    const metQuorum = calculations.participationRate >= quorumPercentage;
+    const metThreshold =
+      calculations.totalVotes > 0
+        ? calculations.approvalRate >= thresholdPercentage
+        : false;
 
-    // Calculate approval rate from cast votes
-    const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
-    const thresholdRate = thresholdPercentage;
-
-    // Calculate vote breakdown percentages
-    const votesForPercent =
-      liquidTokens > 0 ? (votesFor / liquidTokens) * 100 : 0;
-    const votesAgainstPercent =
-      liquidTokens > 0 ? (votesAgainst / liquidTokens) * 100 : 0;
-
-    // Calculate required token amounts for display
-    const quorumTokensRequired =
-      liquidTokens > 0 ? (liquidTokens * quorumPercentage) / 100 : 0;
-
-    // Calculate if requirements are actually met based on current data
-    const actuallyMetQuorum = participationRate >= quorumPercentage;
-    const actuallyMetThreshold =
-      totalVotes > 0 ? approvalRate >= thresholdPercentage : false;
-
-    // Check if proposal failed to be concluded within execution window
+    // Check execution status
     const currentBitcoinHeight = chainState?.bitcoin_block_height
       ? parseInt(chainState.bitcoin_block_height)
       : 0;
@@ -178,44 +104,15 @@ const VotingProgressChart = ({
     const concludedBy = proposal.concluded_by;
     const failedToExecute = currentBitcoinHeight > execEnd && !concludedBy;
 
-    console.log("calculations updated:", {
-      votesFor,
-      votesAgainst,
-      totalVotes,
-      liquidTokens,
-      quorumPercentage,
-      thresholdPercentage,
-      quorumTokensRequired,
-      thresholdRate,
-      participationRate,
-      quorumRate,
-      approvalRate,
-      votesForPercent,
-      votesAgainstPercent,
-      actuallyMetQuorum,
-      actuallyMetThreshold,
-      failedToExecute,
-    });
-
     return {
-      votesFor,
-      votesAgainst,
-      totalVotes,
-      liquidTokens,
+      ...calculations,
       quorumPercentage,
       thresholdPercentage,
-      quorumTokensRequired,
-      thresholdRate,
-      participationRate,
-      quorumRate,
-      approvalRate,
-      votesForPercent,
-      votesAgainstPercent,
-      metQuorum: actuallyMetQuorum,
-      metThreshold: actuallyMetThreshold,
+      metQuorum,
+      metThreshold,
       failedToExecute,
     };
-  }, [proposal, parsedVotes, chainState]); // Added parsedVotes to dependency array
+  }, [calculations, proposal, chainState]);
 
   // Helper functions using the new status system
   const getStatusText = (met: boolean, percentage?: number) => {
@@ -338,6 +235,129 @@ const VotingProgressChart = ({
   const resultStatus = getResultStatus();
   console.log("resultStatus:", resultStatus);
 
+  // Use the refresh function from the hook
+  const handleManualRefresh = refreshVoteData;
+
+  // Show loading state if data is loading and we don't have an error
+  if (isLoadingVotes && !voteDataError) {
+    return (
+      <div className="space-y-6 overflow-x-auto">
+        <div className="text-sm text-muted-foreground flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          Loading vote data...
+        </div>
+
+        {/* Loading skeleton */}
+        <div className="space-y-3">
+          <div className="h-6 bg-muted rounded-lg animate-pulse"></div>
+          <div className="flex justify-between">
+            <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-4 rounded-lg border bg-muted/10">
+              <div className="h-4 w-16 bg-muted rounded animate-pulse mb-2"></div>
+              <div className="h-6 w-24 bg-muted rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if we couldn't load vote data
+  if (
+    (voteDataError || (!voteDisplayData && !isLoadingVotes)) &&
+    !enhancedCalculations
+  ) {
+    return (
+      <div className="space-y-6 overflow-x-auto">
+        <div className="text-sm text-destructive flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Failed to load vote data. Please try refreshing.
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isLoadingVotes}
+            className="h-8 px-2"
+          >
+            <RefreshCw
+              className={`h-3 w-3 mr-1 ${isLoadingVotes ? "animate-spin" : ""}`}
+            />
+            Retry
+          </Button>
+        </div>
+
+        {/* Show basic proposal status without vote counts */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg border bg-muted/10">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Quorum
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Data unavailable
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border bg-muted/10">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Threshold
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Data unavailable
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "p-4 rounded-lg border transition-colors",
+              resultStatus.bgColor
+            )}
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
+                  Result
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {resultStatus.icon}
+                <span className="text-sm font-medium">
+                  {resultStatus.status}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Vote data unavailable
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // At this point, we know enhancedCalculations is not null due to the error check above
+  if (!enhancedCalculations) {
+    return null; // This should never happen due to the check above, but satisfies TypeScript
+  }
+
   return (
     <div className="space-y-6 overflow-x-auto">
       {/* Loading indicator for vote data */}
@@ -353,8 +373,11 @@ const VotingProgressChart = ({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              Participation: {calculations.participationRate.toFixed(1)}%
+            <span className="text-sm font-medium">
+              {getStatusText(
+                enhancedCalculations.metQuorum,
+                enhancedCalculations.participationRate
+              )}
             </span>
             <TooltipProvider>
               <Tooltip>
@@ -377,36 +400,36 @@ const VotingProgressChart = ({
             {/* Votes for (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
-                calculations.votesForPercent > 0 ? "rounded-l-lg" : ""
+                enhancedCalculations.votesForPercent > 0 ? "rounded-l-lg" : ""
               } ${
-                calculations.votesAgainstPercent === 0 &&
-                calculations.votesForPercent > 0
+                enhancedCalculations.votesAgainstPercent === 0 &&
+                enhancedCalculations.votesForPercent > 0
                   ? "rounded-r-lg"
                   : ""
               }`}
               style={{
-                width: `${Math.min(calculations.votesForPercent, 100)}%`,
+                width: `${Math.min(enhancedCalculations.votesForPercent, 100)}%`,
               }}
             />
             {/* Votes against (red) */}
             <div
               className={`absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out ${
-                calculations.votesAgainstPercent > 0 &&
-                (calculations.votesForPercent +
-                  calculations.votesAgainstPercent >=
+                enhancedCalculations.votesAgainstPercent > 0 &&
+                (enhancedCalculations.votesForPercent +
+                  enhancedCalculations.votesAgainstPercent >=
                   100 ||
-                  calculations.votesForPercent === 0)
+                  enhancedCalculations.votesForPercent === 0)
                   ? "rounded-r-lg"
                   : ""
               } ${
-                calculations.votesForPercent === 0 &&
-                calculations.votesAgainstPercent > 0
+                enhancedCalculations.votesForPercent === 0 &&
+                enhancedCalculations.votesAgainstPercent > 0
                   ? "rounded-l-lg"
                   : ""
               }`}
               style={{
-                width: `${Math.min(calculations.votesAgainstPercent, 100)}%`,
-                left: `${Math.min(calculations.votesForPercent, 100)}%`,
+                width: `${Math.min(enhancedCalculations.votesAgainstPercent, 100)}%`,
+                left: `${Math.min(enhancedCalculations.votesForPercent, 100)}%`,
               }}
             />
           </div>
@@ -415,7 +438,7 @@ const VotingProgressChart = ({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-primary z-10"
             style={{
-              left: `calc(${Math.min(calculations.quorumRate, 100)}% - 1px)`,
+              left: `calc(${Math.min(enhancedCalculations.quorumPercentage, 100)}% - 1px)`,
             }}
           >
             <div
@@ -431,40 +454,21 @@ const VotingProgressChart = ({
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
               <span>
-                For:{" "}
-                <TokenBalance
-                  value={calculations.votesFor.toString()}
-                  decimals={8}
-                  variant="abbreviated"
-                  symbol={tokenSymbol}
-                />
+                {voteDisplayData?.votesFor} (
+                {enhancedCalculations.votesForPercent.toFixed(1)}%)
               </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-red-500 rounded-full" />
               <span>
-                Against:{" "}
-                <TokenBalance
-                  value={calculations.votesAgainst.toString()}
-                  decimals={8}
-                  variant="abbreviated"
-                  symbol={tokenSymbol}
-                />
+                {voteDisplayData?.votesAgainst} (
+                {enhancedCalculations.votesAgainstPercent.toFixed(1)}%)
               </span>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>
-              Quorum:{" "}
-              <TokenBalance
-                value={calculations.quorumTokensRequired.toString()}
-                decimals={8}
-                variant="abbreviated"
-                symbol={tokenSymbol}
-              />{" "}
-              ({calculations.quorumPercentage}%)
-            </span>
+            <span>Total: {voteDisplayData?.liquidTokens || "0"}</span>
           </div>
         </div>
       </div>
@@ -474,8 +478,11 @@ const VotingProgressChart = ({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              Approval Rate: {calculations.approvalRate.toFixed(1)}%
+            <span className="text-sm font-medium">
+              {getStatusText(
+                enhancedCalculations.metThreshold,
+                enhancedCalculations.approvalRate
+              )}
             </span>
             <TooltipProvider>
               <Tooltip>
@@ -498,9 +505,11 @@ const VotingProgressChart = ({
             {/* Approval rate (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
-                calculations.approvalRate > 0 ? "rounded-l-lg" : ""
-              } ${calculations.approvalRate >= 95 ? "rounded-r-lg" : ""}`}
-              style={{ width: `${Math.min(calculations.approvalRate, 100)}%` }}
+                enhancedCalculations.approvalRate > 0 ? "rounded-l-lg" : ""
+              } ${enhancedCalculations.approvalRate >= 95 ? "rounded-r-lg" : ""}`}
+              style={{
+                width: `${Math.min(enhancedCalculations.approvalRate, 100)}%`,
+              }}
             />
           </div>
 
@@ -508,7 +517,7 @@ const VotingProgressChart = ({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-primary z-10"
             style={{
-              left: `calc(${Math.min(calculations.thresholdPercentage, 100)}% - 1px)`,
+              left: `calc(${Math.min(enhancedCalculations.thresholdPercentage, 100)}% - 1px)`,
             }}
           >
             <div
@@ -523,12 +532,13 @@ const VotingProgressChart = ({
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             <span>
-              Approval: {calculations.approvalRate.toFixed(1)}% of votes cast
+              Approval: {enhancedCalculations.approvalRate.toFixed(1)}% of votes
+              cast
             </span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>Threshold: {calculations.thresholdPercentage}%</span>
+            <span>Threshold: {enhancedCalculations.thresholdPercentage}%</span>
           </div>
         </div>
       </div>
@@ -540,12 +550,12 @@ const VotingProgressChart = ({
           className={cn(
             "p-4 rounded-lg border transition-colors",
             isActive
-              ? calculations.metQuorum
+              ? enhancedCalculations.metQuorum
                 ? "bg-green-500/10 border-green-500/30"
                 : "bg-orange-500/10 border-orange-500/30"
               : !isEnded
                 ? "bg-gray-500/10 border-gray-500/30"
-                : calculations.metQuorum
+                : enhancedCalculations.metQuorum
                   ? "bg-green-500/10 border-green-500/30"
                   : "bg-red-500/10 border-red-500/30"
           )}
@@ -561,7 +571,7 @@ const VotingProgressChart = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    {getStatusIcon(calculations.metQuorum)}
+                    {getStatusIcon(enhancedCalculations.metQuorum)}
                   </TooltipTrigger>
                   {isActive && (
                     <TooltipContent>
@@ -576,19 +586,18 @@ const VotingProgressChart = ({
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(calculations.metQuorum)
+                  getStatusColor(enhancedCalculations.metQuorum)
                 )}
               >
                 {getStatusText(
-                  calculations.metQuorum,
-                  calculations.participationRate
+                  enhancedCalculations.metQuorum,
+                  enhancedCalculations.participationRate
                 )}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Participation: {calculations.participationRate.toFixed(1)}%{" "}
-              {calculations.metQuorum ? "≥" : "<"} Quorum:{" "}
-              {calculations.quorumPercentage}%
+              {enhancedCalculations.participationRate.toFixed(1)}% of{" "}
+              {enhancedCalculations.quorumPercentage}% required
             </div>
           </div>
         </div>
@@ -598,12 +607,12 @@ const VotingProgressChart = ({
           className={cn(
             "p-4 rounded-lg border transition-colors",
             isActive
-              ? calculations.metThreshold
+              ? enhancedCalculations.metThreshold
                 ? "bg-green-500/10 border-green-500/30"
                 : "bg-orange-500/10 border-orange-500/30"
               : !isEnded
                 ? "bg-gray-500/10 border-gray-500/30"
-                : calculations.metThreshold
+                : enhancedCalculations.metThreshold
                   ? "bg-green-500/10 border-green-500/30"
                   : "bg-red-500/10 border-red-500/30"
           )}
@@ -619,7 +628,7 @@ const VotingProgressChart = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    {getStatusIcon(calculations.metThreshold)}
+                    {getStatusIcon(enhancedCalculations.metThreshold)}
                   </TooltipTrigger>
                   {isActive && (
                     <TooltipContent>
@@ -634,19 +643,18 @@ const VotingProgressChart = ({
               <span
                 className={cn(
                   "text-sm font-semibold",
-                  getStatusColor(calculations.metThreshold)
+                  getStatusColor(enhancedCalculations.metThreshold)
                 )}
               >
                 {getStatusText(
-                  calculations.metThreshold,
-                  calculations.approvalRate
+                  enhancedCalculations.metThreshold,
+                  enhancedCalculations.approvalRate
                 )}
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Approval: {calculations.approvalRate.toFixed(1)}%{" "}
-              {calculations.metThreshold ? "≥" : "<"} Threshold:{" "}
-              {calculations.thresholdPercentage}%
+              {enhancedCalculations.approvalRate.toFixed(1)}% of{" "}
+              {enhancedCalculations.thresholdPercentage}% required
             </div>
           </div>
         </div>
@@ -672,12 +680,12 @@ const VotingProgressChart = ({
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              {calculations.totalVotes > 0 ? (
+              {enhancedCalculations && enhancedCalculations.totalVotes > 0 ? (
                 <div className="space-y-1">
                   <div className="flex items-center gap-1">
                     <span>Total votes:</span>
                     <TokenBalance
-                      value={calculations.totalVotes.toString()}
+                      value={enhancedCalculations.totalVotes.toString()}
                       decimals={8}
                       variant="abbreviated"
                       symbol={tokenSymbol}
@@ -695,21 +703,21 @@ const VotingProgressChart = ({
                       ⏳ Veto period active
                     </div>
                   )}
-                  {calculations.failedToExecute && (
+                  {enhancedCalculations.failedToExecute && (
                     <div className="text-destructive">
                       ⚠️ Execution deadline passed
                     </div>
                   )}
                   {status === "FAILED" &&
-                    calculations.metQuorum &&
-                    calculations.metThreshold && (
+                    enhancedCalculations.metQuorum &&
+                    enhancedCalculations.metThreshold && (
                       <div className="text-destructive">
                         ⚠️ Failed despite meeting requirements
                       </div>
                     )}
                 </div>
               ) : (
-                <span>No votes cast</span>
+                <span>Vote data unavailable</span>
               )}
             </div>
           </div>

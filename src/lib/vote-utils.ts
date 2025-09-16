@@ -1,6 +1,6 @@
 // Helper function to format votes with appropriate suffixes
 export function formatVotes(votes: number): string {
-  if (isNaN(votes)) return "0";
+  if (isNaN(votes)) throw new Error("Invalid vote value: NaN");
   if (votes === 0) return "0";
 
   // Simply return the number divided by 1e8 as requested
@@ -24,60 +24,72 @@ export async function getProposalVotes(
     throw new Error("Invalid contract principal format");
   }
 
-  // Call the endpoint with POST method and the correct request body format
-  const response = await fetch(
+  try {
     // `${url}/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`,
-    `https://aibtcdev-cache-preview.hosting-962.workers.dev/contract-calls/read-only/${contractAddress}/${contractName}/get-agent-permissions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        functionArgs: [
-          {
-            type: "uint",
-            value: proposalId.toString(),
-          },
-        ],
-        network:
-          process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
-            ? "mainnet"
-            : "testnet",
-        // Add cache control in the request body
-        cacheControl: bustCache
-          ? {
-              bustCache: true, // Force a fresh request
-              ttl: 3600, // Cache for 1 hour
-            }
-          : undefined,
-      }),
+    const response = await fetch(
+      `https://aibtcdev-cache-preview.hosting-962.workers.dev/contract-calls/read-only/${contractAddress}/${contractName}/get-proposal`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          functionArgs: [
+            {
+              type: "uint",
+              value: proposalId.toString(),
+            },
+          ],
+          network:
+            process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
+              ? "mainnet"
+              : "testnet",
+          // Add cache control in the request body
+          cacheControl: bustCache
+            ? {
+                bustCache: true, // Force a fresh request
+                ttl: 3600, // Cache for 1 hour
+              }
+            : undefined,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
-  );
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch proposal votes: ${errorText}`);
-  }
+    const responseData = await response.json();
 
-  const responseData = await response.json();
+    // Check if the data is nested inside a data property
+    const voteData = responseData.data || responseData;
 
-  // Check if the data is nested inside a data property
-  const voteData = responseData.data || responseData;
+    if (!voteData) {
+      throw new Error("No vote data returned from API");
+    }
 
-  if (!voteData) {
+    // Validate that we have the required vote fields
+    const votesFor = voteData.votesFor;
+    const votesAgainst = voteData.votesAgainst;
+    const liquidTokens = voteData.liquidTokens;
+
+    if (votesFor === undefined || votesAgainst === undefined) {
+      throw new Error("Invalid vote data structure - missing vote fields");
+    }
+
     return {
       ...responseData,
-      votesFor: "0",
-      votesAgainst: "0",
-      formattedVotesFor: "0",
-      formattedVotesAgainst: "0",
+      votesFor: votesFor,
+      votesAgainst: votesAgainst,
+      liquidTokens: liquidTokens,
+      fetchedAt: Date.now(), // Add timestamp for debugging
+      wasCacheBusted: bustCache,
     };
+  } catch (error) {
+    // Re-throw with more context
+    throw new Error(
+      `Failed to fetch proposal votes: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
-
-  return {
-    ...responseData,
-    votesFor: voteData.votesFor,
-    votesAgainst: voteData.votesAgainst,
-  };
 }

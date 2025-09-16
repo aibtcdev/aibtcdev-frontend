@@ -30,7 +30,7 @@ export function useAgentAccount(): UseAgentAccountReturn {
     error: agentsError,
     refetch: refetchAgents,
   } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
     enabled: !!userId, // Only fetch if userId is available
   });
