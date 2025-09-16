@@ -65,9 +65,9 @@ export function AgentConfigTable({
           <Bot className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
-          <h3 className="font-semibold text-foreground">No DAOs Available</h3>
+          <h3 className="font-semibold text-foreground">No DAO Token found</h3>
           <p className="text-sm text-muted-foreground">
-            Connect to DAOs to configure your AI agent for automated governance
+            Your agent must hold DAO Token to participate in voting.
           </p>
         </div>
       </div>

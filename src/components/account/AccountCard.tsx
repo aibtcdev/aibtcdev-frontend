@@ -182,7 +182,10 @@ export function AccountCard({
                         className="h-8 w-8 p-0 hover:bg-primary/10"
                       >
                         <a
-                          href={getExplorerLink("address", address)}
+                          href={getExplorerLink(
+                            title === "Agent Account" ? "tx" : "address",
+                            address
+                          )}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

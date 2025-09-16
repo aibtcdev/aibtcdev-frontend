@@ -115,7 +115,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
                         >
                           <a
                             href={getExplorerLink(
-                              "address",
+                              "tx",
                               extension.contract_principal
                             )}
                             target="_blank"
@@ -221,7 +221,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
                             >
                               <a
                                 href={getExplorerLink(
-                                  "address",
+                                  "tx",
                                   extension.contract_principal
                                 )}
                                 target="_blank"
