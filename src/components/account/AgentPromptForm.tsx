@@ -331,9 +331,12 @@ export function AgentPromptForm() {
   });
 
   // Fetch the DAO Manager agent
+  const { isAuthenticated } = useAuth();
+
   const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   // Store the DAO Manager agent ID

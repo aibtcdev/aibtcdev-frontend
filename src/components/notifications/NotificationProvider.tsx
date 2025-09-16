@@ -27,14 +27,15 @@ const formatBalance = (balance: number, decimals: number = 8): string => {
   return parseFloat(formatted).toString();
 };
 
-const isFakeToken = (tokenId: string) => {
+const isDAOToken = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
   const parts = cleaned.split("::");
   const asset = parts[parts.length - 1];
-  return asset === "fake";
+  const daoTokens = ["fake", "facerizz", "facedrop", "faces", "facevibe"];
+  return daoTokens.includes(asset.toLowerCase());
 };
 
-const getFakeTokenName = (tokenId: string) => {
+const getDAOTokenName = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
   const parts = cleaned.split("::");
   if (parts.length >= 2) {
@@ -80,40 +81,41 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // Calculate token info whenever balances change
-  const { tokenBalance, tokenName } = useMemo(() => {
+  const daoTokens = useMemo(() => {
     if (!address || !balances[address]?.fungible_tokens) {
-      return { tokenBalance: 0, tokenName: "FAKE" };
+      return [];
     }
 
     const fungibleTokens = balances[address].fungible_tokens;
+    const tokens: Array<{ balance: number; name: string }> = [];
 
     for (const [tokenId, tokenData] of Object.entries(fungibleTokens)) {
-      if (isFakeToken(tokenId)) {
+      if (isDAOToken(tokenId)) {
         const balance = Number(tokenData.balance || 0);
         if (balance > 0) {
-          return {
-            tokenBalance: balance,
-            tokenName: getFakeTokenName(tokenId),
-          };
+          tokens.push({
+            balance,
+            name: getDAOTokenName(tokenId),
+          });
         }
       }
     }
 
-    return { tokenBalance: 0, tokenName: "FAKE" };
+    return tokens;
   }, [balances, address]);
 
   // Generate notifications based on current state
   const notifications = useMemo(() => {
     const notifs: Notification[] = [];
 
-    // Asset deposit notification - only show if user has tokens
-    if (tokenBalance > 0) {
-      const formattedBalance = formatBalance(tokenBalance, 8);
+    // Asset deposit notification - show for each DAO token with balance
+    daoTokens.forEach((token) => {
+      const formattedBalance = formatBalance(token.balance, 8);
       notifs.push({
-        id: "asset-deposit",
+        id: `asset-deposit-${token.name.toLowerCase()}`,
         type: "asset-deposit",
         title: "Deposit Available",
-        message: `Deposit your ${formattedBalance} ${tokenName} into Agent voting contract to send contribution and provide them voting power`,
+        message: `Deposit your ${formattedBalance} ${token.name} into Agent voting contract to send contribution and provide them voting power`,
         actionText: "Deposit",
         actionUrl: "/account?tab=wallets",
         icon: Coins,
@@ -121,7 +123,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         createdAt: new Date(),
         priority: "high",
       });
-    }
+    });
 
     // Custom instructions notification - only show if user has agent but no instructions
     const hasAgent = agentWallets.length > 0;
@@ -155,7 +157,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       // Then by creation date (newest first)
       return b.createdAt.getTime() - a.createdAt.getTime();
     });
-  }, [tokenBalance, tokenName, agentWallets, prompts]);
+  }, [daoTokens, agentWallets, prompts]);
 
   const unreadCount = notifications.length;
 

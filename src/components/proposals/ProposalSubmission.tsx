@@ -293,9 +293,9 @@ export function ProposalSubmission({
 
   // Fetch user's DAO Manager agent
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
-    enabled: hasAccessToken, // Only fetch when authenticated
+    enabled: hasAccessToken && !!userId, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus

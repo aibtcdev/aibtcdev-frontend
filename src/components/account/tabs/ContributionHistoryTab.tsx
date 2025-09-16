@@ -174,7 +174,7 @@ export function ContributionHistoryTab({
             No Contributions Yet
           </h3>
           <p className="text-sm text-muted-foreground">
-            Your agent hasn't created any DAO proposals yet
+            Your agent hasn't created any DAO contribution yet
           </p>
         </div>
       </div>

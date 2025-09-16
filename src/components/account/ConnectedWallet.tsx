@@ -7,7 +7,7 @@ import { useWalletStore, WalletBalance, TokenBalance } from "@/store/wallet";
 import { Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { request } from "@stacks/connect";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
@@ -59,9 +59,9 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
 
   const { balances } = useWalletStore();
 
-  const { signOut, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+  // const router = useRouter();
 
   const {
     transactionStatus,
@@ -137,10 +137,10 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
-  };
+  // const handleSignOut = async () => {
+  //   await signOut();
+  //   router.push("/");
+  // };
 
   const handleRequestSBTC = async () => {
     if (!isAuthenticated) {
@@ -222,17 +222,17 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                 variant="secondary"
                 className="flex items-center gap-1.5 text-xs"
               >
-                {isRequestingSBTC ? "Requesting..." : "Get sBTC faucet"}
+                {isRequestingSBTC ? "Requesting..." : "Get testnet sBTC"}
               </Button>
             )}
-            <Button
+            {/* <Button
               onClick={handleSignOut}
               variant="destructive"
               size="sm"
               className="text-sm font-medium"
             >
               Sign Out
-            </Button>
+            </Button> */}
           </div>
         </div>
         <AccountCard

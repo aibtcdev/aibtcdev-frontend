@@ -124,7 +124,7 @@ const NETWORK_CONFIG = {
 
 export default function DepositForm({
   btcUsdPrice,
-  poolStatus,
+  // poolStatus,
   setConfirmationData,
   setShowConfirmation,
   activeWalletProvider,
@@ -145,9 +145,6 @@ export default function DepositForm({
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
-
-  // Debug poolStatus
-  console.log("DepositForm poolStatus:", poolStatus);
 
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
@@ -173,12 +170,9 @@ export default function DepositForm({
   const { transactionStatus, transactionMessage, reset, startMonitoring } =
     useTransactionVerification();
 
-  console.log("contract", dexContract);
-
   // Start monitoring when modal opens with transaction ID
   useEffect(() => {
     if (isModalOpen && activeTxId) {
-      console.log("Starting transaction monitoring for:", activeTxId);
       startMonitoring(activeTxId).catch(console.error);
     }
   }, [isModalOpen, activeTxId, startMonitoring]);
@@ -223,12 +217,6 @@ export default function DepositForm({
   const effectiveUserAddress = userAddress || connectedUserAddress;
 
   const btcAddress = effectiveUserAddress ? getBitcoinAddress() : null;
-
-  useEffect(() => {
-    if (btcAddress) {
-      console.log(`Querying BTC balance for address: ${btcAddress}`);
-    }
-  }, [btcAddress]);
 
   // Fetch STX balance for transaction fees
   const { data: stxBalance } = useQuery<number | null>({
@@ -275,7 +263,6 @@ export default function DepositForm({
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
-      console.log("buyquotedexcontract", dexContract);
 
       // Use a default address for quote calculation when not authenticated
       const senderAddress =
@@ -283,51 +270,33 @@ export default function DepositForm({
       const [contractAddress, contractName] = dexContract.split(".");
 
       try {
-        const btcAmount = parseFloat(amount) * Math.pow(10, 8);
+        const btcAmount = BigInt(
+          Math.round(parseFloat(amount) * Math.pow(10, 8))
+        );
 
         // Calculate bridge fee for testnet BTC purchases
         let finalAmount = btcAmount;
         if (!buyWithSbtc) {
           // Only apply bridge fee for BTC (not sBTC)
-          const calculateBridgeFee = (amountSats: number): number => {
-            if (amountSats <= 300000) {
+          const calculateBridgeFee = (amountSats: bigint): number => {
+            const satsNum = Number(amountSats);
+            if (satsNum <= 300000) {
               return 3000; // 3000 sats for amounts up to 300,000 sats
             } else {
-              return Math.floor(amountSats * 0.01); // 1% of the amount for amounts above 300,000 sats
+              return Math.floor(satsNum * 0.01); // 1% of the amount for amounts above 300,000 sats
             }
           };
 
           const bridgeFee = calculateBridgeFee(btcAmount);
-          finalAmount = btcAmount - bridgeFee;
-
-          console.log(
-            "Quote calculation - Original:",
-            btcAmount,
-            "Bridge fee:",
-            bridgeFee,
-            "Final:",
-            finalAmount
-          );
+          finalAmount = btcAmount - BigInt(bridgeFee);
 
           // If amount after fee is too small, return null
           if (finalAmount <= 0) {
-            console.log("Amount after bridge fee is too small");
             return null;
           }
-        } else {
-          // sBTC purchase - no bridge fee
-          console.log("=== sBTC QUOTE CALCULATION ===");
-          console.log("Original sBTC amount:", btcAmount);
-          console.log("Final amount (no bridge fee):", finalAmount);
         }
 
         const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-in?tip=latest`;
-
-        console.log("Quote request URL:", url);
-        console.log("Quote request body:", {
-          sender: senderAddress,
-          arguments: [cvToHex(uintCV(finalAmount))],
-        });
 
         const response = await fetch(url, {
           method: "POST",
@@ -336,7 +305,7 @@ export default function DepositForm({
           },
           body: JSON.stringify({
             sender: senderAddress,
-            arguments: [cvToHex(uintCV(finalAmount))],
+            arguments: [cvToHex(uintCV(Number(finalAmount)))],
           }),
         });
 
@@ -345,38 +314,6 @@ export default function DepositForm({
         }
 
         const data = (await response.json()) as HiroGetInResponse;
-
-        if (buyWithSbtc) {
-          console.log("=== sBTC QUOTE RESPONSE ===");
-          console.log("Raw response:", data);
-          if (data?.result) {
-            try {
-              const clarityValue = hexToCV(data.result);
-              const jsonValue = cvToJSON(clarityValue);
-              console.log("Parsed quote response:", jsonValue);
-
-              // Show tokens-out before slippage
-              if (
-                jsonValue.value?.value &&
-                jsonValue.value.value["tokens-out"]
-              ) {
-                const tokensOutBeforeSlippage =
-                  jsonValue.value.value["tokens-out"].value;
-                console.log(
-                  "Tokens out (BEFORE slippage):",
-                  tokensOutBeforeSlippage
-                );
-                console.log(
-                  "Tokens out (BEFORE slippage, formatted):",
-                  (Number(tokensOutBeforeSlippage) / 10 ** 8).toFixed(8)
-                );
-              }
-            } catch (parseError) {
-              console.error("Error parsing sBTC quote response:", parseError);
-            }
-          }
-          console.log("=============================");
-        }
 
         return data;
       } catch (error) {
@@ -392,27 +329,25 @@ export default function DepositForm({
       if (amount && Number.parseFloat(amount) > 0) {
         setLoadingQuote(true);
         const quoteData = await getBuyQuote(amount);
-        console.log("buyquote", dexContract, quoteData);
         setRawBuyQuote(quoteData);
 
         if (quoteData?.result) {
           try {
             const clarityValue = hexToCV(quoteData.result);
-            console.log("clarityvalueofbuyquote", clarityValue);
             const jsonValue = cvToJSON(clarityValue);
-            console.log("jsonvalueofbuyquote", jsonValue);
             if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
-              const rawAmount = jsonValue.value.value["tokens-out"].value;
+              const rawAmount = BigInt(
+                jsonValue.value.value["tokens-out"].value
+              );
 
               const slippageFactor = 1 - currentSlippage / 100;
 
-              const amountAfterSlippage = Math.floor(
-                Number(rawAmount) * slippageFactor
-              );
+              const amountAfterSlippage = Number(rawAmount) * slippageFactor;
+              const minTokensOut = Math.floor(amountAfterSlippage);
 
-              setMinTokenOut(amountAfterSlippage);
+              setMinTokenOut(minTokensOut);
               setBuyQuote(
-                (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
+                (minTokensOut / 10 ** 8).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })
@@ -428,6 +363,7 @@ export default function DepositForm({
           }
         } else {
           setBuyQuote(null);
+          setRawBuyQuote(null);
           setMinTokenOut(0);
         }
         setLoadingQuote(false);
@@ -457,8 +393,6 @@ export default function DepositForm({
       const blockstreamUrl = isMainnet
         ? `https://blockstream.info/api/address/${btcAddress}/utxo`
         : `https://blockstream.info/testnet/api/address/${btcAddress}/utxo`;
-
-      // console.log("blockstreamUrl", blockstreamUrl);
 
       const response = await fetch(blockstreamUrl);
 
@@ -703,7 +637,7 @@ export default function DepositForm({
       return;
     }
 
-    const ustx = parseFloat(amount) * Math.pow(10, 8);
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
 
     if (!rawBuyQuote?.result) {
       toast({
@@ -714,15 +648,17 @@ export default function DepositForm({
       return;
     }
 
-    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
 
     if (ustx > sbtcBalanceInSats) {
       toast({
         title: "Insufficient sBTC balance",
         description: `You need more sBTC to complete this purchase. Required: ${(
-          ustx / Math.pow(10, 8)
+          Number(ustx) / Math.pow(10, 8)
         ).toFixed(8)} sBTC, Available: ${(
-          (sbtcBalanceInSats || 0) / Math.pow(10, 8)
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
         ).toFixed(8)} sBTC`,
         variant: "destructive",
       });
@@ -735,9 +671,11 @@ export default function DepositForm({
       const clarityValue = hexToCV(rawBuyQuote.result);
       const jsonValue = cvToJSON(clarityValue);
 
-      const quoteAmount = jsonValue.value.value["tokens-out"].value;
+      const quoteAmount = BigInt(jsonValue.value.value["tokens-out"].value);
       const newStx = Number(jsonValue.value.value["new-stx"].value);
-      const tokenBalance = jsonValue.value.value["ft-balance"]?.value;
+      const tokenBalance = BigInt(
+        jsonValue.value.value["ft-balance"]?.value || 0
+      );
       const currentStxBalance = Number(
         jsonValue.value.value["total-stx"]?.value || 0
       );
@@ -757,8 +695,8 @@ export default function DepositForm({
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
-        if (ustx > bufferAmount) {
-          const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+        if (Number(ustx) > bufferAmount) {
+          const formattedUstx = (Number(ustx) / Math.pow(10, 8)).toFixed(8);
           const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
 
           toast({
@@ -773,50 +711,11 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
-      console.log("=== SLIPPAGE CALCULATION ===");
-      console.log("Tokens out (BEFORE slippage):", quoteAmount);
-      console.log(
-        "Tokens out (BEFORE slippage, formatted):",
-        (Number(quoteAmount) / 10 ** 8).toFixed(8)
-      );
-      console.log("Current slippage %:", currentSlippage);
-      console.log("Slippage factor:", slippageFactor);
-      console.log("Min tokens out (AFTER slippage):", minTokensOut);
-      console.log(
-        "Min tokens out (AFTER slippage, formatted):",
-        (minTokensOut / 10 ** 8).toFixed(8)
-      );
-      console.log("============================");
-
       // Use adapter contract instead of direct DEX contract
       const [adapterAddress, adapterName] = adapterContract.split(".");
       const [dexAddress, dexName] = dexContract.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
-
-      console.log("=== ADAPTER CONTRACT DEBUG ===");
-      console.log("Raw contracts:", {
-        adapterContract,
-        dexContract,
-        tokenContract,
-        sbtcContract: NETWORK_CONFIG.SBTC_CONTRACT,
-      });
-      console.log("Parsed contract parts:", {
-        adapterAddress,
-        adapterName,
-        dexAddress,
-        dexName,
-        tokenAddress,
-        tokenName,
-        sbtcAddress,
-        sbtcName,
-      });
-      console.log("Transaction amounts:", {
-        ustx,
-        minTokensOut,
-        slippageFactor: 1 - currentSlippage / 100,
-        currentSlippage,
-      });
+      // const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
       // Validate all required contract parts are available
       if (
@@ -827,14 +726,6 @@ export default function DepositForm({
         !tokenAddress ||
         !tokenName
       ) {
-        console.error("Missing contract information:", {
-          adapterAddress: !!adapterAddress,
-          adapterName: !!adapterName,
-          dexAddress: !!dexAddress,
-          dexName: !!dexName,
-          tokenAddress: !!tokenAddress,
-          tokenName: !!tokenName,
-        });
         toast({
           title: "Configuration Error",
           description:
@@ -847,17 +738,9 @@ export default function DepositForm({
       // Arguments for buy-and-deposit function
       const args = [
         contractPrincipalCV(tokenAddress, tokenName), // daoToken <sip010-trait>
-        uintCV(ustx), // amount uint - sBTC amount to spend
+        uintCV(Number(ustx)), // amount uint - sBTC amount to spend
         Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - minimum tokens out for slippage protection
       ];
-
-      console.log("Function arguments:", args);
-      console.log("Function arguments decoded:", {
-        sbtcAmount: ustx,
-        tokenContract: `${tokenAddress}.${tokenName}`,
-        dexContract: `${dexAddress}.${dexName}`,
-        minTokensOut,
-      });
 
       // const assetName = getTokenAssetName(daoName);
 
@@ -894,8 +777,6 @@ export default function DepositForm({
         // postConditions,
         postConditionMode: "allow" as const,
       };
-
-      console.log("Buy-and-deposit transaction params:", params);
 
       const response = await request("stx_callContract", params);
 
@@ -968,7 +849,6 @@ export default function DepositForm({
   ]);
 
   const handleBuyWithBtcOnTestnet = useCallback(async () => {
-    console.log("CALLING BUY WITH BITCOIN ON TESTNET...");
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -985,23 +865,20 @@ export default function DepositForm({
       return;
     }
 
-    const ustx = parseFloat(amount) * Math.pow(10, 8);
-    console.log("Original USTX: ", ustx);
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
 
     // Calculate bridge fee
-    const calculateBridgeFee = (amountSats: number): number => {
-      if (amountSats <= 300000) {
+    const calculateBridgeFee = (amountSats: bigint): number => {
+      const satsNum = Number(amountSats);
+      if (satsNum <= 300000) {
         return 3000; // 3000 sats for amounts up to 300,000 sats
       } else {
-        return Math.floor(amountSats * 0.01); // 1% of the amount for amounts above 300,000 sats
+        return Math.floor(satsNum * 0.01); // 1% of the amount for amounts above 300,000 sats
       }
     };
 
     const bridgeFee = calculateBridgeFee(ustx);
-    const amountAfterFee = ustx - bridgeFee;
-
-    console.log("Bridge fee:", bridgeFee, "sats");
-    console.log("Amount after fee:", amountAfterFee, "sats");
+    const amountAfterFee = ustx - BigInt(bridgeFee);
 
     if (amountAfterFee <= 0) {
       toast({
@@ -1014,10 +891,9 @@ export default function DepositForm({
 
     // Fetch quote for the amount after deducting the bridge fee
     const getBuyQuoteAfterFee = async (
-      amountAfterFeeSats: number
+      amountAfterFeeSats: bigint
     ): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
-      console.log("Fetching quote for amount after fee:", amountAfterFeeSats);
 
       const senderAddress =
         userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
@@ -1033,7 +909,7 @@ export default function DepositForm({
           },
           body: JSON.stringify({
             sender: senderAddress,
-            arguments: [cvToHex(uintCV(amountAfterFeeSats))],
+            arguments: [cvToHex(uintCV(BigInt(amountAfterFeeSats)))],
           }),
         });
 
@@ -1070,44 +946,35 @@ export default function DepositForm({
       const jsonValue = cvToJSON(clarityValue);
 
       if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
-        const rawAmount = jsonValue.value.value["tokens-out"].value;
+        const rawAmount = BigInt(jsonValue.value.value["tokens-out"].value);
         const slippageFactor = 1 - currentSlippage / 100;
-        const amountAfterSlippage = Math.floor(
-          Number(rawAmount) * slippageFactor
-        );
+        const amountAfterSlippage = Number(rawAmount) * slippageFactor;
+        const minTokensOut = Math.floor(amountAfterSlippage);
 
-        setMinTokenOut(amountAfterSlippage);
+        setMinTokenOut(minTokensOut);
         setBuyQuote(
-          (amountAfterSlippage / 10 ** 8).toLocaleString(undefined, {
+          (minTokensOut / 10 ** 8).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })
         );
-
-        console.log("Updated quote after bridge fee deduction:", {
-          originalAmount: ustx,
-          bridgeFee,
-          amountAfterFee,
-          tokensOut: amountAfterSlippage,
-        });
       }
     } catch (error) {
       console.error("Error parsing quote after fee deduction:", error);
     }
 
-    const sbtcBalanceInSats = Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8));
-    console.log("SBTC BALANCE", sbtcBalanceInSats);
-    console.log("User input amount (ustx):", ustx, "sats");
-    console.log("Amount after bridge fee:", amountAfterFee, "sats");
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
 
     // Validate user has enough balance for the full input amount (what they're actually sending)
     if (ustx > sbtcBalanceInSats) {
       toast({
         title: "Insufficient sBTC balance",
         description: `You need more sBTC to complete this purchase. Required: ${(
-          ustx / Math.pow(10, 8)
+          Number(ustx) / Math.pow(10, 8)
         ).toFixed(8)} sBTC, Available: ${(
-          (sbtcBalanceInSats || 0) / Math.pow(10, 8)
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
         ).toFixed(8)} sBTC`,
         variant: "destructive",
       });
@@ -1120,11 +987,13 @@ export default function DepositForm({
       const clarityValue = hexToCV(quoteAfterFee.result);
       const jsonValue = cvToJSON(clarityValue);
 
-      const quoteAmount = jsonValue.value.value["tokens-out"].value;
+      const quoteAmount = BigInt(jsonValue.value.value["tokens-out"].value);
       // const quoteAmount = 0;
       const newStx = Number(jsonValue.value.value["new-stx"].value);
       // const newStx = Number(0);
-      const tokenBalance = jsonValue.value.value["ft-balance"]?.value;
+      const tokenBalance = BigInt(
+        jsonValue.value.value["ft-balance"]?.value || 0
+      );
       // const tokenBalance = 0;
       const currentStxBalance = Number(
         jsonValue.value.value["total-stx"]?.value || 0
@@ -1145,8 +1014,8 @@ export default function DepositForm({
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
-        if (ustx > bufferAmount) {
-          const formattedUstx = (ustx / Math.pow(10, 8)).toFixed(8);
+        if (Number(ustx) > bufferAmount) {
+          const formattedUstx = (Number(ustx) / Math.pow(10, 8)).toFixed(8);
           const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
 
           toast({
@@ -1192,7 +1061,7 @@ export default function DepositForm({
       const [sbtcAddress, sbtcName] = sbtcContract.split(".");
 
       const args = [
-        Cl.uint(ustx),
+        Cl.uint(Number(ustx)),
         Cl.uint(minTokensOut),
         Cl.uint(1),
         Cl.contractPrincipal(tokenAddress, tokenName), // token contract
@@ -1201,14 +1070,6 @@ export default function DepositForm({
         Cl.contractPrincipal(poolAddress, poolName), // pool contract
         Cl.contractPrincipal(sbtcAddress, sbtcName), // sbtc contract
       ];
-      console.log("ARGUMENTS FOR BUYWITH BTC ON TESTNET", args);
-      console.log(
-        "First argument (amount):",
-        ustx,
-        "sats =",
-        (ustx / Math.pow(10, 8)).toFixed(8),
-        "sBTC"
-      );
       // const assetName = getTokenAssetName(daoName);
 
       // HELPER FUNCTION TO DETERMINE IF THE TOKEN IS BONDED OR IN DEX
@@ -1246,25 +1107,6 @@ export default function DepositForm({
 
       // const assetName = getTokenAssetName(daoName);
 
-      // Post conditions for testnet BTC swap
-      console.log("=== POST CONDITION AMOUNTS ===");
-      console.log(
-        "Post condition will validate user sends exactly:",
-        ustx,
-        "sats"
-      );
-      console.log(
-        "Post condition will validate user sends exactly:",
-        (ustx / Math.pow(10, 8)).toFixed(8),
-        "sBTC"
-      );
-      console.log(
-        "Contract will receive after bridge fee:",
-        amountAfterFee,
-        "sats"
-      );
-      console.log("==============================");
-
       // const postConditions = [
       //   // User sends sBTC to the bridge contract - use original user input amount (what user actually sends)
       //   Pc.principal(userAddress)
@@ -1278,16 +1120,16 @@ export default function DepositForm({
       //   //   .ft(`${tokenAddress}.${tokenName}`, assetName),
       // ];
 
-      const params = {
+      const contractCallOptions = {
         contract:
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
         // postConditions,
-        PostConditionMode: "allow" as const,
+        postConditionMode: "allow" as const,
       };
 
-      const response = await request("stx_callContract", params);
+      const response = await request("stx_callContract", contractCallOptions);
 
       if (response && response.txid) {
         setActiveTxId(response.txid);
