@@ -222,17 +222,17 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                 variant="secondary"
                 className="flex items-center gap-1.5 text-xs"
               >
-                {isRequestingSBTC ? "Requesting..." : "Get sBTC faucet"}
+                {isRequestingSBTC ? "Requesting..." : "Get testnet sBTC"}
               </Button>
             )}
-            <Button
+            {/* <Button
               onClick={handleSignOut}
               variant="destructive"
               size="sm"
               className="text-sm font-medium"
             >
               Sign Out
-            </Button>
+            </Button> */}
           </div>
         </div>
         <AccountCard
