@@ -109,7 +109,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     const notifs: Notification[] = [];
 
     // Asset deposit notification - show for each DAO token with balance
-    daoTokens.forEach((token, index) => {
+    daoTokens.forEach((token) => {
       const formattedBalance = formatBalance(token.balance, 8);
       notifs.push({
         id: `asset-deposit-${token.name.toLowerCase()}`,
