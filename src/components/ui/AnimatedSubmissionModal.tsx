@@ -70,15 +70,6 @@ export function AnimatedSubmissionModal({
     return () => clearTimeout(timeout);
   }, [currentStepIndex, daoName, isError, isCompleted]);
 
-  const getStepStatus = (
-    stepIndex: number
-  ): "pending" | "active" | "completed" | "error" => {
-    if (isError && stepIndex === currentStepIndex) return "error";
-    if (stepIndex < currentStepIndex) return "completed";
-    if (stepIndex === currentStepIndex) return "active";
-    return "pending";
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
