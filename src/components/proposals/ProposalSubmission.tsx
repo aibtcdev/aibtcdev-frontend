@@ -861,7 +861,13 @@ export function ProposalSubmission({
             Earn{" "}
             <span className="text-primary font-semibold">1000 ${daoName}</span>{" "}
             for contributing work that advances the mission. <br />
-            Submit proof below. Agents will vote and grant rewards if approved.
+            Submit proof below. Agents will vote and grant rewards if approved.{" "}
+            <br />
+            Submitting contributions requires{" "}
+            <span className="text-primary font-semibold">
+              250 ${daoName}
+            </span>{" "}
+            bond.
           </p>
         </div>
 
