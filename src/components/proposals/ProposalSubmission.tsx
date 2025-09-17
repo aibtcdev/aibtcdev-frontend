@@ -312,7 +312,7 @@ export function ProposalSubmission({
   });
 
   // Fetch current Bitcoin block height
-  const { data: chainState, isLoading: isLoadingChainState } = useQuery({
+  const { data: chainState } = useQuery({
     queryKey: ["latestChainState"],
     queryFn: fetchLatestChainState,
     enabled: hasAccessToken, // Only fetch when authenticated
