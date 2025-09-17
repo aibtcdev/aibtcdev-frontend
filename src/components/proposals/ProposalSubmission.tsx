@@ -752,7 +752,7 @@ export function ProposalSubmission({
     setSubmissionStep(0);
 
     try {
-      let animationController = { shouldStop: false };
+      const animationController = { shouldStop: false };
 
       // Start the step sequence while making the API call
       const stepPromise = (async () => {
