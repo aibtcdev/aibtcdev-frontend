@@ -1238,7 +1238,8 @@ export function ProposalSubmission({
                 </div>
               ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
                 <span>
-                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
+                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()} to
+                  submit Contribution
                 </span>
               ) : (
                 <div className="flex items-center gap-3">
