@@ -111,3 +111,46 @@ export async function fetchAgentContributionHistory(
 
   return contributions;
 }
+
+/**
+ * Check if any proposals exist in the specified Bitcoin block height
+ * @param bitcoinBlockHeight - The Bitcoin block height to check
+ * @returns Promise resolving to true if proposals exist in that block, false otherwise
+ */
+export async function checkProposalsInBitcoinBlock(
+  bitcoinBlockHeight: number
+): Promise<boolean> {
+  if (!bitcoinBlockHeight || bitcoinBlockHeight <= 0) {
+    console.log("❌ Invalid Bitcoin block height provided");
+    return false;
+  }
+
+  console.log(
+    "🔍 Checking for proposals in Bitcoin block:",
+    bitcoinBlockHeight
+  );
+
+  try {
+    const { data, error } = await supabase
+      .from("proposals")
+      .select("id, created_btc")
+      .eq("created_btc", bitcoinBlockHeight.toString())
+      .limit(1);
+
+    if (error) {
+      console.error("❌ Error checking proposals in Bitcoin block:", error);
+      throw error;
+    }
+
+    const hasProposals = data && data.length > 0;
+    console.log(
+      `📊 Bitcoin block ${bitcoinBlockHeight} has proposals:`,
+      hasProposals
+    );
+
+    return hasProposals;
+  } catch (error) {
+    console.error("❌ Error in checkProposalsInBitcoinBlock:", error);
+    return false;
+  }
+}

@@ -21,6 +21,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
 import { fetchAgents } from "@/services/agent.service";
 import { fetchAirdropsBySender } from "@/services/airdrop.service";
+import { checkProposalsInBitcoinBlock } from "@/services/contribution.service";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 import { getStacksAddress } from "@/lib/address";
 import {
   Dialog,
@@ -260,6 +262,14 @@ export function ProposalSubmission({
   >(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
+  // State for Bitcoin block validation
+  const [hasProposalInCurrentBlock, setHasProposalInCurrentBlock] =
+    useState(false);
+  const [isCheckingBitcoinBlock, setIsCheckingBitcoinBlock] = useState(false);
+  const [currentBitcoinBlock, setCurrentBitcoinBlock] = useState<number | null>(
+    null
+  );
+
   // Error code mapping
   const errorDetailsArray = getAllErrorDetails();
   const errorCodeMap = errorDetailsArray.reduce(
@@ -299,6 +309,17 @@ export function ProposalSubmission({
     staleTime: 10 * 60 * 1000, // 10 min
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
+  });
+
+  // Fetch current Bitcoin block height
+  const { data: chainState, isLoading: isLoadingChainState } = useQuery({
+    queryKey: ["latestChainState"],
+    queryFn: fetchLatestChainState,
+    enabled: hasAccessToken, // Only fetch when authenticated
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Find the user's agent based on profile_id
@@ -510,6 +531,38 @@ export function ProposalSubmission({
     userAgent?.account_contract,
     daoName,
   ]);
+
+  // Check for proposals in current Bitcoin block
+  useEffect(() => {
+    const checkBitcoinBlockProposals = async () => {
+      if (!hasAccessToken || !chainState?.bitcoin_block_height) {
+        setHasProposalInCurrentBlock(false);
+        setCurrentBitcoinBlock(null);
+        return;
+      }
+
+      const bitcoinBlockHeight = parseInt(chainState.bitcoin_block_height);
+      setCurrentBitcoinBlock(bitcoinBlockHeight);
+      setIsCheckingBitcoinBlock(true);
+
+      try {
+        const hasProposal =
+          await checkProposalsInBitcoinBlock(bitcoinBlockHeight);
+        setHasProposalInCurrentBlock(hasProposal);
+        console.log(`Bitcoin block ${bitcoinBlockHeight} validation:`, {
+          hasProposal,
+          blockHeight: bitcoinBlockHeight,
+        });
+      } catch (error) {
+        console.error("Error checking Bitcoin block proposals:", error);
+        setHasProposalInCurrentBlock(false);
+      } finally {
+        setIsCheckingBitcoinBlock(false);
+      }
+    };
+
+    checkBitcoinBlockProposals();
+  }, [hasAccessToken, chainState?.bitcoin_block_height]);
 
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
@@ -1082,6 +1135,34 @@ export function ProposalSubmission({
                 </div>
               )}
 
+            {/* Bitcoin Block Validation */}
+            {hasAccessToken &&
+              hasAgentAccount &&
+              hasAgentDaoTokens &&
+              !isCheckingBitcoinBlock &&
+              hasProposalInCurrentBlock &&
+              currentBitcoinBlock && (
+                <div className="text-sm text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <strong>⏱️ Bitcoin Block Limit Reached</strong>
+                      <div className="text-xs text-yellow-200 mt-1">
+                        Only one contribution per Bitcoin block. Please wait
+                        until block {currentBitcoinBlock + 1}.
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-yellow-200">
+                        Current Block
+                      </div>
+                      <div className="font-bold">
+                        {currentBitcoinBlock.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
               <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
                 <strong>Invalid Twitter URL:</strong> URL must be in the format
@@ -1132,7 +1213,9 @@ export function ProposalSubmission({
                 !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
-                isLoadingBalance
+                isLoadingBalance ||
+                isCheckingBitcoinBlock ||
+                hasProposalInCurrentBlock
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
               style={{ height: "var(--submit-cta-height)" }}
@@ -1142,6 +1225,21 @@ export function ProposalSubmission({
                   <Loader />
                   <span>Submitting...</span>
                 </div>
+              ) : !hasAccessToken ? (
+                <span>Connect Wallet to Submit</span>
+              ) : !hasAgentAccount ? (
+                <span>Waiting for Agent Account</span>
+              ) : !hasAgentDaoTokens ? (
+                <span>Join DAO to Submit</span>
+              ) : isCheckingBitcoinBlock ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>Checking Bitcoin Block...</span>
+                </div>
+              ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
+                <span>
+                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
+                </span>
               ) : (
                 <div className="flex items-center gap-3">
                   <Send className="h-4 w-4" />
