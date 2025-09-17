@@ -60,6 +60,7 @@ import {
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { AnimatedSubmissionModal } from "@/components/ui/AnimatedSubmissionModal";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -227,6 +228,10 @@ export function ProposalSubmission({
   // };
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStep, setSubmissionStep] = useState(0);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isSubmissionCompleted, setIsSubmissionCompleted] = useState(false);
   // const [isGenerating, setIsGenerating] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
   const name = daoName;
@@ -723,11 +728,50 @@ export function ProposalSubmission({
     if (!accessToken) throw new Error("Missing access token");
 
     setIsSubmitting(true);
+    setShowSubmissionModal(true);
+    setSubmissionError(null);
+    setIsSubmissionCompleted(false);
+
     try {
-      const response = await proposeSendMessage(accessToken, payload);
+      // Start the animation sequence while making the API call
+      const animationPromise = (async () => {
+        // Step 1: Submitting contribution
+        setSubmissionStep(0);
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Step 2: Processing the contribution
+        setSubmissionStep(1);
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        // Step 3: Checking agent voting account
+        setSubmissionStep(2);
+        await new Promise((resolve) => setTimeout(resolve, 700));
+
+        // Step 4: Setting up contribution transaction
+        setSubmissionStep(3);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Step 5: Broadcasting transaction to network
+        setSubmissionStep(4);
+      })();
+
+      // Make the actual API call
+      const apiPromise = proposeSendMessage(accessToken, payload);
+
+      // Wait for both animation and API call to complete
+      const [, response] = await Promise.all([animationPromise, apiPromise]);
       console.log("API Response:", response);
 
+      // Mark as completed and show completion state briefly
+      setIsSubmissionCompleted(true);
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       return response;
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -752,6 +796,14 @@ export function ProposalSubmission({
     try {
       const response = await sendRequest(extensionData);
 
+      // Close submission modal after successful API call
+      setShowSubmissionModal(false);
+      setSubmissionStep(0);
+      setIsSubmissionCompleted(false);
+
+      // Small delay before showing transaction status modal
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       setApiResponse(response);
       setShowResultDialog(true);
       setTxStatusView("initial");
@@ -770,6 +822,14 @@ export function ProposalSubmission({
         // setContribution(""); // Do NOT clear here; will clear after confirmed-success
       }
     } catch (err) {
+      // Wait a moment to show error state in animated modal
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Close submission modal and show error
+      setShowSubmissionModal(false);
+      setSubmissionStep(0);
+      setIsSubmissionCompleted(false);
+
       // Handle network errors or other unexpected errors
       const networkErrorResponse: ApiResponse = {
         success: false,
@@ -1223,7 +1283,7 @@ export function ProposalSubmission({
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <Loader />
-                  <span>Submitting...</span>
+                  <span>Processing...</span>
                 </div>
               ) : !hasAccessToken ? (
                 <span>Connect Wallet to Submit</span>
@@ -1627,6 +1687,24 @@ export function ProposalSubmission({
           handleApproveContract();
         }}
         showRetryButton={true}
+      />
+
+      {/* Animated Submission Modal */}
+      <AnimatedSubmissionModal
+        isOpen={showSubmissionModal}
+        onClose={() => {
+          // Only allow closing if there's an error
+          if (submissionError) {
+            setShowSubmissionModal(false);
+            setSubmissionStep(0);
+            setSubmissionError(null);
+          }
+        }}
+        daoName={daoName || "DAO"}
+        currentStep={submissionStep}
+        isError={!!submissionError}
+        errorMessage={submissionError || undefined}
+        isCompleted={isSubmissionCompleted}
       />
     </>
   );
