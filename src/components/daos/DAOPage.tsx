@@ -11,6 +11,7 @@ import {
   BarChart3,
   DollarSign,
   TrendingUp,
+  Bot,
 } from "lucide-react";
 import {
   fetchToken,
@@ -42,6 +43,8 @@ import { formatNumber } from "@/utils/format";
 import { hexToCV, cvToJSON } from "@stacks/transactions";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -58,6 +61,29 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("charter");
+
+  // Agent account data
+  const { userAgentBalance } = useAgentAccount();
+
+  // Helper function to get agent balance for specific DAO token
+  const getAgentTokenBalance = useCallback(
+    (tokenContract: string | null | undefined): string => {
+      if (!userAgentBalance || !tokenContract) return "0";
+
+      // Look for the token in fungible_tokens using the contract principal
+      const tokenKey = Object.keys(userAgentBalance.fungible_tokens).find(
+        (key) => key.includes(tokenContract)
+      );
+
+      if (tokenKey && userAgentBalance.fungible_tokens[tokenKey]) {
+        const balance = userAgentBalance.fungible_tokens[tokenKey].balance;
+        return balance;
+      }
+
+      return "0";
+    },
+    [userAgentBalance]
+  );
 
   // Helper function to check if the token is bonded
   // const checkBonded = useCallback(
@@ -439,6 +465,18 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 <FileText className="h-4 w-4 text-orange-400" />
                 <span className="text-muted-foreground">Contributions:</span>
                 <span className="font-medium">{totalProposals}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-cyan-400" />
+                <span className="text-muted-foreground">Agent Balance:</span>
+                <span className="font-medium">
+                  <BalanceDisplay
+                    value={getAgentTokenBalance(tokenContract)}
+                    symbol={token?.symbol || dao?.name || ""}
+                    decimals={8}
+                    variant="abbreviated"
+                  />
+                </span>
               </div>
             </div>
           </div>
