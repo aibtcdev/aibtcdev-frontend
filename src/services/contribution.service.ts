@@ -111,3 +111,54 @@ export async function fetchAgentContributionHistory(
 
   return contributions;
 }
+
+/**
+ * Check if any proposals exist in the specified Bitcoin block height for a specific DAO
+ * @param bitcoinBlockHeight - The Bitcoin block height to check
+ * @param daoId - The DAO ID to check proposals for
+ * @returns Promise resolving to true if proposals exist in that block for the DAO, false otherwise
+ */
+export async function checkProposalsInBitcoinBlock(
+  bitcoinBlockHeight: number,
+  daoId: string
+): Promise<boolean> {
+  if (!bitcoinBlockHeight || bitcoinBlockHeight <= 0) {
+    console.log("❌ Invalid Bitcoin block height provided");
+    return false;
+  }
+
+  if (!daoId) {
+    console.log("❌ Invalid DAO ID provided");
+    return false;
+  }
+
+  console.log(
+    `🔍 Checking for proposals in Bitcoin block ${bitcoinBlockHeight} for DAO:`,
+    daoId
+  );
+
+  try {
+    const { data, error } = await supabase
+      .from("proposals")
+      .select("id, created_btc, dao_id")
+      .eq("created_btc", bitcoinBlockHeight.toString())
+      .eq("dao_id", daoId)
+      .limit(1);
+
+    if (error) {
+      console.error("❌ Error checking proposals in Bitcoin block:", error);
+      throw error;
+    }
+
+    const hasProposals = data && data.length > 0;
+    console.log(
+      `📊 Bitcoin block ${bitcoinBlockHeight} for DAO ${daoId} has proposals:`,
+      hasProposals
+    );
+
+    return hasProposals;
+  } catch (error) {
+    console.error("❌ Error in checkProposalsInBitcoinBlock:", error);
+    return false;
+  }
+}
