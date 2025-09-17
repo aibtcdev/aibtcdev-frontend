@@ -551,13 +551,19 @@ export function ProposalSubmission({
       setIsCheckingBitcoinBlock(true);
 
       try {
-        const hasProposal =
-          await checkProposalsInBitcoinBlock(bitcoinBlockHeight);
+        const hasProposal = await checkProposalsInBitcoinBlock(
+          bitcoinBlockHeight,
+          daoId
+        );
         setHasProposalInCurrentBlock(hasProposal);
-        console.log(`Bitcoin block ${bitcoinBlockHeight} validation:`, {
-          hasProposal,
-          blockHeight: bitcoinBlockHeight,
-        });
+        console.log(
+          `Bitcoin block ${bitcoinBlockHeight} validation for DAO ${daoId}:`,
+          {
+            hasProposal,
+            blockHeight: bitcoinBlockHeight,
+            daoId,
+          }
+        );
       } catch (error) {
         console.error("Error checking Bitcoin block proposals:", error);
         setHasProposalInCurrentBlock(false);
@@ -567,7 +573,7 @@ export function ProposalSubmission({
     };
 
     checkBitcoinBlockProposals();
-  }, [hasAccessToken, chainState?.bitcoin_block_height]);
+  }, [hasAccessToken, chainState?.bitcoin_block_height, daoId]);
 
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
