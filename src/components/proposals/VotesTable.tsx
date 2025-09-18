@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProposalVotes } from "@/services/vote.service";
 import type { Vote } from "@/types";
 import { ThumbsUp, ThumbsDown, ExternalLink, Eye } from "lucide-react";
@@ -21,6 +21,7 @@ interface VotesTableProps {
 }
 
 const VotesTable = ({ proposalId }: VotesTableProps) => {
+  const queryClient = useQueryClient();
   const [selectedReasoning, setSelectedReasoning] = useState<{
     reasoning: string;
     voter: string;
@@ -31,6 +32,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
     isLoading,
     error,
     isError,
+    refetch,
   } = useQuery<Vote[], Error>({
     queryKey: ["proposalVotesTable", proposalId],
     queryFn: () => fetchProposalVotes(proposalId),
@@ -39,6 +41,14 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
     staleTime: 1000 * 60 * 1, // 1 minute stale time
     gcTime: 1000 * 60 * 5, // 5 minutes garbage collection time
   });
+
+  // Handle retry with proper query invalidation
+  const handleRetry = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["proposalVotesTable", proposalId],
+    });
+    refetch();
+  };
 
   // Helper function to truncate addresses
   const truncateAddress = (address: string) => {
@@ -223,7 +233,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                 error?.message ||
                 "There was an error loading the vote data. Please try again."
               }
-              onRetry={() => window.location.reload()}
+              onRetry={handleRetry}
             />
           ) : !votes || votes.length === 0 ? (
             <DataTable.Empty
