@@ -14,9 +14,6 @@ interface UseProposalVoteProps {
 }
 
 interface VoteDisplayData {
-  votesFor: string;
-  votesAgainst: string;
-  liquidTokens: string;
   rawVotesFor: string;
   rawVotesAgainst: string;
   rawLiquidTokens: string;
@@ -71,9 +68,9 @@ export function useProposalVote({
 
   // Memoized format function
   const formatBalance = useCallback(
-    (value: string | number, decimals: number = 8): string => {
+    (value: string | number, decimals: number = 8): string | null => {
       const num = typeof value === "string" ? parseFloat(value) : value;
-      if (isNaN(num)) return "0";
+      if (isNaN(num) || num < 0) return null;
 
       const normalized = num / Math.pow(10, decimals);
 
@@ -240,15 +237,28 @@ export function useProposalVote({
       return null;
     }
 
+    // Validate that we have valid numeric values
+    const votesForNum = parseFloat(votesFor);
+    const votesAgainstNum = parseFloat(votesAgainst);
+    const liquidTokensNum = parseFloat(liquidTokens);
+
+    if (
+      isNaN(votesForNum) ||
+      isNaN(votesAgainstNum) ||
+      isNaN(liquidTokensNum) ||
+      votesForNum < 0 ||
+      votesAgainstNum < 0 ||
+      liquidTokensNum < 0
+    ) {
+      return null;
+    }
+
     return {
-      votesFor: formatBalance(votesFor),
-      votesAgainst: formatBalance(votesAgainst),
-      liquidTokens: formatBalance(liquidTokens),
       rawVotesFor: votesFor,
       rawVotesAgainst: votesAgainst,
       rawLiquidTokens: liquidTokens,
     };
-  }, [activeVoteData, formatBalance]);
+  }, [activeVoteData]);
 
   // Calculate vote metrics
   const calculations = useMemo((): VoteCalculations | null => {

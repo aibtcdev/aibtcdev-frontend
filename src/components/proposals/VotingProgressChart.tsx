@@ -449,28 +449,74 @@ const VotingProgressChart = ({
         </div>
 
         {/* Vote breakdown */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>
-                {voteDisplayData?.votesFor} (
-                {enhancedCalculations.votesForPercent.toFixed(1)}%)
-              </span>
+        {!voteDisplayData ? (
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Failed to fetch vote data</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isLoadingVotes}
+              className="h-8 px-2 text-destructive hover:text-destructive"
+            >
+              <RefreshCw
+                className={`h-3 w-3 mr-1 ${isLoadingVotes ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                {voteDisplayData ? (
+                  <>
+                    <TokenBalance
+                      value={voteDisplayData.rawVotesFor}
+                      decimals={8}
+                      variant="abbreviated"
+                    />{" "}
+                    ({enhancedCalculations.votesForPercent.toFixed(1)}%)
+                  </>
+                ) : (
+                  <span className="text-destructive">Failed to fetch</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full" />
+                {voteDisplayData ? (
+                  <>
+                    <TokenBalance
+                      value={voteDisplayData.rawVotesAgainst}
+                      decimals={8}
+                      variant="abbreviated"
+                    />{" "}
+                    ({enhancedCalculations.votesAgainstPercent.toFixed(1)}%)
+                  </>
+                ) : (
+                  <span className="text-destructive">Failed to fetch</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-red-500 rounded-full" />
-              <span>
-                {voteDisplayData?.votesAgainst} (
-                {enhancedCalculations.votesAgainstPercent.toFixed(1)}%)
-              </span>
+              <div className="w-2 h-2 bg-primary rounded-full" />
+              <span>Total: </span>
+              {voteDisplayData ? (
+                <TokenBalance
+                  value={voteDisplayData.rawLiquidTokens}
+                  decimals={8}
+                  variant="abbreviated"
+                />
+              ) : (
+                <span className="text-destructive">Failed to fetch</span>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>Total: {voteDisplayData?.liquidTokens || "0"}</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Approval Rate Progress Bar */}
@@ -717,7 +763,7 @@ const VotingProgressChart = ({
                     )}
                 </div>
               ) : (
-                <span>Vote data unavailable</span>
+                <span>No vote data available</span>
               )}
             </div>
           </div>

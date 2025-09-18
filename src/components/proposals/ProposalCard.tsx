@@ -18,6 +18,8 @@ import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -36,7 +38,12 @@ export default function ProposalCard({
   const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
 
   // Use centralized vote hook for consistent data fetching
-  const { voteDisplayData, error: hasVoteDataError } = useProposalVote({
+  const {
+    voteDisplayData,
+    error: hasVoteDataError,
+    refreshVoteData,
+    isLoading: isLoadingVotes,
+  } = useProposalVote({
     proposal,
     contractPrincipal: proposal.contract_principal,
   });
@@ -45,18 +52,12 @@ export default function ProposalCard({
   const voteSummary = useMemo(() => {
     // Use hook data if available, otherwise fallback to proposal props
     if (voteDisplayData && !hasVoteDataError) {
+      const votesForNum = Number(voteDisplayData.rawVotesFor);
+      const votesAgainstNum = Number(voteDisplayData.rawVotesAgainst);
       return {
-        votesFor: voteDisplayData.votesFor
-          ? Number(voteDisplayData.votesFor)
-          : null,
-        votesAgainst: voteDisplayData.votesAgainst
-          ? Number(voteDisplayData.votesAgainst)
-          : null,
-        totalVotes:
-          voteDisplayData.votesFor && voteDisplayData.votesAgainst
-            ? Number(voteDisplayData.votesFor) +
-              Number(voteDisplayData.votesAgainst)
-            : null,
+        votesFor: votesForNum,
+        votesAgainst: votesAgainstNum,
+        totalVotes: votesForNum + votesAgainstNum,
         hasVoteData: true,
       };
     }
@@ -94,19 +95,27 @@ export default function ProposalCard({
   const { votesFor, votesAgainst, totalVotes, hasVoteData } = voteSummary;
 
   // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
+  // Only calculate percentages when we have valid vote data
   const forPercentage =
-    hasVoteData && liquidTokens > 0 && votesFor !== null
+    hasVoteData && liquidTokens > 0 && votesFor !== null && votesFor >= 0
       ? (votesFor / liquidTokens) * 100
-      : 0;
+      : null;
   const againstPercentage =
-    hasVoteData && liquidTokens > 0 && votesAgainst !== null
+    hasVoteData &&
+    liquidTokens > 0 &&
+    votesAgainst !== null &&
+    votesAgainst >= 0
       ? (votesAgainst / liquidTokens) * 100
-      : 0;
+      : null;
 
   const approvalRate =
-    hasVoteData && totalVotes !== null && totalVotes > 0 && votesFor !== null
+    hasVoteData &&
+    totalVotes !== null &&
+    totalVotes > 0 &&
+    votesFor !== null &&
+    votesFor >= 0
       ? (votesFor / totalVotes) * 100
-      : 0;
+      : null;
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -328,6 +337,32 @@ export default function ProposalCard({
           )}
         </div>
 
+        {/* Vote Data Error Handling */}
+        {hasVoteDataError && !voteDisplayData && (
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Failed to fetch vote data</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                refreshVoteData();
+              }}
+              disabled={isLoadingVotes}
+              className="h-8 px-2 text-destructive hover:text-destructive"
+            >
+              <RefreshCw
+                className={`h-3 w-3 mr-1 ${isLoadingVotes ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
+        )}
+
         {/* Voting Progress for Active Proposals */}
         {isActive &&
           hasVoteData &&
@@ -339,16 +374,22 @@ export default function ProposalCard({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                   <span className="text-success font-medium">
-                    For: {formatNumber(votesFor)} ({forPercentage.toFixed(1)}%
+                    For: {formatNumber(votesFor)} (
+                    {forPercentage !== null ? forPercentage.toFixed(1) : "--"}%
                     of liquid)
                   </span>
                   <span className="text-destructive font-medium">
                     Against: {formatNumber(votesAgainst)} (
-                    {againstPercentage.toFixed(1)}% of liquid)
+                    {againstPercentage !== null
+                      ? againstPercentage.toFixed(1)
+                      : "--"}
+                    % of liquid)
                   </span>
                 </div>
                 <div className="text-xs text-foreground/75">
-                  Approval: {approvalRate.toFixed(1)}% of votes cast
+                  Approval:{" "}
+                  {approvalRate !== null ? approvalRate.toFixed(1) : "--"}% of
+                  votes cast
                 </div>
               </div>
 
@@ -356,11 +397,15 @@ export default function ProposalCard({
                 <div className="h-full flex">
                   <div
                     className="bg-success transition-all duration-500"
-                    style={{ width: `${forPercentage}%` }}
+                    style={{
+                      width: `${forPercentage !== null ? forPercentage : 0}%`,
+                    }}
                   />
                   <div
                     className="bg-destructive transition-all duration-500"
-                    style={{ width: `${againstPercentage}%` }}
+                    style={{
+                      width: `${againstPercentage !== null ? againstPercentage : 0}%`,
+                    }}
                   />
                 </div>
               </div>
