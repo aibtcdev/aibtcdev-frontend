@@ -7,7 +7,7 @@ export interface Notification {
     | "warning"
     | "success";
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   actionText?: string;
   actionUrl?: string;
   icon?: React.ComponentType<{ className?: string }>;

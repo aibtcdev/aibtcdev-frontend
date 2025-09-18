@@ -21,6 +21,7 @@ import {
 import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
 import { getStacksAddress } from "@/lib/address";
+import { getStacksAddressPair } from "@aibtc/types";
 
 // Define proper interface for wallet user data
 interface WalletAddress {
@@ -218,7 +219,6 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
     setShowTerms(false);
 
     try {
-      console.log("userData", userData);
       // Extract STX address using getStacksAddress helper function
       const stxAddress = getStacksAddress();
       if (!stxAddress) {
@@ -264,19 +264,31 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         } = await supabase.auth.getUser();
         const userId = user?.id;
 
-        // 2️⃣ grab addresses from the new wallet session structure
-        // For now, we'll use the same address for both mainnet and testnet
-        // since the new API only returns current network's address
-        const currentAddress = stxAddress;
-        const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
-        const mainnetAddr = isMainnet ? currentAddress : "";
-        const testnetAddr = !isMainnet ? currentAddress : "";
+        // 2️⃣ derive both testnet and mainnet addresses using getStacksAddressPair
+        // This function can take either a testnet or mainnet address and return both
+        // Network validation above ensures user connects with correct network for this environment
+        let mainnetAddr: string;
+        let testnetAddr: string;
+
+        try {
+          const addressPair = getStacksAddressPair(stxAddress);
+          mainnetAddr = addressPair.mainnet;
+          testnetAddr = addressPair.testnet;
+        } catch (error) {
+          console.error("Error with getStacksAddressPair:", error);
+          // Fallback: if the function fails, use the connected address for the current network
+          // and leave the other network address empty for now
+          if (stxAddress.startsWith("ST")) {
+            testnetAddr = stxAddress;
+            mainnetAddr = ""; // Will need to be derived later
+          } else {
+            mainnetAddr = stxAddress;
+            testnetAddr = ""; // Will need to be derived later
+          }
+        }
 
         // 3️⃣ patch the profile table (creates row if missing)
         if (userId) {
-          console.log(
-            "Updating profile with Stacks addresses after authentication"
-          );
           await ensureProfileHasStacksAddresses(
             userId,
             mainnetAddr,
@@ -301,6 +313,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         description: "Authentication failed. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 
@@ -404,32 +417,15 @@ async function ensureProfileHasStacksAddresses(
   testnetAddr: string
 ) {
   try {
-    // Get the current profile data
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("mainnet_address, testnet_address")
-      .eq("id", userId)
-      .single();
+    // Always store both addresses - we derive them from the connected address
+    // Note: addresses might be empty strings if derivation failed
+    const updates: Record<string, string | null> = {
+      id: userId,
+      mainnet_address: mainnetAddr || null,
+      testnet_address: testnetAddr || null,
+    };
 
-    // Prepare updates object - only update fields that are null
-    const updates: Record<string, string> = { id: userId };
-    // If no profile exists or mainnet_address is null, add it to updates
-    if (!profile?.mainnet_address && mainnetAddr) {
-      updates.mainnet_address = mainnetAddr;
-    }
-
-    // If no profile exists or testnet_address is null, add it to updates
-    if (!profile?.testnet_address && testnetAddr) {
-      updates.testnet_address = testnetAddr;
-    }
-
-    // Only proceed if we have updates to make
-    if (Object.keys(updates).length <= 1) {
-      console.log("No address updates needed for profile");
-      return;
-    }
-
-    // Use upsert to create or update the profile
+    // Use upsert to create or update the profile with both addresses
     const { error: upsertErr } = await supabase
       .from("profiles")
       .upsert(updates, {
@@ -441,8 +437,6 @@ async function ensureProfileHasStacksAddresses(
       console.error("Error updating profile:", upsertErr);
       throw upsertErr;
     }
-
-    console.log("Profile updated with Stacks addresses");
   } catch (error) {
     console.error("Error in ensureProfileHasStacksAddresses:", error);
   }
