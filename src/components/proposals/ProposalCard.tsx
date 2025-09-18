@@ -1,15 +1,10 @@
 "use client";
 
 import type React from "react";
-import { Clock, User, BarChart3, Building2 } from "lucide-react";
+import { Clock, User, BarChart3, Building2, Coins } from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
-import {
-  truncateString,
-  getExplorerLink,
-  formatAction,
-  formatNumber,
-} from "@/utils/format";
+import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
@@ -91,31 +86,8 @@ export default function ProposalCard({
   ]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
-  const liquidTokens = Number(proposal.liquid_tokens || 0);
-  const { votesFor, votesAgainst, totalVotes, hasVoteData } = voteSummary;
-
-  // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
-  // Only calculate percentages when we have valid vote data
-  const forPercentage =
-    hasVoteData && liquidTokens > 0 && votesFor !== null && votesFor >= 0
-      ? (votesFor / liquidTokens) * 100
-      : null;
-  const againstPercentage =
-    hasVoteData &&
-    liquidTokens > 0 &&
-    votesAgainst !== null &&
-    votesAgainst >= 0
-      ? (votesAgainst / liquidTokens) * 100
-      : null;
-
-  const approvalRate =
-    hasVoteData &&
-    totalVotes !== null &&
-    totalVotes > 0 &&
-    votesFor !== null &&
-    votesFor >= 0
-      ? (votesFor / totalVotes) * 100
-      : null;
+  const liquidTokens = Number(proposal.liquid_tokens);
+  const { totalVotes, hasVoteData } = voteSummary;
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -335,6 +307,16 @@ export default function ProposalCard({
               />
             </div>
           )}
+          {liquidTokens > 0 && (
+            <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
+              <Coins className="h-3 w-3 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">Liquid:</span>
+              <TokenBalance
+                variant="abbreviated"
+                value={liquidTokens.toString()}
+              />
+            </div>
+          )}
         </div>
 
         {/* Vote Data Error Handling */}
@@ -362,55 +344,6 @@ export default function ProposalCard({
             </Button>
           </div>
         )}
-
-        {/* Voting Progress for Active Proposals */}
-        {isActive &&
-          hasVoteData &&
-          totalVotes !== null &&
-          totalVotes > 0 &&
-          votesFor !== null &&
-          votesAgainst !== null && (
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                  <span className="text-success font-medium">
-                    For: {formatNumber(votesFor)} (
-                    {forPercentage !== null ? forPercentage.toFixed(1) : "--"}%
-                    of liquid)
-                  </span>
-                  <span className="text-destructive font-medium">
-                    Against: {formatNumber(votesAgainst)} (
-                    {againstPercentage !== null
-                      ? againstPercentage.toFixed(1)
-                      : "--"}
-                    % of liquid)
-                  </span>
-                </div>
-                <div className="text-xs text-foreground/75">
-                  Approval:{" "}
-                  {approvalRate !== null ? approvalRate.toFixed(1) : "--"}% of
-                  votes cast
-                </div>
-              </div>
-
-              <div className="w-full bg-muted/30 rounded-full h-1.5 sm:h-2 overflow-hidden">
-                <div className="h-full flex">
-                  <div
-                    className="bg-success transition-all duration-500"
-                    style={{
-                      width: `${forPercentage !== null ? forPercentage : 0}%`,
-                    }}
-                  />
-                  <div
-                    className="bg-destructive transition-all duration-500"
-                    style={{
-                      width: `${againstPercentage !== null ? againstPercentage : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
 
         {/* Completed Status */}
         {/* {isPassed && (

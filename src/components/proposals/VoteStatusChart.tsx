@@ -22,6 +22,7 @@ const VoteStatusChart = ({
   initialVotesAgainst,
   // refreshing = false,
   tokenSymbol = "",
+  liquidTokens,
   proposal,
 }: VoteStatusChartProps) => {
   const [localRefreshing, setLocalRefreshing] = useState(false);
@@ -116,7 +117,7 @@ const VoteStatusChart = ({
     <div className="space-y-2">
       {/* Vote Progress Bar */}
       <div className="relative">
-        <div className="h-3 sm:h-4 bg-muted rounded-full overflow-hidden">
+        <div className="h-3 sm:h-4 bg-muted rounded-full overflow-hidden relative">
           {/* Votes for (green) */}
           <div
             className="absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out rounded-l-full"
@@ -148,6 +149,7 @@ const VoteStatusChart = ({
             className="font-medium"
           />
         </div>
+
         <div className="flex items-center gap-1">
           <span className="text-muted-foreground">Against:</span>
           <TokenBalance
@@ -159,6 +161,20 @@ const VoteStatusChart = ({
           />
           <div className="w-2 h-2 bg-red-500 rounded-full" />
         </div>
+
+        {/* Liquid Tokens - Right */}
+        {liquidTokens && Number(liquidTokens) > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">Liquid:</span>
+            <TokenBalance
+              value={liquidTokens}
+              decimals={8}
+              variant="abbreviated"
+              symbol={tokenSymbol}
+              className="font-medium"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
