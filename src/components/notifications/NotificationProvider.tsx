@@ -14,18 +14,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { getStacksAddress } from "@/lib/address";
 import { Settings, Coins } from "lucide-react";
 import { Notification, NotificationContextType } from "./types";
+import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
 );
-
-// Custom format function for token balances with specified decimals
-const formatBalance = (balance: number, decimals: number = 8): string => {
-  if (!balance || balance === 0) return "0";
-  const divisor = Math.pow(10, decimals);
-  const formatted = (balance / divisor).toFixed(decimals);
-  return parseFloat(formatted).toString();
-};
 
 const isDAOToken = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
@@ -110,12 +103,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Asset deposit notification - show for each DAO token with balance
     daoTokens.forEach((token) => {
-      const formattedBalance = formatBalance(token.balance, 8);
       notifs.push({
         id: `asset-deposit-${token.name.toLowerCase()}`,
         type: "asset-deposit",
         title: "Deposit Available",
-        message: `Deposit your ${formattedBalance} ${token.name} into Agent voting contract to send contribution and provide them voting power`,
+        message: (
+          <>
+            Deposit your{" "}
+            <BalanceDisplay
+              value={token.balance}
+              symbol={token.name}
+              decimals={8}
+              variant="abbreviated"
+              showSymbol={true}
+            />{" "}
+            into Agent voting contract to send contribution and provide them
+            voting power
+          </>
+        ),
         actionText: "Deposit",
         actionUrl: "/account?tab=wallets",
         icon: Coins,
