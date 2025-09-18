@@ -67,27 +67,27 @@ export function useProposalVote({
     });
 
   // Memoized format function
-  const formatBalance = useCallback(
-    (value: string | number, decimals: number = 8): string | null => {
-      const num = typeof value === "string" ? parseFloat(value) : value;
-      if (isNaN(num) || num < 0) return null;
+  // const formatBalance = useCallback(
+  //   (value: string | number, decimals: number = 8): string | null => {
+  //     const num = typeof value === "string" ? parseFloat(value) : value;
+  //     if (isNaN(num) || num < 0) return null;
 
-      const normalized = num / Math.pow(10, decimals);
+  //     const normalized = num / Math.pow(10, decimals);
 
-      if (normalized >= 1000000) {
-        return `${(normalized / 1000000).toFixed(2)}M`;
-      }
-      if (normalized >= 1000) {
-        return `${(normalized / 1000).toFixed(2)}K`;
-      }
-      if (normalized < 1 && normalized > 0) {
-        return normalized.toFixed(decimals).replace(/\.?0+$/, "");
-      }
+  //     if (normalized >= 1000000) {
+  //       return `${(normalized / 1000000).toFixed(2)}M`;
+  //     }
+  //     if (normalized >= 1000) {
+  //       return `${(normalized / 1000).toFixed(2)}K`;
+  //     }
+  //     if (normalized < 1 && normalized > 0) {
+  //       return normalized.toFixed(decimals).replace(/\.?0+$/, "");
+  //     }
 
-      return normalized.toFixed(decimals).replace(/\.?0+$/, "");
-    },
-    []
-  );
+  //     return normalized.toFixed(decimals).replace(/\.?0+$/, "");
+  //   },
+  //   []
+  // );
 
   // Primary vote data source
   const primaryQuery = useQuery({
