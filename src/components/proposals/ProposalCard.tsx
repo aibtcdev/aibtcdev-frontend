@@ -363,55 +363,6 @@ export default function ProposalCard({
           </div>
         )}
 
-        {/* Voting Progress for Active Proposals */}
-        {isActive &&
-          hasVoteData &&
-          totalVotes !== null &&
-          totalVotes > 0 &&
-          votesFor !== null &&
-          votesAgainst !== null && (
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                  <span className="text-success font-medium">
-                    For: {formatNumber(votesFor)} (
-                    {forPercentage !== null ? forPercentage.toFixed(1) : "--"}%
-                    of liquid)
-                  </span>
-                  <span className="text-destructive font-medium">
-                    Against: {formatNumber(votesAgainst)} (
-                    {againstPercentage !== null
-                      ? againstPercentage.toFixed(1)
-                      : "--"}
-                    % of liquid)
-                  </span>
-                </div>
-                <div className="text-xs text-foreground/75">
-                  Approval:{" "}
-                  {approvalRate !== null ? approvalRate.toFixed(1) : "--"}% of
-                  votes cast
-                </div>
-              </div>
-
-              <div className="w-full bg-muted/30 rounded-full h-1.5 sm:h-2 overflow-hidden">
-                <div className="h-full flex">
-                  <div
-                    className="bg-success transition-all duration-500"
-                    style={{
-                      width: `${forPercentage !== null ? forPercentage : 0}%`,
-                    }}
-                  />
-                  <div
-                    className="bg-destructive transition-all duration-500"
-                    style={{
-                      width: `${againstPercentage !== null ? againstPercentage : 0}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
         {/* Completed Status */}
         {/* {isPassed && (
           <div className="text-sm">
