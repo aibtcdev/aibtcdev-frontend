@@ -1,15 +1,10 @@
 "use client";
 
 import type React from "react";
-import { Clock, User, BarChart3, Building2 } from "lucide-react";
+import { Clock, User, BarChart3, Building2, Coins } from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
-import {
-  truncateString,
-  getExplorerLink,
-  formatAction,
-  formatNumber,
-} from "@/utils/format";
+import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
@@ -91,31 +86,8 @@ export default function ProposalCard({
   ]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
-  const liquidTokens = Number(proposal.liquid_tokens || 0);
-  const { votesFor, votesAgainst, totalVotes, hasVoteData } = voteSummary;
-
-  // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
-  // Only calculate percentages when we have valid vote data
-  const forPercentage =
-    hasVoteData && liquidTokens > 0 && votesFor !== null && votesFor >= 0
-      ? (votesFor / liquidTokens) * 100
-      : null;
-  const againstPercentage =
-    hasVoteData &&
-    liquidTokens > 0 &&
-    votesAgainst !== null &&
-    votesAgainst >= 0
-      ? (votesAgainst / liquidTokens) * 100
-      : null;
-
-  const approvalRate =
-    hasVoteData &&
-    totalVotes !== null &&
-    totalVotes > 0 &&
-    votesFor !== null &&
-    votesFor >= 0
-      ? (votesFor / totalVotes) * 100
-      : null;
+  const liquidTokens = Number(proposal.liquid_tokens);
+  const { totalVotes, hasVoteData } = voteSummary;
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -332,6 +304,16 @@ export default function ProposalCard({
               <TokenBalance
                 variant="abbreviated"
                 value={totalVotes.toString()}
+              />
+            </div>
+          )}
+          {liquidTokens > 0 && (
+            <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
+              <Coins className="h-3 w-3 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">Liquid:</span>
+              <TokenBalance
+                variant="abbreviated"
+                value={liquidTokens.toString()}
               />
             </div>
           )}
