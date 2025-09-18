@@ -377,68 +377,76 @@ export function AgentTokensTable({
     <>
       {/* Mobile Card View */}
       <div className="block sm:hidden space-y-4">
-        {tokensData.map(({ dao, agentBalance, userBalance, tokenData }) => {
-          const hasAgentBalance = parseFloat(agentBalance) > 0;
-          const hasUserBalance = parseFloat(userBalance) > 0;
-          const contractPrincipal = tokenData.contractPrincipal;
+        {tokensData
+          .filter(
+            ({ agentBalance, userBalance }) =>
+              parseFloat(agentBalance) > 0 || parseFloat(userBalance) > 0
+          )
+          .map(({ dao, agentBalance, userBalance, tokenData }) => {
+            const hasAgentBalance = parseFloat(agentBalance) > 0;
+            const hasUserBalance = parseFloat(userBalance) > 0;
+            const contractPrincipal = tokenData.contractPrincipal;
 
-          // Get voting contract principal (different from token contract)
-          // const votingContractPrincipal = dao.extensions?.find(
-          //   (ext) =>
-          //     ext.type === "EXTENSIONS" &&
-          //     ext.subtype === "ACTION_PROPOSAL_VOTING"
-          // )?.contract_principal;
+            // Get voting contract principal (different from token contract)
+            // const votingContractPrincipal = dao.extensions?.find(
+            //   (ext) =>
+            //     ext.type === "EXTENSIONS" &&
+            //     ext.subtype === "ACTION_PROPOSAL_VOTING"
+            // )?.contract_principal;
 
-          // Get approval statuses
-          const isTokenApproved =
-            tokenApprovals.data?.[contractPrincipal] || false;
-          // const isSwapApproved =
-          //   swapApprovals.data?.[contractPrincipal] || false;
-          // const isVotingApproved = votingContractPrincipal
-          //   ? votingApprovals.data?.[votingContractPrincipal] || false
-          //   : false;
+            // Get approval statuses
+            const isTokenApproved =
+              tokenApprovals.data?.[contractPrincipal] || false;
+            // const isSwapApproved =
+            //   swapApprovals.data?.[contractPrincipal] || false;
+            // const isVotingApproved = votingContractPrincipal
+            //   ? votingApprovals.data?.[votingContractPrincipal] || false
+            //   : false;
 
-          return (
-            <div
-              key={dao.id}
-              className="rounded-lg border bg-card p-4 space-y-3"
-            >
-              {/* Token Header */}
-              <div className="flex items-center justify-between">
-                <Badge variant="outline" className="text-xs">
-                  {dao.name}
-                </Badge>
-                <span className="font-mono text-sm font-medium">
-                  {formatBalance(agentBalance, 8)}
-                </span>
+            return (
+              <div
+                key={dao.id}
+                className="rounded-lg border bg-card p-4 space-y-3"
+              >
+                {/* Token Header */}
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="text-xs">
+                    {dao.name}
+                  </Badge>
+                  <div className="font-mono text-sm font-medium">
+                    {formatBalance(agentBalance, 8)}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-2">
+                  {hasUserBalance && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleDeposit(tokenData, agentAddress, "agent")
+                      }
+                      className="flex-1 text-xs"
+                    >
+                      Deposit {formatBalance(userBalance, 8)}
+                    </Button>
+                  )}
+                  {hasAgentBalance && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleWithdraw(tokenData, agentBalance)}
+                      disabled={!isTokenApproved}
+                      className="flex-1 text-xs"
+                    >
+                      Withdraw
+                    </Button>
+                  )}
+                </div>
               </div>
-
-              {/* Actions */}
-              <div className="flex space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    handleDeposit(tokenData, agentAddress, "agent")
-                  }
-                  disabled={!hasUserBalance}
-                  className="flex-1 text-xs"
-                >
-                  Deposit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleWithdraw(tokenData, agentBalance)}
-                  disabled={!hasAgentBalance || !isTokenApproved}
-                  className="flex-1 text-xs"
-                >
-                  Withdraw
-                </Button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
       {/* Desktop Table View */}
@@ -446,8 +454,8 @@ export function AgentTokensTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Token</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
+              <TableHead>DAO Token</TableHead>
+              <TableHead className="text-right">Agent Balance</TableHead>
               <TableHead className="text-center">Token</TableHead>
               <TableHead className="text-center">Swap</TableHead>
               <TableHead className="text-center">Voting</TableHead>
@@ -456,7 +464,10 @@ export function AgentTokensTable({
           </TableHeader>
           <TableBody>
             {tokensData
-              .filter(({ agentBalance }) => parseFloat(agentBalance) > 0)
+              .filter(
+                ({ agentBalance, userBalance }) =>
+                  parseFloat(agentBalance) > 0 || parseFloat(userBalance) > 0
+              )
               .map(({ dao, agentBalance, userBalance, tokenData }) => {
                 const hasAgentBalance = parseFloat(agentBalance) > 0;
                 const hasUserBalance = parseFloat(userBalance) > 0;
@@ -583,31 +594,35 @@ export function AgentTokensTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center space-x-2">
-                        {/* Deposit to Agent Account */}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleDeposit(tokenData, agentAddress, "agent")
-                          }
-                          disabled={!hasUserBalance}
-                          className="text-xs"
-                        >
-                          Deposit
-                        </Button>
+                        {/* Deposit to Agent Account - only show if user has tokens */}
+                        {hasUserBalance && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleDeposit(tokenData, agentAddress, "agent")
+                            }
+                            className="text-xs"
+                            title={`Deposit ${formatBalance(userBalance, 8)} from wallet`}
+                          >
+                            Deposit {formatBalance(userBalance, 8)}
+                          </Button>
+                        )}
 
-                        {/* Withdraw from Agent Account */}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            handleWithdraw(tokenData, agentBalance)
-                          }
-                          disabled={!hasAgentBalance || !isTokenApproved}
-                          className="text-xs"
-                        >
-                          Withdraw
-                        </Button>
+                        {/* Withdraw from Agent Account - only show if agent has tokens */}
+                        {hasAgentBalance && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              handleWithdraw(tokenData, agentBalance)
+                            }
+                            disabled={!isTokenApproved}
+                            className="text-xs"
+                          >
+                            Withdraw
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

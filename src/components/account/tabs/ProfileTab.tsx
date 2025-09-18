@@ -228,7 +228,7 @@ export function ProfileTab({
                 network={
                   userAgentAddress?.startsWith("SP") ? "mainnet" : "testnet"
                 }
-                helpText="Where your agent holds AI DAO tokens to power voting"
+                helpText="Your agent's voting account - deposit DAO tokens here to enable AI voting"
               />
 
               {/* DAO Tokens Management Table */}
