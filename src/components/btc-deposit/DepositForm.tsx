@@ -756,6 +756,11 @@ export default function DepositForm({
   };
 
   const handleBuyWithSbtc = useCallback(async () => {
+    // Fork to Bitflow handler when bonded
+    if (isBonded === true) {
+      return handleBuyWithSbtcBitflow();
+    }
+
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -993,7 +998,382 @@ export default function DepositForm({
     handleWalletAuth,
   ]);
 
+  const handleBuyWithSbtcBitflow = useCallback(async () => {
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For it's hardcode -> var this thing @Biwas form Rafa
+    // if (!adapterContract) {
+    //   toast({
+    //     title: "Configuration Error",
+    //     description: "Bitflow adapter contract not configured.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
+
+    if (!rawBuyQuote?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get Bitflow quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
+
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          Number(ustx) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // For Bitflow, rawBuyQuote.result is a simple uint (dy amount)
+      const clarityValue = hexToCV(rawBuyQuote.result);
+      const jsonValue = cvToJSON(clarityValue);
+      const quoteAmount = BigInt(jsonValue.value);
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // Use Bitflow adapter contract
+      const [adapterAddress, adapterName] =
+        BITFLOW_CONTRACTS.ADAPTER.split(".");
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+
+      // Validate contract parts
+      if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
+        toast({
+          title: "Configuration Error",
+          description:
+            "Missing required contract information for Bitflow adapter.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Arguments for Bitflow buy-and-deposit function
+      const args = [
+        contractPrincipalCV(tokenAddress, tokenName), // daoToken <sip010-trait>
+        uintCV(Number(ustx)), // amount uint - sBTC amount to spend
+        Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - from Bitflow quote
+      ];
+
+      const params = {
+        contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
+        functionName: "buy-and-deposit",
+        functionArgs: args,
+        postConditionMode: "allow" as const,
+      };
+
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                // Force status update if API shows different status
+                if (txData.tx_status === "success") {
+                  // Transaction is actually confirmed but WebSocket missed it
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during Bitflow sBTC transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit Bitflow sBTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    rawBuyQuote,
+    sbtcBalance,
+    currentSlippage,
+    tokenContract,
+    adapterContract,
+    toast,
+    handleWalletAuth,
+  ]);
+
+  const handleBuyWithBtcOnTestnetBitflow = useCallback(async () => {
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
+
+    // Calculate bridge fee (same as existing)
+    const calculateBridgeFee = (amountSats: bigint): number => {
+      const satsNum = Number(amountSats);
+      if (satsNum <= 300000) {
+        return 3000;
+      } else {
+        return Math.floor(satsNum * 0.01);
+      }
+    };
+
+    const bridgeFee = calculateBridgeFee(ustx);
+    const amountAfterFee = ustx - BigInt(bridgeFee);
+
+    if (amountAfterFee <= 0) {
+      toast({
+        title: "Amount too small",
+        description: `Amount after bridge fee (${bridgeFee} sats) would be ${amountAfterFee} sats. Please enter a larger amount.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For bonded tokens, get fresh Bitflow quote with amount after fee
+    const bitflowQuoteAfterFee = await getBuyBitflowQuote(
+      (Number(amountAfterFee) / Math.pow(10, 8)).toString()
+    );
+
+    if (!bitflowQuoteAfterFee?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get Bitflow quote after fee deduction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update the UI state with the new Bitflow quote after fee deduction
+    setRawBuyQuote(bitflowQuoteAfterFee);
+
+    // Parse and update the displayed quote for Bitflow (simple uint structure)
+    try {
+      const clarityValue = hexToCV(bitflowQuoteAfterFee.result);
+      const jsonValue = cvToJSON(clarityValue);
+
+      // For Bitflow, it's a simple uint, not the DEX structure
+      const rawAmount = BigInt(jsonValue.value);
+      const slippageFactor = 1 - currentSlippage / 100;
+      const amountAfterSlippage = Number(rawAmount) * slippageFactor;
+      const minTokensOut = Math.floor(amountAfterSlippage);
+
+      setMinTokenOut(minTokensOut);
+      setBuyQuote(
+        (minTokensOut / 10 ** 8).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
+    } catch (error) {
+      console.error("Error parsing Bitflow quote after fee deduction:", error);
+    }
+
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
+
+    // Validate user has enough balance for the full input amount (what they're actually sending)
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          Number(ustx) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Parse Bitflow quote (simple uint)
+      const clarityValue = hexToCV(bitflowQuoteAfterFee.result);
+      const jsonValue = cvToJSON(clarityValue);
+      const quoteAmount = BigInt(jsonValue.value);
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // Use same bridge contract but with Bitflow minReceive
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [prelaunchAddress, prelaunchName] = (
+        prelaunchContract || dexContract
+      ).split(".");
+      const [poolAddress, poolName] = (poolContract || dexContract).split(".");
+
+      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+      const sbtcContract = isMainnet
+        ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+        : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      const [sbtcAddress, sbtcName] = sbtcContract.split(".");
+
+      const args = [
+        Cl.uint(Number(ustx)),
+        Cl.uint(minTokensOut), // minReceive from Bitflow quote
+        Cl.uint(7),
+        Cl.contractPrincipal(tokenAddress, tokenName),
+        Cl.contractPrincipal(dexAddress, dexName),
+        Cl.contractPrincipal(prelaunchAddress, prelaunchName),
+        Cl.contractPrincipal(poolAddress, poolName),
+        Cl.contractPrincipal(sbtcAddress, sbtcName),
+      ];
+
+      const contractCallOptions = {
+        contract:
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
+        functionName: "swap-btc-to-aibtc",
+        functionArgs: args,
+        postConditionMode: "allow" as const,
+      };
+
+      const response = await request("stx_callContract", contractCallOptions);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                if (txData.tx_status === "success") {
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during Bitflow BTC testnet transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit Bitflow BTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    sbtcBalance,
+    currentSlippage,
+    dexContract,
+    tokenContract,
+    prelaunchContract,
+    poolContract,
+    getBuyBitflowQuote,
+    transactionStatus,
+    toast,
+    handleWalletAuth,
+  ]);
+
   const handleBuyWithBtcOnTestnet = useCallback(async () => {
+    // Fork to Bitflow handler when bonded
+    if (isBonded === true) {
+      return handleBuyWithBtcOnTestnetBitflow();
+    }
+
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
