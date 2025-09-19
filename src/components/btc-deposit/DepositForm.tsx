@@ -1326,12 +1326,34 @@ export default function DepositForm({
         Cl.contractPrincipal(sbtcAddress, sbtcName),
       ];
 
+      // All 4 post conditions - always present (not conditional)
+      // All 4 post conditions for simulated bridge flow
+      const postConditions = [
+        // 1. Bridge contract sends sBTC (not user - it's simulated)
+        Pc.principal(
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
+        )
+          .willSendEq(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // 2. Pool sends tokens
+        Pc.principal(`${poolAddress}.${poolName}`)
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+        // 4. Bridge contract sends tokens to user
+        Pc.principal(
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
+        )
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+      ];
+
       const contractCallOptions = {
         contract:
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
-        postConditionMode: "allow" as const,
+        postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", contractCallOptions);
