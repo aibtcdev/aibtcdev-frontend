@@ -32,6 +32,7 @@ import {
   // Pc,
   contractPrincipalCV,
   Cl,
+  Pc,
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import {
@@ -1080,6 +1081,37 @@ export default function DepositForm({
         return;
       }
 
+      // Check agent account and prepare post conditions
+      const poolContract = BITFLOW_CONTRACTS.POOL; // "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1"
+      const [poolAddress, poolName] = poolContract.split(".");
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+
+      // Base post conditions - always present
+      const postConditions = [
+        // 1. User sends sBTC amount out
+        Pc.principal(userAddress)
+          .willSendEq(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // 2. Pool sends >= dy-amount from Bitflow quote
+        Pc.principal(`${poolAddress}.${poolName}`)
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+      ];
+
+      // Add agent-specific post conditions if user has agent account
+      if (hasAgentAccount) {
+        postConditions.push(
+          // 3. Adapter sends sBTC to pool
+          Pc.principal(`${adapterAddress}.${adapterName}`)
+            .willSendEq(ustx)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+          // 4. Adapter sends tokens to user's agent account
+          Pc.principal(`${adapterAddress}.${adapterName}`)
+            .willSendGte(minTokensOut)
+            .ft(`${tokenAddress}.${tokenName}`, "faces2")
+        );
+      }
+
       // Arguments for Bitflow buy-and-deposit function
       const args = [
         contractPrincipalCV(tokenAddress, tokenName), // daoToken <sip010-trait>
@@ -1091,7 +1123,8 @@ export default function DepositForm({
         contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
         functionName: "buy-and-deposit",
         functionArgs: args,
-        postConditionMode: "allow" as const,
+        postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", params);
