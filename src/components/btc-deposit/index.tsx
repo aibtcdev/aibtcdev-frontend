@@ -25,6 +25,7 @@ interface BitcoinDepositProps {
   prelaunchContract?: string;
   poolContract?: string;
   adapterContract?: string;
+  isBonded?: boolean | null;
 }
 
 export default function BitcoinDeposit({
@@ -36,6 +37,7 @@ export default function BitcoinDeposit({
   prelaunchContract,
   poolContract,
   adapterContract,
+  isBonded,
   // headerOffset = 96,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
@@ -162,6 +164,7 @@ export default function BitcoinDeposit({
             prelaunchContract={prelaunchContract}
             poolContract={poolContract}
             adapterContract={adapterContract}
+            isBonded={isBonded}
           />
         )}
       </div>

@@ -73,6 +73,7 @@ interface DepositFormProps {
   prelaunchContract?: string;
   poolContract?: string;
   adapterContract?: string;
+  isBonded?: boolean | null;
 }
 
 interface HiroGetInResponse {
@@ -117,6 +118,25 @@ const NETWORK_CONFIG = {
     : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
 };
 
+// Bitflow contracts for bonded token trading
+// Quick hardcoded fix @Biwas -> var this thing
+const BITFLOW_CONTRACTS = {
+  CORE: "STTWD9SPRQVD3P733V89SV0P8RZRZNQADG034F0A.xyk-core-v-1-2",
+  POOL: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1",
+  ADAPTER:
+    "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-bitflow-buy-and-deposit",
+  X_TOKEN: "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+  Y_TOKEN: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-faktory",
+};
+
+interface BitflowPoolData {
+  "x-balance": number;
+  "y-balance": number;
+  "x-protocol-fee": number;
+  "x-provider-fee": number;
+  "pool-status": boolean;
+}
+
 // Helper function to get token asset name
 // const getTokenAssetName = (symbol: string): string => {
 //   return symbol.toLowerCase();
@@ -142,6 +162,7 @@ export default function DepositForm({
   prelaunchContract,
   poolContract,
   adapterContract,
+  isBonded,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
@@ -260,11 +281,101 @@ export default function DepositForm({
     enabled: !!userAddress && buyWithSbtc,
   });
 
+  // ADD THESE NEW FUNCTIONS HERE:
+  const getBitflowPoolData =
+    useCallback(async (): Promise<BitflowPoolData | null> => {
+      try {
+        const senderAddress =
+          userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+        const [poolAddress, poolName] = BITFLOW_CONTRACTS.POOL.split(".");
+
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${poolAddress}/${poolName}/get-pool?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sender: senderAddress,
+            arguments: [],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data?.result) {
+          const clarityValue = hexToCV(data.result);
+          const jsonValue = cvToJSON(clarityValue);
+
+          const poolData = jsonValue.value?.value;
+          if (poolData) {
+            return {
+              "x-balance": Number(poolData["x-balance"]?.value || 0),
+              "y-balance": Number(poolData["y-balance"]?.value || 0),
+              "x-protocol-fee": Number(poolData["x-protocol-fee"]?.value || 0),
+              "x-provider-fee": Number(poolData["x-provider-fee"]?.value || 0),
+              "pool-status": poolData["pool-status"]?.value === true,
+            };
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching Bitflow pool data:", error);
+        return null;
+      }
+    }, [userAddress]);
+
+  const calculateBitflowQuote = useCallback(
+    (xAmount: number, poolData: BitflowPoolData): number => {
+      const BPS = 10000;
+      const xBalance = poolData["x-balance"];
+      const yBalance = poolData["y-balance"];
+      const protocolFee = poolData["x-protocol-fee"];
+      const providerFee = poolData["x-provider-fee"];
+
+      const xAmountFeesProtocol = Math.floor((xAmount * protocolFee) / BPS);
+      const xAmountFeesProvider = Math.floor((xAmount * providerFee) / BPS);
+      const xAmountFeesTotal = xAmountFeesProtocol + xAmountFeesProvider;
+      const dx = xAmount - xAmountFeesTotal;
+      const updatedXBalance = xBalance + dx;
+      const dy = Math.floor((yBalance * dx) / updatedXBalance);
+
+      return dy;
+    },
+    []
+  );
+
+  const getBuyBitflowQuote = useCallback(
+    async (amount: string): Promise<HiroGetInResponse | null> => {
+      const poolData = await getBitflowPoolData();
+      if (!poolData || !poolData["pool-status"]) {
+        console.error("Bitflow pool not available or disabled");
+        return null;
+      }
+
+      const xAmount = Math.round(parseFloat(amount) * Math.pow(10, 8));
+      const dy = calculateBitflowQuote(xAmount, poolData);
+
+      return {
+        result: cvToHex(uintCV(dy)),
+      };
+    },
+    [getBitflowPoolData, calculateBitflowQuote]
+  );
+
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
 
-      // Use a default address for quote calculation when not authenticated
+      // Fork based on bonded status
+      if (isBonded) {
+        return getBuyBitflowQuote(amount);
+      }
+
+      // Existing logic unchanged
       const senderAddress =
         userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
       const [contractAddress, contractName] = dexContract.split(".");
@@ -321,9 +432,8 @@ export default function DepositForm({
         return null;
       }
     },
-    [userAddress, dexContract, buyWithSbtc]
+    [userAddress, dexContract, buyWithSbtc, isBonded, getBuyBitflowQuote]
   );
-
   useEffect(() => {
     const fetchQuote = async () => {
       if (amount && Number.parseFloat(amount) > 0) {
@@ -333,9 +443,43 @@ export default function DepositForm({
 
         if (quoteData?.result) {
           try {
+            console.log("🔍 Quote Debug:");
+            console.log("  - isBonded:", isBonded);
+            console.log("  - Raw quote result:", quoteData.result);
+
             const clarityValue = hexToCV(quoteData.result);
+            console.log("  - Parsed clarity value:", clarityValue);
+
             const jsonValue = cvToJSON(clarityValue);
-            if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
+            console.log("  - JSON value:", jsonValue);
+            console.log(
+              "  - JSON structure:",
+              JSON.stringify(jsonValue, null, 2)
+            );
+            if (isBonded === true && jsonValue.type === "uint") {
+              // Bitflow parsing - simple uint response
+              const dyAmount = BigInt(jsonValue.value);
+              console.log("  - Bitflow dy amount (bigint):", dyAmount);
+
+              const slippageFactor = 1 - currentSlippage / 100;
+              const amountAfterSlippage = Number(dyAmount) * slippageFactor;
+              const minTokensOut = Math.floor(amountAfterSlippage);
+
+              console.log("  - Bitflow minTokensOut:", minTokensOut);
+              console.log("  - Bitflow quote display:", minTokensOut / 10 ** 8);
+
+              setMinTokenOut(minTokensOut);
+              setBuyQuote(
+                (minTokensOut / 10 ** 8).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              );
+            } else if (
+              jsonValue.value?.value &&
+              jsonValue.value.value["tokens-out"]
+            ) {
+              // Existing DEX parsing - keep unchanged
               const rawAmount = BigInt(
                 jsonValue.value.value["tokens-out"].value
               );
@@ -353,6 +497,7 @@ export default function DepositForm({
                 })
               );
             } else {
+              console.log("  - No valid quote structure found");
               setBuyQuote(null);
               setMinTokenOut(0);
             }
