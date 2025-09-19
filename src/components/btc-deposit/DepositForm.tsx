@@ -649,10 +649,6 @@ export default function DepositForm({
       // Convert buffer amount from satoshis to BTC
       const maxAllowedBTC = bufferAmount / Math.pow(10, 8);
 
-      console.log(
-        `📏 Max calculation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}, Max allowed: ${maxAllowedBTC.toFixed(8)} BTC`
-      );
-
       return maxAllowedBTC;
     } catch (error) {
       console.error("Error calculating max allowed amount:", error);
@@ -926,10 +922,6 @@ export default function DepositForm({
       }
 
       // Check target limit logic (only if targetStx is provided)
-      console.log(
-        `🎯 Buffer validation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}`
-      );
-
       if (targetStx > 0) {
         const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
@@ -1676,10 +1668,6 @@ export default function DepositForm({
       }
 
       // Check target limit logic (only if targetStx is provided)
-      console.log(
-        `🎯 Buffer validation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}`
-      );
-
       if (targetStx > 0) {
         const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
