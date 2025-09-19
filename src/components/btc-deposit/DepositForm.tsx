@@ -32,6 +32,7 @@ import {
   // Pc,
   contractPrincipalCV,
   Cl,
+  Pc,
 } from "@stacks/transactions";
 import { request } from "@stacks/connect";
 import {
@@ -73,6 +74,9 @@ interface DepositFormProps {
   prelaunchContract?: string;
   poolContract?: string;
   adapterContract?: string;
+  isBonded?: boolean | null;
+  bitflowAdapter?: string;
+  bitflowPool?: string;
 }
 
 interface HiroGetInResponse {
@@ -117,6 +121,24 @@ const NETWORK_CONFIG = {
     : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
 };
 
+// Bitflow contracts for bonded token trading
+// Now passed as props from DAOPage.tsx based on DAO extensions
+// const BITFLOW_CONTRACTS = {
+//   CORE: "STTWD9SPRQVD3P733V89SV0P8RZRZNQADG034F0A.xyk-core-v-1-2", // Not used anywhere, commented out
+//   POOL: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1",
+//   ADAPTER: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-bitflow-buy-and-deposit",
+//   X_TOKEN: "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+//   Y_TOKEN: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-faktory",
+// };
+
+interface BitflowPoolData {
+  "x-balance": number;
+  "y-balance": number;
+  "x-protocol-fee": number;
+  "x-provider-fee": number;
+  "pool-status": boolean;
+}
+
 // Helper function to get token asset name
 // const getTokenAssetName = (symbol: string): string => {
 //   return symbol.toLowerCase();
@@ -132,7 +154,7 @@ export default function DepositForm({
   daoName,
   userAddress,
   dexId,
-  targetStx = 0,
+  targetStx = 5000000,
   tokenContract,
   currentSlippage = 4,
   swapType,
@@ -142,9 +164,21 @@ export default function DepositForm({
   prelaunchContract,
   poolContract,
   adapterContract,
+  isBonded,
+  bitflowAdapter,
+  bitflowPool,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
+
+  // Create dynamic Bitflow contracts object from props
+  const BITFLOW_CONTRACTS = {
+    // CORE: Not used anywhere, commented out
+    POOL: bitflowPool || "",
+    ADAPTER: bitflowAdapter || "",
+    X_TOKEN: NETWORK_CONFIG.SBTC_CONTRACT, // Always use network-specific sBTC contract
+    Y_TOKEN: tokenContract, // DAO token is the Y_TOKEN
+  };
 
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
@@ -260,11 +294,104 @@ export default function DepositForm({
     enabled: !!userAddress && buyWithSbtc,
   });
 
+  const getBitflowPoolData =
+    useCallback(async (): Promise<BitflowPoolData | null> => {
+      if (!BITFLOW_CONTRACTS.POOL) {
+        return null;
+      }
+
+      try {
+        const senderAddress =
+          userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+        const [poolAddress, poolName] = BITFLOW_CONTRACTS.POOL.split(".");
+
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${poolAddress}/${poolName}/get-pool?tip=latest`;
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sender: senderAddress,
+            arguments: [],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data?.result) {
+          const clarityValue = hexToCV(data.result);
+          const jsonValue = cvToJSON(clarityValue);
+
+          const poolData = jsonValue.value?.value;
+          if (poolData) {
+            return {
+              "x-balance": Number(poolData["x-balance"]?.value || 0),
+              "y-balance": Number(poolData["y-balance"]?.value || 0),
+              "x-protocol-fee": Number(poolData["x-protocol-fee"]?.value || 0),
+              "x-provider-fee": Number(poolData["x-provider-fee"]?.value || 0),
+              "pool-status": poolData["pool-status"]?.value === true,
+            };
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching Bitflow pool data:", error);
+        return null;
+      }
+    }, [userAddress, BITFLOW_CONTRACTS.POOL]);
+
+  const calculateBitflowQuote = useCallback(
+    (xAmount: number, poolData: BitflowPoolData): number => {
+      const BPS = 10000;
+      const xBalance = poolData["x-balance"];
+      const yBalance = poolData["y-balance"];
+      const protocolFee = poolData["x-protocol-fee"];
+      const providerFee = poolData["x-provider-fee"];
+
+      const xAmountFeesProtocol = Math.floor((xAmount * protocolFee) / BPS);
+      const xAmountFeesProvider = Math.floor((xAmount * providerFee) / BPS);
+      const xAmountFeesTotal = xAmountFeesProtocol + xAmountFeesProvider;
+      const dx = xAmount - xAmountFeesTotal;
+      const updatedXBalance = xBalance + dx;
+      const dy = Math.floor((yBalance * dx) / updatedXBalance);
+
+      return dy;
+    },
+    []
+  );
+
+  const getBuyBitflowQuote = useCallback(
+    async (amount: string): Promise<HiroGetInResponse | null> => {
+      const poolData = await getBitflowPoolData();
+      if (!poolData || !poolData["pool-status"]) {
+        console.error("Bitflow pool not available or disabled");
+        return null;
+      }
+
+      const xAmount = Math.round(parseFloat(amount) * Math.pow(10, 8));
+      const dy = calculateBitflowQuote(xAmount, poolData);
+
+      return {
+        result: cvToHex(uintCV(dy)),
+      };
+    },
+    [getBitflowPoolData, calculateBitflowQuote]
+  );
+
   const getBuyQuote = useCallback(
     async (amount: string): Promise<HiroGetInResponse | null> => {
       if (!dexContract) return null;
 
-      // Use a default address for quote calculation when not authenticated
+      // Fork based on bonded status
+      if (isBonded) {
+        return getBuyBitflowQuote(amount);
+      }
+
+      // Existing logic unchanged
       const senderAddress =
         userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
       const [contractAddress, contractName] = dexContract.split(".");
@@ -321,9 +448,8 @@ export default function DepositForm({
         return null;
       }
     },
-    [userAddress, dexContract, buyWithSbtc]
+    [userAddress, dexContract, buyWithSbtc, isBonded, getBuyBitflowQuote]
   );
-
   useEffect(() => {
     const fetchQuote = async () => {
       if (amount && Number.parseFloat(amount) > 0) {
@@ -333,9 +459,43 @@ export default function DepositForm({
 
         if (quoteData?.result) {
           try {
+            console.log("🔍 Quote Debug:");
+            console.log("  - isBonded:", isBonded);
+            console.log("  - Raw quote result:", quoteData.result);
+
             const clarityValue = hexToCV(quoteData.result);
+            console.log("  - Parsed clarity value:", clarityValue);
+
             const jsonValue = cvToJSON(clarityValue);
-            if (jsonValue.value?.value && jsonValue.value.value["tokens-out"]) {
+            console.log("  - JSON value:", jsonValue);
+            console.log(
+              "  - JSON structure:",
+              JSON.stringify(jsonValue, null, 2)
+            );
+            if (isBonded === true && jsonValue.type === "uint") {
+              // Bitflow parsing - simple uint response
+              const dyAmount = BigInt(jsonValue.value);
+              console.log("  - Bitflow dy amount (bigint):", dyAmount);
+
+              const slippageFactor = 1 - currentSlippage / 100;
+              const amountAfterSlippage = Number(dyAmount) * slippageFactor;
+              const minTokensOut = Math.floor(amountAfterSlippage);
+
+              console.log("  - Bitflow minTokensOut:", minTokensOut);
+              console.log("  - Bitflow quote display:", minTokensOut / 10 ** 8);
+
+              setMinTokenOut(minTokensOut);
+              setBuyQuote(
+                (minTokensOut / 10 ** 8).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+              );
+            } else if (
+              jsonValue.value?.value &&
+              jsonValue.value.value["tokens-out"]
+            ) {
+              // Existing DEX parsing - keep unchanged
               const rawAmount = BigInt(
                 jsonValue.value.value["tokens-out"].value
               );
@@ -353,6 +513,7 @@ export default function DepositForm({
                 })
               );
             } else {
+              console.log("  - No valid quote structure found");
               setBuyQuote(null);
               setMinTokenOut(0);
             }
@@ -379,7 +540,7 @@ export default function DepositForm({
     }, 500);
 
     return () => clearTimeout(debounce);
-  }, [amount, getBuyQuote, currentSlippage, dexContract]);
+  }, [amount, getBuyQuote, currentSlippage, dexContract, isBonded]);
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -456,11 +617,64 @@ export default function DepositForm({
     setSelectedPreset(presetAmount);
   };
 
+  // Helper function to calculate max allowed amount based on buffer limit
+  const calculateMaxAllowedAmount = async (): Promise<number | null> => {
+    if (targetStx <= 0) return null; // No target limit set
+
+    try {
+      // Get a quote to find current STX balance
+      const testQuote = await getBuyQuote("0.0001"); // Small amount to get quote
+      if (!testQuote?.result) return null;
+
+      let currentStxBalance = 0;
+
+      if (isBonded) {
+        // For Bitflow (bonded), quote is simple uint
+        // We need to get pool data to calculate currentStxBalance equivalent
+        // For now, we'll use a conservative approach
+        return null; // Let regular balance limit apply for bonded tokens
+      } else {
+        // For regular DEX, parse the quote response
+        const clarityValue = hexToCV(testQuote.result);
+        const jsonValue = cvToJSON(clarityValue);
+        currentStxBalance = Number(
+          jsonValue.value?.value?.["total-stx"]?.value || 0
+        );
+      }
+
+      const TARGET_STX = targetStx; // Already in satoshis
+      const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+      const bufferAmount = remainingToTarget * 1.15;
+
+      // Convert buffer amount from satoshis to BTC
+      const maxAllowedBTC = bufferAmount / Math.pow(10, 8);
+
+      return maxAllowedBTC;
+    } catch (error) {
+      console.error("Error calculating max allowed amount:", error);
+      return null;
+    }
+  };
+
   const handleMaxClick = async (): Promise<void> => {
+    // Calculate max allowed amount based on buffer limit
+    const maxAllowed = await calculateMaxAllowedAmount();
+
     if (buyWithSbtc) {
       if (sbtcBalance !== null && sbtcBalance !== undefined) {
-        setAmount(sbtcBalance.toFixed(8));
+        // Use the smaller of: user balance or max allowed by buffer
+        const effectiveMax =
+          maxAllowed !== null ? Math.min(sbtcBalance, maxAllowed) : sbtcBalance;
+        setAmount(effectiveMax.toFixed(8));
         setSelectedPreset("max");
+
+        if (maxAllowed !== null && maxAllowed < sbtcBalance) {
+          toast({
+            title: "Max amount limited by target",
+            description: `Using ${effectiveMax.toFixed(8)} BTC (target limit) instead of full balance ${sbtcBalance.toFixed(8)} BTC`,
+            variant: "default",
+          });
+        }
       } else {
         toast({
           title: "sBTC Balance not available",
@@ -478,16 +692,34 @@ export default function DepositForm({
         const estimatedSize = 1 * 70 + 2 * 33 + 12;
         const networkFeeSats = estimatedSize * selectedRate;
         const networkFee = networkFeeSats / 100000000;
-        const maxAmount = Math.max(0, btcBalance - networkFee);
-        const formattedMaxAmount = maxAmount.toFixed(8);
+        const maxAmountAfterFees = Math.max(0, btcBalance - networkFee);
+
+        // Use the smaller of: (balance - fees) or max allowed by buffer
+        const effectiveMax =
+          maxAllowed !== null
+            ? Math.min(maxAmountAfterFees, maxAllowed)
+            : maxAmountAfterFees;
+        const formattedMaxAmount = effectiveMax.toFixed(8);
 
         setAmount(formattedMaxAmount);
         setSelectedPreset("max");
+
+        if (maxAllowed !== null && maxAllowed < maxAmountAfterFees) {
+          toast({
+            title: "Max amount limited by target",
+            description: `Using ${effectiveMax.toFixed(8)} BTC (target limit) instead of full balance ${maxAmountAfterFees.toFixed(8)} BTC`,
+            variant: "default",
+          });
+        }
       } catch (error) {
         console.error("Error calculating max amount:", error);
         const networkFee = 0.000006;
-        const maxAmount = Math.max(0, btcBalance - networkFee);
-        setAmount(maxAmount.toFixed(8));
+        const maxAmountAfterFees = Math.max(0, btcBalance - networkFee);
+        const effectiveMax =
+          maxAllowed !== null
+            ? Math.min(maxAmountAfterFees, maxAllowed)
+            : maxAmountAfterFees;
+        setAmount(effectiveMax.toFixed(8));
         setSelectedPreset("max");
       }
     } else {
@@ -691,14 +923,13 @@ export default function DepositForm({
 
       // Check target limit logic (only if targetStx is provided)
       if (targetStx > 0) {
-        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
         if (Number(ustx) > bufferAmount) {
           const formattedUstx = (Number(ustx) / Math.pow(10, 8)).toFixed(8);
           const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
-
           toast({
             title: "Amount exceeds target limit",
             description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
@@ -843,6 +1074,434 @@ export default function DepositForm({
     tokenContract,
     adapterContract,
     // daoName,
+    transactionStatus,
+    isBonded,
+    toast,
+    handleWalletAuth,
+  ]);
+
+  const handleBuyWithSbtcBitflow = useCallback(async () => {
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For it's hardcode -> var this thing @Biwas form Rafa
+    // if (!adapterContract) {
+    //   toast({
+    //     title: "Configuration Error",
+    //     description: "Bitflow adapter contract not configured.",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
+
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
+
+    if (!rawBuyQuote?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get Bitflow quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
+
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          Number(ustx) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // For Bitflow, rawBuyQuote.result is a simple uint (dy amount)
+      const clarityValue = hexToCV(rawBuyQuote.result);
+      const jsonValue = cvToJSON(clarityValue);
+      const quoteAmount = BigInt(jsonValue.value);
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // Use Bitflow adapter contract
+      const [adapterAddress, adapterName] =
+        BITFLOW_CONTRACTS.ADAPTER.split(".");
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+
+      // Validate contract parts
+      if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
+        toast({
+          title: "Configuration Error",
+          description:
+            "Missing required contract information for Bitflow adapter.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check agent account and prepare post conditions
+      const poolContract = BITFLOW_CONTRACTS.POOL; // "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1"
+      const [poolAddress, poolName] = poolContract.split(".");
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+
+      // Base post conditions - always present
+      const postConditions = [
+        // 1. User sends sBTC amount out
+        Pc.principal(userAddress)
+          .willSendEq(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // 2. Pool sends >= dy-amount from Bitflow quote
+        Pc.principal(`${poolAddress}.${poolName}`)
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+      ];
+
+      // Add agent-specific post conditions if user has agent account
+      if (hasAgentAccount) {
+        postConditions.push(
+          // 3. Adapter sends sBTC to pool
+          Pc.principal(`${adapterAddress}.${adapterName}`)
+            .willSendEq(ustx)
+            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+          // 4. Adapter sends tokens to user's agent account
+          Pc.principal(`${adapterAddress}.${adapterName}`)
+            .willSendGte(minTokensOut)
+            .ft(`${tokenAddress}.${tokenName}`, "faces2")
+        );
+      }
+
+      // Arguments for Bitflow buy-and-deposit function
+      const args = [
+        contractPrincipalCV(tokenAddress, tokenName), // daoToken <sip010-trait>
+        uintCV(Number(ustx)), // amount uint - sBTC amount to spend
+        Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - from Bitflow quote
+      ];
+
+      const params = {
+        contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
+        functionName: "buy-and-deposit",
+        functionArgs: args,
+        postConditions,
+        postConditionMode: "deny" as const,
+      };
+
+      const response = await request("stx_callContract", params);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                // Force status update if API shows different status
+                if (txData.tx_status === "success") {
+                  // Transaction is actually confirmed but WebSocket missed it
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during Bitflow sBTC transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit Bitflow sBTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    rawBuyQuote,
+    sbtcBalance,
+    currentSlippage,
+    tokenContract,
+    toast,
+    handleWalletAuth,
+    BITFLOW_CONTRACTS.ADAPTER,
+    BITFLOW_CONTRACTS.POOL,
+    hasAgentAccount,
+    transactionStatus,
+  ]);
+
+  const handleBuyWithBtcOnTestnetBitflow = useCallback(async () => {
+    // If wallet not connected, trigger auth and set pending order flag
+    if (!accessToken || !userAddress) {
+      setPendingOrderAfterConnection(true);
+      await handleWalletAuth();
+      return;
+    }
+
+    if (parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter an amount greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const ustx = BigInt(Math.round(parseFloat(amount) * Math.pow(10, 8)));
+
+    // Calculate bridge fee (same as existing)
+    const calculateBridgeFee = (amountSats: bigint): number => {
+      const satsNum = Number(amountSats);
+      if (satsNum <= 300000) {
+        return 3000;
+      } else {
+        return Math.floor(satsNum * 0.01);
+      }
+    };
+
+    const bridgeFee = calculateBridgeFee(ustx);
+    const amountAfterFee = ustx - BigInt(bridgeFee);
+
+    if (amountAfterFee <= 0) {
+      toast({
+        title: "Amount too small",
+        description: `Amount after bridge fee (${bridgeFee} sats) would be ${amountAfterFee} sats. Please enter a larger amount.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For bonded tokens, get fresh Bitflow quote with amount after fee
+    const bitflowQuoteAfterFee = await getBuyBitflowQuote(
+      (Number(amountAfterFee) / Math.pow(10, 8)).toString()
+    );
+
+    if (!bitflowQuoteAfterFee?.result) {
+      toast({
+        title: "Error",
+        description: "Failed to get Bitflow quote after fee deduction.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update the UI state with the new Bitflow quote after fee deduction
+    setRawBuyQuote(bitflowQuoteAfterFee);
+
+    // Parse and update the displayed quote for Bitflow (simple uint structure)
+    try {
+      const clarityValue = hexToCV(bitflowQuoteAfterFee.result);
+      const jsonValue = cvToJSON(clarityValue);
+
+      // For Bitflow, it's a simple uint, not the DEX structure
+      const rawAmount = BigInt(jsonValue.value);
+      const slippageFactor = 1 - currentSlippage / 100;
+      const amountAfterSlippage = Number(rawAmount) * slippageFactor;
+      const minTokensOut = Math.floor(amountAfterSlippage);
+
+      setMinTokenOut(minTokensOut);
+      setBuyQuote(
+        (minTokensOut / 10 ** 8).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
+    } catch (error) {
+      console.error("Error parsing Bitflow quote after fee deduction:", error);
+    }
+
+    const sbtcBalanceInSats = BigInt(
+      Math.floor((sbtcBalance ?? 0) * Math.pow(10, 8))
+    );
+
+    // Validate user has enough balance for the full input amount (what they're actually sending)
+    if (ustx > sbtcBalanceInSats) {
+      toast({
+        title: "Insufficient sBTC balance",
+        description: `You need more sBTC to complete this purchase. Required: ${(
+          Number(ustx) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC, Available: ${(
+          Number(sbtcBalanceInSats) / Math.pow(10, 8)
+        ).toFixed(8)} sBTC`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Parse Bitflow quote (simple uint)
+      const clarityValue = hexToCV(bitflowQuoteAfterFee.result);
+      const jsonValue = cvToJSON(clarityValue);
+      const quoteAmount = BigInt(jsonValue.value);
+
+      const slippageFactor = 1 - currentSlippage / 100;
+      const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
+
+      // Use same bridge contract but with Bitflow minReceive
+      const [tokenAddress, tokenName] = tokenContract.split(".");
+      const [dexAddress, dexName] = dexContract.split(".");
+      const [prelaunchAddress, prelaunchName] = (
+        prelaunchContract || dexContract
+      ).split(".");
+      const [poolAddress, poolName] = (poolContract || dexContract).split(".");
+
+      const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+      const sbtcContract = isMainnet
+        ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
+        : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
+      const [sbtcAddress, sbtcName] = sbtcContract.split(".");
+
+      const args = [
+        Cl.uint(Number(ustx)),
+        Cl.uint(minTokensOut), // minReceive from Bitflow quote
+        Cl.uint(7),
+        Cl.contractPrincipal(tokenAddress, tokenName),
+        Cl.contractPrincipal(dexAddress, dexName),
+        Cl.contractPrincipal(prelaunchAddress, prelaunchName),
+        Cl.contractPrincipal(poolAddress, poolName),
+        Cl.contractPrincipal(sbtcAddress, sbtcName),
+      ];
+
+      // All 4 post conditions - always present (not conditional)
+      // All 4 post conditions for simulated bridge flow
+      const postConditions = [
+        // 1. Bridge contract sends sBTC (not user - it's simulated)
+        Pc.principal(
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
+        )
+          .willSendEq(ustx)
+          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+        // 2. Pool sends tokens
+        Pc.principal(`${poolAddress}.${poolName}`)
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+        // 4. Bridge contract sends tokens to user
+        Pc.principal(
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
+        )
+          .willSendGte(minTokensOut)
+          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+      ];
+
+      const contractCallOptions = {
+        contract:
+          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
+        functionName: "swap-btc-to-aibtc",
+        functionArgs: args,
+        postConditions,
+        postConditionMode: "deny" as const,
+      };
+
+      const response = await request("stx_callContract", contractCallOptions);
+
+      if (response && response.txid) {
+        setActiveTxId(response.txid);
+        setIsModalOpen(true);
+
+        // Add fallback check after 30 seconds
+        setTimeout(async () => {
+          if (transactionStatus === "pending") {
+            try {
+              const isMainnet =
+                process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+              const apiUrl = isMainnet
+                ? "https://api.mainnet.hiro.so"
+                : "https://api.testnet.hiro.so";
+
+              const txResponse = await fetch(
+                `${apiUrl}/extended/v1/tx/${response.txid}`
+              );
+              if (txResponse.ok) {
+                const txData = await txResponse.json();
+                console.log("Fallback transaction check:", txData);
+
+                if (txData.tx_status === "success") {
+                  console.log("Transaction confirmed via fallback check");
+                } else if (
+                  ["abort_by_response", "abort_by_post_condition"].includes(
+                    txData.tx_status
+                  )
+                ) {
+                  console.log("Transaction failed via fallback check");
+                }
+              }
+            } catch (error) {
+              console.error("Fallback transaction check failed:", error);
+            }
+          }
+        }, 30000);
+      } else {
+        throw new Error("Transaction failed or was rejected.");
+      }
+    } catch (error) {
+      console.error("Error during Bitflow BTC testnet transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit Bitflow BTC buy order.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    accessToken,
+    userAddress,
+    amount,
+    sbtcBalance,
+    currentSlippage,
+    dexContract,
+    tokenContract,
+    prelaunchContract,
+    poolContract,
+    getBuyBitflowQuote,
     transactionStatus,
     toast,
     handleWalletAuth,
@@ -1010,7 +1669,7 @@ export default function DepositForm({
 
       // Check target limit logic (only if targetStx is provided)
       if (targetStx > 0) {
-        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
@@ -1195,6 +1854,7 @@ export default function DepositForm({
     prelaunchContract,
     poolContract,
     transactionStatus,
+    isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -1274,15 +1934,23 @@ export default function DepositForm({
     }
 
     if (buyWithSbtc) {
-      await handleBuyWithSbtc();
+      // Fork to Bitflow handler when bonded
+      if (isBonded === true) {
+        await handleBuyWithSbtcBitflow();
+      } else {
+        await handleBuyWithSbtc();
+      }
       return;
     }
 
     // Network-specific BTC handling
     if (!isMainnet) {
-      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet
-      // This handles different contract states (bonded, prelaunch, etc.)
-      await handleBuyWithBtcOnTestnet();
+      // Fork to Bitflow handler when bonded
+      if (isBonded === true) {
+        await handleBuyWithBtcOnTestnetBitflow();
+      } else {
+        await handleBuyWithBtcOnTestnet();
+      }
       return;
     }
 
@@ -1439,6 +2107,9 @@ export default function DepositForm({
     handleUtxoCountError,
     isAddressTypeError,
     handleAddressTypeError,
+    isBonded,
+    handleBuyWithSbtcBitflow,
+    handleBuyWithBtcOnTestnetBitflow,
   ]);
 
   // Auto-place order after wallet connection - wait for all data to load
