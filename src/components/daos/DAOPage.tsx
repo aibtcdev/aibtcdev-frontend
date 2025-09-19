@@ -205,6 +205,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     prelaunchContract,
     buyPrelaunchContract,
     poolContract,
+    bitflowAdapter,
+    bitflowPool,
   } = useMemo(() => {
     if (!extensions)
       return {
@@ -215,6 +217,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         prelaunchContract: null,
         buyPrelaunchContract: null,
         poolContract: null,
+        bitflowAdapter: null,
+        bitflowPool: null,
       };
 
     console.log("All extensions:", extensions);
@@ -236,11 +240,22 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
     );
 
+    // Bitflow contract extensions
+    const bitflowAdapterExtension = extensions.find(
+      (ext) =>
+        ext.type === "TRADING" && ext.subtype === "BITFLOW_BUY_AND_DEPOSIT"
+    );
+    const bitflowPoolExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
+    );
+
     const dexPrincipal = dexExtension?.contract_principal;
     const tokenPrincipal = tokenExtension?.contract_principal;
     const prelaunchPrincipal = prelaunchExtension?.contract_principal;
     const buyPrelaunchPrincipal = buyPrelaunchExtension?.contract_principal;
     const poolPrincipal = poolExtension?.contract_principal;
+    const bitflowAdapterPrincipal = bitflowAdapterExtension?.contract_principal;
+    const bitflowPoolPrincipal = bitflowPoolExtension?.contract_principal;
 
     return {
       dex: dexPrincipal,
@@ -251,6 +266,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       prelaunchContract: prelaunchPrincipal,
       buyPrelaunchContract: buyPrelaunchPrincipal,
       poolContract: poolPrincipal,
+      bitflowAdapter: bitflowAdapterPrincipal,
+      bitflowPool: bitflowPoolPrincipal,
     };
   }, [extensions]);
 
@@ -531,6 +548,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 prelaunchContract={prelaunchContract || undefined}
                 poolContract={poolContract || undefined}
                 adapterContract={buyPrelaunchContract || undefined}
+                bitflowAdapter={bitflowAdapter || undefined}
+                bitflowPool={bitflowPool || undefined}
               />
             </div>
           </div>

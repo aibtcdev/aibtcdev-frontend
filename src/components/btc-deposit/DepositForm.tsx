@@ -75,6 +75,8 @@ interface DepositFormProps {
   poolContract?: string;
   adapterContract?: string;
   isBonded?: boolean | null;
+  bitflowAdapter?: string;
+  bitflowPool?: string;
 }
 
 interface HiroGetInResponse {
@@ -120,15 +122,14 @@ const NETWORK_CONFIG = {
 };
 
 // Bitflow contracts for bonded token trading
-// Quick hardcoded fix @Biwas -> var this thing
-const BITFLOW_CONTRACTS = {
-  CORE: "STTWD9SPRQVD3P733V89SV0P8RZRZNQADG034F0A.xyk-core-v-1-2",
-  POOL: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1",
-  ADAPTER:
-    "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-bitflow-buy-and-deposit",
-  X_TOKEN: "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
-  Y_TOKEN: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-faktory",
-};
+// Now passed as props from DAOPage.tsx based on DAO extensions
+// const BITFLOW_CONTRACTS = {
+//   CORE: "STTWD9SPRQVD3P733V89SV0P8RZRZNQADG034F0A.xyk-core-v-1-2", // Not used anywhere, commented out
+//   POOL: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1",
+//   ADAPTER: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-bitflow-buy-and-deposit",
+//   X_TOKEN: "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token",
+//   Y_TOKEN: "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.faces2-faktory",
+// };
 
 interface BitflowPoolData {
   "x-balance": number;
@@ -153,7 +154,7 @@ export default function DepositForm({
   daoName,
   userAddress,
   dexId,
-  targetStx = 0,
+  targetStx = 5000000,
   tokenContract,
   currentSlippage = 4,
   swapType,
@@ -164,9 +165,20 @@ export default function DepositForm({
   poolContract,
   adapterContract,
   isBonded,
+  bitflowAdapter,
+  bitflowPool,
 }: DepositFormProps) {
   // SET IT TO TRUE IF YOU WANT TO DISABLE BUY
   const BUY_DISABLED = false;
+
+  // Create dynamic Bitflow contracts object from props
+  const BITFLOW_CONTRACTS = {
+    // CORE: Not used anywhere, commented out
+    POOL: bitflowPool || "",
+    ADAPTER: bitflowAdapter || "",
+    X_TOKEN: NETWORK_CONFIG.SBTC_CONTRACT, // Always use network-specific sBTC contract
+    Y_TOKEN: tokenContract, // DAO token is the Y_TOKEN
+  };
 
   const [amount, setAmount] = useState<string>("0.0001");
   const [isAgentDetailsOpen, setIsAgentDetailsOpen] = useState(false);
@@ -282,9 +294,12 @@ export default function DepositForm({
     enabled: !!userAddress && buyWithSbtc,
   });
 
-  // ADD THESE NEW FUNCTIONS HERE:
   const getBitflowPoolData =
     useCallback(async (): Promise<BitflowPoolData | null> => {
+      if (!BITFLOW_CONTRACTS.POOL) {
+        return null;
+      }
+
       try {
         const senderAddress =
           userAddress || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
@@ -327,7 +342,7 @@ export default function DepositForm({
         console.error("Error fetching Bitflow pool data:", error);
         return null;
       }
-    }, [userAddress]);
+    }, [userAddress, BITFLOW_CONTRACTS.POOL]);
 
   const calculateBitflowQuote = useCallback(
     (xAmount: number, poolData: BitflowPoolData): number => {
@@ -525,7 +540,7 @@ export default function DepositForm({
     }, 500);
 
     return () => clearTimeout(debounce);
-  }, [amount, getBuyQuote, currentSlippage, dexContract]);
+  }, [amount, getBuyQuote, currentSlippage, dexContract, isBonded]);
 
   // Fetch BTC balance using React Query with 40-minute cache
   const { data: btcBalance, isLoading: isBalanceLoading } = useQuery<
@@ -602,11 +617,68 @@ export default function DepositForm({
     setSelectedPreset(presetAmount);
   };
 
+  // Helper function to calculate max allowed amount based on buffer limit
+  const calculateMaxAllowedAmount = async (): Promise<number | null> => {
+    if (targetStx <= 0) return null; // No target limit set
+
+    try {
+      // Get a quote to find current STX balance
+      const testQuote = await getBuyQuote("0.0001"); // Small amount to get quote
+      if (!testQuote?.result) return null;
+
+      let currentStxBalance = 0;
+
+      if (isBonded) {
+        // For Bitflow (bonded), quote is simple uint
+        // We need to get pool data to calculate currentStxBalance equivalent
+        // For now, we'll use a conservative approach
+        return null; // Let regular balance limit apply for bonded tokens
+      } else {
+        // For regular DEX, parse the quote response
+        const clarityValue = hexToCV(testQuote.result);
+        const jsonValue = cvToJSON(clarityValue);
+        currentStxBalance = Number(
+          jsonValue.value?.value?.["total-stx"]?.value || 0
+        );
+      }
+
+      const TARGET_STX = targetStx; // Already in satoshis
+      const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
+      const bufferAmount = remainingToTarget * 1.15;
+
+      // Convert buffer amount from satoshis to BTC
+      const maxAllowedBTC = bufferAmount / Math.pow(10, 8);
+
+      console.log(
+        `📏 Max calculation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}, Max allowed: ${maxAllowedBTC.toFixed(8)} BTC`
+      );
+
+      return maxAllowedBTC;
+    } catch (error) {
+      console.error("Error calculating max allowed amount:", error);
+      return null;
+    }
+  };
+
   const handleMaxClick = async (): Promise<void> => {
+    // Calculate max allowed amount based on buffer limit
+    const maxAllowed = await calculateMaxAllowedAmount();
+
     if (buyWithSbtc) {
       if (sbtcBalance !== null && sbtcBalance !== undefined) {
-        setAmount(sbtcBalance.toFixed(8));
+        // Use the smaller of: user balance or max allowed by buffer
+        const effectiveMax =
+          maxAllowed !== null ? Math.min(sbtcBalance, maxAllowed) : sbtcBalance;
+        setAmount(effectiveMax.toFixed(8));
         setSelectedPreset("max");
+
+        if (maxAllowed !== null && maxAllowed < sbtcBalance) {
+          toast({
+            title: "Max amount limited by target",
+            description: `Using ${effectiveMax.toFixed(8)} BTC (target limit) instead of full balance ${sbtcBalance.toFixed(8)} BTC`,
+            variant: "default",
+          });
+        }
       } else {
         toast({
           title: "sBTC Balance not available",
@@ -624,16 +696,34 @@ export default function DepositForm({
         const estimatedSize = 1 * 70 + 2 * 33 + 12;
         const networkFeeSats = estimatedSize * selectedRate;
         const networkFee = networkFeeSats / 100000000;
-        const maxAmount = Math.max(0, btcBalance - networkFee);
-        const formattedMaxAmount = maxAmount.toFixed(8);
+        const maxAmountAfterFees = Math.max(0, btcBalance - networkFee);
+
+        // Use the smaller of: (balance - fees) or max allowed by buffer
+        const effectiveMax =
+          maxAllowed !== null
+            ? Math.min(maxAmountAfterFees, maxAllowed)
+            : maxAmountAfterFees;
+        const formattedMaxAmount = effectiveMax.toFixed(8);
 
         setAmount(formattedMaxAmount);
         setSelectedPreset("max");
+
+        if (maxAllowed !== null && maxAllowed < maxAmountAfterFees) {
+          toast({
+            title: "Max amount limited by target",
+            description: `Using ${effectiveMax.toFixed(8)} BTC (target limit) instead of full balance ${maxAmountAfterFees.toFixed(8)} BTC`,
+            variant: "default",
+          });
+        }
       } catch (error) {
         console.error("Error calculating max amount:", error);
         const networkFee = 0.000006;
-        const maxAmount = Math.max(0, btcBalance - networkFee);
-        setAmount(maxAmount.toFixed(8));
+        const maxAmountAfterFees = Math.max(0, btcBalance - networkFee);
+        const effectiveMax =
+          maxAllowed !== null
+            ? Math.min(maxAmountAfterFees, maxAllowed)
+            : maxAmountAfterFees;
+        setAmount(effectiveMax.toFixed(8));
         setSelectedPreset("max");
       }
     } else {
@@ -757,11 +847,6 @@ export default function DepositForm({
   };
 
   const handleBuyWithSbtc = useCallback(async () => {
-    // Fork to Bitflow handler when bonded
-    if (isBonded === true) {
-      return handleBuyWithSbtcBitflow();
-    }
-
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -841,15 +926,18 @@ export default function DepositForm({
       }
 
       // Check target limit logic (only if targetStx is provided)
+      console.log(
+        `🎯 Buffer validation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}`
+      );
+
       if (targetStx > 0) {
-        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
         if (Number(ustx) > bufferAmount) {
           const formattedUstx = (Number(ustx) / Math.pow(10, 8)).toFixed(8);
           const formattedMax = (bufferAmount / Math.pow(10, 8)).toFixed(8);
-
           toast({
             title: "Amount exceeds target limit",
             description: `Maximum purchase amount is ${formattedMax} BTC. You entered ${formattedUstx}.`,
@@ -995,6 +1083,7 @@ export default function DepositForm({
     adapterContract,
     // daoName,
     transactionStatus,
+    isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -1187,9 +1276,12 @@ export default function DepositForm({
     sbtcBalance,
     currentSlippage,
     tokenContract,
-    adapterContract,
     toast,
     handleWalletAuth,
+    BITFLOW_CONTRACTS.ADAPTER,
+    BITFLOW_CONTRACTS.POOL,
+    hasAgentAccount,
+    transactionStatus,
   ]);
 
   const handleBuyWithBtcOnTestnetBitflow = useCallback(async () => {
@@ -1424,11 +1516,6 @@ export default function DepositForm({
   ]);
 
   const handleBuyWithBtcOnTestnet = useCallback(async () => {
-    // Fork to Bitflow handler when bonded
-    if (isBonded === true) {
-      return handleBuyWithBtcOnTestnetBitflow();
-    }
-
     // If wallet not connected, trigger auth and set pending order flag
     if (!accessToken || !userAddress) {
       setPendingOrderAfterConnection(true);
@@ -1589,8 +1676,12 @@ export default function DepositForm({
       }
 
       // Check target limit logic (only if targetStx is provided)
+      console.log(
+        `🎯 Buffer validation - Bonded: ${isBonded}, Quote source: ${isBonded ? "Bitflow" : "Faktory"}`
+      );
+
       if (targetStx > 0) {
-        const TARGET_STX = targetStx * Math.pow(10, 8);
+        const TARGET_STX = targetStx; // targetStx is already in satoshis
         const remainingToTarget = Math.max(0, TARGET_STX - currentStxBalance);
         const bufferAmount = remainingToTarget * 1.15;
 
@@ -1775,6 +1866,7 @@ export default function DepositForm({
     prelaunchContract,
     poolContract,
     transactionStatus,
+    isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -1854,15 +1946,23 @@ export default function DepositForm({
     }
 
     if (buyWithSbtc) {
-      await handleBuyWithSbtc();
+      // Fork to Bitflow handler when bonded
+      if (isBonded === true) {
+        await handleBuyWithSbtcBitflow();
+      } else {
+        await handleBuyWithSbtc();
+      }
       return;
     }
 
     // Network-specific BTC handling
     if (!isMainnet) {
-      // Testnet: BTC selection uses handleBuyWithBtcOnTestnet
-      // This handles different contract states (bonded, prelaunch, etc.)
-      await handleBuyWithBtcOnTestnet();
+      // Fork to Bitflow handler when bonded
+      if (isBonded === true) {
+        await handleBuyWithBtcOnTestnetBitflow();
+      } else {
+        await handleBuyWithBtcOnTestnet();
+      }
       return;
     }
 
@@ -2019,6 +2119,9 @@ export default function DepositForm({
     handleUtxoCountError,
     isAddressTypeError,
     handleAddressTypeError,
+    isBonded,
+    handleBuyWithSbtcBitflow,
+    handleBuyWithBtcOnTestnetBitflow,
   ]);
 
   // Auto-place order after wallet connection - wait for all data to load
