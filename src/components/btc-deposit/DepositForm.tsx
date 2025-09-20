@@ -1075,7 +1075,6 @@ export default function DepositForm({
     adapterContract,
     // daoName,
     transactionStatus,
-    isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -1854,7 +1853,7 @@ export default function DepositForm({
     prelaunchContract,
     poolContract,
     transactionStatus,
-    isBonded,
+    // isBonded,
     toast,
     handleWalletAuth,
   ]);
