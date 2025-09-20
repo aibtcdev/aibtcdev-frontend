@@ -11,6 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogOverlay,
+  DialogPortal,
 } from "@/components/ui/dialog";
 import { TermsOfService } from "@/components/terms-and-condition/TermsOfService";
 import dynamic from "next/dynamic";
@@ -347,65 +349,68 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
       </Button>
 
       <Dialog open={showTerms} onOpenChange={setShowTerms}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[900px] h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
-            <DialogTitle className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-              Terms & Conditions
-            </DialogTitle>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
-              Please read the complete terms and scroll to the bottom to
-              continue.
-            </p>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-hidden">
-            <TermsOfService onScrollComplete={handleScrollComplete} />
-          </div>
-
-          <DialogFooter className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <Button
-                onClick={() => setShowTerms(false)}
-                variant="outline"
-                className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAcceptTerms}
-                disabled={isLoading || !hasScrolledToBottom}
-                className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
-                  hasScrolledToBottom
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                }`}
-                title={
-                  !hasScrolledToBottom
-                    ? "Please scroll to the bottom to read all terms"
-                    : ""
-                }
-              >
-                {isLoading ? (
-                  <>
-                    <Loader />
-                    <span className="ml-2">Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    {hasScrolledToBottom
-                      ? "Accept & Continue"
-                      : "Please scroll to continue"}
-                  </>
-                )}
-              </Button>
-            </div>
-            {!hasScrolledToBottom && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                You must read all terms before accepting
+        <DialogPortal>
+          <DialogOverlay className="z-[110]" />
+          <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[900px] h-[90vh] p-0 overflow-hidden z-[110]">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+              <DialogTitle className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                Terms & Conditions
+              </DialogTitle>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+                Please read the complete terms and scroll to the bottom to
+                continue.
               </p>
-            )}
-          </DialogFooter>
-        </DialogContent>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-hidden">
+              <TermsOfService onScrollComplete={handleScrollComplete} />
+            </div>
+
+            <DialogFooter className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Button
+                  onClick={() => setShowTerms(false)}
+                  variant="outline"
+                  className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAcceptTerms}
+                  disabled={isLoading || !hasScrolledToBottom}
+                  className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
+                    hasScrolledToBottom
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  }`}
+                  title={
+                    !hasScrolledToBottom
+                      ? "Please scroll to the bottom to read all terms"
+                      : ""
+                  }
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader />
+                      <span className="ml-2">Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      {hasScrolledToBottom
+                        ? "Accept & Continue"
+                        : "Please scroll to continue"}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {!hasScrolledToBottom && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  You must read all terms before accepting
+                </p>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </StacksProvider>
   );
