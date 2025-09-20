@@ -287,22 +287,23 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   });
 
   // Check if market is open
-  const {
-    data: isMarketOpen,
-    error: marketOpenError,
-    isLoading: isMarketOpenLoading,
-  } = useQuery({
-    queryKey: ["marketOpen", prelaunchContract],
-    queryFn: () => checkMarketOpen(prelaunchContract!),
-    enabled: !!prelaunchContract,
-    staleTime: 300000,
-  });
+  // const {
+  //   data: isMarketOpen,
+  //   error: marketOpenError,
+  //   isLoading: isMarketOpenLoading,
+  // } = useQuery({
+  //   queryKey: ["marketOpen", prelaunchContract],
+  //   queryFn: () => checkMarketOpen(prelaunchContract!),
+  //   enabled: !!prelaunchContract,
+  //   staleTime: 300000,
+  // });
 
+  const isMarketOpen = false;
   console.log("Market open query status:");
   console.log("- prelaunchContract:", prelaunchContract);
   console.log("- isMarketOpen:", isMarketOpen);
-  console.log("- marketOpenError:", marketOpenError);
-  console.log("- isMarketOpenLoading:", isMarketOpenLoading);
+  // console.log("- marketOpenError:", marketOpenError);
+  // console.log("- isMarketOpenLoading:", isMarketOpenLoading);
   console.log("- isBonded:", isBonded);
 
   const { data: holdersData } = useQuery({
