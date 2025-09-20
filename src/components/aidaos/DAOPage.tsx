@@ -360,7 +360,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   }, [marketStats, tokenPrice, holdersData, token]);
 
   const totalProposals = useMemo(() => {
-    return Array.isArray(proposals) ? proposals.length : 0;
+    if (!Array.isArray(proposals)) return 0;
+    return proposals.filter((proposal) => proposal.status === "DEPLOYED")
+      .length;
   }, [proposals]);
 
   if (isBasicLoading || !dao) {
