@@ -72,7 +72,7 @@ export async function generateMetadata({
       creator: "@aibtcdev",
     },
     alternates: {
-      canonical: `/daos/${resolvedParams.name}`,
+      canonical: `/aidaos/${resolvedParams.name}`,
     },
     robots: {
       index: true,

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import ProposalCard from "@/components/proposals/ProposalCard";
 import type { Proposal } from "@/types";
 import { FileText } from "lucide-react";
-import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
+import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
 
 interface DAOProposalsProps {
   proposals: Proposal[];

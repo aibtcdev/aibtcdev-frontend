@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "@/components/reusables/Loader";
-import DAOHolders from "@/components/daos/DaoHolders";
+import DAOHolders from "@/components/aidaos/DaoHolders";
 import {
   fetchToken,
   fetchHolders,

@@ -18,7 +18,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
+import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useClipboard } from "@/hooks/useClipboard";

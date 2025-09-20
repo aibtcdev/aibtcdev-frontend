@@ -6,7 +6,7 @@ import { Search, TrendingUp, Users, Calendar, Activity } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DAOListItem } from "@/components/daos/DaoCard";
+import { DAOListItem } from "@/components/aidaos/DaoCard";
 import type { DAO, Holder } from "@/types";
 import {
   fetchDAOsWithExtension,

@@ -34,9 +34,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
-import { MissionContent } from "@/components/daos/MissionContent";
-import DAOExtensions from "@/components/daos/DaoExtensions";
-import DAOHolders from "@/components/daos/DaoHolders";
+import { MissionContent } from "@/components/aidaos/MissionContent";
+import DAOExtensions from "@/components/aidaos/DaoExtensions";
+import DAOHolders from "@/components/aidaos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
 import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
@@ -390,19 +390,19 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       id: "charter",
       label: "Charter",
       icon: BarChart3,
-      href: `/daos/${encodedName}/charter`,
+      href: `/aidaos/${encodedName}/charter`,
     },
     {
       id: "extensions",
       label: "Extensions",
       icon: FileText,
-      href: `/daos/${encodedName}/extension`,
+      href: `/aidaos/${encodedName}/extension`,
     },
     {
       id: "holders",
       label: "Holders",
       icon: Users,
-      href: `/daos/${encodedName}/holders`,
+      href: `/aidaos/${encodedName}/holders`,
     },
   ];
 

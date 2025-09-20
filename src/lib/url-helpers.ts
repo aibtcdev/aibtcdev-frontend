@@ -7,5 +7,5 @@ export function createDaoSlug(name: string): string {
 }
 
 export function getDaoUrl(name: string): string {
-  return `/daos/${createDaoSlug(name)}`;
+  return `/aidaos/${createDaoSlug(name)}`;
 }
