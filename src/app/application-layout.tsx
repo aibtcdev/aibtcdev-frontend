@@ -127,7 +127,11 @@ export default function ApplicationLayout({
 
           {/* Mobile User Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {isAuthenticated && <NotificationBell />}
+            {isAuthenticated && (
+              <div className="mr-2">
+                <NotificationBell />
+              </div>
+            )}
             {isAuthenticated ? (
               <DropdownMenu
                 open={isMobileMenuOpen}
@@ -271,7 +275,11 @@ export default function ApplicationLayout({
 
           {/* Right Section - BTC Balance Dropdown & Auth Button */}
           <div className="flex items-center gap-2 relative z-10 justify-end">
-            {isAuthenticated && <NotificationBell />}
+            {isAuthenticated && (
+              <div className="mr-3">
+                <NotificationBell />
+              </div>
+            )}
             {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
             {isAuthenticated ? (
               <DropdownMenu
