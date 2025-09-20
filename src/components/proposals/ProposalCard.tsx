@@ -104,7 +104,7 @@ export default function ProposalCard({
   const daoLink = useMemo(() => {
     const proposalWithDAO = proposal as ProposalWithDAO;
     if (proposalWithDAO.daos?.name) {
-      return `/daos/${encodeURIComponent(proposalWithDAO.daos.name)}`;
+      return `/aidaos/${encodeURIComponent(proposalWithDAO.daos.name)}`;
     }
     return null;
   }, [proposal]);

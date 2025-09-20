@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import DAOExtensions from "@/components/daos/DaoExtensions";
+import DAOExtensions from "@/components/aidaos/DaoExtensions";
 import { fetchDAOByName, fetchDAOExtensions } from "@/services/dao.service";
 import { Loader } from "@/components/reusables/Loader";
 

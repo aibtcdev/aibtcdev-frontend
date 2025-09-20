@@ -4,7 +4,7 @@ import type React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Info } from "lucide-react";
-import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
+import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
 
 type MarkdownComponentProps = {
   children?: React.ReactNode;

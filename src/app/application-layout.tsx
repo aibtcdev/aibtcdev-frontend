@@ -100,7 +100,7 @@ export default function ApplicationLayout({
 
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center">
-            <Link href="/daos" className="flex items-center gap-2">
+            <Link href="/aidaos" className="flex items-center gap-2">
               <Image
                 src="/logos/aibtcdev-avatar-1000px.png"
                 alt="AIBTCDEV"
@@ -127,7 +127,11 @@ export default function ApplicationLayout({
 
           {/* Mobile User Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {isAuthenticated && <NotificationBell />}
+            {isAuthenticated && (
+              <div className="mr-2">
+                <NotificationBell />
+              </div>
+            )}
             {isAuthenticated ? (
               <DropdownMenu
                 open={isMobileMenuOpen}
@@ -232,7 +236,7 @@ export default function ApplicationLayout({
           {/* Left Section - Logo */}
           <div className="flex items-center gap-2 lg:gap-3 relative z-10 justify-start">
             <Link
-              href="/daos"
+              href="/aidaos"
               className="flex items-center gap-2 lg:gap-3 group"
             >
               <div className="flex items-center gap-2 lg:gap-3 transition-all duration-300 ease-in-out group-hover:scale-105">
@@ -271,7 +275,11 @@ export default function ApplicationLayout({
 
           {/* Right Section - BTC Balance Dropdown & Auth Button */}
           <div className="flex items-center gap-2 relative z-10 justify-end">
-            {isAuthenticated && <NotificationBell />}
+            {isAuthenticated && (
+              <div className="mr-3">
+                <NotificationBell />
+              </div>
+            )}
             {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
             {isAuthenticated ? (
               <DropdownMenu

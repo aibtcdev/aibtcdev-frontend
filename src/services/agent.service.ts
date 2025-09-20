@@ -9,7 +9,7 @@ import type { Agent } from "@/types";
  * Query key: ['agents']
  * Used in:
  * - src/components/chat/agent-selector.tsx
- * - src/components/daos/DaoAgentSelector.tsx
+ * - src/components/aidaos/DaoAgentSelector.tsx
  */
 export const fetchAgents = async (): Promise<Agent[]> => {
   try {

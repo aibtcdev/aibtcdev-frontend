@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "DAOs",
+  title: "AI DAOs",
   description: "Bitcoin-backed DAOs. Fully autonomous governance.",
 };
 

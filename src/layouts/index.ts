@@ -1,1 +1,1 @@
-export { MissionContent } from "@/components/daos/MissionContent";
+export { MissionContent } from "@/components/aidaos/MissionContent";

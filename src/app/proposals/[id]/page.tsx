@@ -49,7 +49,7 @@ function ProposalHeader({ proposal }: { proposal: ProposalWithDAO }) {
                 {proposal.daos?.name && (
                   <>
                     <Link
-                      href={`/daos/${encodeURIComponent(proposal.daos.name)}`}
+                      href={`/aidaos/${encodeURIComponent(proposal.daos.name)}`}
                       className="hover:text-foreground transition-colors duration-150 flex items-center gap-1"
                     >
                       {proposal.daos.name}

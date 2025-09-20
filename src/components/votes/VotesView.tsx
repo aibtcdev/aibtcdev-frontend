@@ -666,7 +666,7 @@ function VoteCard({ vote }: VoteCardProps) {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Link href={`/daos/${encodeURIComponent(vote.dao_name)}`}>
+                  <Link href={`/aidaos/${encodeURIComponent(vote.dao_name)}`}>
                     <span className="font-bold hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       {vote.dao_name}
                       <ExternalLink className="h-3 w-3" />

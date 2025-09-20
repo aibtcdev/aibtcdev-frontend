@@ -42,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Info } from "lucide-react";
+import { Info, Lock } from "lucide-react";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import {
@@ -1075,7 +1075,6 @@ export default function DepositForm({
     adapterContract,
     // daoName,
     transactionStatus,
-    isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -1854,7 +1853,7 @@ export default function DepositForm({
     prelaunchContract,
     poolContract,
     transactionStatus,
-    isBonded,
+    // isBonded,
     toast,
     handleWalletAuth,
   ]);
@@ -2167,7 +2166,21 @@ export default function DepositForm({
   }
 
   return (
-    <div className="flex flex-col space-y-5 md:space-y-6 w-full max-w-lg mx-auto">
+    <div className="relative flex flex-col space-y-5 md:space-y-6 w-full max-w-lg mx-auto">
+      {/* Locked Overlay when Market is Closed */}
+      {isMarketOpen === false && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-50 min-h-full">
+          <div className="text-center space-y-4 max-w-md mx-auto px-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Lock className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-2">Market Closed</h3>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <h2 className="text-2xl font-semibold text-white">Buy ${daoName}</h2>
