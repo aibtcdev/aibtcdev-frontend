@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
+import { TokenSwapModal } from "@/components/account/TokenSwapModal";
 import { WalletBalance } from "@/store/wallet";
 import { useBatchContractApprovals } from "@/hooks/useContractApproval";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
@@ -78,6 +79,7 @@ export function AgentTokensTable({
 }: AgentTokensTableProps) {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [swapModalOpen, setSwapModalOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
   const [depositRecipient, setDepositRecipient] = useState<string | null>(null);
   const [depositType, setDepositType] = useState<"agent" | "wallet" | null>(
@@ -363,6 +365,16 @@ export function AgentTokensTable({
     setWithdrawModalOpen(true);
   };
 
+  const handleSwap = (tokenData: TokenData, agentBalance: string) => {
+    // Create token data with agent balance for swapping
+    const swapTokenData = {
+      ...tokenData,
+      balance: agentBalance,
+    };
+    setSelectedToken(swapTokenData);
+    setSwapModalOpen(true);
+  };
+
   const tokensData = getTokensData();
 
   if (tokensData.length === 0) {
@@ -433,15 +445,26 @@ export function AgentTokensTable({
                     </Button>
                   )}
                   {hasAgentBalance && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleWithdraw(tokenData, agentBalance)}
-                      disabled={!isTokenApproved}
-                      className="flex-1 text-xs"
-                    >
-                      Withdraw
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleWithdraw(tokenData, agentBalance)}
+                        disabled={!isTokenApproved}
+                        className="flex-1 text-xs"
+                      >
+                        Withdraw
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleSwap(tokenData, agentBalance)}
+                        disabled={!swapApprovals.data?.[contractPrincipal]}
+                        className="flex-1 text-xs"
+                      >
+                        Swap
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -611,17 +634,30 @@ export function AgentTokensTable({
 
                         {/* Withdraw from Agent Account - only show if agent has tokens */}
                         {hasAgentBalance && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              handleWithdraw(tokenData, agentBalance)
-                            }
-                            disabled={!isTokenApproved}
-                            className="text-xs"
-                          >
-                            Withdraw
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleWithdraw(tokenData, agentBalance)
+                              }
+                              disabled={!isTokenApproved}
+                              className="text-xs"
+                            >
+                              Withdraw
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() =>
+                                handleSwap(tokenData, agentBalance)
+                              }
+                              disabled={!isSwapApproved}
+                              className="text-xs"
+                            >
+                              Swap for sBTC
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -654,6 +690,19 @@ export function AgentTokensTable({
           isOpen={withdrawModalOpen}
           onClose={() => {
             setWithdrawModalOpen(false);
+            setSelectedToken(null);
+          }}
+          agentAddress={agentAddress}
+          tokenData={selectedToken}
+        />
+      )}
+
+      {/* Swap Modal */}
+      {selectedToken && (
+        <TokenSwapModal
+          isOpen={swapModalOpen}
+          onClose={() => {
+            setSwapModalOpen(false);
             setSelectedToken(null);
           }}
           agentAddress={agentAddress}
