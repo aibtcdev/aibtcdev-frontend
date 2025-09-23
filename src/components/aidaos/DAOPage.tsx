@@ -540,7 +540,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             {/* Right column - Buy Panel */}
             <div className="order-1 lg:order-2">
               <BitcoinDeposit
-                dexId={1}
+                dexId={8}
                 dexContract={dexContract || ""}
                 daoName={dao.name}
                 tokenContract={tokenContract || ""}
