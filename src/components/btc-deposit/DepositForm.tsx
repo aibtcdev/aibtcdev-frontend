@@ -1721,7 +1721,7 @@ export default function DepositForm({
       const args = [
         Cl.uint(Number(ustx)),
         Cl.uint(minTokensOut),
-        Cl.uint(1),
+        Cl.uint(dexId),
         Cl.contractPrincipal(tokenAddress, tokenName), // token contract
         Cl.contractPrincipal(dexAddress, dexName), // dex contract
         Cl.contractPrincipal(prelaunchAddress, prelaunchName), // prelaunch contract
