@@ -4,7 +4,7 @@ const page = () => {
   return (
     <div>
       <BitcoinDeposit
-        dexId={6}
+        dexId={8}
         dexContract={
           "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.facemelt-faktory-dex"
         }
