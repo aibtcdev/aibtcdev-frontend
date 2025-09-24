@@ -1175,7 +1175,7 @@ export default function DepositForm({
         // 2. Pool sends >= dy-amount from Bitflow quote
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
       ];
 
       // Add agent-specific post conditions if user has agent account
@@ -1188,7 +1188,7 @@ export default function DepositForm({
           // 4. Adapter sends tokens to user's agent account
           Pc.principal(`${adapterAddress}.${adapterName}`)
             .willSendGte(minTokensOut)
-            .ft(`${tokenAddress}.${tokenName}`, "faces2")
+            .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`)
         );
       }
 
@@ -1401,7 +1401,7 @@ export default function DepositForm({
       const args = [
         Cl.uint(Number(ustx)),
         Cl.uint(minTokensOut), // minReceive from Bitflow quote
-        Cl.uint(7),
+        Cl.uint(dexId),
         Cl.contractPrincipal(tokenAddress, tokenName),
         Cl.contractPrincipal(dexAddress, dexName),
         Cl.contractPrincipal(prelaunchAddress, prelaunchName),
@@ -1421,13 +1421,13 @@ export default function DepositForm({
         // 2. Pool sends tokens
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
         // 4. Bridge contract sends tokens to user
         Pc.principal(
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
         )
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
       ];
 
       const contractCallOptions = {
