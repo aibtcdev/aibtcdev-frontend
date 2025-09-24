@@ -7,6 +7,15 @@ export const updateSession = async (request: NextRequest) => {
     if (request.nextUrl.pathname === "/") {
       return NextResponse.redirect(new URL("/aidaos", request.url));
     }
+
+    // Handle DAO-related path redirects
+    if (request.nextUrl.pathname === "/daos") {
+      return NextResponse.redirect(new URL("/aidaos", request.url));
+    }
+
+    if (request.nextUrl.pathname === "/ai-daos") {
+      return NextResponse.redirect(new URL("/aidaos", request.url));
+    }
     // Create an unmodified response
     let response = NextResponse.next({
       request: {
