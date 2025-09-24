@@ -1,16 +1,37 @@
 "use client";
 
-import React from "react";
-import { Shield, AlertTriangle } from "lucide-react";
+import React, { useMemo } from "react";
+import { Shield, AlertTriangle, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProposalSection } from "../layout/ProposalSection";
 import { useProposalVetos, useProposalHasVetos } from "@/hooks/useVetos";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DAOVetoProposal } from "../DAOVetoProposal";
+import { useProposalStatus } from "@/hooks/useProposalStatus";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { checkAgentVetoStatus } from "@/services/veto.service";
+import { fetchAgents } from "@/services/agent.service";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface VetosSectionProps {
   proposalId: string;
   defaultOpen?: boolean;
+  proposal: Proposal | ProposalWithDAO;
 }
+
+// Helper function to mask addresses
+const maskAddress = (addr?: string | null) => {
+  if (!addr) return "";
+  if (addr.length <= 10) return addr;
+  return `${addr.slice(0, 5)}...${addr.slice(-5)}`;
+};
 
 function formatBalance(value: string | number, decimals: number = 8) {
   let num = typeof value === "string" ? parseFloat(value) : value;
@@ -29,9 +50,48 @@ function formatBalance(value: string | number, decimals: number = 8) {
   }
 }
 
-function VetosContent({ proposalId }: { proposalId: string }) {
+function VetosContent({
+  proposalId,
+  proposal,
+}: {
+  proposalId: string;
+  proposal: Proposal | ProposalWithDAO;
+}) {
   const { data: vetos, isLoading, error } = useProposalVetos(proposalId);
-  const { hasVetos } = useProposalHasVetos(proposalId);
+  const { hasVetos, vetoCount } = useProposalHasVetos(proposalId);
+
+  // Get auth state and proposal status for veto functionality
+  const { isAuthenticated, userId } = useAuth();
+  const { status: proposalStatus } = useProposalStatus(proposal);
+
+  // Fetch user's agents to get agent account address
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents", userId],
+    queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
+  });
+
+  // Get agent account address for veto checking
+  const agentAccountAddress = useMemo(() => {
+    if (!agents.length) return null;
+    const agent = agents[0];
+    return agent.account_contract || null;
+  }, [agents]);
+
+  // Check if current user (agent) has already vetoed this proposal
+  const { data: existingVeto } = useQuery({
+    queryKey: ["agentVeto", proposalId, agentAccountAddress],
+    queryFn: () => {
+      if (!proposalId || !agentAccountAddress) return null;
+      return checkAgentVetoStatus(proposalId, agentAccountAddress);
+    },
+    enabled: !!proposalId && !!agentAccountAddress && isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get DAO ID and name from proposal
+  const daoId = proposal.dao_id;
+  const daoName = "daos" in proposal ? proposal.daos?.name : undefined;
 
   if (isLoading) {
     return (
@@ -74,38 +134,84 @@ function VetosContent({ proposalId }: { proposalId: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      {vetos?.map((veto, index) => {
-        return (
+    <div className="space-y-4">
+      {/* Veto Button - Always show with tooltip */}
+      {daoId && (
+        <div className="flex justify-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DAOVetoProposal
+                    daoId={daoId}
+                    proposalId={proposalId}
+                    size="default"
+                    variant="destructive"
+                    disabled={
+                      proposalStatus !== "VETO_PERIOD" || !!existingVeto
+                    }
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {existingVeto
+                    ? "You have already vetoed this proposal"
+                    : proposalStatus !== "VETO_PERIOD"
+                      ? "Can only be vetoed during veto period"
+                      : "Click to veto this proposal"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* Veto Status Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">Veto Status</span>
+        <Badge
+          variant={hasVetos ? "destructive" : "secondary"}
+          className="text-xs"
+        >
+          {hasVetos
+            ? `${vetoCount} Veto${vetoCount !== 1 ? "s" : ""}`
+            : "No Vetos"}
+        </Badge>
+      </div>
+
+      {/* Veto List - Same format as VotesView.tsx */}
+      <div className="space-y-2">
+        {vetos?.map((veto, index) => (
           <div
             key={veto.id}
-            className="flex items-center justify-between p-3 rounded-lg bg-background/50 hover:bg-background/70 transition-colors"
+            className="bg-destructive/10 border border-destructive/20 rounded-lg p-3"
           >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-6 h-6 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-medium text-destructive">
-                  {index + 1}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-sm font-mono truncate block">
-                  {veto.address?.slice(0, 5)}...{veto.address?.slice(-5)}
-                </span>
-                {veto.reasoning && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {veto.reasoning}
-                  </p>
-                )}
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-destructive">
+                Vetoed {formatBalance(veto.amount || "0")} {daoName || "tokens"}{" "}
+                by {maskAddress(veto.address)}
+              </span>
+              {veto.tx_id && (
+                <a
+                  href={`https://explorer.hiro.so/txid/${veto.tx_id}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1 ml-2"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View Transaction
+                </a>
+              )}
             </div>
-            {veto.amount && (
-              <Badge variant="destructive" className="text-xs">
-                {formatBalance(veto.amount)}
-              </Badge>
-            )}
           </div>
-        );
-      })}
+        ))}
+        {vetos && vetos.length > 3 && (
+          <p className="text-xs text-muted-foreground text-center">
+            +{vetos.length - 3} more vetos
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -113,8 +219,41 @@ function VetosContent({ proposalId }: { proposalId: string }) {
 export function VetosSection({
   proposalId,
   defaultOpen = false,
+  proposal,
 }: VetosSectionProps) {
   const { hasVetos, vetoCount } = useProposalHasVetos(proposalId);
+
+  // Get auth state and proposal status for veto functionality
+  const { isAuthenticated, userId } = useAuth();
+  const { status: proposalStatus } = useProposalStatus(proposal);
+
+  // Fetch user's agents to get agent account address
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents", userId],
+    queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
+  });
+
+  // Get agent account address for veto checking
+  const agentAccountAddress = useMemo(() => {
+    if (!agents.length) return null;
+    const agent = agents[0];
+    return agent.account_contract || null;
+  }, [agents]);
+
+  // Check if current user (agent) has already vetoed this proposal
+  const { data: existingVeto } = useQuery({
+    queryKey: ["agentVeto", proposalId, agentAccountAddress],
+    queryFn: () => {
+      if (!proposalId || !agentAccountAddress) return null;
+      return checkAgentVetoStatus(proposalId, agentAccountAddress);
+    },
+    enabled: !!proposalId && !!agentAccountAddress && isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get DAO ID from proposal
+  const daoId = proposal.dao_id;
 
   const icon = hasVetos ? (
     <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -124,6 +263,36 @@ export function VetosSection({
 
   const title = hasVetos ? `Vetos (${vetoCount})` : "Vetos";
   const variant = hasVetos ? "warning" : "muted";
+
+  // Veto button as header action
+  const vetoAction = daoId ? (
+    <div onClick={(e) => e.stopPropagation()}>
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <DAOVetoProposal
+                daoId={daoId}
+                proposalId={proposalId}
+                size="sm"
+                variant="destructive"
+                disabled={proposalStatus !== "VETO_PERIOD" || !!existingVeto}
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>
+              {existingVeto
+                ? "You have already vetoed this proposal"
+                : proposalStatus !== "VETO_PERIOD"
+                  ? "Can only be vetoed during veto period"
+                  : "Click to veto this proposal"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  ) : null;
 
   return (
     <ProposalSection.Provider
@@ -148,10 +317,11 @@ export function VetosSection({
                 ? "Community objections to this proposal"
                 : "No objections submitted"
             }
+            actions={vetoAction}
             collapsible={true}
           />
           <ProposalSection.Content collapsible={true} lazy={true}>
-            <VetosContent proposalId={proposalId} />
+            <VetosContent proposalId={proposalId} proposal={proposal} />
           </ProposalSection.Content>
         </ProposalSection.Card>
       </ProposalSection.Root>
