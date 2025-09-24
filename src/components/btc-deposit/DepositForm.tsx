@@ -388,6 +388,37 @@ export default function DepositForm({
 
       // Fork based on bonded status
       if (isBonded) {
+        // For bonded tokens, apply bridge fee calculation if using BTC (not sBTC)
+        if (!buyWithSbtc) {
+          const btcAmount = BigInt(
+            Math.round(parseFloat(amount) * Math.pow(10, 8))
+          );
+
+          const calculateBridgeFee = (amountSats: bigint): number => {
+            const satsNum = Number(amountSats);
+            if (satsNum <= 300000) {
+              return 3000; // 3000 sats for amounts up to 300,000 sats
+            } else {
+              return Math.floor(satsNum * 0.01); // 1% of the amount for amounts above 300,000 sats
+            }
+          };
+
+          const bridgeFee = calculateBridgeFee(btcAmount);
+          const finalAmount = btcAmount - BigInt(bridgeFee);
+
+          // If amount after fee is too small, return null
+          if (finalAmount <= 0) {
+            return null;
+          }
+
+          // Use amount after bridge fee for Bitflow quote
+          const amountAfterFee = (
+            Number(finalAmount) / Math.pow(10, 8)
+          ).toString();
+          return getBuyBitflowQuote(amountAfterFee);
+        }
+
+        // For sBTC with bonded tokens, no bridge fee
         return getBuyBitflowQuote(amount);
       }
 
