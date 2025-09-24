@@ -182,7 +182,7 @@ function VetosContent({
 
       {/* Veto List - Same format as VotesView.tsx */}
       <div className="space-y-2">
-        {vetos?.map((veto, index) => (
+        {vetos?.map((veto) => (
           <div
             key={veto.id}
             className="bg-destructive/10 border border-destructive/20 rounded-lg p-3"
