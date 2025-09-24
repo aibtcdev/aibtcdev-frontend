@@ -388,6 +388,37 @@ export default function DepositForm({
 
       // Fork based on bonded status
       if (isBonded) {
+        // For bonded tokens, apply bridge fee calculation if using BTC (not sBTC)
+        if (!buyWithSbtc) {
+          const btcAmount = BigInt(
+            Math.round(parseFloat(amount) * Math.pow(10, 8))
+          );
+
+          const calculateBridgeFee = (amountSats: bigint): number => {
+            const satsNum = Number(amountSats);
+            if (satsNum <= 300000) {
+              return 3000; // 3000 sats for amounts up to 300,000 sats
+            } else {
+              return Math.floor(satsNum * 0.01); // 1% of the amount for amounts above 300,000 sats
+            }
+          };
+
+          const bridgeFee = calculateBridgeFee(btcAmount);
+          const finalAmount = btcAmount - BigInt(bridgeFee);
+
+          // If amount after fee is too small, return null
+          if (finalAmount <= 0) {
+            return null;
+          }
+
+          // Use amount after bridge fee for Bitflow quote
+          const amountAfterFee = (
+            Number(finalAmount) / Math.pow(10, 8)
+          ).toString();
+          return getBuyBitflowQuote(amountAfterFee);
+        }
+
+        // For sBTC with bonded tokens, no bridge fee
         return getBuyBitflowQuote(amount);
       }
 
@@ -1149,6 +1180,8 @@ export default function DepositForm({
       const [adapterAddress, adapterName] =
         BITFLOW_CONTRACTS.ADAPTER.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
+      // Extract clean token name without -faktory suffix for .ft() calls
+      const cleanTokenName = tokenName.replace("-faktory", "");
 
       // Validate contract parts
       if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
@@ -1175,7 +1208,7 @@ export default function DepositForm({
         // 2. Pool sends >= dy-amount from Bitflow quote
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
       ];
 
       // Add agent-specific post conditions if user has agent account
@@ -1188,7 +1221,7 @@ export default function DepositForm({
           // 4. Adapter sends tokens to user's agent account
           Pc.principal(`${adapterAddress}.${adapterName}`)
             .willSendGte(minTokensOut)
-            .ft(`${tokenAddress}.${tokenName}`, "faces2")
+            .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`)
         );
       }
 
@@ -1386,6 +1419,8 @@ export default function DepositForm({
 
       // Use same bridge contract but with Bitflow minReceive
       const [tokenAddress, tokenName] = tokenContract.split(".");
+      // Extract clean token name without -faktory suffix for .ft() calls
+      const cleanTokenName = tokenName.replace("-faktory", "");
       const [dexAddress, dexName] = dexContract.split(".");
       const [prelaunchAddress, prelaunchName] = (
         prelaunchContract || dexContract
@@ -1401,7 +1436,7 @@ export default function DepositForm({
       const args = [
         Cl.uint(Number(ustx)),
         Cl.uint(minTokensOut), // minReceive from Bitflow quote
-        Cl.uint(7),
+        Cl.uint(dexId),
         Cl.contractPrincipal(tokenAddress, tokenName),
         Cl.contractPrincipal(dexAddress, dexName),
         Cl.contractPrincipal(prelaunchAddress, prelaunchName),
@@ -1421,13 +1456,13 @@ export default function DepositForm({
         // 2. Pool sends tokens
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
         // 4. Bridge contract sends tokens to user
         Pc.principal(
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
         )
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, "faces2"),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
       ];
 
       const contractCallOptions = {
