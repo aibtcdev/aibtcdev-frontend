@@ -1062,9 +1062,9 @@ export function ProposalSubmission({
                           rel="noopener noreferrer"
                           className="text-primary hover:underline font-medium"
                         >
-                          Create one here
+                          Send airdrop
                         </a>{" "}
-                        to enhance your contribution.
+                        to boost your contribution.
                       </>
                     )}
                   </div>
