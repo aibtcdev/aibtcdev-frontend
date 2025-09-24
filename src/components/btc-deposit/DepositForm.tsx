@@ -1149,6 +1149,8 @@ export default function DepositForm({
       const [adapterAddress, adapterName] =
         BITFLOW_CONTRACTS.ADAPTER.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
+      // Extract clean token name without -faktory suffix for .ft() calls
+      const cleanTokenName = tokenName.replace("-faktory", "");
 
       // Validate contract parts
       if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
@@ -1175,7 +1177,7 @@ export default function DepositForm({
         // 2. Pool sends >= dy-amount from Bitflow quote
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
       ];
 
       // Add agent-specific post conditions if user has agent account
@@ -1188,7 +1190,7 @@ export default function DepositForm({
           // 4. Adapter sends tokens to user's agent account
           Pc.principal(`${adapterAddress}.${adapterName}`)
             .willSendGte(minTokensOut)
-            .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`)
+            .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`)
         );
       }
 
@@ -1386,6 +1388,8 @@ export default function DepositForm({
 
       // Use same bridge contract but with Bitflow minReceive
       const [tokenAddress, tokenName] = tokenContract.split(".");
+      // Extract clean token name without -faktory suffix for .ft() calls
+      const cleanTokenName = tokenName.replace("-faktory", "");
       const [dexAddress, dexName] = dexContract.split(".");
       const [prelaunchAddress, prelaunchName] = (
         prelaunchContract || dexContract
@@ -1421,13 +1425,13 @@ export default function DepositForm({
         // 2. Pool sends tokens
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
         // 4. Bridge contract sends tokens to user
         Pc.principal(
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
         )
           .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${tokenName}`),
+          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
       ];
 
       const contractCallOptions = {
