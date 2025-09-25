@@ -52,11 +52,7 @@ import {
   type ApiResponse,
   // type ProposalRecommendationRequest,
 } from "@/services/tool.service";
-import {
-  fetchTwitterEmbed,
-  isTwitterOEmbedError,
-  type TwitterOEmbedResponse,
-} from "@/services/twitter.service";
+// Removed Twitter embed imports - using simple URL validation instead
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
@@ -217,9 +213,7 @@ export function ProposalSubmission({
   const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
     string | null
   >(null);
-  const [twitterEmbed, setTwitterEmbed] =
-    useState<TwitterOEmbedResponse | null>(null);
-  const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
+  // Removed Twitter embed state - using simple URL validation instead
   // const { issues, hasAnyIssues, cleanText } =
   //   useUnicodeValidation(contribution);
   // const handleClean = () => {
@@ -597,38 +591,7 @@ export function ProposalSubmission({
     }
   }, [senderAirdrops, showAirdropNotification]);
 
-  // Fetch Twitter embed when URL is valid
-  useEffect(() => {
-    const fetchEmbed = async () => {
-      if (isValidTwitterUrl && twitterUrl) {
-        setIsLoadingEmbed(true);
-        setTwitterEmbed(null);
-
-        try {
-          const embedData = await fetchTwitterEmbed(twitterUrl);
-
-          if (!isTwitterOEmbedError(embedData)) {
-            setTwitterEmbed(embedData);
-          } else {
-            console.error("Failed to fetch Twitter embed:", embedData.error);
-            setTwitterEmbed(null);
-          }
-        } catch (error) {
-          console.error("Error fetching Twitter embed:", error);
-          setTwitterEmbed(null);
-        } finally {
-          setIsLoadingEmbed(false);
-        }
-      } else {
-        setTwitterEmbed(null);
-      }
-    };
-
-    // Debounce the API call
-    const timeoutId = setTimeout(fetchEmbed, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [twitterUrl, isValidTwitterUrl]);
+  // Removed Twitter embed fetching - using simple URL validation instead
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -989,12 +952,7 @@ export function ProposalSubmission({
 
   return (
     <>
-      <div
-        className="rounded-2xl bg-muted/10 border-white/10 p-4  sm:p-6 lg:p-7 flex flex-col relative"
-        style={{
-          maxHeight: "var(--available-height)",
-        }}
-      >
+      <div className="rounded-2xl bg-muted/10 border-white/10 p-4 sm:p-6 lg:p-7 flex flex-col relative">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
@@ -1031,7 +989,25 @@ export function ProposalSubmission({
           )}
         {/* Header */}
         <div className="mb-4">
-          <h2 className="text-2xl font-bold mb-1">Earn ${daoName}</h2>
+          <div className="flex items-start justify-between mb-1">
+            <h2 className="text-2xl font-bold">Earn ${daoName}</h2>
+            {/* Tip positioned at top right */}
+            <div className="relative group">
+              <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
+                💡 <strong>Tips</strong>
+              </div>
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-2 w-80 p-3 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="text-sm text-zinc-200">
+                  Make sure your contribution is clear, specific, and aligned
+                  with the DAO's mission. AI agents will vote on this
+                  contribution with {name}.
+                </div>
+                {/* Arrow pointing up */}
+                <div className="absolute -top-1 right-4 w-2 h-2 bg-zinc-800 border-l border-t border-zinc-700 rotate-45"></div>
+              </div>
+            </div>
+          </div>
           <p className="text-sm">
             Earn{" "}
             <span className="text-primary font-semibold">1000 ${daoName}</span>{" "}
@@ -1046,16 +1022,9 @@ export function ProposalSubmission({
           </p>
         </div>
 
-        {/* Scrollable Body */}
-        <div
-          className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3"
-          style={{
-            paddingBottom:
-              "calc(var(--submit-cta-height) + var(--cta-spacing))",
-          }}
-        >
-          {/* Airdrop Notification - Only show when authenticated */}
-          {hasAccessToken ? (
+        {/* Content Body */}
+        <div className="flex-1 space-y-3">
+          {hasAccessToken && (
             <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1087,29 +1056,22 @@ export function ProposalSubmission({
                       </>
                     ) : (
                       <>
-                        Send boosts to enhance your contribution or{" "}
                         <a
                           href="https://faktory.fun/airdrop"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline font-medium"
                         >
-                          create one here
-                        </a>
+                          Send airdrop
+                        </a>{" "}
+                        to boost your contribution.
                       </>
                     )}
                   </div>
                 </div>
-                {/* <button
-                  onClick={() => setShowAirdropNotification(false)}
-                  className="p-1 rounded-md hover:bg-muted/50 transition-colors duration-200"
-                  aria-label="Dismiss notification"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button> */}
               </div>
             </div>
-          ) : null}
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="relative">
@@ -1119,7 +1081,7 @@ export function ProposalSubmission({
                   setContribution(e.target.value);
                 }}
                 placeholder={`Describe the work you've done that pushes the ${daoName} mission.`}
-                className={`w-full min-h-[100px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
+                className={`w-full min-h-[107px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -1151,7 +1113,9 @@ export function ProposalSubmission({
                   if (cleaned) setTwitterUrl(cleaned);
                 }}
                 placeholder="X.com URL to a post showing proof of your work."
-                className={`w-full p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
+                className={`w-full p-4 ${
+                  twitterUrl && isValidTwitterUrl ? "pr-16" : ""
+                } bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -1160,6 +1124,23 @@ export function ProposalSubmission({
                 }
                 required
               />
+              {/* Clickable link button inside input */}
+              {twitterUrl && isValidTwitterUrl && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      cleanTwitterUrl(twitterUrl),
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
+                  title="Open Twitter post"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+              )}
               {twitterUrl && !isValidTwitterUrl && (
                 <div className="text-xs text-red-400 mt-1">
                   ⚠️ Please enter a valid X.com (Twitter) post URL in the
@@ -1168,8 +1149,8 @@ export function ProposalSubmission({
               )}
             </div>
 
-            {/* Airdrop Selector - Show disabled version when not authenticated */}
-            {(senderAirdrops.length > 0 || !hasAccessToken) && (
+            {/* Airdrop Selector - Always show when authenticated */}
+            {hasAccessToken && (
               <div className="space-y-1">
                 <Select
                   onValueChange={(value) =>
@@ -1186,7 +1167,9 @@ export function ProposalSubmission({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      Attach boost (optional)
+                      {senderAirdrops.length > 0
+                        ? "Attach boost (optional)"
+                        : "No boosts available - Create one to attach"}
                     </SelectItem>
                     {senderAirdrops.map((airdrop) => (
                       <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
@@ -1214,32 +1197,6 @@ export function ProposalSubmission({
                       <ExternalLink className="h-3 w-3" />
                       View selected boost on explorer
                     </a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Twitter Embed Preview */}
-            {twitterUrl && isValidTwitterUrl && (
-              <div className="bg-background/60 rounded-xl p-3 shadow-sm">
-                <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Twitter Post Preview
-                </div>
-                {isLoadingEmbed ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      Loading preview...
-                    </div>
-                  </div>
-                ) : twitterEmbed ? (
-                  <div
-                    className="twitter-embed"
-                    dangerouslySetInnerHTML={{ __html: twitterEmbed.html }}
-                  />
-                ) : (
-                  <div className="text-sm text-muted-foreground py-4">
-                    Failed to load Twitter post preview
                   </div>
                 )}
               </div>
@@ -1285,24 +1242,12 @@ export function ProposalSubmission({
                 </div>
               )}
 
-            {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
+            {/* {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
               <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
                 <strong>Invalid Twitter URL:</strong> URL must be in the format
                 https://x.com/username/status/1234567890123456789
               </div>
-            )}
-
-            {hasAccessToken &&
-              contribution.trim() &&
-              twitterUrl.trim() &&
-              isValidTwitterUrl &&
-              isWithinLimit && (
-                <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
-                  💡 <strong>Tip:</strong> Make sure your contribution is clear,
-                  specific, and aligned with the DAO's mission. AI agents will
-                  vote on this contribution with {name}.
-                </div>
-              )}
+            )} */}
 
             {isLoadingExtensions && (
               <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
@@ -1318,9 +1263,9 @@ export function ProposalSubmission({
           </form>
         </div>
 
-        {/* Sticky Footer CTA */}
-        <div className="sticky bottom-0 -mx-5 sm:-mx-6 lg:-mx-7  pt-4 z-20">
-          <div className="px-5 sm:px-6 lg:px-7">
+        {/* Footer CTA */}
+        <div className="pt-4">
+          <div>
             <Button
               onClick={handleSubmit}
               disabled={
@@ -1340,7 +1285,6 @@ export function ProposalSubmission({
                 hasProposalInCurrentBlock
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
-              style={{ height: "var(--submit-cta-height)" }}
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">

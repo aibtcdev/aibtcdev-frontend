@@ -96,7 +96,11 @@ const ProposalDetails = ({
       {/* Secondary Content - Progressive Disclosure */}
       <VotesSection proposalId={proposal.id} defaultOpen={false} />
 
-      <VetosSection proposalId={proposal.id} defaultOpen={false} />
+      <VetosSection
+        proposalId={proposal.id}
+        proposal={proposal}
+        defaultOpen={false}
+      />
 
       {/* Tertiary Content - Advanced Details, Collapsed by Default */}
       <ChainSection proposal={proposal} defaultOpen={false} />

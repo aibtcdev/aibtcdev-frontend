@@ -143,8 +143,10 @@ export default function ApplicationLayout({
                     size="sm"
                     className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-transparent rounded-lg"
                   >
-                    {/* <DisplayBtc /> */}
-                    <DisplayAgentAddress />
+                    {/* Mobile: Show only icon */}
+                    <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
+                      <User className="w-3.5 h-3.5" />
+                    </div>
                     <ChevronDown className="h-3 w-3 text-primary/70" />
                   </Button>
                 </DropdownMenuTrigger>
