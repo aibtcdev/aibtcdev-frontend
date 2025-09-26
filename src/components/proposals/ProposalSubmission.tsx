@@ -52,7 +52,11 @@ import {
   type ApiResponse,
   // type ProposalRecommendationRequest,
 } from "@/services/tool.service";
-// Removed Twitter embed imports - using simple URL validation instead
+import {
+  fetchTwitterEmbed,
+  isTwitterOEmbedError,
+  type TwitterOEmbedResponse,
+} from "@/services/twitter.service";
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
@@ -213,12 +217,11 @@ export function ProposalSubmission({
   const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
     string | null
   >(null);
-  // Removed Twitter embed state - using simple URL validation instead
-  // const { issues, hasAnyIssues, cleanText } =
-  //   useUnicodeValidation(contribution);
-  // const handleClean = () => {
-  //   setContribution(cleanText);
-  // };
+  // Twitter embed state
+  const [twitterEmbedData, setTwitterEmbedData] =
+    useState<TwitterOEmbedResponse | null>(null);
+  const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
+  const [embedError, setEmbedError] = useState<string | null>(null);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
@@ -591,7 +594,42 @@ export function ProposalSubmission({
     }
   }, [senderAirdrops, showAirdropNotification]);
 
-  // Removed Twitter embed fetching - using simple URL validation instead
+  // Fetch Twitter embed when URL is valid
+  useEffect(() => {
+    const fetchEmbed = async () => {
+      if (!twitterUrl || !isValidTwitterUrl) {
+        setTwitterEmbedData(null);
+        setEmbedError(null);
+        return;
+      }
+
+      setIsLoadingEmbed(true);
+      setEmbedError(null);
+
+      try {
+        const result = await fetchTwitterEmbed(cleanTwitterUrl(twitterUrl));
+
+        if (isTwitterOEmbedError(result)) {
+          setEmbedError(result.error);
+          setTwitterEmbedData(null);
+        } else {
+          setTwitterEmbedData(result);
+          setEmbedError(null);
+        }
+      } catch (error) {
+        setEmbedError(
+          error instanceof Error ? error.message : "Failed to load preview"
+        );
+        setTwitterEmbedData(null);
+      } finally {
+        setIsLoadingEmbed(false);
+      }
+    };
+
+    // Debounce the fetch to avoid too many requests
+    const timeoutId = setTimeout(fetchEmbed, 500);
+    return () => clearTimeout(timeoutId);
+  }, [twitterUrl, isValidTwitterUrl]);
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -632,6 +670,9 @@ export function ProposalSubmission({
           setContribution(""); // Clear proposal only after successful confirmation
           setTwitterUrl("");
           setSelectedAirdropTxHash(null);
+          // Clear Twitter embed data
+          setTwitterEmbedData(null);
+          setEmbedError(null);
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -1148,6 +1189,44 @@ export function ProposalSubmission({
                 </div>
               )}
             </div>
+
+            {/* Twitter Embed Preview */}
+            {twitterUrl && isValidTwitterUrl && (
+              <div className="space-y-2">
+                {isLoadingEmbed && (
+                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader />
+                      <span>Loading preview...</span>
+                    </div>
+                  </div>
+                )}
+
+                {embedError && (
+                  <div className="bg-red-900/20 border border-red-800/30 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-red-300">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Preview unavailable: {embedError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {twitterEmbedData && !isLoadingEmbed && (
+                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                    <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      <span>Twitter Post Preview</span>
+                    </div>
+                    <div
+                      className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
+                      dangerouslySetInnerHTML={{
+                        __html: twitterEmbedData.html,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Airdrop Selector - Always show when authenticated */}
             {hasAccessToken && (
