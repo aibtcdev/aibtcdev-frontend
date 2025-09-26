@@ -4,13 +4,14 @@ export interface ContributionHistory {
   proposal_title: string;
   proposal_id: bigint;
   created_at: string;
-  executed: boolean;
-  met_quorum: boolean;
-  met_threshold: boolean;
-  passed: boolean;
+  concluded_by: string | null;
+  executed: boolean | null;
+  met_quorum: boolean | null;
+  met_threshold: boolean | null;
+  passed: boolean | null;
   // agent_vote: boolean;
   reward_amount: number;
-  reward_type: "gain" | "loss";
+  reward_type: "gain" | "loss" | "pending";
 }
 
 export interface SupabaseProposal {

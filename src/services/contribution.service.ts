@@ -6,10 +6,11 @@ type SupabaseProposalResponse = {
   proposal_id: bigint;
   title: string;
   created_at: string;
-  executed: boolean;
-  met_quorum: boolean;
-  met_threshold: boolean;
-  passed: boolean;
+  concluded_by: string | null;
+  executed: boolean | null;
+  met_quorum: boolean | null;
+  met_threshold: boolean | null;
+  passed: boolean | null;
   contract_caller: string;
   daos: {
     name: string;
@@ -36,6 +37,7 @@ export async function fetchAgentContributionHistory(
       proposal_id,
       title,
       created_at,
+      concluded_by,
       executed,
       met_quorum,
       met_threshold,
@@ -74,23 +76,31 @@ export async function fetchAgentContributionHistory(
   const contributions: ContributionHistory[] = data.map((proposal) => {
     const dao = proposal.daos;
 
-    const isSuccessfulContribution =
-      proposal.executed &&
-      proposal.met_quorum &&
-      proposal.met_threshold &&
-      proposal.passed;
-
-    const isFailedContribution = !isSuccessfulContribution;
+    // Check if proposal is still pending (concluded_by is null)
+    const isPending = proposal.concluded_by === null;
 
     let rewardAmount = 0;
-    let rewardType: "gain" | "loss" = "gain";
+    let rewardType: "gain" | "loss" | "pending" = "pending";
 
-    if (isSuccessfulContribution) {
-      rewardAmount = 1000;
-      rewardType = "gain";
-    } else if (isFailedContribution) {
-      rewardAmount = 250;
-      rewardType = "loss";
+    if (isPending) {
+      // Pending proposals have no reward yet
+      rewardAmount = 0;
+      rewardType = "pending";
+    } else {
+      // Concluded proposals - check if successful
+      const isSuccessfulContribution =
+        proposal.executed &&
+        proposal.met_quorum &&
+        proposal.met_threshold &&
+        proposal.passed;
+
+      if (isSuccessfulContribution) {
+        rewardAmount = 1000;
+        rewardType = "gain";
+      } else {
+        rewardAmount = 250;
+        rewardType = "loss";
+      }
     }
 
     return {
@@ -99,10 +109,11 @@ export async function fetchAgentContributionHistory(
       proposal_title: proposal.title || "Unknown Proposal",
       proposal_id: proposal.proposal_id,
       created_at: proposal.created_at,
-      executed: proposal.executed || false,
-      met_quorum: proposal.met_quorum || false,
-      met_threshold: proposal.met_threshold || false,
-      passed: proposal.passed || false,
+      concluded_by: proposal.concluded_by,
+      executed: proposal.executed,
+      met_quorum: proposal.met_quorum,
+      met_threshold: proposal.met_threshold,
+      passed: proposal.passed,
       // agent_vote: not needed for contribution history
       reward_amount: rewardAmount,
       reward_type: rewardType,
