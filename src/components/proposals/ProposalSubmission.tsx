@@ -222,6 +222,12 @@ export function ProposalSubmission({
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
   const [embedError, setEmbedError] = useState<string | null>(null);
+  // Hover preview state
+  const [showHoverPreview, setShowHoverPreview] = useState(false);
+  const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [showPreviewOnPaste, setShowPreviewOnPaste] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
@@ -371,14 +377,17 @@ export function ProposalSubmission({
   const combinedLength = contribution.length + twitterReferenceText.length;
   const isWithinLimit = combinedLength <= 2043;
 
-  // Cleanup WebSocket on unmount
+  // Cleanup WebSocket and hover timeout on unmount
   useEffect(() => {
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe?.();
       }
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+      }
     };
-  }, []);
+  }, [hoverTimeoutId]);
 
   // Get connected wallet address
   useEffect(() => {
@@ -630,6 +639,56 @@ export function ProposalSubmission({
     const timeoutId = setTimeout(fetchEmbed, 500);
     return () => clearTimeout(timeoutId);
   }, [twitterUrl, isValidTwitterUrl]);
+
+  // Hover preview handlers (desktop only)
+  const handleMouseEnter = () => {
+    // Only enable hover on desktop (screens >= 1024px)
+    if (
+      window.innerWidth >= 1024 &&
+      twitterUrl &&
+      isValidTwitterUrl &&
+      twitterEmbedData
+    ) {
+      // Clear any existing timeout
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+      }
+      // Show preview after a short delay
+      const timeoutId = setTimeout(() => {
+        setShowHoverPreview(true);
+      }, 300); // 300ms delay
+      setHoverTimeoutId(timeoutId);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Only handle hover on desktop
+    if (window.innerWidth >= 1024) {
+      // Clear timeout if mouse leaves before delay completes
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+        setHoverTimeoutId(null);
+      }
+      // Hide preview immediately (but keep paste preview if active)
+      if (!showPreviewOnPaste) {
+        setShowHoverPreview(false);
+      }
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData("text");
+    const cleanedUrl = cleanTwitterUrl(pastedText);
+
+    if (cleanedUrl && window.innerWidth >= 1024) {
+      // Show preview immediately on paste for desktop
+      setShowPreviewOnPaste(true);
+      // Hide after 3 seconds
+      setTimeout(() => {
+        setShowPreviewOnPaste(false);
+      }, 3000);
+    }
+  };
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -1153,6 +1212,9 @@ export function ProposalSubmission({
                   const cleaned = cleanTwitterUrl(twitterUrl);
                   if (cleaned) setTwitterUrl(cleaned);
                 }}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                onPaste={handlePaste}
                 placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full p-4 ${
                   twitterUrl && isValidTwitterUrl ? "pr-16" : ""
@@ -1176,6 +1238,8 @@ export function ProposalSubmission({
                       "noopener,noreferrer"
                     )
                   }
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
                   title="Open Twitter post"
                 >
@@ -1188,11 +1252,35 @@ export function ProposalSubmission({
                   format: https://x.com/username/status/1234567890123456789
                 </div>
               )}
+
+              {/* Hover/Paste Preview Tooltip - Desktop Only */}
+              {(showHoverPreview || showPreviewOnPaste) && twitterEmbedData && (
+                <div
+                  className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
+                  onMouseEnter={() => setShowHoverPreview(true)}
+                  onMouseLeave={() => {
+                    if (!showPreviewOnPaste) {
+                      handleMouseLeave();
+                    }
+                  }}
+                >
+                  <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                    {/* <ExternalLink className="h-4 w-4" /> */}
+                    <span>Twitter Post Preview</span>
+                  </div>
+                  <div
+                    className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg [&_iframe]:max-h-80 [&_iframe]:overflow-hidden"
+                    dangerouslySetInnerHTML={{
+                      __html: twitterEmbedData.html,
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Twitter Embed Preview */}
+            {/* Twitter Embed Preview - Mobile Only */}
             {twitterUrl && isValidTwitterUrl && (
-              <div className="space-y-2">
+              <div className="lg:hidden space-y-2">
                 {isLoadingEmbed && (
                   <div className="bg-background/60 border border-white/10 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
