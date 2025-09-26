@@ -42,12 +42,24 @@ export function ContributionHistoryTab({
   const sortedContributions = useMemo(() => {
     const sorted = [...contributions].sort((a, b) => {
       if (sortBy === "status") {
-        const aSuccess =
-          a.executed && a.met_quorum && a.met_threshold && a.passed;
-        const bSuccess =
-          b.executed && b.met_quorum && b.met_threshold && b.passed;
-        if (aSuccess !== bSuccess) {
-          return sortOrder === "desc" ? (aSuccess ? -1 : 1) : aSuccess ? 1 : -1;
+        // Define status priority: pending = 0, success = 1, failed = 2
+        const getStatusPriority = (contribution: ContributionHistory) => {
+          if (contribution.concluded_by === null) return 0; // pending
+          const isSuccess =
+            contribution.executed &&
+            contribution.met_quorum &&
+            contribution.met_threshold &&
+            contribution.passed;
+          return isSuccess ? 1 : 2; // success or failed
+        };
+
+        const aPriority = getStatusPriority(a);
+        const bPriority = getStatusPriority(b);
+
+        if (aPriority !== bPriority) {
+          return sortOrder === "desc"
+            ? aPriority - bPriority
+            : bPriority - aPriority;
         }
       }
       // Default to date sorting
@@ -72,6 +84,12 @@ export function ContributionHistoryTab({
   };
 
   const getStatusBadge = (contribution: ContributionHistory) => {
+    // Check if proposal is still pending (concluded_by is null)
+    if (contribution.concluded_by === null) {
+      return <Badge variant="secondary">Pending</Badge>;
+    }
+
+    // Proposal is concluded - check if successful
     const isSuccessful =
       contribution.executed &&
       contribution.met_quorum &&
@@ -82,17 +100,7 @@ export function ContributionHistoryTab({
       return <Badge className="bg-green-600 hover:bg-green-700">Success</Badge>;
     }
 
-    // Check if proposal is still pending (null values indicate pending)
-    if (
-      contribution.executed === null ||
-      contribution.met_quorum === null ||
-      contribution.met_threshold === null ||
-      contribution.passed === null
-    ) {
-      return <Badge variant="secondary">Pending</Badge>;
-    }
-
-    // If executed but didn't meet requirements or didn't pass
+    // If concluded but didn't meet requirements or didn't pass
     return <Badge variant="destructive">Failed</Badge>;
   };
 
@@ -198,11 +206,15 @@ export function ContributionHistoryTab({
     (c) => c.reward_type === "loss"
   ).length;
 
+  const pendingContributions = sortedContributions.filter(
+    (c) => c.reward_type === "pending"
+  ).length;
+
   return (
     <div className="flex flex-col items-center">
       <div className="w-full space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
           <div className="rounded-lg border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Successful</span>
@@ -217,6 +229,14 @@ export function ContributionHistoryTab({
             </div>
             <p className="text-lg sm:text-2xl font-bold text-red-600">
               {failedContributions}
+            </p>
+          </div>
+          <div className="rounded-lg border bg-card p-3 sm:p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-medium">Pending</span>
+            </div>
+            <p className="text-lg sm:text-2xl font-bold text-yellow-600">
+              {pendingContributions}
             </p>
           </div>
           <div className="rounded-lg border bg-card p-3 sm:p-4">
