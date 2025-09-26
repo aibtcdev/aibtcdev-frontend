@@ -79,7 +79,7 @@ export function ContributionHistoryTab({
     }
   };
 
-  const handleProposalClick = (proposalId: bigint) => {
+  const handleProposalClick = (proposalId: string) => {
     router.push(`/proposals/${proposalId}`);
   };
 
@@ -280,7 +280,7 @@ export function ContributionHistoryTab({
 
                 {/* Proposal Title */}
                 <button
-                  onClick={() => handleProposalClick(contribution.proposal_id)}
+                  onClick={() => handleProposalClick(contribution.id)}
                   className="text-left hover:text-green-600 transition-colors group flex items-start gap-2 w-full min-w-0"
                   title="Click to view proposal details"
                 >
@@ -357,9 +357,7 @@ export function ContributionHistoryTab({
                       </TableCell>
                       <TableCell>
                         <button
-                          onClick={() =>
-                            handleProposalClick(contribution.proposal_id)
-                          }
+                          onClick={() => handleProposalClick(contribution.id)}
                           className="text-left hover:text-green-600 transition-colors group flex items-center gap-1 max-w-[300px]"
                           title="Click to view proposal details"
                         >
