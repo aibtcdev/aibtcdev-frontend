@@ -1444,8 +1444,8 @@ export default function DepositForm({
         Cl.contractPrincipal(sbtcAddress, sbtcName),
       ];
 
-      // All 4 post conditions - always present (not conditional)
-      // All 4 post conditions for simulated bridge flow
+      // All 3 post conditions - always present (not conditional)
+      // All 3 post conditions for simulated bridge flow
       const postConditions = [
         // 1. Bridge contract sends sBTC (not user - it's simulated)
         Pc.principal(
@@ -1457,7 +1457,7 @@ export default function DepositForm({
         Pc.principal(`${poolAddress}.${poolName}`)
           .willSendGte(minTokensOut)
           .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
-        // 4. Bridge contract sends tokens to user
+        // 3. Bridge contract sends tokens to user
         Pc.principal(
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
         )
