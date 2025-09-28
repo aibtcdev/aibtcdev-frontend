@@ -60,6 +60,9 @@ import {
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useXStatus } from "@/hooks/useXStatus";
+import { XLinking } from "@/components/auth/XLinking";
+import { validateXUsernameMatch } from "@/services/x-auth.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -255,7 +258,12 @@ export function ProposalSubmission({
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [showAirdropNotification, setShowAirdropNotification] = useState(false);
 
+  // X username validation state
+  const [isValidatingXUsername, setIsValidatingXUsername] = useState(false);
+  const [xUsernameError, setXUsernameError] = useState<string | null>(null);
+
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
+  const { needsXLink, isLoading: isXLoading, refreshStatus } = useXStatus();
 
   // Determine if user has access token
   const hasAccessToken = !!accessToken && !isSessionLoading;
@@ -921,9 +929,31 @@ export function ProposalSubmission({
       !contribution.trim() ||
       !twitterUrl.trim() ||
       !isValidTwitterUrl ||
-      !isWithinLimit
+      !isWithinLimit ||
+      needsXLink
     )
       return;
+
+    // Validate X username matches the linked account
+    setIsValidatingXUsername(true);
+    setXUsernameError(null);
+
+    try {
+      const validation = await validateXUsernameMatch(twitterUrl);
+
+      if (!validation.isValid) {
+        setXUsernameError(validation.error || "X username validation failed");
+        setIsValidatingXUsername(false);
+        return;
+      }
+
+      setIsValidatingXUsername(false);
+    } catch (error) {
+      console.error("X username validation error:", error);
+      setXUsernameError("Failed to validate X username. Please try again.");
+      setIsValidatingXUsername(false);
+      return;
+    }
 
     const extensionData = buildExtensionData();
     if (!extensionData) {
@@ -1371,6 +1401,16 @@ export function ProposalSubmission({
 
             {/* Error/Status Messages - Only show when authenticated */}
 
+            {/* X Username Validation Error */}
+            {xUsernameError && (
+              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+                <strong>❌ X Username Mismatch</strong>
+                <div className="text-xs text-red-200 mt-1">
+                  {xUsernameError}
+                </div>
+              </div>
+            )}
+
             {/* Agent Account Validation - Only show if we have actually loaded agents data */}
             {hasAccessToken &&
               !isLoadingAgents &&
@@ -1442,6 +1482,7 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
+                isValidatingXUsername ||
                 !hasAgentAccount ||
                 // !hasDaoTokens ||
                 !hasAgentDaoTokens ||
@@ -1449,7 +1490,10 @@ export function ProposalSubmission({
                 isLoadingAgents ||
                 isLoadingBalance ||
                 isCheckingBitcoinBlock ||
-                hasProposalInCurrentBlock
+                hasProposalInCurrentBlock ||
+                needsXLink ||
+                isXLoading ||
+                !!xUsernameError
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
             >
@@ -1460,6 +1504,15 @@ export function ProposalSubmission({
                 </div>
               ) : !hasAccessToken ? (
                 <span>Connect Wallet to Submit</span>
+              ) : needsXLink ? (
+                <span>Link X Account to Submit</span>
+              ) : isValidatingXUsername ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>Validating X Username...</span>
+                </div>
+              ) : xUsernameError ? (
+                <span>Fix X Username to Submit</span>
               ) : !hasAgentAccount ? (
                 <span>Waiting for Agent Account</span>
               ) : !hasAgentDaoTokens ? (
@@ -1483,6 +1536,23 @@ export function ProposalSubmission({
             </Button>
           </div>
         </div>
+
+        {/* X Account Lock Overlay */}
+        {hasAccessToken && hasAgentDaoTokens && needsXLink && !isXLoading && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
+            <div className="text-center space-y-4 max-w-md mx-auto px-6">
+              <div>
+                <XLinking
+                  compact={false}
+                  showTitle={false}
+                  onLinkingComplete={() => {
+                    refreshStatus();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}

@@ -1,6 +1,14 @@
 export interface Profile {
+  id: string;
   email: string;
   assigned_agent_address: string | null;
+  username: string | null; // Twitter username
+  mainnet_address: string | null;
+  testnet_address: string | null;
+  role?: string;
+  account_index?: number | null;
+  has_dao_agent?: boolean;
+  has_completed_guide?: boolean;
 }
 
 export interface ProfileWithBalance extends Profile {

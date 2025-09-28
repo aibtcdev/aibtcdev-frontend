@@ -10,6 +10,7 @@ export interface Profile {
   role: UserRole;
   assigned_agent_address: string | null;
   account_index: number | null;
+  username?: string | null;
 }
 
 interface EditingProfile {

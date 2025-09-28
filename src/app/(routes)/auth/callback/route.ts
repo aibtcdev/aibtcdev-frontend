@@ -14,7 +14,57 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error("Error exchanging code for session:", error);
+      return NextResponse.redirect(`${origin}/auth-error`);
+    }
+
+    // Check if this is a X OAuth callback (identity linking)
+    if (data.user && data.user.identities) {
+      const xIdentity = data.user.identities.find(
+        (identity) => identity.provider === "twitter"
+      );
+
+      if (xIdentity && xIdentity.identity_data) {
+        // Log the identity data to see what fields are available
+        console.log("X identity data:", xIdentity.identity_data);
+
+        // Update profile with X username only
+        const identityData = xIdentity.identity_data;
+        const xUsername =
+          identityData.username ||
+          identityData.user_name ||
+          identityData.screen_name ||
+          identityData.preferred_username;
+
+        console.log("Extracted X username:", xUsername);
+
+        if (xUsername) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              username: xUsername,
+            })
+            .eq("id", data.user.id);
+
+          if (updateError) {
+            console.error(
+              "Error updating profile with X username:",
+              updateError
+            );
+          } else {
+            console.log(
+              "Successfully updated profile with X username:",
+              xUsername
+            );
+          }
+        } else {
+          console.error("No X username found in identity data");
+        }
+      }
+    }
   }
 
   if (redirectTo) {
