@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { X, Coins, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "./NotificationProvider";
 import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
@@ -38,7 +38,6 @@ const getDAOTokenName = (tokenId: string) => {
 };
 
 export const DepositNotificationBanner: React.FC = () => {
-  const { notifications } = useNotifications();
   const { balances } = useWalletStore();
   const [dismissedNotifications, setDismissedNotifications] =
     useState<DismissedState>({});
