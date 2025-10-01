@@ -159,6 +159,7 @@ const buildPostConditions = (
   minTokensOut: number, // min receive
   hasAgentAccount: boolean,
   isBonded: boolean, // for bonded-specific logic
+  isUsingBridge: boolean = false,
   bufferPercent: number = 1 // 1% buffer for LTE
 ) => {
   const buffer = Number(ustx) * (bufferPercent / 100);
@@ -199,7 +200,7 @@ const buildPostConditions = (
   }
 
   // Bonded-specific additions (e.g., for bridge simulations in testnet)
-  if (isBonded && !isMainnet) {
+  if (isBonded && !isMainnet && isUsingBridge) {
     // Example for testnet BTC bonded
     // Add bridge conditions if needed (e.g., from your testnet handler)
     conditions.push(
@@ -1294,7 +1295,8 @@ export default function DepositForm({
         ustx,
         minTokensOut,
         hasAgentAccount,
-        true
+        true,
+        false
       );
 
       // Arguments for Bitflow buy-and-deposit function
@@ -1530,6 +1532,7 @@ export default function DepositForm({
         ustx,
         minTokensOut,
         hasAgentAccount,
+        true,
         true
       );
 
@@ -1883,6 +1886,7 @@ export default function DepositForm({
         ustx,
         minTokensOut,
         hasAgentAccount,
+        false,
         false
       );
 
