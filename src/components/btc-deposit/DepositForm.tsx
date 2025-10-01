@@ -167,14 +167,12 @@ const buildPostConditions = (
 
   const conditions = [];
 
-  // User sends sBTC: Only if NO agent account (direct flow)
-  if (!hasAgentAccount) {
-    conditions.push(
-      Pc.principal(userAddress)
-        .willSendLte(maxUstx) // Flexible: <= max with buffer
-        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
-    );
-  }
+  // User sends sBTC (always, as user initiates the transfer)
+  conditions.push(
+    Pc.principal(userAddress)
+      .willSendLte(maxUstx) // Flexible: <= max with buffer
+      .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+  );
 
   // Pool sends tokens: Always (GTE for slippage protection)
   conditions.push(
