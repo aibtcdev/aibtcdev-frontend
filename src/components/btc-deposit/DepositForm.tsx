@@ -1887,7 +1887,7 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         false,
-        false
+        true
       );
 
       const contractCallOptions = {
