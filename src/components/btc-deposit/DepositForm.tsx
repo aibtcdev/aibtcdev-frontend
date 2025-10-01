@@ -139,8 +139,9 @@ interface BitflowPoolData {
   "pool-status": boolean;
 }
 
-const getTokenAssetName = (symbol: string): string => {
-  return symbol.toLowerCase();
+const getCleanTokenName = (daoName: string, tokenName: string): string => {
+  let clean = tokenName.replace("-faktory", "").toLowerCase();
+  return clean || daoName.toLowerCase();
 };
 
 const buildPostConditions = (
@@ -1073,7 +1074,7 @@ export default function DepositForm({
         Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - minimum tokens out for slippage protection
       ];
 
-      const cleanTokenName = getTokenAssetName(daoName);
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
       const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
@@ -1255,8 +1256,6 @@ export default function DepositForm({
       const [adapterAddress, adapterName] =
         BITFLOW_CONTRACTS.ADAPTER.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      // Extract clean token name without -faktory suffix for .ft() calls
-      const cleanTokenName = tokenName.replace("-faktory", "");
 
       // Validate contract parts
       if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
@@ -1273,6 +1272,8 @@ export default function DepositForm({
       const poolContract = BITFLOW_CONTRACTS.POOL; // "ST2Q77H5HHT79JK4932JCFDX4VY6XA3Y1F61A25CD.xyk-pool-sbtc-faces2-v-1-1"
       const [poolAddress, poolName] = poolContract.split(".");
       const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
       const postConditions = buildPostConditions(
         userAddress,
@@ -1485,8 +1486,6 @@ export default function DepositForm({
 
       // Use same bridge contract but with Bitflow minReceive
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      // Extract clean token name without -faktory suffix for .ft() calls
-      const cleanTokenName = tokenName.replace("-faktory", "");
       const [dexAddress, dexName] = dexContract.split(".");
       const [prelaunchAddress, prelaunchName] = (
         prelaunchContract || dexContract
@@ -1498,6 +1497,8 @@ export default function DepositForm({
         ? "SM3VDXK3WZZSA84XXFKAFAF15NNZX32CTSG82JFQ4.sbtc-token"
         : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
       const [sbtcAddress, sbtcName] = sbtcContract.split(".");
+
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
       const args = [
         Cl.uint(Number(ustx)),
@@ -1861,7 +1862,7 @@ export default function DepositForm({
       // POST CONDITION FOR PRELAUNCH
       // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
 
-      const cleanTokenName = getTokenAssetName(daoName);
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
       const postConditions = buildPostConditions(
         userAddress,
