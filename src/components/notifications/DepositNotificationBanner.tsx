@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "./NotificationProvider";
 import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 import Link from "next/link";
 import { useWalletStore } from "@/store/wallet";
