@@ -45,6 +45,7 @@ import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
+import { getIdFromFaktoryDaoName } from "@aibtc/types";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -529,7 +530,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
             {/* Right column - Buy Panel */}
             <div className="order-1 lg:order-2">
               <BitcoinDeposit
-                dexId={8}
+                dexId={getIdFromFaktoryDaoName(dao.name.toLowerCase()) ?? 9}
                 dexContract={dexContract || ""}
                 daoName={dao.name}
                 tokenContract={tokenContract || ""}
