@@ -139,10 +139,84 @@ interface BitflowPoolData {
   "pool-status": boolean;
 }
 
-// Helper function to get token asset name
-// const getTokenAssetName = (symbol: string): string => {
-//   return symbol.toLowerCase();
-// };
+const getCleanTokenName = (daoName: string, tokenName: string): string => {
+  const clean = tokenName.replace("-faktory", "").toLowerCase();
+  return clean || daoName.toLowerCase();
+};
+
+const buildPostConditions = (
+  userAddress: string,
+  adapterAddress: string,
+  adapterName: string,
+  poolAddress: string,
+  poolName: string,
+  sbtcAddress: string,
+  sbtcName: string,
+  tokenAddress: string,
+  tokenName: string,
+  cleanTokenName: string, // e.g., without "-faktory"
+  ustx: bigint, // sBTC amount
+  minTokensOut: number, // min receive
+  hasAgentAccount: boolean,
+  isBonded: boolean, // for bonded-specific logic
+  isUsingBridge: boolean = false,
+  bufferPercent: number = 1 // 1% buffer for LTE
+) => {
+  const buffer = Number(ustx) * (bufferPercent / 100);
+  const maxUstx = Number(ustx) + buffer; // For LTE
+
+  const conditions = [];
+
+  // User sends sBTC (always, as user initiates the transfer)
+  conditions.push(
+    Pc.principal(userAddress)
+      .willSendLte(maxUstx) // Flexible: <= max with buffer
+      .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+  );
+
+  // Pool sends tokens: Always (GTE for slippage protection)
+  conditions.push(
+    Pc.principal(`${poolAddress}.${poolName}`)
+      .willSendGte(minTokensOut)
+      .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
+  );
+
+  // Adapter-specific: Only if agent account (intermediated flow)
+  if (hasAgentAccount) {
+    // Adapter sends sBTC to pool: LTE with buffer (not Eq)
+    conditions.push(
+      Pc.principal(`${adapterAddress}.${adapterName}`)
+        .willSendLte(maxUstx)
+        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
+    );
+    // Adapter sends tokens to agent: GTE
+    conditions.push(
+      Pc.principal(`${adapterAddress}.${adapterName}`)
+        .willSendGte(minTokensOut)
+        .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
+    );
+  }
+
+  // Bonded-specific additions (e.g., for bridge simulations in testnet)
+  if (isBonded && !isMainnet && isUsingBridge) {
+    // Example for testnet BTC bonded
+    // Add bridge conditions if needed (e.g., from your testnet handler)
+    conditions.push(
+      Pc.principal(
+        "STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation"
+      )
+        .willSendLte(maxUstx)
+        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
+      Pc.principal(
+        "STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation"
+      )
+        .willSendGte(minTokensOut)
+        .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
+    );
+  }
+
+  return conditions;
+};
 
 export default function DepositForm({
   btcUsdPrice,
@@ -1004,20 +1078,26 @@ export default function DepositForm({
         Cl.some(uintCV(minTokensOut)), // minReceive (optional uint) - minimum tokens out for slippage protection
       ];
 
-      // const assetName = getTokenAssetName(daoName);
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
-      // Post conditions for adapter contract based on actual contract behavior
-      // const postConditions = [
-      //   // 1. User sends sBTC to adapter contract
-      //   Pc.principal(userAddress)
-      //     .willSendEq(ustx)
-      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      //   // 2. If user has agent account: adapter sends tokens to agent account
-      //   // If no agent account: DEX sends tokens directly to user
-      //   Pc.principal(`${adapterAddress}.${adapterName}`)
-      //     .willSendGte(minTokensOut)
-      //     .ft(`${tokenAddress}.${tokenName}`, assetName),
-      // ];
+      const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
+
+      const postConditions = buildPostConditions(
+        userAddress,
+        adapterAddress,
+        adapterName,
+        dexAddress,
+        dexName,
+        sbtcAddress,
+        sbtcName,
+        tokenAddress,
+        tokenName,
+        cleanTokenName,
+        ustx,
+        minTokensOut,
+        hasAgentAccount,
+        false
+      );
 
       // Add additional post conditions for last buy scenario
       if (targetStx > 0) {
@@ -1036,8 +1116,8 @@ export default function DepositForm({
         contract: `${adapterAddress}.${adapterName}` as `${string}.${string}`,
         functionName: "buy-and-deposit",
         functionArgs: args,
-        // postConditions,
-        postConditionMode: "allow" as const,
+        postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", params);
@@ -1180,8 +1260,6 @@ export default function DepositForm({
       const [adapterAddress, adapterName] =
         BITFLOW_CONTRACTS.ADAPTER.split(".");
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      // Extract clean token name without -faktory suffix for .ft() calls
-      const cleanTokenName = tokenName.replace("-faktory", "");
 
       // Validate contract parts
       if (!adapterAddress || !adapterName || !tokenAddress || !tokenName) {
@@ -1199,31 +1277,25 @@ export default function DepositForm({
       const [poolAddress, poolName] = poolContract.split(".");
       const [sbtcAddress, sbtcName] = NETWORK_CONFIG.SBTC_CONTRACT.split(".");
 
-      // Base post conditions - always present
-      const postConditions = [
-        // 1. User sends sBTC amount out
-        Pc.principal(userAddress)
-          .willSendEq(ustx)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        // 2. Pool sends >= dy-amount from Bitflow quote
-        Pc.principal(`${poolAddress}.${poolName}`)
-          .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
-      ];
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
-      // Add agent-specific post conditions if user has agent account
-      if (hasAgentAccount) {
-        postConditions.push(
-          // 3. Adapter sends sBTC to pool
-          Pc.principal(`${adapterAddress}.${adapterName}`)
-            .willSendEq(ustx)
-            .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-          // 4. Adapter sends tokens to user's agent account
-          Pc.principal(`${adapterAddress}.${adapterName}`)
-            .willSendGte(minTokensOut)
-            .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`)
-        );
-      }
+      const postConditions = buildPostConditions(
+        userAddress,
+        adapterAddress,
+        adapterName,
+        poolAddress,
+        poolName,
+        sbtcAddress,
+        sbtcName,
+        tokenAddress,
+        tokenName,
+        cleanTokenName,
+        ustx,
+        minTokensOut,
+        hasAgentAccount,
+        true,
+        false
+      );
 
       // Arguments for Bitflow buy-and-deposit function
       const args = [
@@ -1419,8 +1491,6 @@ export default function DepositForm({
 
       // Use same bridge contract but with Bitflow minReceive
       const [tokenAddress, tokenName] = tokenContract.split(".");
-      // Extract clean token name without -faktory suffix for .ft() calls
-      const cleanTokenName = tokenName.replace("-faktory", "");
       const [dexAddress, dexName] = dexContract.split(".");
       const [prelaunchAddress, prelaunchName] = (
         prelaunchContract || dexContract
@@ -1433,6 +1503,8 @@ export default function DepositForm({
         : "STV9K21TBFAK4KNRJXF5DFP8N7W46G4V9RJ5XDY2.sbtc-token";
       const [sbtcAddress, sbtcName] = sbtcContract.split(".");
 
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
+
       const args = [
         Cl.uint(Number(ustx)),
         Cl.uint(minTokensOut), // minReceive from Bitflow quote
@@ -1444,26 +1516,23 @@ export default function DepositForm({
         Cl.contractPrincipal(sbtcAddress, sbtcName),
       ];
 
-      // All 3 post conditions - always present (not conditional)
-      // All 3 post conditions for simulated bridge flow
-      const postConditions = [
-        // 1. Bridge contract sends sBTC (not user - it's simulated)
-        Pc.principal(
-          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
-        )
-          .willSendEq(ustx)
-          .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-        // 2. Pool sends tokens
-        Pc.principal(`${poolAddress}.${poolName}`)
-          .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
-        // 3. Bridge contract sends tokens to user
-        Pc.principal(
-          `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
-        )
-          .willSendGte(minTokensOut)
-          .ft(`${tokenAddress}.${tokenName}`, `${cleanTokenName}`),
-      ];
+      const postConditions = buildPostConditions(
+        userAddress,
+        dexAddress,
+        dexName,
+        poolAddress,
+        poolName,
+        sbtcAddress,
+        sbtcName,
+        tokenAddress,
+        tokenName,
+        cleanTokenName,
+        ustx,
+        minTokensOut,
+        hasAgentAccount,
+        true,
+        true
+      );
 
       const contractCallOptions = {
         contract:
@@ -1799,28 +1868,33 @@ export default function DepositForm({
       // POST CONDITION FOR PRELAUNCH
       // 1. user sends sbtc and bridge-contract is also sending amount, if last buy prelaunch contract is sending the total ft-amount
 
-      // const assetName = getTokenAssetName(daoName);
+      const cleanTokenName = getCleanTokenName(daoName, tokenName);
 
-      // const postConditions = [
-      //   // User sends sBTC to the bridge contract - use original user input amount (what user actually sends)
-      //   Pc.principal(userAddress)
-      //     .willSendEq(ustx)
-      //     .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      //   // Bridge contract will send tokens to user
-      //   // Pc.principal(
-      //   //   `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation`
-      //   // )
-      //   //   .willSendGte(minTokensOut)
-      //   //   .ft(`${tokenAddress}.${tokenName}`, assetName),
-      // ];
+      const postConditions = buildPostConditions(
+        userAddress,
+        dexAddress,
+        dexName,
+        poolAddress,
+        poolName,
+        sbtcAddress,
+        sbtcName,
+        tokenAddress,
+        tokenName,
+        cleanTokenName,
+        ustx,
+        minTokensOut,
+        hasAgentAccount,
+        false,
+        true
+      );
 
       const contractCallOptions = {
         contract:
           `STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation` as `${string}.${string}`,
         functionName: "swap-btc-to-aibtc",
         functionArgs: args,
-        // postConditions,
-        postConditionMode: "allow" as const,
+        postConditions,
+        postConditionMode: "deny" as const,
       };
 
       const response = await request("stx_callContract", contractCallOptions);
