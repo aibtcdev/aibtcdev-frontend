@@ -140,7 +140,7 @@ interface BitflowPoolData {
 }
 
 const getCleanTokenName = (daoName: string, tokenName: string): string => {
-  let clean = tokenName.replace("-faktory", "").toLowerCase();
+  const clean = tokenName.replace("-faktory", "").toLowerCase();
   return clean || daoName.toLowerCase();
 };
 
@@ -199,13 +199,18 @@ const buildPostConditions = (
   }
 
   // Bonded-specific additions (e.g., for bridge simulations in testnet)
-  if (isBonded && !isMainnet) { // Example for testnet BTC bonded
+  if (isBonded && !isMainnet) {
+    // Example for testnet BTC bonded
     // Add bridge conditions if needed (e.g., from your testnet handler)
     conditions.push(
-      Pc.principal('STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation')
+      Pc.principal(
+        "STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation"
+      )
         .willSendLte(maxUstx)
         .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token"),
-      Pc.principal('STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation')
+      Pc.principal(
+        "STQM5S86GFM1731EBZE192PNMMP8844R30E8WDPB.btc2aibtc-simulation"
+      )
         .willSendGte(minTokensOut)
         .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
     );
