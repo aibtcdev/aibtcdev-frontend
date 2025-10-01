@@ -36,6 +36,7 @@ import {
   NotificationProvider,
   NotificationBell,
 } from "@/components/notifications";
+import { DepositNotificationBanner } from "@/components/notifications/DepositNotificationBanner";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -454,6 +455,9 @@ export default function ApplicationLayout({
           onClose={closeAuthModal}
           redirectUrl={"/votes"}
         />
+
+        {/* Deposit Notification Banner - Fixed Top Right */}
+        {isAuthenticated && <DepositNotificationBanner />}
       </div>
     </NotificationProvider>
   );

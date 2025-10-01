@@ -71,10 +71,16 @@ export function formatTokenBalance(balance: string | number): string {
  * @returns Formatted number with suffix
  */
 export function formatNumber(num: number): string {
-  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-  return num.toFixed(2);
+  const format = (value: number) => {
+    const fixed = value.toFixed(2);
+    // Remove .00 for whole numbers
+    return fixed.endsWith(".00") ? fixed.slice(0, -3) : fixed;
+  };
+
+  if (num >= 1e9) return `${format(num / 1e9)}B`;
+  if (num >= 1e6) return `${format(num / 1e6)}M`;
+  if (num >= 1e3) return `${format(num / 1e3)}K`;
+  return format(num);
 }
 
 /**

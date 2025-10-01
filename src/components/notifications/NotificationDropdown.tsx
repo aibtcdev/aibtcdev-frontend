@@ -18,6 +18,11 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   onClose,
 }) => {
   const { notifications } = useNotifications();
+
+  // Filter out deposit notifications (they show in banner instead)
+  const bellNotifications = notifications.filter(
+    (n) => n.type !== "asset-deposit"
+  );
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -78,13 +83,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
       {/* Notifications List */}
       <div className="max-h-96 overflow-y-auto">
-        {notifications.length === 0 ? (
+        {bellNotifications.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
             No notifications
           </div>
         ) : (
           <div className="space-y-1 p-2">
-            {notifications.map((notification) => {
+            {bellNotifications.map((notification) => {
               const IconComponent = notification.icon;
 
               return (

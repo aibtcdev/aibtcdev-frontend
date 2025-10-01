@@ -24,7 +24,14 @@ const isDAOToken = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
   const parts = cleaned.split("::");
   const asset = parts[parts.length - 1];
-  const daoTokens = ["fake", "facerizz", "facedrop", "faces", "facevibe"];
+  const daoTokens = [
+    "fake",
+    "facerizz",
+    "facedrop",
+    "faces",
+    "facevibe",
+    "elonbtc",
+  ];
   return daoTokens.includes(asset.toLowerCase());
 };
 
@@ -164,7 +171,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [daoTokens, agentWallets, prompts]);
 
-  const unreadCount = notifications.length;
+  // Exclude deposit notifications from bell count (they show in banner instead)
+  const unreadCount = notifications.filter(
+    (n) => n.type !== "asset-deposit"
+  ).length;
 
   const dismissNotification = (id: string) => {
     // Notifications cannot be dismissed - they persist until conditions are resolved
