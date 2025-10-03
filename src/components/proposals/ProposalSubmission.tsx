@@ -1451,12 +1451,14 @@ export function ProposalSubmission({
                 isCheckingBitcoinBlock ||
                 hasProposalInCurrentBlock
               }
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
               {isSubmitting ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-center px-2">
                   <Loader />
-                  <span>{submissionButtonText || "Processing..."}</span>
+                  <span className="break-words">
+                    {submissionButtonText || "Processing..."}
+                  </span>
                 </div>
               ) : !hasAccessToken ? (
                 <span>Connect Wallet to Submit</span>
@@ -1465,14 +1467,13 @@ export function ProposalSubmission({
               ) : !hasAgentDaoTokens ? (
                 <span>Join DAO to Submit</span>
               ) : isCheckingBitcoinBlock ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-center px-2">
                   <Loader />
-                  <span>Checking Bitcoin Block...</span>
+                  <span className="break-words">Checking Bitcoin Block...</span>
                 </div>
               ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
                 <span>
-                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()} to
-                  submit Contribution
+                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
                 </span>
               ) : (
                 <div className="flex items-center gap-3">
