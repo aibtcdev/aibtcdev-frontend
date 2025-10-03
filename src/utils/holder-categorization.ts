@@ -103,6 +103,11 @@ export function categorizeHolders(
   };
 
   for (const holder of holders) {
+    // Skip holders with zero balance
+    if (Number.parseFloat(holder.balance) <= 0) {
+      continue;
+    }
+
     // Check protocol contracts FIRST and most specifically
     if (isProtocolContract(holder.address)) {
       categorized.protocol.push(holder);
