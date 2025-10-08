@@ -1,16 +1,13 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { ProposalWithDAO } from "@/types";
 import { fetchProposalById } from "@/services/dao.service";
 import ProposalDetails from "@/components/proposals/ProposalDetails";
-import FixedActionBar, {
-  FixedActionBarSpacer,
-} from "@/components/proposals/layout/FixedActionBar";
+import { FixedActionBarSpacer } from "@/components/proposals/layout/FixedActionBar";
 import { ProposalHeader } from "@/components/proposals/ProposalHeader";
-import { Flag, MessageSquare, User, Clock } from "lucide-react";
+import { User, Clock } from "lucide-react";
 import { Loader } from "@/components/reusables/Loader";
 import { getExplorerLink, truncateString } from "@/utils/format";
 

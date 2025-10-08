@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Users, Target, Shield } from "lucide-react";
@@ -61,7 +62,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   };
 
   // Get DAO image - check if full DAO object is available
-  const daoImage = (proposal.daos as any)?.image_url;
+  const daoImage =
+    proposal.daos && "image_url" in proposal.daos
+      ? (proposal.daos.image_url as string)
+      : undefined;
 
   return (
     <div className="mb-6">
@@ -83,9 +87,11 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
           {/* DAO Image */}
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-muted flex-shrink-0">
             {daoImage ? (
-              <img
+              <Image
                 src={daoImage}
                 alt={proposal.daos?.name || "DAO"}
+                width={48}
+                height={48}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   console.log("Image failed to load:", daoImage);
