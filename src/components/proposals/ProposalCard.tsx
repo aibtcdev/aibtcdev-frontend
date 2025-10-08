@@ -114,7 +114,7 @@ export default function ProposalCard({
       href={`/proposals/${proposal.id}`}
       className="block group cursor-pointer"
     >
-      <div className="p-4 sm:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300">
+      <div className="p-4 sm:p-5 lg:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">

@@ -60,37 +60,7 @@ function VetosContent({
   const { data: vetos, isLoading, error } = useProposalVetos(proposalId);
   const { hasVetos, vetoCount } = useProposalHasVetos(proposalId);
 
-  // Get auth state and proposal status for veto functionality
-  const { isAuthenticated, userId } = useAuth();
-  const { status: proposalStatus } = useProposalStatus(proposal);
-
-  // Fetch user's agents to get agent account address
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents", userId],
-    queryFn: fetchAgents,
-    enabled: isAuthenticated && !!userId,
-  });
-
-  // Get agent account address for veto checking
-  const agentAccountAddress = useMemo(() => {
-    if (!agents.length) return null;
-    const agent = agents[0];
-    return agent.account_contract || null;
-  }, [agents]);
-
-  // Check if current user (agent) has already vetoed this proposal
-  const { data: existingVeto } = useQuery({
-    queryKey: ["agentVeto", proposalId, agentAccountAddress],
-    queryFn: () => {
-      if (!proposalId || !agentAccountAddress) return null;
-      return checkAgentVetoStatus(proposalId, agentAccountAddress);
-    },
-    enabled: !!proposalId && !!agentAccountAddress && isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Get DAO ID and name from proposal
-  const daoId = proposal.dao_id;
+  // Get DAO name from proposal
   const daoName = "daos" in proposal ? proposal.daos?.name : undefined;
 
   if (isLoading) {
@@ -135,38 +105,6 @@ function VetosContent({
 
   return (
     <div className="space-y-4">
-      {/* Veto Button - Always show with tooltip */}
-      {daoId && (
-        <div className="flex justify-center">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <DAOVetoProposal
-                    daoId={daoId}
-                    proposalId={proposalId}
-                    size="default"
-                    variant="destructive"
-                    disabled={
-                      proposalStatus !== "VETO_PERIOD" || !!existingVeto
-                    }
-                  />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {existingVeto
-                    ? "You have already vetoed this proposal"
-                    : proposalStatus !== "VETO_PERIOD"
-                      ? "Can only be vetoed during veto period"
-                      : "Click to veto this proposal"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
-
       {/* Veto Status Header */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Veto Status</span>
