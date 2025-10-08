@@ -159,7 +159,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                         •
                       </span>
                       <span className="text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shadow-sm">
-                        #{proposal.proposal_id}
+                        Contribution #{proposal.proposal_id}
                       </span>
                     </div>
                   </div>

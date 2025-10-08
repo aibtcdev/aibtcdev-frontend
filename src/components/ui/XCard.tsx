@@ -120,7 +120,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
     return (
       <div
         className={cn(
-          "border rounded-lg p-4 bg-card hover:bg-accent/50 transition-colors cursor-pointer",
+          " rounded-lg p-4 bg-card hover:bg-accent/50 transition-colors cursor-pointer",
           className
         )}
         onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
@@ -138,7 +138,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
   return (
     <div
       className={cn(
-        "border rounded-lg transition-colors cursor-pointer group overflow-hidden",
+        "bg-muted/30 rounded-lg transition-colors cursor-pointer group overflow-hidden",
         className
       )}
       onClick={() => window.open(url, "_blank", "noopener,noreferrer")}

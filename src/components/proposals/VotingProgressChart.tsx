@@ -359,7 +359,7 @@ const VotingProgressChart = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 border-t pt-5">
       {/* Loading indicator for vote data */}
       {isLoadingVotes && (
         <div className="text-sm text-muted-foreground flex items-center gap-2">
