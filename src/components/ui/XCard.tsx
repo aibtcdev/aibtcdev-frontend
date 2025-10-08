@@ -164,7 +164,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
   return (
     <div
       className={cn(
-        "border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer group overflow-hidden",
+        "border rounded-lg  transition-colors cursor-pointer group overflow-hidden",
         className
       )}
       onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
@@ -196,73 +196,49 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
 
       {/* Success State - Show Embed */}
       {twitterEmbedData && !isLoadingEmbed && (
-        <div className="overflow-hidden">
-          {/* X Header */}
-          <div className="p-3 border-b border-border/50 bg-muted/20">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-black rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-xs">𝕏</span>
+        <div className=" rounded-xl overflow-hidden">
+          {/* Twitter-like header */}
+          <div className="p-4 pb-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-gray-600 dark:text-gray-300 font-bold text-sm">
+                  𝕏
+                </span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground truncate">
-                    X Post by @{username}
+                  <span className="font-bold">
+                    {twitterEmbedData.author_name || `@${username}`}
                   </span>
-                  <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                    @{username}
+                  </span>
                 </div>
-                {twitterEmbedData.author_name && (
-                  <div className="text-xs text-muted-foreground/70 truncate">
-                    {twitterEmbedData.author_name}
-                  </div>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Tweet Content */}
-          <div className="space-y-3">
-            {/* Title/Description if available */}
-            {(twitterEmbedData.title || twitterEmbedData.description) && (
-              <div className="p-3 pb-0">
-                {twitterEmbedData.title && (
-                  <div className="text-sm font-medium text-foreground mb-1 line-clamp-2">
-                    {twitterEmbedData.title}
-                  </div>
-                )}
-                {twitterEmbedData.description && (
-                  <div className="text-xs text-muted-foreground line-clamp-3">
-                    {twitterEmbedData.description}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Embedded Tweet HTML with clean styling */}
+          {/* Tweet content */}
+          <div className="px-4 pb-4">
             <div
-              className="twitter-embed-container overflow-hidden
-                [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg
-                [&_iframe]:max-h-96 [&_iframe]:overflow-hidden
-                [&_.twitter-tweet]:border [&_.twitter-tweet]:border-border/20 [&_.twitter-tweet]:rounded-lg
-                [&_.twitter-tweet]:bg-card [&_.twitter-tweet]:p-4 [&_.twitter-tweet]:mx-0 [&_.twitter-tweet]:my-0
-                [&_.twitter-tweet]:max-w-none [&_.twitter-tweet]:font-sans
-                [&_.twitter-tweet_p]:text-foreground [&_.twitter-tweet_p]:text-sm [&_.twitter-tweet_p]:leading-relaxed
-                [&_.twitter-tweet_a]:text-primary [&_.twitter-tweet_a]:hover:text-primary/80 [&_.twitter-tweet_a]:no-underline
-                [&_.twitter-tweet_a]:break-words
-                [&_blockquote]:m-0 [&_blockquote]:p-0"
+              className="twitter-embed-container 
+                [&_blockquote]:m-0 [&_blockquote]:p-0 [&_blockquote]:border-0 [&_blockquote]:bg-transparent
+                [&_.twitter-tweet]:border-0 [&_.twitter-tweet]:bg-transparent [&_.twitter-tweet]:p-0 [&_.twitter-tweet]:m-0
+                [&_.twitter-tweet]:shadow-none [&_.twitter-tweet]:max-w-none
+                [&_.twitter-tweet_p]:text-gray-900 [&_.twitter-tweet_p]:dark:text-white [&_.twitter-tweet_p]:text-base [&_.twitter-tweet_p]:leading-normal [&_.twitter-tweet_p]:mb-3
+                [&_.twitter-tweet_a]:text-blue-500 [&_.twitter-tweet_a]:hover:text-blue-600 [&_.twitter-tweet_a]:no-underline
+                [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
               dangerouslySetInnerHTML={{
                 __html: twitterEmbedData.html,
               }}
             />
           </div>
 
-          {/* Mobile-friendly footer */}
-          <div className="p-3 pt-2 border-t border-border/30 bg-muted/10">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="truncate">View full post on X</span>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="hidden sm:inline">Open</span>
-                <ExternalLink className="h-3 w-3 flex-shrink-0" />
-              </div>
+          {/* Twitter-like footer */}
+          <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-3">
+            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+              <span>View on X</span>
+              <ExternalLink className="h-4 w-4" />
             </div>
           </div>
         </div>

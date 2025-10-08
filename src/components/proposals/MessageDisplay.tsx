@@ -1,17 +1,10 @@
 "use client";
 
-import { Copy, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useClipboard } from "@/hooks/useClipboard";
-
 interface MessageDisplayProps {
   message?: string;
 }
 
 const MessageDisplay = ({ message }: MessageDisplayProps) => {
-  const { copiedText, copyToClipboard } = useClipboard();
-  const isCopied = copiedText === message;
-
   // Handle empty message
   if (!message) {
     return (
@@ -19,24 +12,48 @@ const MessageDisplay = ({ message }: MessageDisplayProps) => {
     );
   }
 
+  // Parse metadata from message
+  const metadataRegex = /--- Metadata ---\s*\n([\s\S]*?)(?=\n\n|\n$|$)/;
+  const metadataMatch = message.match(metadataRegex);
+
+  let cleanMessage = message;
+  let tags: string[] = [];
+
+  if (metadataMatch) {
+    // Remove metadata section from message
+    cleanMessage = message.replace(metadataRegex, "").trim();
+
+    // Extract tags from metadata
+    const metadataContent = metadataMatch[1];
+    const tagsMatch = metadataContent.match(/Tags:\s*(.+)/);
+    if (tagsMatch) {
+      tags = tagsMatch[1]
+        .split("|")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+    }
+  }
+
   return (
-    <div className="relative">
-      <div className="p-2 rounded  text-xs break-words whitespace-pre-wrap">
-        {message}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 absolute top-1 right-1 opacity-70 hover:opacity-100 hover:bg-zinc-700"
-          onClick={() => copyToClipboard(message)}
-          aria-label="Copy to clipboard"
-        >
-          {isCopied ? (
-            <Check className="h-3.5 w-3.5 text-green-500" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
-          )}
-        </Button>
+    <div className="space-y-3">
+      {/* Main message content */}
+      <div className="p-2 rounded text-xs break-words whitespace-pre-wrap">
+        {cleanMessage}
       </div>
+
+      {/* Tags as hashtags */}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag, index) => (
+            <span
+              key={index}
+              className="text-xs text-primary/80 bg-primary/10 px-2 py-1 rounded-full"
+            >
+              #{tag.replace(/\s+/g, "")}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
