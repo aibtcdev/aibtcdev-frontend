@@ -91,66 +91,20 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
         Back
       </Button>
 
-      {/* Header content matching the design */}
-      <div className="bg-card border rounded-lg p-4 sm:p-6 space-y-4">
-        {/* Top row: DAO image, name, proposal info, and Agent Summary - responsive layout */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          {/* DAO/Token Image */}
-          <div className="w-16 h-16 rounded-md overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 flex-shrink-0">
-            {daoImage ? (
-              <Image
-                src={daoImage}
-                alt={proposal.daos?.name || "DAO"}
-                width={64}
-                height={64}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.svg";
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <span className="text-sm font-bold text-primary">
-                  {proposal.daos?.name?.charAt(0) || "?"}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* Enhanced Header Design - Mobile First */}
+      <div className="relative overflow-hidden">
+        {/* Gradient background with subtle pattern */}
+        <div className="bg-gradient-to-br from-card via-card/95 to-card/90 border rounded-2xl shadow-lg backdrop-blur-sm relative">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-full -translate-y-16 translate-x-16" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary/5 to-transparent rounded-full translate-y-12 -translate-x-12" />
 
-          {/* DAO name, proposal info, and Agent Summary - mobile responsive */}
-          <div className="flex-1 min-w-0 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-base sm:text-lg font-semibold mb-2">
-              <span className="truncate">
-                {proposal.daos?.name || "Unknown DAO"}
-              </span>
-              <span className="text-muted-foreground hidden sm:inline">•</span>
-              <span className="text-sm sm:text-base text-muted-foreground sm:text-foreground">
-                Contribution #{proposal.proposal_id}
-              </span>
-            </div>
-
-            {/* Agent Summary as big title - responsive text size */}
-            <div className="text-lg sm:text-xl font-bold text-foreground">
-              <span className="text-muted-foreground font-normal mr-2 block sm:inline">
-                Agent Summary:
-              </span>
-              <span className="break-words">{proposal.title}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Status and metrics row - mobile responsive grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-3 lg:gap-6 text-sm">
-          {/* Status */}
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground whitespace-nowrap">
-              Status:
-            </span>
+          {/* Status badge - floating on mobile */}
+          <div className="absolute top-4 right-4 z-10 sm:hidden">
             <Badge
               variant={statusConfig.variant}
               className={cn(
-                "flex items-center gap-1",
+                "flex items-center gap-1 shadow-lg backdrop-blur-sm",
                 statusConfig.bg,
                 statusConfig.border,
                 statusConfig.color
@@ -161,82 +115,219 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
             </Badge>
           </div>
 
-          {/* Quorum */}
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">
-              Quorum:
-            </span>
-            {enhancedCalculations ? (
-              <Badge
-                variant={
-                  enhancedCalculations.metQuorum ? "default" : "secondary"
-                }
-                className={cn(
-                  enhancedCalculations.metQuorum
-                    ? "bg-green-500/10 text-green-600 border-green-500/30"
-                    : "bg-muted text-muted-foreground"
+          {/* Main content */}
+          <div className="relative p-6 space-y-6">
+            {/* Enhanced layout for both mobile and desktop */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              {/* Enhanced DAO/Token Image with glow effect */}
+              <div className="relative group">
+                <div className="w-24 h-24 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-500 group-hover:scale-105 shadow-lg">
+                  {daoImage ? (
+                    <Image
+                      src={daoImage}
+                      alt={proposal.daos?.name || "DAO"}
+                      width={96}
+                      height={96}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <span className="text-xl sm:text-lg font-bold text-primary">
+                        {proposal.daos?.name?.charAt(0) || "?"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {/* Subtle glow effect */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm" />
+              </div>
+
+              {/* Content - Mobile centered, desktop left-aligned */}
+              <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-4">
+                {/* DAO name and contribution ID */}
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
+                    <h2 className="text-2xl sm:text-2xl font-bold text-foreground truncate">
+                      {proposal.daos?.name || "Unknown DAO"}
+                    </h2>
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <span className="text-muted-foreground hidden sm:inline">
+                        •
+                      </span>
+                      <span className="text-sm font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 shadow-sm">
+                        #{proposal.proposal_id}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agent Summary - Enhanced typography */}
+                <div className="space-y-3">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground font-medium opacity-80">
+                    Agent Summary
+                  </div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight break-words">
+                    {proposal.title}
+                  </h1>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Metrics section - Enhanced mobile cards */}
+        <div className="mt-6">
+          {/* Mobile: Beautiful metric cards */}
+          <div className="grid grid-cols-3 sm:hidden gap-3">
+            {/* Quorum Card */}
+            <div className="bg-background/60 backdrop-blur-sm rounded-md p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Quorum
+                </span>
+                {enhancedCalculations ? (
+                  <span
+                    className={cn(
+                      "text-sm font-bold",
+                      enhancedCalculations.metQuorum
+                        ? "text-green-600"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {getStatusText(
+                      enhancedCalculations.metQuorum,
+                      enhancedCalculations.participationRate
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {isLoadingVotes ? "..." : "Failed"}
+                  </span>
                 )}
-              >
-                {getStatusText(
-                  enhancedCalculations.metQuorum,
-                  enhancedCalculations.participationRate
+              </div>
+            </div>
+
+            {/* Threshold Card */}
+            <div className="bg-background/60 backdrop-blur-sm rounded-md p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                  <Target className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Threshold
+                </span>
+                {enhancedCalculations ? (
+                  <span
+                    className={cn(
+                      "text-sm font-bold",
+                      enhancedCalculations.metThreshold
+                        ? "text-green-600"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {getStatusText(
+                      enhancedCalculations.metThreshold,
+                      enhancedCalculations.approvalRate
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {isLoadingVotes ? "..." : "Failed"}
+                  </span>
                 )}
-              </Badge>
-            ) : (
-              <Badge
-                variant="secondary"
-                className="bg-muted text-muted-foreground"
-              >
-                {isLoadingVotes ? "Loading..." : "Failed"}
-              </Badge>
-            )}
+              </div>
+            </div>
+
+            {/* Vetos Card */}
+            <div className="bg-background/60 backdrop-blur-sm rounded-md p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                  <Shield className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Vetos
+                </span>
+                <span className="text-sm font-bold text-foreground">
+                  {vetoCount}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Vote Threshold */}
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">
-              Threshold:
-            </span>
-            {enhancedCalculations ? (
-              <Badge
-                variant={
-                  enhancedCalculations.metThreshold ? "default" : "secondary"
-                }
-                className={cn(
-                  enhancedCalculations.metThreshold
-                    ? "bg-green-500/10 text-green-600 border-green-500/30"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                {getStatusText(
-                  enhancedCalculations.metThreshold,
-                  enhancedCalculations.approvalRate
-                )}
-              </Badge>
-            ) : (
-              <Badge
-                variant="secondary"
-                className="bg-muted text-muted-foreground"
-              >
-                {isLoadingVotes ? "Loading..." : "Failed"}
-              </Badge>
-            )}
-          </div>
+          {/* Desktop: Inline badge-style metrics */}
+          <div className="hidden sm:flex sm:items-center sm:gap-4 sm:flex-wrap text-sm">
+            {/* Status */}
+            <div className="flex items-center gap-2">
+              <statusConfig.icon className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">Status:</span>
+              <span className={cn("font-semibold", statusConfig.color)}>
+                {statusConfig.label}
+              </span>
+            </div>
 
-          {/* Vetos */}
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">
-              Vetos:
-            </span>
-            <Badge
-              variant="secondary"
-              className="bg-muted text-muted-foreground"
-            >
-              {vetoCount}
-            </Badge>
+            {/* Quorum */}
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">Quorum:</span>
+              {enhancedCalculations ? (
+                <span
+                  className={cn(
+                    "font-semibold",
+                    enhancedCalculations.metQuorum
+                      ? "text-green-600"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {getStatusText(
+                    enhancedCalculations.metQuorum,
+                    enhancedCalculations.participationRate
+                  )}
+                </span>
+              ) : (
+                <span className="font-semibold text-muted-foreground">
+                  {isLoadingVotes ? "Loading..." : "Failed"}
+                </span>
+              )}
+            </div>
+
+            {/* Threshold */}
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">Threshold:</span>
+              {enhancedCalculations ? (
+                <span
+                  className={cn(
+                    "font-semibold",
+                    enhancedCalculations.metThreshold
+                      ? "text-green-600"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {getStatusText(
+                    enhancedCalculations.metThreshold,
+                    enhancedCalculations.approvalRate
+                  )}
+                </span>
+              ) : (
+                <span className="font-semibold text-muted-foreground">
+                  {isLoadingVotes ? "Loading..." : "Failed"}
+                </span>
+              )}
+            </div>
+
+            {/* Vetos */}
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <span className="text-muted-foreground">Vetos:</span>
+              <span className="font-semibold text-foreground">{vetoCount}</span>
+            </div>
           </div>
         </div>
       </div>
