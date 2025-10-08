@@ -42,7 +42,7 @@ export function MessageSection({
 
   return (
     <div
-      className={`${isXReference ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}`}
+      className={`${isXReference ? "grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6" : ""}`}
     >
       {/* On-chain Message Section */}
       <ProposalSection.Provider
@@ -71,10 +71,10 @@ export function MessageSection({
                       href={referenceLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
+                      className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-start gap-2"
                     >
-                      <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                      <span className="inline-block max-w-full break-all">
+                      <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="inline-block max-w-full break-all min-w-0">
                         {referenceLink}
                       </span>
                     </a>
@@ -91,10 +91,10 @@ export function MessageSection({
                       href={`https://explorer.hiro.so/txid/${airdropReferenceLink}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
+                      className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-start gap-2"
                     >
-                      <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                      <span className="inline-block max-w-full break-all">
+                      <ExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="inline-block max-w-full break-all min-w-0">
                         {airdropReferenceLink}
                       </span>
                     </a>

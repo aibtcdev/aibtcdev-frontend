@@ -20,38 +20,42 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
   } = useProposalTiming(proposal);
 
   return (
-    <div className="flex items-center gap-4 text-sm text-muted-foreground overflow-x-auto">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm text-muted-foreground">
       {/* Voting Start Time */}
-      <div className="flex items-center gap-1.5 whitespace-nowrap">
-        <Calendar className="h-4 w-4 text-primary" />
-        <span className="font-medium">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+        <span className="font-medium whitespace-nowrap">
           {startTime ? "Voting Started:" : "Voting Starts:"}
         </span>
-        <span className="text-foreground">
+        <span className="text-foreground truncate">
           {startTime || estimatedStartTime || "TBD"}
         </span>
         {isStartEstimated && (
-          <span className="text-xs bg-muted/50 px-1 py-0.5 rounded">est.</span>
+          <span className="text-xs bg-muted/50 px-1 py-0.5 rounded whitespace-nowrap">
+            est.
+          </span>
         )}
       </div>
 
       {/* Voting End Time */}
       {endTime && (
-        <div className="flex items-center gap-1.5 whitespace-nowrap">
-          <Clock className="h-4 w-4 text-primary" />
-          <span className="font-medium">Ended:</span>
-          <span className="text-foreground">{endTime}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="font-medium whitespace-nowrap">Ended:</span>
+          <span className="text-foreground truncate">{endTime}</span>
         </div>
       )}
 
-      {/* Estimated Time Remaining (inline with others) */}
+      {/* Estimated Time Remaining */}
       {isActive && estimatedTimeRemaining && (
-        <div className="flex items-center gap-1.5 whitespace-nowrap">
-          <Timer className="h-4 w-4 text-accent" />
-          <span className="font-medium">Ends in:</span>
-          <span className="text-foreground">{estimatedTimeRemaining}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Timer className="h-4 w-4 text-accent flex-shrink-0" />
+          <span className="font-medium whitespace-nowrap">Ends in:</span>
+          <span className="text-foreground truncate">
+            {estimatedTimeRemaining}
+          </span>
           {isEstimated && (
-            <span className="text-xs bg-muted/50 px-1 py-0.5 rounded">
+            <span className="text-xs bg-muted/50 px-1 py-0.5 rounded whitespace-nowrap">
               est.
             </span>
           )}

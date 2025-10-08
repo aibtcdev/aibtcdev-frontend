@@ -81,9 +81,9 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
       </Button>
 
       {/* Header content matching the design */}
-      <div className="bg-card border rounded-lg p-6 space-y-4">
-        {/* Top row: DAO image, name, proposal info, and Agent Summary inline */}
-        <div className="flex items-center gap-3">
+      <div className="bg-card border rounded-lg p-4 sm:p-6 space-y-4">
+        {/* Top row: DAO image, name, proposal info, and Agent Summary - responsive layout */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           {/* DAO Image */}
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-muted flex-shrink-0">
             {daoImage ? (
@@ -107,29 +107,35 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
             )}
           </div>
 
-          {/* DAO name, proposal info, and Agent Summary inline */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-lg font-semibold mb-2">
-              <span>{proposal.daos?.name || "Unknown DAO"}</span>
-              <span className="text-muted-foreground">•</span>
-              <span>Contribution #{proposal.proposal_id}</span>
+          {/* DAO name, proposal info, and Agent Summary - mobile responsive */}
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-base sm:text-lg font-semibold mb-2">
+              <span className="truncate">
+                {proposal.daos?.name || "Unknown DAO"}
+              </span>
+              <span className="text-muted-foreground hidden sm:inline">•</span>
+              <span className="text-sm sm:text-base text-muted-foreground sm:text-foreground">
+                Contribution #{proposal.proposal_id}
+              </span>
             </div>
 
-            {/* Agent Summary as big title */}
-            <div className="text-xl font-bold text-foreground">
-              <span className=" text-muted-foreground font-normal mr-2">
+            {/* Agent Summary as big title - responsive text size */}
+            <div className="text-lg sm:text-xl font-bold text-foreground">
+              <span className="text-muted-foreground font-normal mr-2 block sm:inline">
                 Agent Summary:
               </span>
-              {proposal.title}
+              <span className="break-words">{proposal.title}</span>
             </div>
           </div>
         </div>
 
-        {/* Status and metrics row */}
-        <div className="flex items-center gap-6 text-sm">
+        {/* Status and metrics row - mobile responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-3 lg:gap-6 text-sm">
           {/* Status */}
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Status:</span>
+            <span className="text-muted-foreground whitespace-nowrap">
+              Status:
+            </span>
             <Badge
               variant={statusConfig.variant}
               className={cn(
@@ -146,8 +152,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
 
           {/* Quorum */}
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Quorum:</span>
+            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground whitespace-nowrap">
+              Quorum:
+            </span>
             {enhancedCalculations ? (
               <Badge
                 variant={
@@ -176,8 +184,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
 
           {/* Vote Threshold */}
           <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Vote Threshold:</span>
+            <Target className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground whitespace-nowrap">
+              Threshold:
+            </span>
             {enhancedCalculations ? (
               <Badge
                 variant={
@@ -206,8 +216,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
 
           {/* Vetos */}
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Vetos:</span>
+            <Shield className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground whitespace-nowrap">
+              Vetos:
+            </span>
             <Badge
               variant="secondary"
               className="bg-muted text-muted-foreground"

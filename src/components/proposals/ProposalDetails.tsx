@@ -60,9 +60,9 @@ const ProposalDetails = ({
       {/* On-chain Message - Top Priority, Always Open */}
       <MessageSection proposal={proposal} defaultOpen={true} />
 
-      {/* Voting Timer - Top Right Side */}
-      <div className="flex justify-end">
-        <div className="max-w-full">
+      {/* Voting Timer - Mobile Responsive */}
+      <div className="flex justify-start sm:justify-end">
+        <div className="w-full sm:max-w-full">
           <TimeRemainingMetric proposal={proposal as ProposalWithDAO} />
         </div>
       </div>

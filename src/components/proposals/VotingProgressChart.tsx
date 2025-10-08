@@ -359,7 +359,7 @@ const VotingProgressChart = ({
   }
 
   return (
-    <div className="space-y-6 overflow-x-auto">
+    <div className="space-y-6">
       {/* Loading indicator for vote data */}
       {isLoadingVotes && (
         <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -370,10 +370,10 @@ const VotingProgressChart = ({
 
       {/* Participation Progress Bar */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium">
+            <Users className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="text-sm font-medium break-words">
               {getStatusText(
                 enhancedCalculations.metQuorum,
                 enhancedCalculations.participationRate
@@ -382,7 +382,7 @@ const VotingProgressChart = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-3 w-3 text-muted-foreground" />
+                  <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
@@ -450,9 +450,9 @@ const VotingProgressChart = ({
 
         {/* Vote breakdown */}
         {!voteDisplayData ? (
-          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <span className="text-sm">Failed to fetch vote data</span>
             </div>
             <Button
@@ -460,7 +460,7 @@ const VotingProgressChart = ({
               size="sm"
               onClick={handleManualRefresh}
               disabled={isLoadingVotes}
-              className="h-8 px-2 text-destructive hover:text-destructive"
+              className="h-8 px-2 text-destructive hover:text-destructive self-start sm:self-auto"
             >
               <RefreshCw
                 className={`h-3 w-3 mr-1 ${isLoadingVotes ? "animate-spin" : ""}`}
@@ -469,48 +469,50 @@ const VotingProgressChart = ({
             </Button>
           </div>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
                 {voteDisplayData ? (
-                  <>
+                  <span className="break-all">
                     <TokenBalance
                       value={voteDisplayData.rawVotesFor}
                       decimals={8}
                       variant="abbreviated"
                     />{" "}
                     ({enhancedCalculations.votesForPercent.toFixed(1)}%)
-                  </>
+                  </span>
                 ) : (
                   <span className="text-destructive">Failed to fetch</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full" />
+                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
                 {voteDisplayData ? (
-                  <>
+                  <span className="break-all">
                     <TokenBalance
                       value={voteDisplayData.rawVotesAgainst}
                       decimals={8}
                       variant="abbreviated"
                     />{" "}
                     ({enhancedCalculations.votesAgainstPercent.toFixed(1)}%)
-                  </>
+                  </span>
                 ) : (
                   <span className="text-destructive">Failed to fetch</span>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-primary rounded-full" />
+              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
               <span>Total: </span>
               {voteDisplayData ? (
-                <TokenBalance
-                  value={voteDisplayData.rawLiquidTokens}
-                  decimals={8}
-                  variant="abbreviated"
-                />
+                <span className="break-all">
+                  <TokenBalance
+                    value={voteDisplayData.rawLiquidTokens}
+                    decimals={8}
+                    variant="abbreviated"
+                  />
+                </span>
               ) : (
                 <span className="text-destructive">Failed to fetch</span>
               )}
@@ -521,10 +523,10 @@ const VotingProgressChart = ({
 
       {/* Approval Rate Progress Bar */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium">
+            <Target className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="text-sm font-medium break-words">
               {getStatusText(
                 enhancedCalculations.metThreshold,
                 enhancedCalculations.approvalRate
@@ -533,7 +535,7 @@ const VotingProgressChart = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-3 w-3 text-muted-foreground" />
+                  <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
@@ -574,23 +576,25 @@ const VotingProgressChart = ({
         </div>
 
         {/* Approval breakdown */}
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
-            <span>
+            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+            <span className="break-words">
               Approval: {enhancedCalculations.approvalRate.toFixed(1)}% of votes
               cast
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-primary rounded-full" />
-            <span>Threshold: {enhancedCalculations.thresholdPercentage}%</span>
+            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+            <span className="break-words">
+              Threshold: {enhancedCalculations.thresholdPercentage}%
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Status Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Status Grid - Mobile Responsive */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Quorum Status */}
         <div
           className={cn(

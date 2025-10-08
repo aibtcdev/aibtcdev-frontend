@@ -82,28 +82,28 @@ export default function ProposalDetailsPage() {
     <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
       <ProposalHeader proposal={proposal} />
 
-      {/* Creator and Timestamp Section */}
-      <div className="mb-6  rounded-lg p-4">
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
+      {/* Creator and Timestamp Section - Mobile Responsive */}
+      <div className="mb-6 rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground">
           {/* Creator */}
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            <span>Created by:</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <User className="h-4 w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">Created by:</span>
             <a
               href={getExplorerLink("tx", `${proposal.creator}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-primary hover:text-primary/80 transition-colors underline"
+              className="font-mono text-primary hover:text-primary/80 transition-colors underline truncate"
             >
               {truncateString(proposal.creator, 5, 5)}
             </a>
           </div>
 
           {/* Timestamp */}
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span>Timestamp:</span>
-            <span className="text-foreground">
+          <div className="flex items-center gap-2 min-w-0">
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">Timestamp:</span>
+            <span className="text-foreground truncate">
               {new Date(proposal.created_at).toLocaleString()}
             </span>
           </div>
