@@ -6,7 +6,6 @@ import { Suspense } from "react";
 import { ProposalWithDAO } from "@/types";
 import { fetchProposalById } from "@/services/dao.service";
 import ProposalDetails from "@/components/proposals/ProposalDetails";
-import ProposalSidebar from "@/components/proposals/layout/ProposalSidebar";
 import FixedActionBar, {
   FixedActionBarSpacer,
 } from "@/components/proposals/layout/FixedActionBar";
@@ -95,37 +94,25 @@ export default function ProposalDetailsPage() {
     <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
       <ProposalHeader proposal={proposal} />
 
-      {/* Desktop Layout: Sidebar + Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Sidebar - Hidden on mobile, visible on desktop */}
-        <div className="hidden lg:block lg:col-span-3">
-          <ProposalSidebar
-            proposal={proposal}
-            // onVote={handleVote}
-            // onShare={handleShare}
-          />
-        </div>
-
-        {/* Main Content */}
-        <div className="lg:col-span-9">
-          <Suspense
-            fallback={
-              <div className="flex justify-center items-center min-h-[200px] w-full">
-                <div className="text-center space-y-4">
-                  <Loader />
-                  <p className="text-muted-foreground">
-                    Loading proposal details...
-                  </p>
-                </div>
+      {/* Full Width Main Content */}
+      <div className="w-full">
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center min-h-[200px] w-full">
+              <div className="text-center space-y-4">
+                <Loader />
+                <p className="text-muted-foreground">
+                  Loading proposal details...
+                </p>
               </div>
-            }
-          >
-            <ProposalDetails proposal={proposal} />
-          </Suspense>
+            </div>
+          }
+        >
+          <ProposalDetails proposal={proposal} />
+        </Suspense>
 
-          {/* Spacer to prevent content from being hidden behind fixed action bar */}
-          <FixedActionBarSpacer />
-        </div>
+        {/* Spacer to prevent content from being hidden behind fixed action bar */}
+        <FixedActionBarSpacer />
       </div>
 
       {/* Mobile Fixed Action Bar - One Primary Action */}

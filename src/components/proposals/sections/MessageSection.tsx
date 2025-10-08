@@ -62,16 +62,33 @@ export function MessageSection({
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left side: Message */}
                 <div className="space-y-4">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Contribution Message
-                  </div>
                   <MessageDisplay message={cleanedContent} />
+
+                  {/* Airdrop reference */}
+                  {airdropReferenceLink && (
+                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Airdrop Transaction ID
+                      </div>
+                      <a
+                        href={`https://explorer.hiro.so/txid/${airdropReferenceLink}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                        <span className="inline-block max-w-full break-all">
+                          {airdropReferenceLink}
+                        </span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right side: X Preview */}
                 <div className="space-y-4">
                   <div className="text-sm font-medium text-muted-foreground">
-                    X Post Reference
+                    Preview
                   </div>
                   <XCard url={referenceLink} />
                 </div>
@@ -97,26 +114,26 @@ export function MessageSection({
                     </a>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Airdrop reference (always shown if present) */}
-            {airdropReferenceLink && (
-              <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/50">
-                <div className="text-xs text-muted-foreground mb-1">
-                  Airdrop Transaction ID
-                </div>
-                <a
-                  href={`https://explorer.hiro.so/txid/${airdropReferenceLink}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
-                >
-                  <ExternalLink className="h-4 w-4 flex-shrink-0" />
-                  <span className="inline-block max-w-full break-all">
-                    {airdropReferenceLink}
-                  </span>
-                </a>
+                {/* Airdrop reference */}
+                {airdropReferenceLink && (
+                  <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Airdrop Transaction ID
+                    </div>
+                    <a
+                      href={`https://explorer.hiro.so/txid/${airdropReferenceLink}?chain=${process.env.NEXT_PUBLIC_STACKS_NETWORK || "mainnet"}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:text-primary/80 transition-colors break-all word-break-all overflow-wrap-anywhere flex items-center gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4 flex-shrink-0" />
+                      <span className="inline-block max-w-full break-all">
+                        {airdropReferenceLink}
+                      </span>
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </ProposalSection.Content>
