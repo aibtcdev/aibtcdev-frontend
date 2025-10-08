@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
 import { useProposalHasVetos } from "@/hooks/useVetos";
 import { safeNumberFromBigInt } from "@/utils/proposal";
+import { fetchToken } from "@/services/dao.service";
 import type { ProposalWithDAO } from "@/types";
 
 interface ProposalHeaderProps {
@@ -31,6 +33,14 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
 
   // Get vetos data
   const { vetoCount } = useProposalHasVetos(proposal.id);
+
+  // Fetch token data for the DAO to get image_url
+  const { data: tokenData } = useQuery({
+    queryKey: ["token", proposal.dao_id],
+    queryFn: () => fetchToken(proposal.dao_id),
+    enabled: !!proposal.dao_id,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   // Enhanced calculations with proposal-specific logic
   const enhancedCalculations = useMemo(() => {
@@ -61,11 +71,12 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
     return `${percentage.toFixed(1)}%`;
   };
 
-  // Get DAO image - check if full DAO object is available
+  // Get DAO/token image - prioritize token image, fallback to DAO image if available
   const daoImage =
-    proposal.daos && "image_url" in proposal.daos
+    tokenData?.image_url ||
+    (proposal.daos && "image_url" in proposal.daos
       ? (proposal.daos.image_url as string)
-      : undefined;
+      : undefined);
 
   return (
     <div className="mb-6">
@@ -84,18 +95,18 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
       <div className="bg-card border rounded-lg p-4 sm:p-6 space-y-4">
         {/* Top row: DAO image, name, proposal info, and Agent Summary - responsive layout */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          {/* DAO Image */}
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+          {/* DAO/Token Image */}
+          <div className="w-16 h-16 rounded-md overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 flex-shrink-0">
             {daoImage ? (
               <Image
                 src={daoImage}
                 alt={proposal.daos?.name || "DAO"}
-                width={48}
-                height={48}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.log("Image failed to load:", daoImage);
-                  e.currentTarget.style.display = "none";
+                  const target = e.target as HTMLImageElement;
+                  target.src = "/placeholder.svg";
                 }}
               />
             ) : (
