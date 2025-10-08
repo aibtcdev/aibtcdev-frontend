@@ -74,35 +74,42 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
   } = useProposalTiming(proposal);
 
   return (
-    <div className="space-y-3">
+    <div className="flex items-center gap-4 text-sm text-muted-foreground overflow-x-auto">
       {/* Voting Start Time */}
-      <MetricCard
-        icon={<Calendar className="h-4 w-4 text-primary" />}
-        label={startTime ? "Voting Started" : "Voting Starts"}
-        value={startTime || estimatedStartTime || "TBD"}
-        variant="default"
-        isEstimated={isStartEstimated}
-      />
+      <div className="flex items-center gap-1.5 whitespace-nowrap">
+        <Calendar className="h-4 w-4 text-primary" />
+        <span className="font-medium">
+          {startTime ? "Voting Started:" : "Voting Starts:"}
+        </span>
+        <span className="text-foreground">
+          {startTime || estimatedStartTime || "TBD"}
+        </span>
+        {isStartEstimated && (
+          <span className="text-xs bg-muted/50 px-1 py-0.5 rounded">est.</span>
+        )}
+      </div>
 
       {/* Voting End Time */}
       {endTime && (
-        <MetricCard
-          icon={<Clock className="h-4 w-4 text-primary" />}
-          label="Voting Ended"
-          value={endTime}
-          variant="default"
-        />
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <Clock className="h-4 w-4 text-primary" />
+          <span className="font-medium">Ended:</span>
+          <span className="text-foreground">{endTime}</span>
+        </div>
       )}
 
-      {/* Estimated Time Remaining (only when active) */}
+      {/* Estimated Time Remaining (inline with others) */}
       {isActive && estimatedTimeRemaining && (
-        <MetricCard
-          icon={<Timer className="h-4 w-4 text-accent" />}
-          label="Time Remaining"
-          value={estimatedTimeRemaining}
-          variant="warning"
-          isEstimated={isEstimated}
-        />
+        <div className="flex items-center gap-1.5 whitespace-nowrap">
+          <Timer className="h-4 w-4 text-accent" />
+          <span className="font-medium">Ends in:</span>
+          <span className="text-foreground">{estimatedTimeRemaining}</span>
+          {isEstimated && (
+            <span className="text-xs bg-muted/50 px-1 py-0.5 rounded">
+              est.
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

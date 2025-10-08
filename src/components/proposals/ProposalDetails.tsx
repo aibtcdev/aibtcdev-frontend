@@ -13,6 +13,7 @@ import VotesSection from "./sections/VotesSection";
 import VetosSection from "./sections/VetosSection";
 import ChainSection from "./sections/ChainSection";
 import VotingProgressChart from "./VotingProgressChart";
+import { TimeRemainingMetric } from "./layout/TimeRemainingMetric";
 
 interface ProposalDetailsProps {
   proposal: Proposal | ProposalWithDAO;
@@ -58,6 +59,13 @@ const ProposalDetails = ({
     <div className={`space-y-6 ${className}`}>
       {/* On-chain Message - Top Priority, Always Open */}
       <MessageSection proposal={proposal} defaultOpen={true} />
+
+      {/* Voting Timer - Top Right Side */}
+      <div className="flex justify-end">
+        <div className="max-w-full">
+          <TimeRemainingMetric proposal={proposal as ProposalWithDAO} />
+        </div>
+      </div>
 
       {/* Global Vote Data Error - Only show if VotingProgressChart doesn't handle it */}
       {hasVoteDataError && !voteDisplayData && (
