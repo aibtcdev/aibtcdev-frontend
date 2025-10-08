@@ -72,17 +72,6 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
   const [embedError, setEmbedError] = useState<string | null>(null);
 
-  // Load Twitter widgets script if not already loaded
-  useEffect(() => {
-    if (typeof window !== "undefined" && !(window as any).twttr) {
-      const script = document.createElement("script");
-      script.src = "https://platform.twitter.com/widgets.js";
-      script.async = true;
-      script.charset = "utf-8";
-      document.head.appendChild(script);
-    }
-  }, []);
-
   // Fetch Twitter embed data
   useEffect(() => {
     const fetchEmbed = async () => {
@@ -110,10 +99,6 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
         } else {
           setTwitterEmbedData(result);
           setEmbedError(null);
-
-          // Debug: Log the HTML content to see what we're getting
-          console.log("Twitter embed HTML:", result.html);
-          console.log("Twitter embed data:", result);
         }
       } catch (error) {
         setEmbedError(
@@ -129,17 +114,6 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
     const timeoutId = setTimeout(fetchEmbed, 300);
     return () => clearTimeout(timeoutId);
   }, [url, isValid]);
-
-  // Trigger Twitter widget rendering when embed data is loaded
-  useEffect(() => {
-    if (
-      twitterEmbedData &&
-      (window as any).twttr &&
-      (window as any).twttr.widgets
-    ) {
-      (window as any).twttr.widgets.load();
-    }
-  }, [twitterEmbedData]);
 
   if (!isValid) {
     // Fallback for non-X URLs
@@ -164,7 +138,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
   return (
     <div
       className={cn(
-        "border rounded-lg  transition-colors cursor-pointer group overflow-hidden",
+        "border rounded-lg transition-colors cursor-pointer group overflow-hidden",
         className
       )}
       onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
@@ -194,52 +168,41 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
         </div>
       )}
 
-      {/* Success State - Show Embed */}
+      {/* Success State - Show Post Info */}
       {twitterEmbedData && !isLoadingEmbed && (
-        <div className=" rounded-xl overflow-hidden">
-          {/* Twitter-like header */}
-          <div className="p-4 pb-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-gray-600 dark:text-gray-300 font-bold text-sm">
-                  𝕏
+        <div className="p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-gray-600 dark:text-gray-300 font-bold text-sm">
+                𝕏
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-bold">
+                  {twitterEmbedData.author_name || `@${username}`}
                 </span>
+                <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold">
-                    {twitterEmbedData.author_name || `@${username}`}
-                  </span>
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">
-                    @{username}
-                  </span>
-                </div>
-              </div>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">
+                @{username}
+              </span>
             </div>
           </div>
 
-          {/* Tweet content */}
-          <div className="px-4 pb-4">
-            <div
-              className="twitter-embed-container 
-                [&_blockquote]:m-0 [&_blockquote]:p-0 [&_blockquote]:border-0 [&_blockquote]:bg-transparent
-                [&_.twitter-tweet]:border-0 [&_.twitter-tweet]:bg-transparent [&_.twitter-tweet]:p-0 [&_.twitter-tweet]:m-0
-                [&_.twitter-tweet]:shadow-none [&_.twitter-tweet]:max-w-none
-                [&_.twitter-tweet_p]:text-gray-900 [&_.twitter-tweet_p]:dark:text-white [&_.twitter-tweet_p]:text-base [&_.twitter-tweet_p]:leading-normal [&_.twitter-tweet_p]:mb-3
-                [&_.twitter-tweet_a]:text-blue-500 [&_.twitter-tweet_a]:hover:text-blue-600 [&_.twitter-tweet_a]:no-underline
-                [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
-              dangerouslySetInnerHTML={{
-                __html: twitterEmbedData.html,
-              }}
-            />
-          </div>
+          {/* Display tweet HTML without images */}
+          <div
+            className="twitter-embed-container mb-3 [&_p]:text-sm [&_p]:mb-2 [&_a]:text-primary [&_a]:hover:underline [&_img]:hidden [&_video]:hidden [&_.twitter-player]:hidden"
+            dangerouslySetInnerHTML={{
+              __html: twitterEmbedData.html,
+            }}
+          />
 
-          {/* Twitter-like footer */}
-          <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-3">
-            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-              <span>View on X</span>
-              <ExternalLink className="h-4 w-4" />
-            </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground/70 border-t pt-2">
+            <span className="font-mono">ID: {tweetId}</span>
+            <span className="text-primary text-sm group-hover:underline">
+              View on X →
+            </span>
           </div>
         </div>
       )}

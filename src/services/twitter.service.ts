@@ -10,12 +10,6 @@ export interface TwitterOEmbedResponse {
   provider_name: string;
   provider_url: string;
   version: string;
-  // Additional fields that may be present in Twitter oEmbed responses
-  thumbnail_url?: string;
-  thumbnail_width?: number;
-  thumbnail_height?: number;
-  title?: string;
-  description?: string;
 }
 
 export interface TwitterOEmbedError {
