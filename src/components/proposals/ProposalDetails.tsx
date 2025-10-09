@@ -60,10 +60,20 @@ const ProposalDetails = ({
       {/* On-chain Message - Top Priority, Always Open */}
       <MessageSection proposal={proposal} defaultOpen={true} />
 
-      {/* Voting Timer - Mobile Responsive */}
-      <div className="flex justify-start sm:justify-end">
-        <div className="max-w-full">
-          <TimeRemainingMetric proposal={proposal as ProposalWithDAO} />
+      {/* Agent Voting and Time Remaining Section - Mobile Responsive */}
+      <div className="rounded-lg  bg-card ">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Left: Agent Voting */}
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-foreground">
+              Agent Voting
+            </h2>
+          </div>
+
+          {/* Right: Time Remaining Metrics */}
+          <div className="max-w-full">
+            <TimeRemainingMetric proposal={proposal as ProposalWithDAO} />
+          </div>
         </div>
       </div>
 
