@@ -1052,7 +1052,7 @@ export function ProposalSubmission({
 
   return (
     <>
-      <div className="rounded-2xl bg-muted/10 border-white/10 p-4 sm:p-6 lg:p-7 flex flex-col relative">
+      <div className="rounded-2xl bg-muted/10 border-white/10 p-4 sm:p-5 lg:p-6 flex flex-col relative max-w-full overflow-hidden">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
@@ -1181,7 +1181,7 @@ export function ProposalSubmission({
                   setContribution(e.target.value);
                 }}
                 placeholder={`Describe the work you've done that pushes the ${daoName} mission.`}
-                className={`w-full min-h-[107px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
+                className={`w-full min-h-[107px] p-3 sm:p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 max-w-full ${!isWithinLimit ? "" : ""}`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -1216,8 +1216,8 @@ export function ProposalSubmission({
                 onMouseLeave={handleMouseLeave}
                 onPaste={handlePaste}
                 placeholder="X.com URL to a post showing proof of your work."
-                className={`w-full p-4 ${
-                  twitterUrl && isValidTwitterUrl ? "pr-16" : ""
+                className={`w-full max-w-full p-3 sm:p-4 ${
+                  twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
                 } bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
                 disabled={
                   isSubmitting ||
