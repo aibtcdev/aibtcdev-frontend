@@ -1,62 +1,8 @@
 "use client";
 
-import type React from "react";
 import { Clock, Calendar, Timer } from "lucide-react";
 import { useProposalTiming } from "@/hooks/useProposalTiming";
 import type { ProposalWithDAO } from "@/types";
-import { cn } from "@/lib/utils";
-
-interface MetricCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  variant?: "default" | "warning" | "success";
-  isEstimated?: boolean;
-}
-
-function MetricCard({
-  icon,
-  label,
-  value,
-  variant = "default",
-  isEstimated,
-}: MetricCardProps) {
-  const variantClasses = {
-    default: "border-border/20",
-    warning: "border-destructive/20 bg-destructive/5",
-    success: "border-primary/20 bg-primary/5",
-  };
-
-  return (
-    <div
-      className={cn(
-        "rounded-lg border p-4 transition-colors hover:bg-muted/30",
-        variantClasses[variant]
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-background/50 flex items-center justify-center flex-shrink-0">
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-            {label}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">
-              {value}
-            </span>
-            {isEstimated && (
-              <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-                est.
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface TimeRemainingMetricProps {
   proposal: ProposalWithDAO;
@@ -74,35 +20,46 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
   } = useProposalTiming(proposal);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm text-muted-foreground bg-muted/30 rounded-md p-2">
       {/* Voting Start Time */}
-      <MetricCard
-        icon={<Calendar className="h-4 w-4 text-primary" />}
-        label={startTime ? "Voting Started" : "Voting Starts"}
-        value={startTime || estimatedStartTime || "TBD"}
-        variant="default"
-        isEstimated={isStartEstimated}
-      />
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
+        <span className="font-medium whitespace-nowrap">
+          {startTime ? "Voting Started:" : "Voting Starts:"}
+        </span>
+        <span className="text-foreground truncate">
+          {startTime || estimatedStartTime || "TBD"}
+        </span>
+        {isStartEstimated && (
+          <span className="text-xs bg-muted/50 px-1 py-0.5 rounded whitespace-nowrap">
+            est.
+          </span>
+        )}
+      </div>
 
       {/* Voting End Time */}
       {endTime && (
-        <MetricCard
-          icon={<Clock className="h-4 w-4 text-primary" />}
-          label="Voting Ended"
-          value={endTime}
-          variant="default"
-        />
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="font-medium whitespace-nowrap">Ended:</span>
+          <span className="text-foreground truncate">{endTime}</span>
+        </div>
       )}
 
-      {/* Estimated Time Remaining (only when active) */}
+      {/* Estimated Time Remaining */}
       {isActive && estimatedTimeRemaining && (
-        <MetricCard
-          icon={<Timer className="h-4 w-4 text-accent" />}
-          label="Time Remaining"
-          value={estimatedTimeRemaining}
-          variant="warning"
-          isEstimated={isEstimated}
-        />
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Timer className="h-4 w-4 text-accent flex-shrink-0" />
+          <span className="font-medium whitespace-nowrap">Ends in:</span>
+          <span className="text-foreground truncate">
+            {estimatedTimeRemaining}
+          </span>
+          {isEstimated && (
+            <span className="text-xs bg-muted/50 px-1 py-0.5 rounded whitespace-nowrap">
+              est.
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

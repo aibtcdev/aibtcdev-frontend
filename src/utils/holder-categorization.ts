@@ -20,6 +20,7 @@ const PROTOCOL_CONTRACTS = [
   "treasury",
   "faktory-dex",
   "pre-faktory",
+  "xyk-pool-sbtc",
   // Add bitflow pool patterns after graduation
 ];
 
@@ -33,9 +34,13 @@ const OTHER_CONTRACTS = ["aibtc-dao-run-cost", "btc2aibtc"];
  */
 export function isProtocolContract(address: string): boolean {
   return PROTOCOL_CONTRACTS.some((contract) => {
-    // Check if address contains the contract name pattern (with any prefix)
-    // Matches: fast12-treasury, fake-treasury, treasury, etc.
-    return address.includes(`-${contract}`) || address.endsWith(`.${contract}`);
+    // Check if address contains the contract name pattern (with any prefix or suffix)
+    // Matches: fast12-treasury, fake-treasury, treasury, xyk-pool-sbtc-elonbtc-v-1-1, etc.
+    return (
+      address.includes(`-${contract}`) ||
+      address.endsWith(`.${contract}`) ||
+      address.includes(`.${contract}-`)
+    );
   });
 }
 
@@ -98,6 +103,11 @@ export function categorizeHolders(
   };
 
   for (const holder of holders) {
+    // Skip holders with zero balance
+    if (Number.parseFloat(holder.balance) <= 0) {
+      continue;
+    }
+
     // Check protocol contracts FIRST and most specifically
     if (isProtocolContract(holder.address)) {
       categorized.protocol.push(holder);
