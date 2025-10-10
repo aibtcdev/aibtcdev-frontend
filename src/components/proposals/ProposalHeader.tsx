@@ -104,10 +104,11 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
           <div className="relative p-6 space-y-6">
             {/* Content - Mobile centered, desktop left-aligned */}
             <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-4">
-              {/* Main heading: Contribution ID */}
+              {/* Main heading: Contribution ID with DAO name */}
               <div className="space-y-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                  Contribution #{proposal.proposal_id}
+                  Contribution #{proposal.proposal_id} ·{" "}
+                  {proposal.daos?.name || "Unknown DAO"}
                 </h1>
               </div>
 
@@ -119,10 +120,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                 </h2>
               </div>
 
-              {/* DAO name and image */}
-              <div className="flex items-center justify-center sm:justify-start gap-3 pt-2">
+              {/* DAO name and image - COMMENTED OUT */}
+              {/* <div className="flex items-center justify-center sm:justify-start gap-3 pt-2">
                 {/* DAO/Token Image */}
-                <div className="relative group">
+              {/* <div className="relative group">
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-500 group-hover:scale-105 shadow-lg">
                     {daoImage ? (
                       <Image
@@ -145,11 +146,11 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                     )}
                   </div>
                   {/* Subtle glow effect */}
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm" />
+              {/* <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm" />
                 </div>
 
                 {/* DAO name */}
-                {proposal.daos?.name ? (
+              {/* {proposal.daos?.name ? (
                   <Link
                     href={`/aidaos/${proposal.daos.name}`}
                     className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors duration-200 truncate"
@@ -161,7 +162,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                     Unknown DAO
                   </span>
                 )}
-              </div>
+              </div> */}
 
               {/* Status and Metrics - Inline on same line */}
               <div className="space-y-4">
