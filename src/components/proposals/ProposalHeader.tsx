@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
+// import { useQuery } from "@tanstack/react-query";
+// import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
 import { useProposalHasVetos } from "@/hooks/useVetos";
 import { safeNumberFromBigInt } from "@/utils/proposal";
-import { fetchToken } from "@/services/dao.service";
+// import { fetchToken } from "@/services/dao.service";
 import type { ProposalWithDAO } from "@/types";
 
 interface ProposalHeaderProps {
@@ -36,12 +36,12 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   const { vetoCount } = useProposalHasVetos(proposal.id);
 
   // Fetch token data for the DAO to get image_url
-  const { data: tokenData } = useQuery({
-    queryKey: ["token", proposal.dao_id],
-    queryFn: () => fetchToken(proposal.dao_id),
-    enabled: !!proposal.dao_id,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-  });
+  // const { data: tokenData } = useQuery({
+  //   queryKey: ["token", proposal.dao_id],
+  //   queryFn: () => fetchToken(proposal.dao_id),
+  //   enabled: !!proposal.dao_id,
+  //   staleTime: 10 * 60 * 1000, // 10 minutes
+  // });
 
   // Enhanced calculations with proposal-specific logic
   const enhancedCalculations = useMemo(() => {
@@ -73,11 +73,11 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   };
 
   // Get DAO/token image - prioritize token image, fallback to DAO image if available
-  const daoImage =
-    tokenData?.image_url ||
-    (proposal.daos && "image_url" in proposal.daos
-      ? (proposal.daos.image_url as string)
-      : undefined);
+  // const daoImage =
+  //   tokenData?.image_url ||
+  //   (proposal.daos && "image_url" in proposal.daos
+  //     ? (proposal.daos.image_url as string)
+  //     : undefined);
 
   return (
     <div className="mb-6">
@@ -108,7 +108,16 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
               <div className="space-y-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                   Contribution #{proposal.proposal_id} ·{" "}
-                  {proposal.daos?.name || "Unknown DAO"}
+                  {proposal.daos?.name ? (
+                    <Link
+                      href={`/aidaos/${proposal.daos.name}`}
+                      className="hover:text-primary transition-colors duration-200"
+                    >
+                      {proposal.daos.name}
+                    </Link>
+                  ) : (
+                    "Unknown DAO"
+                  )}
                 </h1>
               </div>
 
