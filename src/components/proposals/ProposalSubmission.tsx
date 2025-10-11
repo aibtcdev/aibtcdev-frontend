@@ -263,7 +263,13 @@ export function ProposalSubmission({
   const [xUsernameError, setXUsernameError] = useState<string | null>(null);
 
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
-  const { needsXLink, isLoading: isXLoading, refreshStatus } = useXStatus();
+  const {
+    needsXLink,
+    isLoading: isXLoading,
+    refreshStatus,
+    verificationStatus,
+    canSubmitContribution,
+  } = useXStatus();
 
   // Determine if user has access token
   const hasAccessToken = !!accessToken && !isSessionLoading;
@@ -1493,7 +1499,8 @@ export function ProposalSubmission({
                 hasProposalInCurrentBlock ||
                 needsXLink ||
                 isXLoading ||
-                !!xUsernameError
+                !!xUsernameError ||
+                !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1508,6 +1515,16 @@ export function ProposalSubmission({
                 <span>Connect Wallet to Submit</span>
               ) : needsXLink ? (
                 <span>Link X Account to Submit</span>
+              ) : verificationStatus.status === "pending" ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>X Verification Pending</span>
+                </div>
+              ) : verificationStatus.status === "not_verified" ? (
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  <span>X Account Not Verified</span>
+                </div>
               ) : isValidatingXUsername ? (
                 <div className="flex items-center gap-2">
                   <Loader />
@@ -1554,6 +1571,52 @@ export function ProposalSubmission({
             </div>
           </div>
         )}
+
+        {/* X Verification Lock Overlay */}
+        {hasAccessToken &&
+          hasAgentDaoTokens &&
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "not_verified" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-red-300 mb-2">
+                    X Account Not Verified
+                  </h3>
+                  <p className="text-sm text-red-200/80 leading-relaxed">
+                    AIBTC is not for everyone.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* X Verification Pending Lock Overlay */}
+        {hasAccessToken &&
+          hasAgentDaoTokens &&
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "pending" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
+                  <Loader />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-300 mb-2">
+                    X Verification Pending
+                  </h3>
+                  <p className="text-sm text-yellow-200/80 leading-relaxed">
+                    Your X account verification is being processed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}
