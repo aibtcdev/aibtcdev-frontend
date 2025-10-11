@@ -13,6 +13,7 @@ export interface XProfile {
   username: string;
   name: string;
   profile_image_url: string;
+  provider_id: string;
 }
 
 export interface XLinkResult {
@@ -116,10 +117,13 @@ export async function unlinkXAccount(): Promise<{
       };
     }
 
-    // Clear username from profile
+    // Clear username and provider_id from profile
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ username: null })
+      .update({
+        username: null,
+        provider_id: null,
+      })
       .eq("id", user.id);
 
     if (updateError) {
@@ -162,8 +166,11 @@ export async function getLinkedXProfile(): Promise<XProfile | null> {
     // Extract X profile data from identity
     const identityData = xIdentity.identity_data;
 
+    const providerId =
+      identityData.sub || identityData.id || identityData.user_id;
+
     return {
-      id: identityData.sub || identityData.id,
+      id: providerId,
       username:
         identityData.username ||
         identityData.user_name ||
@@ -177,6 +184,7 @@ export async function getLinkedXProfile(): Promise<XProfile | null> {
         identityData.profile_image_url ||
         identityData.avatar_url ||
         identityData.picture,
+      provider_id: providerId,
     };
   } catch (error) {
     console.error("Error getting X profile:", error);
@@ -209,7 +217,7 @@ export async function hasLinkedXAccount(): Promise<boolean> {
 }
 
 /**
- * Update profile username after successful X linking
+ * Update profile username and provider ID after successful X linking
  * This should be called from the auth callback after X OAuth completes
  */
 export async function updateProfileWithXUsername(): Promise<{
@@ -239,11 +247,12 @@ export async function updateProfileWithXUsername(): Promise<{
       };
     }
 
-    // Update the profile with X username only
+    // Update the profile with X username and provider ID
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
         username: xProfile.username,
+        provider_id: xProfile.provider_id,
       })
       .eq("id", user.id);
 
@@ -322,9 +331,7 @@ export function extractXUsernameFromUrl(url: string): string | null {
 /**
  * Validate if X username in URL matches the user's linked X account
  */
-export async function validateXUsernameMatch(
-  xUrl: string
-): Promise<{
+export async function validateXUsernameMatch(xUrl: string): Promise<{
   isValid: boolean;
   linkedUsername?: string;
   urlUsername?: string;

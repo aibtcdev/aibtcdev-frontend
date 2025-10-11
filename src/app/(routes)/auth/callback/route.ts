@@ -31,7 +31,7 @@ export async function GET(request: Request) {
         // Log the identity data to see what fields are available
         console.log("X identity data:", xIdentity.identity_data);
 
-        // Update profile with X username only
+        // Update profile with X username and provider ID
         const identityData = xIdentity.identity_data;
         const xUsername =
           identityData.username ||
@@ -39,29 +39,38 @@ export async function GET(request: Request) {
           identityData.screen_name ||
           identityData.preferred_username;
 
-        console.log("Extracted X username:", xUsername);
+        const xProviderId =
+          identityData.sub || identityData.id || identityData.user_id;
 
-        if (xUsername) {
+        console.log("Extracted X username:", xUsername);
+        console.log("Extracted X provider ID:", xProviderId);
+
+        if (xUsername && xProviderId) {
           const { error: updateError } = await supabase
             .from("profiles")
             .update({
               username: xUsername,
+              provider_id: xProviderId,
             })
             .eq("id", data.user.id);
 
           if (updateError) {
-            console.error(
-              "Error updating profile with X username:",
-              updateError
-            );
+            console.error("Error updating profile with X data:", updateError);
           } else {
             console.log(
               "Successfully updated profile with X username:",
-              xUsername
+              xUsername,
+              "and provider ID:",
+              xProviderId
             );
           }
         } else {
-          console.error("No X username found in identity data");
+          console.error(
+            "Missing X data - username:",
+            xUsername,
+            "provider ID:",
+            xProviderId
+          );
         }
       }
     }

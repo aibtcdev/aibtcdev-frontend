@@ -3,6 +3,7 @@ export interface Profile {
   email: string;
   assigned_agent_address: string | null;
   username: string | null; // Twitter username
+  provider_id: string | null; // Twitter/X provider user ID
   mainnet_address: string | null;
   testnet_address: string | null;
   role?: string;
