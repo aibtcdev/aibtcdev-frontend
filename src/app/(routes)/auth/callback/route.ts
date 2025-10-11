@@ -63,6 +63,37 @@ export async function GET(request: Request) {
               "and provider ID:",
               xProviderId
             );
+
+            // Call sync-x-verification endpoint after successful X linking
+            try {
+              const syncResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-x-verification`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    user_id: data.user.id,
+                  }),
+                }
+              );
+
+              if (syncResponse.ok) {
+                console.log(
+                  "Successfully synced X verification for user:",
+                  data.user.id
+                );
+              } else {
+                console.error(
+                  "Failed to sync X verification:",
+                  await syncResponse.text()
+                );
+              }
+            } catch (syncError) {
+              console.error("Error calling sync-x-verification:", syncError);
+            }
           }
         } else {
           console.error(
