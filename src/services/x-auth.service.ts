@@ -44,9 +44,9 @@ export async function linkXAccount(): Promise<XLinkResult> {
     // Use Supabase's linkIdentity method to link X OAuth
     // Get the correct origin (handles Cloudflare preview URLs and other deployments)
     const origin = window.location.origin;
-    const redirectUrl = `${window.location.origin}/auth/callback?flow=xlink&from=${encodeURIComponent(
+    const redirectUrl = `${window.location.origin}/auth/callback?flow=xlink&from=${
       window.location.pathname + window.location.search
-    )}`;
+    }`;
 
     console.log("🔗 X Linking Debug:");
     console.log("  Current origin:", origin);
