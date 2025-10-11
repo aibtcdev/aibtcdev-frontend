@@ -42,11 +42,14 @@ export async function linkXAccount(): Promise<XLinkResult> {
     }
 
     // Use Supabase's linkIdentity method to link X OAuth
+    // Get the correct origin (handles Cloudflare preview URLs and other deployments)
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
     const { error } = await supabase.auth.linkIdentity({
       provider: "twitter" as Provider,
       options: {
         // Redirect back to the current page after linking
-        redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+        redirectTo: `${origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
         scopes: "read:user",
       },
     });
