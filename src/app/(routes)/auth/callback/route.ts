@@ -9,14 +9,9 @@ export async function GET(request: Request) {
   // https://supabase.com/docs/guides/auth/server-side/nextjs
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const origin = requestUrl.origin;
-  const redirectTo = requestUrl.searchParams.get("redirect_to")?.toString();
-
   const from = requestUrl.searchParams.get("from");
-
-  if (from) {
-    return NextResponse.redirect(`${origin}${from}`);
-  }
+  const redirectTo = requestUrl.searchParams.get("redirect_to")?.toString();
+  const origin = requestUrl.origin;
 
   if (code) {
     const supabase = await createClient();
@@ -113,6 +108,9 @@ export async function GET(request: Request) {
     }
   }
 
+  if (from) {
+    return NextResponse.redirect(`${origin}${from}`);
+  }
   if (redirectTo) {
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
