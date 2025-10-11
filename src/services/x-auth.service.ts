@@ -43,7 +43,7 @@ export async function linkXAccount(): Promise<XLinkResult> {
 
     // Use Supabase's linkIdentity method to link X OAuth
     // Get the correct origin (handles Cloudflare preview URLs and other deployments)
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const origin = window.location.origin;
 
     const { error } = await supabase.auth.linkIdentity({
       provider: "twitter" as Provider,
