@@ -9,20 +9,114 @@ export async function GET(request: Request) {
   // https://supabase.com/docs/guides/auth/server-side/nextjs
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const origin = requestUrl.origin;
+  const from = requestUrl.searchParams.get("from");
   const redirectTo = requestUrl.searchParams.get("redirect_to")?.toString();
+  const origin = requestUrl.origin;
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error("Error exchanging code for session:", error);
+      return NextResponse.redirect(`${origin}/auth-error`);
+    }
+
+    // Check if this is a X OAuth callback (identity linking)
+    if (data.user && data.user.identities) {
+      const xIdentity = data.user.identities.find(
+        (identity) => identity.provider === "twitter"
+      );
+
+      if (xIdentity && xIdentity.identity_data) {
+        // Log the identity data to see what fields are available
+        console.log("X identity data:", xIdentity.identity_data);
+
+        // Update profile with X username and provider ID
+        const identityData = xIdentity.identity_data;
+        const xUsername =
+          identityData.username ||
+          identityData.user_name ||
+          identityData.screen_name ||
+          identityData.preferred_username;
+
+        const xProviderId =
+          identityData.sub || identityData.id || identityData.user_id;
+
+        console.log("Extracted X username:", xUsername);
+        console.log("Extracted X provider ID:", xProviderId);
+
+        if (xUsername && xProviderId) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              username: xUsername,
+              provider_id: xProviderId,
+            })
+            .eq("id", data.user.id);
+
+          if (updateError) {
+            console.error("Error updating profile with X data:", updateError);
+          } else {
+            console.log(
+              "Successfully updated profile with X username:",
+              xUsername,
+              "and provider ID:",
+              xProviderId
+            );
+
+            // Call sync-x-verification endpoint after successful X linking
+            try {
+              const syncResponse = await fetch(
+                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sync-x-verification`,
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    user_id: data.user.id,
+                  }),
+                }
+              );
+
+              if (syncResponse.ok) {
+                console.log(
+                  "Successfully synced X verification for user:",
+                  data.user.id
+                );
+              } else {
+                console.error(
+                  "Failed to sync X verification:",
+                  await syncResponse.text()
+                );
+              }
+            } catch (syncError) {
+              console.error("Error calling sync-x-verification:", syncError);
+            }
+          }
+        } else {
+          console.error(
+            "Missing X data - username:",
+            xUsername,
+            "provider ID:",
+            xProviderId
+          );
+        }
+      }
+    }
   }
 
+  if (from) {
+    return NextResponse.redirect(`${origin}${from}`);
+  }
   if (redirectTo) {
     return NextResponse.redirect(`${origin}${redirectTo}`);
   }
 
   // URL to redirect to after sign up process completes
-  return NextResponse.redirect(`${origin}/chat`);
+  return NextResponse.redirect(`${origin}/aidaos`);
 }
 
 /*

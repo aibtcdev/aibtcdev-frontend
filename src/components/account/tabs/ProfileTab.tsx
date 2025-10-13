@@ -7,17 +7,18 @@ import { fetchAgents } from "@/services/agent.service";
 import { fetchDAOsWithExtension } from "@/services/dao.service";
 import { getStacksAddress } from "@/lib/address";
 import { useAuth } from "@/hooks/useAuth";
-import { AccountCard } from "@/components/account/AccountCard";
 import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
 import { AgentTokensTable } from "@/components/account/AgentTokensTable";
 import { ConnectedWallet } from "@/components/account/ConnectedWallet";
-import { Bot, Building2 } from "lucide-react";
+import { AccountCard } from "@/components/account/AccountCard";
+import { useXStatus } from "@/hooks/useXStatus";
+import { XLinking } from "@/components/auth/XLinking";
+import { Building2, Bot } from "lucide-react";
 
 function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
   let num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0";
-
   if (type === "stx") {
     num = num / 1e6;
   } else if (type === "btc" || type === "token") {
@@ -79,6 +80,7 @@ export function ProfileTab({
   const { agentWallets, balances, fetchSingleBalance, fetchContractBalance } =
     useWalletStore();
   const { userId, isAuthenticated } = useAuth();
+  const { refreshStatus } = useXStatus();
 
   const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents", userId],
@@ -281,6 +283,17 @@ export function ProfileTab({
             />
           </div>
         )}
+        {/* X Account Section */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold mb-4">Social Account</h3>
+          <XLinking
+            compact={false}
+            showTitle={false}
+            onLinkingComplete={() => {
+              refreshStatus();
+            }}
+          />
+        </div>
 
         {/* Token Deposit Modal */}
         {depositRecipient && depositType && selectedTokenForDeposit && (

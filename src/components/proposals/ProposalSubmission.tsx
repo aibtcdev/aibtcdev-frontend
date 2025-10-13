@@ -60,6 +60,9 @@ import {
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useXStatus } from "@/hooks/useXStatus";
+import { XLinking } from "@/components/auth/XLinking";
+import { validateXUsernameMatch } from "@/services/x-auth.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -227,7 +230,6 @@ export function ProposalSubmission({
   const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
     null
   );
-  const [showPreviewOnPaste, setShowPreviewOnPaste] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
@@ -255,7 +257,18 @@ export function ProposalSubmission({
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [showAirdropNotification, setShowAirdropNotification] = useState(false);
 
+  // X username validation state
+  const [isValidatingXUsername, setIsValidatingXUsername] = useState(false);
+  const [xUsernameError, setXUsernameError] = useState<string | null>(null);
+
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
+  const {
+    needsXLink,
+    isLoading: isXLoading,
+    refreshStatus,
+    verificationStatus,
+    canSubmitContribution,
+  } = useXStatus();
 
   // Determine if user has access token
   const hasAccessToken = !!accessToken && !isSessionLoading;
@@ -669,24 +682,8 @@ export function ProposalSubmission({
         clearTimeout(hoverTimeoutId);
         setHoverTimeoutId(null);
       }
-      // Hide preview immediately (but keep paste preview if active)
-      if (!showPreviewOnPaste) {
-        setShowHoverPreview(false);
-      }
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedText = e.clipboardData.getData("text");
-    const cleanedUrl = cleanTwitterUrl(pastedText);
-
-    if (cleanedUrl && window.innerWidth >= 1024) {
-      // Show preview immediately on paste for desktop
-      setShowPreviewOnPaste(true);
-      // Hide after 3 seconds
-      setTimeout(() => {
-        setShowPreviewOnPaste(false);
-      }, 3000);
+      // Hide preview immediately
+      setShowHoverPreview(false);
     }
   };
 
@@ -921,9 +918,31 @@ export function ProposalSubmission({
       !contribution.trim() ||
       !twitterUrl.trim() ||
       !isValidTwitterUrl ||
-      !isWithinLimit
+      !isWithinLimit ||
+      needsXLink
     )
       return;
+
+    // Validate X username matches the linked account
+    setIsValidatingXUsername(true);
+    setXUsernameError(null);
+
+    try {
+      const validation = await validateXUsernameMatch(twitterUrl);
+
+      if (!validation.isValid) {
+        setXUsernameError(validation.error || "X username validation failed");
+        setIsValidatingXUsername(false);
+        return;
+      }
+
+      setIsValidatingXUsername(false);
+    } catch (error) {
+      console.error("X username validation error:", error);
+      setXUsernameError("Failed to validate X username. Please try again.");
+      setIsValidatingXUsername(false);
+      return;
+    }
 
     const extensionData = buildExtensionData();
     if (!extensionData) {
@@ -1214,7 +1233,6 @@ export function ProposalSubmission({
                 }}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                onPaste={handlePaste}
                 placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full max-w-full p-3 sm:p-4 ${
                   twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
@@ -1253,16 +1271,12 @@ export function ProposalSubmission({
                 </div>
               )}
 
-              {/* Hover/Paste Preview Tooltip - Desktop Only */}
-              {(showHoverPreview || showPreviewOnPaste) && twitterEmbedData && (
+              {/* Hover Preview Tooltip - Desktop Only */}
+              {showHoverPreview && twitterEmbedData && (
                 <div
                   className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
                   onMouseEnter={() => setShowHoverPreview(true)}
-                  onMouseLeave={() => {
-                    if (!showPreviewOnPaste) {
-                      handleMouseLeave();
-                    }
-                  }}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
                     {/* <ExternalLink className="h-4 w-4" /> */}
@@ -1371,6 +1385,16 @@ export function ProposalSubmission({
 
             {/* Error/Status Messages - Only show when authenticated */}
 
+            {/* X Username Validation Error */}
+            {xUsernameError && (
+              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+                <strong>❌ X Username Mismatch</strong>
+                <div className="text-xs text-red-200 mt-1">
+                  {xUsernameError}
+                </div>
+              </div>
+            )}
+
             {/* Agent Account Validation - Only show if we have actually loaded agents data */}
             {hasAccessToken &&
               !isLoadingAgents &&
@@ -1442,6 +1466,7 @@ export function ProposalSubmission({
                 !isValidTwitterUrl ||
                 !isWithinLimit ||
                 isSubmitting ||
+                isValidatingXUsername ||
                 !hasAgentAccount ||
                 // !hasDaoTokens ||
                 !hasAgentDaoTokens ||
@@ -1449,7 +1474,11 @@ export function ProposalSubmission({
                 isLoadingAgents ||
                 isLoadingBalance ||
                 isCheckingBitcoinBlock ||
-                hasProposalInCurrentBlock
+                hasProposalInCurrentBlock ||
+                needsXLink ||
+                isXLoading ||
+                !!xUsernameError ||
+                !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1462,6 +1491,26 @@ export function ProposalSubmission({
                 </div>
               ) : !hasAccessToken ? (
                 <span>Connect Wallet to Submit</span>
+              ) : needsXLink ? (
+                <span>Link X Account to Submit</span>
+              ) : verificationStatus.status === "pending" ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>X Verification Pending</span>
+                </div>
+              ) : //  : verificationStatus.status === "not_verified" ? (
+              //   <div className="flex items-center gap-2">
+              //     <Lock className="w-4 h-4" />
+              //     <span>X Account Not Verified</span>
+              //   </div>
+              // )
+              isValidatingXUsername ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>Validating X Username...</span>
+                </div>
+              ) : xUsernameError ? (
+                <span>Fix X Username to Submit</span>
               ) : !hasAgentAccount ? (
                 <span>Waiting for Agent Account</span>
               ) : !hasAgentDaoTokens ? (
@@ -1484,6 +1533,69 @@ export function ProposalSubmission({
             </Button>
           </div>
         </div>
+
+        {/* X Account Lock Overlay */}
+        {hasAccessToken && hasAgentDaoTokens && needsXLink && !isXLoading && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
+            <div className="text-center space-y-4 max-w-md mx-auto px-6">
+              <div>
+                <XLinking
+                  compact={false}
+                  showTitle={false}
+                  onLinkingComplete={() => {
+                    refreshStatus();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* X Verification Lock Overlay */}
+        {hasAccessToken &&
+          hasAgentDaoTokens &&
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "not_verified" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-red-300 mb-2">
+                    X Account Not Verified
+                  </h3>
+                  <p className="text-sm text-red-200/80 leading-relaxed">
+                    AIBTC is not for everyone.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* X Verification Pending Lock Overlay */}
+        {hasAccessToken &&
+          hasAgentDaoTokens &&
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "pending" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
+                  <Loader />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-300 mb-2">
+                    X Verification Pending
+                  </h3>
+                  <p className="text-sm text-yellow-200/80 leading-relaxed">
+                    Your X account verification is being processed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}
