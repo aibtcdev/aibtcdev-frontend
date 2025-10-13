@@ -230,7 +230,6 @@ export function ProposalSubmission({
   const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
     null
   );
-  const [showPreviewOnPaste, setShowPreviewOnPaste] = useState(false);
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
@@ -683,24 +682,8 @@ export function ProposalSubmission({
         clearTimeout(hoverTimeoutId);
         setHoverTimeoutId(null);
       }
-      // Hide preview immediately (but keep paste preview if active)
-      if (!showPreviewOnPaste) {
-        setShowHoverPreview(false);
-      }
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pastedText = e.clipboardData.getData("text");
-    const cleanedUrl = cleanTwitterUrl(pastedText);
-
-    if (cleanedUrl && window.innerWidth >= 1024) {
-      // Show preview immediately on paste for desktop
-      setShowPreviewOnPaste(true);
-      // Hide after 3 seconds
-      setTimeout(() => {
-        setShowPreviewOnPaste(false);
-      }, 3000);
+      // Hide preview immediately
+      setShowHoverPreview(false);
     }
   };
 
@@ -1250,7 +1233,6 @@ export function ProposalSubmission({
                 }}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                onPaste={handlePaste}
                 placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full max-w-full p-3 sm:p-4 ${
                   twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
@@ -1289,16 +1271,12 @@ export function ProposalSubmission({
                 </div>
               )}
 
-              {/* Hover/Paste Preview Tooltip - Desktop Only */}
-              {(showHoverPreview || showPreviewOnPaste) && twitterEmbedData && (
+              {/* Hover Preview Tooltip - Desktop Only */}
+              {showHoverPreview && twitterEmbedData && (
                 <div
                   className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
                   onMouseEnter={() => setShowHoverPreview(true)}
-                  onMouseLeave={() => {
-                    if (!showPreviewOnPaste) {
-                      handleMouseLeave();
-                    }
-                  }}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
                     {/* <ExternalLink className="h-4 w-4" /> */}
@@ -1520,12 +1498,13 @@ export function ProposalSubmission({
                   <Loader />
                   <span>X Verification Pending</span>
                 </div>
-              ) : verificationStatus.status === "not_verified" ? (
-                <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  <span>X Account Not Verified</span>
-                </div>
-              ) : isValidatingXUsername ? (
+              ) : //  : verificationStatus.status === "not_verified" ? (
+              //   <div className="flex items-center gap-2">
+              //     <Lock className="w-4 h-4" />
+              //     <span>X Account Not Verified</span>
+              //   </div>
+              // )
+              isValidatingXUsername ? (
                 <div className="flex items-center gap-2">
                   <Loader />
                   <span>Validating X Username...</span>
