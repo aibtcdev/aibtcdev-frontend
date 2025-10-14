@@ -1567,7 +1567,7 @@ export function ProposalSubmission({
                     X Account Not Verified
                   </h3>
                   <p className="text-sm text-red-200/80 leading-relaxed">
-                    AIBTC is not for everyone.
+                    Access for verified contributors only.
                   </p>
                 </div>
               </div>
