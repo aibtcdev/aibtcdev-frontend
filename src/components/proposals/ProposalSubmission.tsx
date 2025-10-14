@@ -65,6 +65,7 @@ import { XLinking } from "@/components/auth/XLinking";
 import {
   validateXUsernameMatch,
   getLinkedXProfile,
+  type XProfile,
 } from "@/services/x-auth.service";
 
 interface WebSocketTransactionMessage {
@@ -263,7 +264,7 @@ export function ProposalSubmission({
   // X username validation state
   const [isValidatingXUsername, setIsValidatingXUsername] = useState(false);
   const [xUsernameError, setXUsernameError] = useState<string | null>(null);
-  const [xProfile, setXProfile] = useState<any>(null);
+  const [xProfile, setXProfile] = useState<XProfile | null>(null);
 
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
   const {
