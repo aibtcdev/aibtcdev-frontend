@@ -17,12 +17,17 @@ const isDAOToken = (tokenId: string) => {
   const parts = cleaned.split("::");
   const asset = parts[parts.length - 1];
   const daoTokens = [
-    "fake",
-    "facerizz",
-    "facedrop",
-    "faces",
-    "facevibe",
-    "elonbtc",
+    // "fake",
+    // "facerizz",
+    // "facedrop",
+    // "faces",
+    // "facevibe",
+    // "elonbtc",
+    "aibtc",
+    "aitest3",
+    "aitest1",
+    "aitest2",
+    "aitest",
   ];
   return daoTokens.includes(asset.toLowerCase());
 };
