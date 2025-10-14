@@ -62,7 +62,10 @@ import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
 import { useXStatus } from "@/hooks/useXStatus";
 import { XLinking } from "@/components/auth/XLinking";
-import { validateXUsernameMatch } from "@/services/x-auth.service";
+import {
+  validateXUsernameMatch,
+  getLinkedXProfile,
+} from "@/services/x-auth.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -260,6 +263,7 @@ export function ProposalSubmission({
   // X username validation state
   const [isValidatingXUsername, setIsValidatingXUsername] = useState(false);
   const [xUsernameError, setXUsernameError] = useState<string | null>(null);
+  const [xProfile, setXProfile] = useState<any>(null);
 
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
   const {
@@ -268,6 +272,7 @@ export function ProposalSubmission({
     refreshStatus,
     verificationStatus,
     canSubmitContribution,
+    profile,
   } = useXStatus();
 
   // Determine if user has access token
@@ -358,6 +363,11 @@ export function ProposalSubmission({
     "  - hasAgentDaoTokens:",
     agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
   );
+  console.log("  - profile:", profile);
+  console.log("  - profile.username:", profile?.username);
+  console.log("  - needsXLink:", needsXLink);
+  console.log("  - xProfile:", xProfile);
+  console.log("  - xProfile.username:", xProfile?.username);
 
   // Check DAO token balance (simplified - checking if user has any DAO tokens)
   const daoTokenExt = daoExtensions?.find(
@@ -410,6 +420,26 @@ export function ProposalSubmission({
       setStacksAddress(null); // Clear address when not authenticated
     }
   }, [hasAccessToken]); // Re-run when authentication state changes
+
+  // Fetch X profile when user is authenticated and has linked X account
+  useEffect(() => {
+    const fetchXProfile = async () => {
+      if (hasAccessToken && !needsXLink) {
+        try {
+          const linkedProfile = await getLinkedXProfile();
+          setXProfile(linkedProfile);
+          console.log("Fetched X profile:", linkedProfile);
+        } catch (error) {
+          console.error("Error fetching X profile:", error);
+          setXProfile(null);
+        }
+      } else {
+        setXProfile(null);
+      }
+    };
+
+    fetchXProfile();
+  }, [hasAccessToken, needsXLink]);
 
   // Fetch DAO token balance when we have the necessary data
   useEffect(() => {
@@ -1563,9 +1593,9 @@ export function ProposalSubmission({
                   <Lock className="w-8 h-8 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-red-300 mb-2 flex items-center justify-center gap-2">
+                  <h3 className="text-xl font-bold text-red-300 mb-2 flex justify-center">
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 flex-shrink-0 mt-1"
                       viewBox="0 0 22 22"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -1575,12 +1605,10 @@ export function ProposalSubmission({
                         fill="#1d9bf0"
                       />
                     </svg>
-                    Verified X Account Required
+                    Your X account{" "}
+                    {xProfile?.username ? `@${xProfile.username} ` : ""}needs to
+                    be verified to submit contribution
                   </h3>
-                  <p className="text-sm text-red-200/80 leading-relaxed">
-                    You'll need a verified (blue check) X account to submit your
-                    contribution.
-                  </p>
                 </div>
               </div>
             </div>
