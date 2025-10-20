@@ -5,15 +5,13 @@ import ProposalCard from "@/components/proposals/ProposalCard";
 import type { Proposal } from "@/types";
 import { FileText } from "lucide-react";
 import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface DAOProposalsProps {
   proposals: Proposal[];
   tokenSymbol?: string;
   daoName?: string;
 }
-
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
 
 const DAOProposals = ({
   proposals,
@@ -23,7 +21,7 @@ const DAOProposals = ({
   // Filter out draft proposals to prevent ProposalCard from returning null
   const deployedProposals = useMemo(() => {
     let filtered = proposals.filter((proposal) => proposal.status === "DEPLOYED");
-    if (enableSingleDaoMode && daoName !== singleDaoName) {
+    if (enableSingleDaoMode && daoName.toUpperCase() !== singleDaoName.toUpperCase()) {
       filtered = [];
     }
     return filtered;

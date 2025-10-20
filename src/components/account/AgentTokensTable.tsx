@@ -23,6 +23,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import { CheckCircle, XCircle, RotateCcw } from "lucide-react";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface TokenData {
   tokenId: string;
@@ -76,8 +77,6 @@ export function AgentTokensTable({
   agentAccountBalance,
   connectedWalletBalance,
 }: AgentTokensTableProps) {
-  const enableSingleDaoMode = true;
-  const singleDaoName = "AIBTC";
 
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);

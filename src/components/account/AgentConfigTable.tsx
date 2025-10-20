@@ -15,15 +15,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteAgentPrompt } from "@/services/agent-prompt.service";
 import { useToast } from "@/hooks/useToast";
 import type { AgentPrompt } from "./AgentPromptForm";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface AgentConfigTableProps {
   daos: Array<{ id: string; name: string }>;
   prompts: AgentPrompt[];
   onConfigure: (daoId: string) => void;
 }
-
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
 
 export function AgentConfigTable({
   daos,
@@ -63,7 +61,7 @@ export function AgentConfigTable({
 
   let filteredDaos = daos;
   if (enableSingleDaoMode) {
-    filteredDaos = daos.filter(dao => dao.name === singleDaoName);
+    filteredDaos = daos.filter(dao => dao.name.toUpperCase() === singleDaoName.toUpperCase());
   }
 
   if (filteredDaos.length === 0) {

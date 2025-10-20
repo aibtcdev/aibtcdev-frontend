@@ -115,8 +115,7 @@ const voteToProposal = (vote: VoteType): Proposal => ({
   voting_threshold: BigInt(0),
 });
 
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 import {
   fetchActiveAgentPromptByDaoAndAgent,
@@ -1350,7 +1349,7 @@ export function VotesView({ votes }: VotesViewProps) {
 
     let filteredByDao = byTab;
     if (enableSingleDaoMode) {
-      filteredByDao = filteredByDao.filter((vote) => vote.dao_name === singleDaoName);
+      filteredByDao = filteredByDao.filter((vote) => vote.dao_name?.toUpperCase() === singleDaoName.toUpperCase());
     }
 
     return selectedDao

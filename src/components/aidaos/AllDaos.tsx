@@ -16,9 +16,7 @@ import {
   fetchHolders,
   fetchProposalCounts,
 } from "@/services/dao.service";
-
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 type SortOption =
   | "name"

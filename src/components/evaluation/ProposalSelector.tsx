@@ -1,6 +1,7 @@
 import React from "react";
 import { ChevronDown, FileText } from "lucide-react";
 import type { ProposalWithDAO } from "@/types";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface ProposalSelectorProps {
   proposals: ProposalWithDAO[];
@@ -8,9 +9,6 @@ interface ProposalSelectorProps {
   onProposalSelect: (proposalId: string) => void;
   disabled?: boolean;
 }
-
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
 
 export default function ProposalSelector({
   proposals,
@@ -23,7 +21,7 @@ export default function ProposalSelector({
   };
 
   const filteredProposals = enableSingleDaoMode
-    ? proposals.filter(proposal => proposal.daos?.name === singleDaoName)
+    ? proposals.filter(proposal => proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase())
     : proposals;
 
   return (

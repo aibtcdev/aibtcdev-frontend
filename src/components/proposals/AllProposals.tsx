@@ -16,9 +16,7 @@ import { useTokens } from "@/hooks/useTokens";
 import { getProposalStatus } from "@/utils/proposal";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
-
-const enableSingleDaoMode = true;
-const singleDaoName = "AIBTC";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface AllProposalsProps {
   proposals: ProposalWithDAO[];
@@ -121,7 +119,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     let filtered = proposals;
 
     if (enableSingleDaoMode) {
-      filtered = filtered.filter((proposal) => proposal.daos?.name === singleDaoName);
+      filtered = filtered.filter((proposal) => proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase());
     }
 
     filtered = filtered.filter((proposal) => {
