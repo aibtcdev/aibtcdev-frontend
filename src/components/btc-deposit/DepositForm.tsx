@@ -160,7 +160,9 @@ const buildPostConditions = (
   hasAgentAccount: boolean,
   isBonded: boolean, // for bonded-specific logic
   isUsingBridge: boolean = false,
-  bufferPercent: number = 1 // 1% buffer for LTE
+  bufferPercent: number = 1, // 1% buffer for LTE
+  isLastBuy: boolean,
+  newStx: number
 ) => {
   const buffer = Number(ustx) * (bufferPercent / 100);
   const maxUstx = Number(ustx) + buffer; // For LTE
@@ -212,6 +214,14 @@ const buildPostConditions = (
       )
         .willSendGte(minTokensOut)
         .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
+    );
+  }
+
+  if (isLastBuy && !isBonded) {
+    conditions.push(
+      Pc.principal(`${poolAddress}.${poolName}`)
+        .willSendEq(newStx)
+        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
     );
   }
 
