@@ -1311,7 +1311,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         true,
-        false
+        false,
+        1,
+        false,
+        0
       );
 
       // Arguments for Bitflow buy-and-deposit function
@@ -1549,7 +1552,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         true,
-        true
+        true,
+        1,
+        false,
+        0
       );
 
       const contractCallOptions = {
@@ -1905,7 +1911,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         false,
-        true
+        true,
+        1,
+        isLastBuy,
+        newStx
       );
 
       const contractCallOptions = {
