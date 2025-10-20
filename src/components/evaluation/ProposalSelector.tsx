@@ -9,6 +9,9 @@ interface ProposalSelectorProps {
   disabled?: boolean;
 }
 
+const enableSingleDaoMode = true;
+const singleDaoName = "AIBTC";
+
 export default function ProposalSelector({
   proposals,
   selectedProposalId,
@@ -18,6 +21,10 @@ export default function ProposalSelector({
   const handleProposalSelect = (proposalId: string) => {
     onProposalSelect(proposalId);
   };
+
+  const filteredProposals = enableSingleDaoMode
+    ? proposals.filter(proposal => proposal.daos?.name === singleDaoName)
+    : proposals;
 
   return (
     <div className="flex items-center gap-2">
@@ -37,7 +44,7 @@ export default function ProposalSelector({
           title="Choose a proposal to evaluate"
         >
           <option value="">Choose proposal...</option>
-          {proposals.map((proposal) => (
+          {filteredProposals.map((proposal) => (
             <option key={proposal.id} value={proposal.id}>
               {proposal.proposal_id ? `#${proposal.proposal_id}: ` : ""}
               {proposal.title || "Untitled Proposal"}
@@ -46,7 +53,7 @@ export default function ProposalSelector({
         </select>
         <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       </div>
-      {proposals.length === 0 && (
+      {filteredProposals.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No proposals available for evaluation.
         </p>

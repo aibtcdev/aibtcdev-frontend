@@ -12,6 +12,9 @@ interface DAOProposalsProps {
   daoName?: string;
 }
 
+const enableSingleDaoMode = true;
+const singleDaoName = "AIBTC";
+
 const DAOProposals = ({
   proposals,
   tokenSymbol = "",
@@ -19,8 +22,12 @@ const DAOProposals = ({
 }: DAOProposalsProps) => {
   // Filter out draft proposals to prevent ProposalCard from returning null
   const deployedProposals = useMemo(() => {
-    return proposals.filter((proposal) => proposal.status === "DEPLOYED");
-  }, [proposals]);
+    let filtered = proposals.filter((proposal) => proposal.status === "DEPLOYED");
+    if (enableSingleDaoMode && daoName !== singleDaoName) {
+      filtered = [];
+    }
+    return filtered;
+  }, [proposals, daoName]);
 
   return (
     <DAOTabLayout
