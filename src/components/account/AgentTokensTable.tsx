@@ -77,7 +77,6 @@ export function AgentTokensTable({
   agentAccountBalance,
   connectedWalletBalance,
 }: AgentTokensTableProps) {
-
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
