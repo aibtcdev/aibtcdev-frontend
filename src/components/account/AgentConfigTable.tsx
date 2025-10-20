@@ -15,6 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteAgentPrompt } from "@/services/agent-prompt.service";
 import { useToast } from "@/hooks/useToast";
 import type { AgentPrompt } from "./AgentPromptForm";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface AgentConfigTableProps {
   daos: Array<{ id: string; name: string }>;
@@ -58,7 +59,12 @@ export function AgentConfigTable({
     return prompts.find((p) => p.dao_id === daoId);
   };
 
-  if (daos.length === 0) {
+  let filteredDaos = daos;
+  if (enableSingleDaoMode) {
+    filteredDaos = daos.filter(dao => dao.name.toUpperCase() === singleDaoName.toUpperCase());
+  }
+
+  if (filteredDaos.length === 0) {
     return (
       <div className="text-center py-12 space-y-4">
         <div className="w-12 h-12 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
@@ -94,7 +100,7 @@ export function AgentConfigTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {daos.map((dao) => {
+            {filteredDaos.map((dao) => {
               const prompt = getPromptForDao(dao.id);
               const isConfigured = !!prompt;
 

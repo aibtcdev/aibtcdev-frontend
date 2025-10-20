@@ -115,6 +115,8 @@ const voteToProposal = (vote: VoteType): Proposal => ({
   voting_threshold: BigInt(0),
 });
 
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
+
 import {
   fetchActiveAgentPromptByDaoAndAgent,
   updateAgentPrompt,
@@ -1345,9 +1347,14 @@ export function VotesView({ votes }: VotesViewProps) {
       }
     })();
 
+    let filteredByDao = byTab;
+    if (enableSingleDaoMode) {
+      filteredByDao = filteredByDao.filter((vote) => vote.dao_name?.toUpperCase() === singleDaoName.toUpperCase());
+    }
+
     return selectedDao
-      ? byTab.filter((vote) => vote.dao_name === selectedDao)
-      : byTab;
+      ? filteredByDao.filter((vote) => vote.dao_name === selectedDao)
+      : filteredByDao;
   }, [votes, activeTab, currentBitcoinHeight, selectedDao]);
 
   const paginatedVotes = filteredVotes.slice(0, visibleCount);
