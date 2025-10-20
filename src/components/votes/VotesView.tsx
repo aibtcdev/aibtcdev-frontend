@@ -115,6 +115,9 @@ const voteToProposal = (vote: VoteType): Proposal => ({
   voting_threshold: BigInt(0),
 });
 
+const enableSingleDaoMode = true;
+const singleDaoName = "AIBTC";
+
 import {
   fetchActiveAgentPromptByDaoAndAgent,
   updateAgentPrompt,
@@ -1345,9 +1348,14 @@ export function VotesView({ votes }: VotesViewProps) {
       }
     })();
 
+    let filteredByDao = byTab;
+    if (enableSingleDaoMode) {
+      filteredByDao = filteredByDao.filter((vote) => vote.dao_name === singleDaoName);
+    }
+
     return selectedDao
-      ? byTab.filter((vote) => vote.dao_name === selectedDao)
-      : byTab;
+      ? filteredByDao.filter((vote) => vote.dao_name === selectedDao)
+      : filteredByDao;
   }, [votes, activeTab, currentBitcoinHeight, selectedDao]);
 
   const paginatedVotes = filteredVotes.slice(0, visibleCount);

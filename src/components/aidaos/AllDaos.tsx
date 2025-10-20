@@ -17,6 +17,9 @@ import {
   fetchProposalCounts,
 } from "@/services/dao.service";
 
+const enableSingleDaoMode = true;
+const singleDaoName = "AIBTC";
+
 type SortOption =
   | "name"
   | "created"
@@ -289,12 +292,15 @@ export default function AllDaos() {
     let allDAOs = [...daos];
 
     // Add mock DAOs if there's only one real DAO
-    if (daos.length === 1) {
+    if (!enableSingleDaoMode && daos.length === 1) {
       const mockDAOs = createMockDAOs(10);
       allDAOs = [...daos, ...mockDAOs];
     }
 
     const filtered = allDAOs.filter((dao) => {
+      if (enableSingleDaoMode) {
+        return dao.name.toUpperCase() === singleDaoName.toUpperCase();
+      }
       const query = searchQuery.toLowerCase();
       try {
         return (
@@ -347,7 +353,7 @@ export default function AllDaos() {
   }, [daos, searchQuery, sortBy, tokenPrices, holdersMap, proposalCounts]);
 
   // Check if we should show search and filters (hide when only one real DAO)
-  const shouldShowSearchAndFilters = daos && daos.length > 1;
+  const shouldShowSearchAndFilters = !enableSingleDaoMode && daos && daos.length > 1;
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
   const paginatedDAOs = filteredAndSortedDAOs.slice(
