@@ -160,7 +160,9 @@ const buildPostConditions = (
   hasAgentAccount: boolean,
   isBonded: boolean, // for bonded-specific logic
   isUsingBridge: boolean = false,
-  bufferPercent: number = 1 // 1% buffer for LTE
+  bufferPercent: number = 1, // 1% buffer for LTE
+  isLastBuy: boolean,
+  newStx: number
 ) => {
   const buffer = Number(ustx) * (bufferPercent / 100);
   const maxUstx = Number(ustx) + buffer; // For LTE
@@ -212,6 +214,14 @@ const buildPostConditions = (
       )
         .willSendGte(minTokensOut)
         .ft(`${tokenAddress}.${tokenName}`, cleanTokenName)
+    );
+  }
+
+  if (isLastBuy && !isBonded) {
+    conditions.push(
+      Pc.principal(`${poolAddress}.${poolName}`)
+        .willSendEq(newStx)
+        .ft(`${sbtcAddress}.${sbtcName}`, "sbtc-token")
     );
   }
 
@@ -1047,6 +1057,8 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
+      const isLastBuy = targetStx > 0 && newStx >= targetStx;
+
       // Use adapter contract instead of direct DEX contract
       const [adapterAddress, adapterName] = adapterContract.split(".");
       const [dexAddress, dexName] = dexContract.split(".");
@@ -1096,7 +1108,11 @@ export default function DepositForm({
         ustx,
         minTokensOut,
         hasAgentAccount,
-        false
+        false,
+        false,
+        1,
+        isLastBuy,
+        newStx
       );
 
       // Add additional post conditions for last buy scenario
@@ -1295,7 +1311,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         true,
-        false
+        false,
+        1,
+        false,
+        0
       );
 
       // Arguments for Bitflow buy-and-deposit function
@@ -1533,7 +1552,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         true,
-        true
+        true,
+        1,
+        false,
+        0
       );
 
       const contractCallOptions = {
@@ -1797,6 +1819,8 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
+      const isLastBuy = targetStx > 0 && newStx >= targetStx;
+
       // const [dexAddress, dexName] = dexContract.split(".");
       // const [tokenAddress, tokenName] = tokenContract.split(".");
       // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
@@ -1889,7 +1913,10 @@ export default function DepositForm({
         minTokensOut,
         hasAgentAccount,
         false,
-        true
+        true,
+        1,
+        isLastBuy,
+        newStx
       );
 
       const contractCallOptions = {
