@@ -1057,6 +1057,8 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
+      const isLastBuy = targetStx > 0 && newStx >= targetStx;
+
       // Use adapter contract instead of direct DEX contract
       const [adapterAddress, adapterName] = adapterContract.split(".");
       const [dexAddress, dexName] = dexContract.split(".");
@@ -1106,7 +1108,11 @@ export default function DepositForm({
         ustx,
         minTokensOut,
         hasAgentAccount,
-        false
+        false,
+        false,
+        1,
+        isLastBuy,
+        newStx
       );
 
       // Add additional post conditions for last buy scenario
