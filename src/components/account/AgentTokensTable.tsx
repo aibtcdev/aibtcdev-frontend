@@ -76,6 +76,9 @@ export function AgentTokensTable({
   agentAccountBalance,
   connectedWalletBalance,
 }: AgentTokensTableProps) {
+  const enableSingleDaoFilter = true;
+  const filterDaoName = "AIBTC";
+
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
@@ -290,7 +293,14 @@ export function AgentTokensTable({
       tokenData: TokenData;
     }> = [];
 
-    daos.forEach((dao) => {
+    let filteredDaos = daos;
+    if (enableSingleDaoFilter) {
+      filteredDaos = daos.filter(
+        (dao) => dao.name.toUpperCase() === filterDaoName.toUpperCase()
+      );
+    }
+
+    filteredDaos.forEach((dao) => {
       const tokenExtension = dao.extensions?.find(
         (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
       );
