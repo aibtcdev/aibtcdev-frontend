@@ -1819,6 +1819,8 @@ export default function DepositForm({
       const slippageFactor = 1 - currentSlippage / 100;
       const minTokensOut = Math.floor(Number(quoteAmount) * slippageFactor);
 
+      const isLastBuy = targetStx > 0 && newStx >= targetStx;
+
       // const [dexAddress, dexName] = dexContract.split(".");
       // const [tokenAddress, tokenName] = tokenContract.split(".");
       // const [sbtcAddress, sbtcName] = SBTC_CONTRACT.split(".");
