@@ -45,7 +45,7 @@ import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
-import { getIdFromFaktoryDaoName } from "@aibtc/types";
+// import { getIdFromFaktoryDaoName } from "@aibtc/types";
 import { TwitterPreviewPanel } from "@/components/twitter/TwitterPreviewPanel";
 
 // Network configuration
@@ -213,9 +213,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     tokenContract,
     prelaunchContract,
     buyPrelaunchContract,
-    poolContract,
-    bitflowAdapter,
-    bitflowPool,
+    // poolContract,
+    // bitflowAdapter,
+    // bitflowPool,
   } = useMemo(() => {
     if (!extensions)
       return {

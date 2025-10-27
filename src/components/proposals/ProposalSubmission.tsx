@@ -9,7 +9,7 @@ import {
   Check,
   ExternalLink,
   AlertCircle,
-  Gift,
+  // Gift,
   Lock,
   // X,
 } from "lucide-react";
@@ -31,14 +31,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { getExplorerLink, truncateString } from "@/utils/format";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { getExplorerLink } from "@/utils/format";
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 import { getAllErrorDetails } from "@aibtc/types";
 // import {
@@ -222,14 +222,6 @@ export function ProposalSubmission({
   onTwitterUrlChange,
 }: ProposalSubmissionProps) {
   const [twitterUrl, setTwitterUrl] = useState("");
-  const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
-    string | null
-  >(null);
-  // Twitter embed state
-  const [twitterEmbedData, setTwitterEmbedData] =
-    useState<TwitterOEmbedResponse | null>(null);
-  const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
-  const [embedError, setEmbedError] = useState<string | null>(null);
   // Hover preview state - Commented out, preview now in right panel
   // const [showHoverPreview, setShowHoverPreview] = useState(false);
   // const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
@@ -280,12 +272,12 @@ export function ProposalSubmission({
   // Determine if user has access token
   const hasAccessToken = !!accessToken && !isSessionLoading;
 
-  // State for DAO token balance
+  // State for DAO token balance - COMMENTED OUT: Not checking DAO token balance for now
   // const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
-  const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
-    string | null
-  >(null);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  // const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
+  //   string | null
+  // >(null);
+  // const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
   // State for Bitcoin block validation
   const [hasProposalInCurrentBlock, setHasProposalInCurrentBlock] =
@@ -360,11 +352,11 @@ export function ProposalSubmission({
   console.log("  - hasAgentAccount:", hasAgentAccount);
   console.log("  - isLoadingAgents:", isLoadingAgents);
   console.log("  - hasAccessToken:", hasAccessToken);
-  console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
-  console.log(
-    "  - hasAgentDaoTokens:",
-    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
-  );
+  // console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
+  // console.log(
+  //   "  - hasAgentDaoTokens:",
+  //   agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
+  // );
   console.log("  - profile:", profile);
   console.log("  - profile.username:", profile?.username);
   console.log("  - needsXLink:", needsXLink);
@@ -379,8 +371,9 @@ export function ProposalSubmission({
     (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
   );
   // const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
-  const hasAgentDaoTokens =
-    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
+  // COMMENTED OUT: Not checking DAO token balance for now
+  // const hasAgentDaoTokens =
+  //   agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
@@ -403,14 +396,6 @@ export function ProposalSubmission({
       onTwitterUrlChange(twitterUrl);
     }
   }, [twitterUrl, onTwitterUrlChange]);
-
-  // Calculate combined length including the Twitter URL
-  const twitterReferenceText = twitterUrl
-    ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
-    : "";
-  // No airdrop reference in message length calculation
-  // const combinedLength = contribution.length + twitterReferenceText.length;
-  // const isWithinLimit = combinedLength <= 2043;
 
   // Cleanup WebSocket on unmount
   useEffect(() => {
@@ -475,11 +460,11 @@ export function ProposalSubmission({
       ) {
         console.log("BALANCE FETCH - Early return due to missing conditions");
         // setDaoTokenBalance(null);
-        setAgentDaoTokenBalance(null);
+        // setAgentDaoTokenBalance(null);
         return;
       }
 
-      setIsLoadingBalance(true);
+      // setIsLoadingBalance(true);
       console.log("BALANCE FETCH - Starting balance fetch...");
 
       try {
@@ -534,7 +519,7 @@ export function ProposalSubmission({
               "BALANCE FETCH - Agent DAO token balance (exact match):",
               agentTokenBalance
             );
-            setAgentDaoTokenBalance(agentTokenBalance);
+            // setAgentDaoTokenBalance(agentTokenBalance);
           } else {
             // Try to find token by matching daoName after ::
             const matchingTokenContract = Object.keys(
@@ -553,7 +538,7 @@ export function ProposalSubmission({
                 "for contract:",
                 matchingTokenContract
               );
-              setAgentDaoTokenBalance(agentTokenBalance);
+              // setAgentDaoTokenBalance(agentTokenBalance);
             } else {
               console.log(
                 "BALANCE FETCH - No agent DAO tokens found for contract:",
@@ -564,14 +549,14 @@ export function ProposalSubmission({
                 daoName
               );
               console.log("BALANCE FETCH - Setting to 0");
-              setAgentDaoTokenBalance("0");
+              // setAgentDaoTokenBalance("0");
             }
           }
         } else {
           console.log(
             "BALANCE FETCH - No agent account contract, setting agent balance to null"
           );
-          setAgentDaoTokenBalance(null);
+          // setAgentDaoTokenBalance(null);
         }
       } catch (error) {
         console.error(
@@ -579,9 +564,9 @@ export function ProposalSubmission({
           error
         );
         // setDaoTokenBalance("0");
-        setAgentDaoTokenBalance("0");
+        // setAgentDaoTokenBalance("0");
       } finally {
-        setIsLoadingBalance(false);
+        // setIsLoadingBalance(false);
         console.log("BALANCE FETCH - Finished loading");
       }
     };
@@ -658,43 +643,6 @@ export function ProposalSubmission({
     }
   }, [senderAirdrops, showAirdropNotification]);
 
-  // Fetch Twitter embed when URL is valid
-  useEffect(() => {
-    const fetchEmbed = async () => {
-      if (!twitterUrl || !isValidTwitterUrl) {
-        setTwitterEmbedData(null);
-        setEmbedError(null);
-        return;
-      }
-
-      setIsLoadingEmbed(true);
-      setEmbedError(null);
-
-      try {
-        const result = await fetchTwitterEmbed(cleanTwitterUrl(twitterUrl));
-
-        if (isTwitterOEmbedError(result)) {
-          setEmbedError(result.error);
-          setTwitterEmbedData(null);
-        } else {
-          setTwitterEmbedData(result);
-          setEmbedError(null);
-        }
-      } catch (error) {
-        setEmbedError(
-          error instanceof Error ? error.message : "Failed to load preview"
-        );
-        setTwitterEmbedData(null);
-      } finally {
-        setIsLoadingEmbed(false);
-      }
-    };
-
-    // Debounce the fetch to avoid too many requests
-    const timeoutId = setTimeout(fetchEmbed, 500);
-    return () => clearTimeout(timeoutId);
-  }, [twitterUrl, isValidTwitterUrl]);
-
   // Hover preview handlers (desktop only)
   // const handleMouseEnter = () => {
   //   // Only enable hover on desktop (screens >= 1024px)
@@ -767,9 +715,6 @@ export function ProposalSubmission({
           setTxStatusView("confirmed-success");
           setTwitterUrl("");
           // setSelectedAirdropTxHash(null); // Commented out - airdrop feature disabled
-          // Clear Twitter embed data
-          setTwitterEmbedData(null);
-          setEmbedError(null);
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -821,7 +766,7 @@ export function ProposalSubmission({
       : "";
 
     const cleanMessage = twitterReference;
-    console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
+    // console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
     console.log("userAgent:", userAgent);
     console.log("userAgent.account_contract:", userAgent?.account_contract);
     return {
@@ -833,7 +778,8 @@ export function ProposalSubmission({
       dao_token_contract_address: daoTokenExt.contract_principal,
       message: cleanMessage,
       memo: "Contribution submitted via aibtcdev frontend",
-      ...(selectedAirdropTxHash ? { airdrop_txid: selectedAirdropTxHash } : {}),
+      // Airdrop feature disabled
+      // ...(selectedAirdropTxHash ? { airdrop_txid: selectedAirdropTxHash } : {}),
     };
   };
 
@@ -1136,8 +1082,8 @@ export function ProposalSubmission({
           </div>
         )}
 
-        {/* Locked Overlay for Users without Agent DAO Tokens */}
-        {hasAccessToken &&
+        {/* Locked Overlay for Users without Agent DAO Tokens - COMMENTED OUT */}
+        {/* {hasAccessToken &&
           hasAgentAccount &&
           !isLoadingBalance &&
           !hasAgentDaoTokens && (
@@ -1457,7 +1403,7 @@ export function ProposalSubmission({
             {/* Bitcoin Block Validation */}
             {hasAccessToken &&
               hasAgentAccount &&
-              hasAgentDaoTokens &&
+              // hasAgentDaoTokens &&
               !isCheckingBitcoinBlock &&
               hasProposalInCurrentBlock &&
               currentBitcoinBlock && (
@@ -1516,10 +1462,10 @@ export function ProposalSubmission({
                 isValidatingXUsername ||
                 !hasAgentAccount ||
                 // !hasDaoTokens ||
-                !hasAgentDaoTokens ||
+                // !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
-                isLoadingBalance ||
+                // isLoadingBalance ||
                 isCheckingBitcoinBlock ||
                 hasProposalInCurrentBlock ||
                 needsXLink ||
@@ -1562,9 +1508,10 @@ export function ProposalSubmission({
                 <span>Fix X Username to Submit</span>
               ) : !hasAgentAccount ? (
                 <span>Waiting for Agent Account</span>
-              ) : !hasAgentDaoTokens ? (
-                <span>Join DAO to Submit</span>
-              ) : isCheckingBitcoinBlock ? (
+              ) : // !hasAgentDaoTokens ? (
+              //   <span>Join DAO to Submit</span>
+              // ) :
+              isCheckingBitcoinBlock ? (
                 <div className="flex items-center gap-2 text-center px-2">
                   <Loader />
                   <span className="break-words">Checking Bitcoin Block...</span>
@@ -1584,21 +1531,23 @@ export function ProposalSubmission({
         </div>
 
         {/* X Account Lock Overlay */}
-        {hasAccessToken && hasAgentDaoTokens && needsXLink && !isXLoading && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
-            <div className="text-center space-y-4 max-w-md mx-auto px-6">
-              <div>
-                <XLinking
-                  compact={false}
-                  showTitle={false}
-                  onLinkingComplete={() => {
-                    refreshStatus();
-                  }}
-                />
+        {hasAccessToken &&
+          /* hasAgentDaoTokens && */ needsXLink &&
+          !isXLoading && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div>
+                  <XLinking
+                    compact={false}
+                    showTitle={false}
+                    onLinkingComplete={() => {
+                      refreshStatus();
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* X Verification Lock Overlay */}
         {/* {hasAccessToken &&
@@ -1635,7 +1584,7 @@ export function ProposalSubmission({
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
-          hasAgentDaoTokens &&
+          /* hasAgentDaoTokens && */
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "pending" && (
