@@ -1,3 +1,4 @@
+// KEEPING THIS AS A BACKUP IN CASE WE WANT SAME THING IN FUTURE
 "use client";
 
 import type React from "react";
@@ -122,7 +123,6 @@ interface ProposalSubmissionProps {
   daoName?: string;
   onSubmissionSuccess?: () => void;
   headerOffset?: number;
-  onTwitterUrlChange?: (url: string) => void;
 }
 
 interface ParsedOutput {
@@ -215,12 +215,12 @@ function cleanTwitterUrl(url: string): string {
   }
 }
 
-export function ProposalSubmission({
+export function ProposalSubmissionOld({
   daoId,
   daoName,
   onSubmissionSuccess,
-  onTwitterUrlChange,
 }: ProposalSubmissionProps) {
+  const [contribution, setContribution] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
   const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
     string | null
@@ -230,11 +230,11 @@ export function ProposalSubmission({
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
   const [embedError, setEmbedError] = useState<string | null>(null);
-  // Hover preview state - Commented out, preview now in right panel
-  // const [showHoverPreview, setShowHoverPreview] = useState(false);
-  // const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
-  //   null
-  // );
+  // Hover preview state
+  const [showHoverPreview, setShowHoverPreview] = useState(false);
+  const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
+    null
+  );
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStep, setSubmissionStep] = useState(0);
@@ -368,9 +368,6 @@ export function ProposalSubmission({
   console.log("  - profile:", profile);
   console.log("  - profile.username:", profile?.username);
   console.log("  - needsXLink:", needsXLink);
-  console.log("  - canSubmitContribution:", canSubmitContribution);
-  console.log("  - verificationStatus:", verificationStatus);
-  console.log("  - isXLoading:", isXLoading);
   console.log("  - xProfile:", xProfile);
   console.log("  - xProfile.username:", xProfile?.username);
 
@@ -397,32 +394,25 @@ export function ProposalSubmission({
   const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
-  // Notify parent component when Twitter URL changes
-  useEffect(() => {
-    if (onTwitterUrlChange) {
-      onTwitterUrlChange(twitterUrl);
-    }
-  }, [twitterUrl, onTwitterUrlChange]);
-
   // Calculate combined length including the Twitter URL
   const twitterReferenceText = twitterUrl
     ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
     : "";
   // No airdrop reference in message length calculation
-  // const combinedLength = contribution.length + twitterReferenceText.length;
-  // const isWithinLimit = combinedLength <= 2043;
+  const combinedLength = contribution.length + twitterReferenceText.length;
+  const isWithinLimit = combinedLength <= 2043;
 
-  // Cleanup WebSocket on unmount
+  // Cleanup WebSocket and hover timeout on unmount
   useEffect(() => {
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe?.();
       }
-      // if (hoverTimeoutId) {
-      //   clearTimeout(hoverTimeoutId);
-      // }
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+      }
     };
-  }, []);
+  }, [hoverTimeoutId]);
 
   // Get connected wallet address
   useEffect(() => {
@@ -696,38 +686,38 @@ export function ProposalSubmission({
   }, [twitterUrl, isValidTwitterUrl]);
 
   // Hover preview handlers (desktop only)
-  // const handleMouseEnter = () => {
-  //   // Only enable hover on desktop (screens >= 1024px)
-  //   if (
-  //     window.innerWidth >= 1024 &&
-  //     twitterUrl &&
-  //     isValidTwitterUrl &&
-  //     twitterEmbedData
-  //   ) {
-  //     // Clear any existing timeout
-  //     if (hoverTimeoutId) {
-  //       clearTimeout(hoverTimeoutId);
-  //     }
-  //     // Show preview after a short delay
-  //     const timeoutId = setTimeout(() => {
-  //       setShowHoverPreview(true);
-  //     }, 300); // 300ms delay
-  //     setHoverTimeoutId(timeoutId);
-  //   }
-  // };
+  const handleMouseEnter = () => {
+    // Only enable hover on desktop (screens >= 1024px)
+    if (
+      window.innerWidth >= 1024 &&
+      twitterUrl &&
+      isValidTwitterUrl &&
+      twitterEmbedData
+    ) {
+      // Clear any existing timeout
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+      }
+      // Show preview after a short delay
+      const timeoutId = setTimeout(() => {
+        setShowHoverPreview(true);
+      }, 300); // 300ms delay
+      setHoverTimeoutId(timeoutId);
+    }
+  };
 
-  // const handleMouseLeave = () => {
-  //   // Only handle hover on desktop
-  //   if (window.innerWidth >= 1024) {
-  //     // Clear timeout if mouse leaves before delay completes
-  //     if (hoverTimeoutId) {
-  //       clearTimeout(hoverTimeoutId);
-  //       setHoverTimeoutId(null);
-  //     }
-  //     // Hide preview immediately
-  //     setShowHoverPreview(false);
-  //   }
-  // };
+  const handleMouseLeave = () => {
+    // Only handle hover on desktop
+    if (window.innerWidth >= 1024) {
+      // Clear timeout if mouse leaves before delay completes
+      if (hoverTimeoutId) {
+        clearTimeout(hoverTimeoutId);
+        setHoverTimeoutId(null);
+      }
+      // Hide preview immediately
+      setShowHoverPreview(false);
+    }
+  };
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -765,8 +755,9 @@ export function ProposalSubmission({
         // Update modal state based on status
         if (isSuccess) {
           setTxStatusView("confirmed-success");
+          setContribution(""); // Clear proposal only after successful confirmation
           setTwitterUrl("");
-          // setSelectedAirdropTxHash(null); // Commented out - airdrop feature disabled
+          setSelectedAirdropTxHash(null);
           // Clear Twitter embed data
           setTwitterEmbedData(null);
           setEmbedError(null);
@@ -815,12 +806,12 @@ export function ProposalSubmission({
       return null;
     }
 
-    // Message is now just the Twitter reference - caption will come from the post
     const twitterReference = twitterUrl
-      ? `Reference: ${cleanTwitterUrl(twitterUrl)}`
+      ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
 
-    const cleanMessage = twitterReference;
+    // Simple message construction - just trim
+    const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
     console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
     console.log("userAgent:", userAgent);
     console.log("userAgent.account_contract:", userAgent?.account_contract);
@@ -955,35 +946,28 @@ export function ProposalSubmission({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("=== SUBMIT ATTEMPT ===");
-    console.log("twitterUrl:", twitterUrl);
-    console.log("isValidTwitterUrl:", isValidTwitterUrl);
-    console.log("needsXLink:", needsXLink);
-    console.log("canSubmitContribution:", canSubmitContribution);
-    console.log("xProfile:", xProfile);
-
-    if (!twitterUrl.trim() || !isValidTwitterUrl || needsXLink) {
-      console.log("Early return - basic validation failed");
+    if (
+      !contribution.trim() ||
+      !twitterUrl.trim() ||
+      !isValidTwitterUrl ||
+      !isWithinLimit ||
+      needsXLink
+    )
       return;
-    }
 
     // Validate X username matches the linked account
     setIsValidatingXUsername(true);
     setXUsernameError(null);
 
     try {
-      console.log("Starting X username validation for URL:", twitterUrl);
       const validation = await validateXUsernameMatch(twitterUrl);
-      console.log("X username validation result:", validation);
 
       if (!validation.isValid) {
-        console.log("Validation failed:", validation.error);
         setXUsernameError(validation.error || "X username validation failed");
         setIsValidatingXUsername(false);
         return;
       }
 
-      console.log("Validation passed, proceeding to submit");
       setIsValidatingXUsername(false);
     } catch (error) {
       console.error("X username validation error:", error);
@@ -1191,8 +1175,7 @@ export function ProposalSubmission({
 
         {/* Content Body */}
         <div className="flex-1 space-y-3">
-          {/* Airdrop notification - Commented out per user request */}
-          {/* {hasAccessToken && (
+          {hasAccessToken && (
             <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1239,11 +1222,10 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* Description textarea commented out - caption from Twitter post will be used */}
-            {/* <div className="relative">
+            <div className="relative">
               <textarea
                 value={contribution}
                 onChange={(e) => {
@@ -1269,7 +1251,7 @@ export function ProposalSubmission({
                   shorten your message or use a shorter Twitter URL.
                 </div>
               )}
-            </div> */}
+            </div>
             <div className="relative">
               <input
                 type="url"
@@ -1281,8 +1263,8 @@ export function ProposalSubmission({
                   const cleaned = cleanTwitterUrl(twitterUrl);
                   if (cleaned) setTwitterUrl(cleaned);
                 }}
-                // onMouseEnter={handleMouseEnter}
-                // onMouseLeave={handleMouseLeave}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
                 placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full max-w-full p-3 sm:p-4 ${
                   twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
@@ -1306,8 +1288,8 @@ export function ProposalSubmission({
                       "noopener,noreferrer"
                     )
                   }
-                  // onMouseEnter={handleMouseEnter}
-                  // onMouseLeave={handleMouseLeave}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
                   title="Open Twitter post"
                 >
@@ -1321,14 +1303,15 @@ export function ProposalSubmission({
                 </div>
               )}
 
-              {/* Hover Preview Tooltip - Desktop Only - Commented out, preview now in right panel */}
-              {/* {showHoverPreview && twitterEmbedData && (
+              {/* Hover Preview Tooltip - Desktop Only */}
+              {showHoverPreview && twitterEmbedData && (
                 <div
                   className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
                   onMouseEnter={() => setShowHoverPreview(true)}
                   onMouseLeave={handleMouseLeave}
                 >
                   <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                    {/* <ExternalLink className="h-4 w-4" /> */}
                     <span>Twitter Post Preview</span>
                   </div>
                   <div
@@ -1338,11 +1321,11 @@ export function ProposalSubmission({
                     }}
                   />
                 </div>
-              )} */}
+              )}
             </div>
 
-            {/* Twitter Embed Preview - Mobile Only - Commented out, preview now in right panel */}
-            {/* {twitterUrl && isValidTwitterUrl && (
+            {/* Twitter Embed Preview - Mobile Only */}
+            {twitterUrl && isValidTwitterUrl && (
               <div className="lg:hidden space-y-2">
                 {isLoadingEmbed && (
                   <div className="bg-background/60 border border-white/10 rounded-xl p-4">
@@ -1377,10 +1360,10 @@ export function ProposalSubmission({
                   </div>
                 )}
               </div>
-            )} */}
+            )}
 
-            {/* Airdrop Selector - Commented out per user request */}
-            {/* {hasAccessToken && (
+            {/* Airdrop Selector - Always show when authenticated */}
+            {hasAccessToken && (
               <div className="space-y-1">
                 <Select
                   onValueChange={(value) =>
@@ -1430,7 +1413,7 @@ export function ProposalSubmission({
                   </div>
                 )}
               </div>
-            )} */}
+            )}
 
             {/* Error/Status Messages - Only show when authenticated */}
 
@@ -1510,8 +1493,10 @@ export function ProposalSubmission({
               onClick={handleSubmit}
               disabled={
                 !hasAccessToken ||
+                !contribution.trim() ||
                 !twitterUrl.trim() ||
                 !isValidTwitterUrl ||
+                !isWithinLimit ||
                 isSubmitting ||
                 isValidatingXUsername ||
                 !hasAgentAccount ||
@@ -1523,11 +1508,9 @@ export function ProposalSubmission({
                 isCheckingBitcoinBlock ||
                 hasProposalInCurrentBlock ||
                 needsXLink ||
-                isXLoading
-                // ||
-                // !!xUsernameError
-                // ||
-                // !canSubmitContribution
+                isXLoading ||
+                !!xUsernameError ||
+                !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1601,7 +1584,7 @@ export function ProposalSubmission({
         )}
 
         {/* X Verification Lock Overlay */}
-        {/* {hasAccessToken &&
+        {hasAccessToken &&
           hasAgentDaoTokens &&
           !needsXLink &&
           !isXLoading &&
@@ -1631,7 +1614,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
