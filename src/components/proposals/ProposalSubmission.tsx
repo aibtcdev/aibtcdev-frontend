@@ -52,11 +52,11 @@ import {
   type ApiResponse,
   // type ProposalRecommendationRequest,
 } from "@/services/tool.service";
-import {
-  fetchTwitterEmbed,
-  isTwitterOEmbedError,
-  type TwitterOEmbedResponse,
-} from "@/services/twitter.service";
+// import {
+//   fetchTwitterEmbed,
+//   isTwitterOEmbedError,
+//   type TwitterOEmbedResponse,
+// } from "@/services/twitter.service";
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
