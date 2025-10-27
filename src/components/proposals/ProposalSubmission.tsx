@@ -1469,11 +1469,9 @@ export function ProposalSubmission({
                 isCheckingBitcoinBlock ||
                 hasProposalInCurrentBlock ||
                 needsXLink ||
-                isXLoading
-                // ||
-                // !!xUsernameError
-                // ||
-                // !canSubmitContribution
+                isXLoading ||
+                !!xUsernameError ||
+                !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1550,8 +1548,7 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {/* {hasAccessToken &&
-          hasAgentDaoTokens &&
+        {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
@@ -1580,7 +1577,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
