@@ -23,6 +23,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/useToast";
 import { AGENT_ACCOUNT_APPROVAL_TYPES } from "@aibtc/types";
 import { CheckCircle, XCircle, RotateCcw } from "lucide-react";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface TokenData {
   tokenId: string;
@@ -290,7 +291,14 @@ export function AgentTokensTable({
       tokenData: TokenData;
     }> = [];
 
-    daos.forEach((dao) => {
+    let filteredDaos = daos;
+    if (enableSingleDaoMode) {
+      filteredDaos = daos.filter(
+        (dao) => dao.name.toUpperCase() === singleDaoName.toUpperCase()
+      );
+    }
+
+    filteredDaos.forEach((dao) => {
       const tokenExtension = dao.extensions?.find(
         (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
       );

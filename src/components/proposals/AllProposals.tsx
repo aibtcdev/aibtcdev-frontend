@@ -16,6 +16,7 @@ import { useTokens } from "@/hooks/useTokens";
 import { getProposalStatus } from "@/utils/proposal";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLatestChainState } from "@/services/chain-state.service";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface AllProposalsProps {
   proposals: ProposalWithDAO[];
@@ -115,7 +116,13 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
 
   // Filter and sort logic
   const filteredAndSortedProposals = useMemo(() => {
-    const filtered = proposals.filter((proposal) => {
+    let filtered = proposals;
+
+    if (enableSingleDaoMode) {
+      filtered = filtered.filter((proposal) => proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase());
+    }
+
+    filtered = filtered.filter((proposal) => {
       // Search filter
       if (filterState.search && typeof filterState.search === "string") {
         const searchTerm = filterState.search.toLowerCase();
