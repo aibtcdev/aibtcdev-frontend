@@ -1642,8 +1642,7 @@ export function ProposalSubmission({
                       />
                     </svg>
                     Your X account{" "}
-                    {xProfile?.username ? `@${xProfile.username} ` : ""}needs to
-                    be verified to submit contribution
+                    {xProfile?.username ? `@${xProfile.username} ` : ""}must have blue a check to submit contribution
                   </h3>
                 </div>
               </div>
