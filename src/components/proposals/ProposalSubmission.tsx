@@ -52,11 +52,11 @@ import {
   type ApiResponse,
   // type ProposalRecommendationRequest,
 } from "@/services/tool.service";
-// import {
-//   fetchTwitterEmbed,
-//   isTwitterOEmbedError,
-//   type TwitterOEmbedResponse,
-// } from "@/services/twitter.service";
+import {
+  fetchTwitterEmbed,
+  isTwitterOEmbedError,
+  type TwitterOEmbedResponse,
+} from "@/services/twitter.service";
 import { useWalletStore } from "@/store/wallet";
 import { useTransactionVerification } from "@/hooks/useTransactionVerification";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
@@ -222,6 +222,9 @@ export function ProposalSubmission({
   onTwitterUrlChange,
 }: ProposalSubmissionProps) {
   const [twitterUrl, setTwitterUrl] = useState("");
+  const [twitterEmbedData, setTwitterEmbedData] =
+    useState<TwitterOEmbedResponse | null>(null);
+  const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
   // Hover preview state - Commented out, preview now in right panel
   // const [showHoverPreview, setShowHoverPreview] = useState(false);
   // const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
@@ -396,6 +399,34 @@ export function ProposalSubmission({
       onTwitterUrlChange(twitterUrl);
     }
   }, [twitterUrl, onTwitterUrlChange]);
+
+  // Fetch Twitter embed data when URL changes
+  useEffect(() => {
+    if (!twitterUrl || !isValidTwitterUrl) {
+      setTwitterEmbedData(null);
+      return;
+    }
+
+    const fetchEmbed = async () => {
+      setIsLoadingEmbed(true);
+      try {
+        const embedData = await fetchTwitterEmbed(cleanTwitterUrl(twitterUrl));
+        if (isTwitterOEmbedError(embedData)) {
+          console.error("Error fetching Twitter embed:", embedData.error);
+          setTwitterEmbedData(null);
+        } else {
+          setTwitterEmbedData(embedData);
+        }
+      } catch (error) {
+        console.error("Error fetching Twitter embed:", error);
+        setTwitterEmbedData(null);
+      } finally {
+        setIsLoadingEmbed(false);
+      }
+    };
+
+    fetchEmbed();
+  }, [twitterUrl, isValidTwitterUrl]);
 
   // Cleanup WebSocket on unmount
   useEffect(() => {
@@ -760,15 +791,57 @@ export function ProposalSubmission({
       return null;
     }
 
-    // Message is now just the Twitter reference - caption will come from the post
+    // Extract the caption text from Twitter embed data
+    let contribution = "";
+    if (twitterEmbedData?.html) {
+      console.log("Twitter embed HTML:", twitterEmbedData.html);
+
+      // Parse the HTML to extract the text content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(twitterEmbedData.html, "text/html");
+
+      // Try to find the blockquote which contains the tweet text
+      const blockquote = doc.querySelector("blockquote");
+      if (blockquote) {
+        // Get all text nodes, excluding links at the end (which are typically the date/author)
+        const paragraphs = blockquote.querySelectorAll("p");
+        console.log("Found paragraphs:", paragraphs.length);
+
+        const textParts: string[] = [];
+        for (let i = 0; i < paragraphs.length; i++) {
+          const text = paragraphs[i].textContent?.trim();
+          console.log(`Paragraph ${i}:`, text);
+          // Skip if this looks like metadata (contains links to twitter.com or x.com)
+          if (
+            text &&
+            !text.includes("twitter.com") &&
+            !text.includes("x.com")
+          ) {
+            textParts.push(text);
+          }
+        }
+        contribution = textParts.join("\n\n");
+      } else {
+        // Fallback: try to get all text content
+        contribution = doc.body.textContent?.trim() || "";
+      }
+
+      console.log("Extracted contribution:", contribution);
+    }
+
+    // Combine caption with Twitter reference
     const twitterReference = twitterUrl
-      ? `Reference: ${cleanTwitterUrl(twitterUrl)}`
+      ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
 
-    const cleanMessage = twitterReference;
+    const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
+
     // console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
     console.log("userAgent:", userAgent);
     console.log("userAgent.account_contract:", userAgent?.account_contract);
+    console.log("Extracted contribution:", contribution);
+    console.log("Clean message:", cleanMessage);
+
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -1122,16 +1195,7 @@ export function ProposalSubmission({
             </div>
           </div>
           <p className="text-sm">
-            Earn{" "}
-            <span className="text-primary font-semibold">1000 ${daoName}</span>{" "}
-            for contributing work that advances the mission. <br />
-            Submit proof below. Agents will vote and grant rewards if approved.{" "}
-            <br />
-            Submitting contributions requires{" "}
-            <span className="text-primary font-semibold">
-              250 ${daoName}
-            </span>{" "}
-            bond.
+            Submit proof of completing the current task to earn BTC rewards.
           </p>
         </div>
 
@@ -1470,8 +1534,11 @@ export function ProposalSubmission({
                 hasProposalInCurrentBlock ||
                 needsXLink ||
                 isXLoading ||
-                !!xUsernameError ||
-                !canSubmitContribution
+                isLoadingEmbed ||
+                !twitterEmbedData
+                // ||
+                // !!xUsernameError ||
+                // !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1518,6 +1585,11 @@ export function ProposalSubmission({
                 <span>
                   Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
                 </span>
+              ) : isLoadingEmbed ? (
+                <div className="flex items-center gap-2 text-center px-2">
+                  <Loader />
+                  <span className="break-words">Loading Post Content...</span>
+                </div>
               ) : (
                 <div className="flex items-center gap-3">
                   <Send className="h-4 w-4" />
@@ -1548,7 +1620,7 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {hasAccessToken &&
+        {/* {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
@@ -1577,7 +1649,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
