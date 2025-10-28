@@ -1148,7 +1148,7 @@ export function ProposalSubmission({
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">
-                  Join {daoName} to unlock earning
+                  Connect Wallet to unlock earning.
                 </h3>
               </div>
             </div>
