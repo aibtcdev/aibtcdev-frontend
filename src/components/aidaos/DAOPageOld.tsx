@@ -1,3 +1,5 @@
+// KEEPING THIS AS A BACKUP IN CASE WE WANT SAME THING IN FUTURE
+
 "use client";
 
 import type React from "react";
@@ -38,15 +40,14 @@ import { MissionContent } from "@/components/aidaos/MissionContent";
 import DAOExtensions from "@/components/aidaos/DaoExtensions";
 import DAOHolders from "@/components/aidaos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
-// import BitcoinDeposit from "@/components/btc-deposit";
+import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
 import { hexToCV, cvToJSON } from "@stacks/transactions";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
 import { useAgentAccount } from "@/hooks/useAgentAccount";
 import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
-// import { getIdFromFaktoryDaoName } from "@aibtc/types";
-import { TwitterPreviewPanel } from "@/components/twitter/TwitterPreviewPanel";
+import { getIdFromFaktoryDaoName } from "@aibtc/types";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -56,20 +57,13 @@ const NETWORK_CONFIG = {
     : "https://api.testnet.hiro.so",
 };
 
-export function DAOPage({ children }: { children: React.ReactNode }) {
+export function DAOPageOld({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const encodedName = params.name as string;
 
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("charter");
-
-  // State for Twitter preview
-  const [twitterUrl, setTwitterUrl] = useState("");
-
-  // Twitter URL validation
-  const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
-  const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
   // Agent account data
   const { userAgentBalance } = useAgentAccount();
@@ -213,9 +207,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     tokenContract,
     prelaunchContract,
     buyPrelaunchContract,
-    // poolContract,
-    // bitflowAdapter,
-    // bitflowPool,
+    poolContract,
+    bitflowAdapter,
+    bitflowPool,
   } = useMemo(() => {
     if (!extensions)
       return {
@@ -532,17 +526,12 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 daoId={dao.id}
                 daoName={dao.name}
                 headerOffset={96}
-                onTwitterUrlChange={setTwitterUrl}
               />
             </div>
 
-            {/* Right column - Twitter Preview Panel */}
+            {/* Right column - Buy Panel */}
             <div className="order-1 lg:order-2">
-              <TwitterPreviewPanel
-                twitterUrl={twitterUrl}
-                isValidTwitterUrl={isValidTwitterUrl}
-              />
-              {/* <BitcoinDeposit
+              <BitcoinDeposit
                 dexId={getIdFromFaktoryDaoName(dao.name.toLowerCase()) ?? 9}
                 dexContract={dexContract || ""}
                 daoName={dao.name}
@@ -554,7 +543,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 adapterContract={buyPrelaunchContract || undefined}
                 bitflowAdapter={bitflowAdapter || undefined}
                 bitflowPool={bitflowPool || undefined}
-              /> */}
+              />
             </div>
           </div>
 
