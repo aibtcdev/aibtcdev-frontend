@@ -1176,7 +1176,7 @@ export function ProposalSubmission({
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-start justify-between mb-1">
-            <h2 className="text-2xl font-bold">Earn ${daoName}</h2>
+            <h2 className="text-2xl font-bold">Earn BTC</h2>
             {/* Tip positioned at top right */}
             <div className="relative group">
               <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
