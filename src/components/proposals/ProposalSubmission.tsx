@@ -809,14 +809,28 @@ export function ProposalSubmission({
 
         const textParts: string[] = [];
         for (let i = 0; i < paragraphs.length; i++) {
-          const text = paragraphs[i].textContent?.trim();
+          // Clone the paragraph to avoid modifying the original
+          const p = paragraphs[i].cloneNode(true) as HTMLElement;
+
+          // Remove only media links (pic.twitter.com, t.co) from the paragraph
+          // Keep mentions and other links
+          const links = p.querySelectorAll("a");
+          links.forEach((link) => {
+            const linkText = link.textContent?.trim() || "";
+            if (
+              linkText.includes("pic.twitter.com") ||
+              linkText.includes("pic.x.com") ||
+              linkText.startsWith("t.co/")
+            ) {
+              link.remove();
+            }
+          });
+
+          const text = p.textContent?.trim();
           console.log(`Paragraph ${i}:`, text);
-          // Skip if this looks like metadata (contains links to twitter.com or x.com)
-          if (
-            text &&
-            !text.includes("twitter.com") &&
-            !text.includes("x.com")
-          ) {
+
+          // Only add non-empty text
+          if (text) {
             textParts.push(text);
           }
         }
@@ -1535,9 +1549,10 @@ export function ProposalSubmission({
                 needsXLink ||
                 isXLoading ||
                 isLoadingEmbed ||
-                !twitterEmbedData ||
-                !!xUsernameError ||
-                !canSubmitContribution
+                !twitterEmbedData
+                // ||
+                // !!xUsernameError ||
+                // !canSubmitContribution
               }
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
@@ -1619,7 +1634,7 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {hasAccessToken &&
+        {/* {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
@@ -1642,12 +1657,13 @@ export function ProposalSubmission({
                       />
                     </svg>
                     Your X account{" "}
-                    {xProfile?.username ? `@${xProfile.username} ` : ""}must have blue a check to submit contribution
+                    {xProfile?.username ? `@${xProfile.username} ` : ""}must
+                    have blue a check to submit contribution
                   </h3>
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
