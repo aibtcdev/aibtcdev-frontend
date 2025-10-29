@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { supabase } from "@/utils/supabase/client";
 import { fetchDAOByName } from "@/services/dao.service";
+import { extractMission } from "@/utils/format";
 import { DAOLayoutClient } from "./layout-client";
 
 // Twitter recommends 2:1 ratio images
@@ -45,12 +46,15 @@ export async function generateMetadata({
     ? `${token.image_url}?w=${OG_IMAGE_WIDTH}&h=${OG_IMAGE_HEIGHT}&fit=cover&auto=format`
     : undefined;
 
+  // Extract SEO-friendly shorter description using extractMission
+  const seoDescription = extractMission(dao.description);
+
   return {
     title: dao.name,
-    description: dao.description,
+    description: seoDescription,
     openGraph: {
       title: dao.name,
-      description: dao.description,
+      description: seoDescription,
       images: ogImageUrl
         ? [
             {
@@ -66,13 +70,13 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: dao.name,
-      description: dao.description,
+      description: seoDescription,
       // Twitter specific image with 2:1 ratio
       images: twitterImageUrl ? [twitterImageUrl] : undefined,
       creator: "@aibtcdev",
     },
     alternates: {
-      canonical: `/daos/${resolvedParams.name}`,
+      canonical: `/aidaos/${resolvedParams.name}`,
     },
     robots: {
       index: true,

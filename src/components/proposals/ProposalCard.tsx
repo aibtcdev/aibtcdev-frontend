@@ -1,15 +1,10 @@
 "use client";
 
 import type React from "react";
-import { Clock, User, BarChart3, Building2 } from "lucide-react";
+import { Clock, User, BarChart3, Building2, Coins } from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
-import {
-  truncateString,
-  getExplorerLink,
-  formatAction,
-  formatNumber,
-} from "@/utils/format";
+import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
@@ -18,6 +13,8 @@ import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -36,7 +33,12 @@ export default function ProposalCard({
   const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
 
   // Use centralized vote hook for consistent data fetching
-  const { voteDisplayData, error: hasVoteDataError } = useProposalVote({
+  const {
+    voteDisplayData,
+    error: hasVoteDataError,
+    refreshVoteData,
+    isLoading: isLoadingVotes,
+  } = useProposalVote({
     proposal,
     contractPrincipal: proposal.contract_principal,
   });
@@ -45,18 +47,12 @@ export default function ProposalCard({
   const voteSummary = useMemo(() => {
     // Use hook data if available, otherwise fallback to proposal props
     if (voteDisplayData && !hasVoteDataError) {
+      const votesForNum = Number(voteDisplayData.rawVotesFor);
+      const votesAgainstNum = Number(voteDisplayData.rawVotesAgainst);
       return {
-        votesFor: voteDisplayData.votesFor
-          ? Number(voteDisplayData.votesFor)
-          : null,
-        votesAgainst: voteDisplayData.votesAgainst
-          ? Number(voteDisplayData.votesAgainst)
-          : null,
-        totalVotes:
-          voteDisplayData.votesFor && voteDisplayData.votesAgainst
-            ? Number(voteDisplayData.votesFor) +
-              Number(voteDisplayData.votesAgainst)
-            : null,
+        votesFor: votesForNum,
+        votesAgainst: votesAgainstNum,
+        totalVotes: votesForNum + votesAgainstNum,
         hasVoteData: true,
       };
     }
@@ -90,23 +86,8 @@ export default function ProposalCard({
   ]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
-  const liquidTokens = Number(proposal.liquid_tokens || 0);
-  const { votesFor, votesAgainst, totalVotes, hasVoteData } = voteSummary;
-
-  // Calculate percentages correctly - based on liquid tokens (like VotingProgressChart)
-  const forPercentage =
-    hasVoteData && liquidTokens > 0 && votesFor !== null
-      ? (votesFor / liquidTokens) * 100
-      : 0;
-  const againstPercentage =
-    hasVoteData && liquidTokens > 0 && votesAgainst !== null
-      ? (votesAgainst / liquidTokens) * 100
-      : 0;
-
-  const approvalRate =
-    hasVoteData && totalVotes !== null && totalVotes > 0 && votesFor !== null
-      ? (votesFor / totalVotes) * 100
-      : 0;
+  const liquidTokens = Number(proposal.liquid_tokens);
+  const { totalVotes, hasVoteData } = voteSummary;
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -123,7 +104,7 @@ export default function ProposalCard({
   const daoLink = useMemo(() => {
     const proposalWithDAO = proposal as ProposalWithDAO;
     if (proposalWithDAO.daos?.name) {
-      return `/daos/${encodeURIComponent(proposalWithDAO.daos.name)}`;
+      return `/aidaos/${encodeURIComponent(proposalWithDAO.daos.name)}`;
     }
     return null;
   }, [proposal]);
@@ -133,7 +114,7 @@ export default function ProposalCard({
       href={`/proposals/${proposal.id}`}
       className="block group cursor-pointer"
     >
-      <div className="p-4 sm:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300">
+      <div className="p-4 sm:p-5 lg:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -326,46 +307,43 @@ export default function ProposalCard({
               />
             </div>
           )}
-        </div>
-
-        {/* Voting Progress for Active Proposals */}
-        {isActive &&
-          hasVoteData &&
-          totalVotes !== null &&
-          totalVotes > 0 &&
-          votesFor !== null &&
-          votesAgainst !== null && (
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-1 sm:gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                  <span className="text-success font-medium">
-                    For: {formatNumber(votesFor)} ({forPercentage.toFixed(1)}%
-                    of liquid)
-                  </span>
-                  <span className="text-destructive font-medium">
-                    Against: {formatNumber(votesAgainst)} (
-                    {againstPercentage.toFixed(1)}% of liquid)
-                  </span>
-                </div>
-                <div className="text-xs text-foreground/75">
-                  Approval: {approvalRate.toFixed(1)}% of votes cast
-                </div>
-              </div>
-
-              <div className="w-full bg-muted/30 rounded-full h-1.5 sm:h-2 overflow-hidden">
-                <div className="h-full flex">
-                  <div
-                    className="bg-success transition-all duration-500"
-                    style={{ width: `${forPercentage}%` }}
-                  />
-                  <div
-                    className="bg-destructive transition-all duration-500"
-                    style={{ width: `${againstPercentage}%` }}
-                  />
-                </div>
-              </div>
+          {liquidTokens > 0 && (
+            <div className="flex items-center gap-1 min-w-0 max-w-[100px] sm:max-w-none">
+              <Coins className="h-3 w-3 flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">Liquid:</span>
+              <TokenBalance
+                variant="abbreviated"
+                value={liquidTokens.toString()}
+              />
             </div>
           )}
+        </div>
+
+        {/* Vote Data Error Handling */}
+        {hasVoteDataError && !voteDisplayData && (
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">Failed to fetch vote data</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                refreshVoteData();
+              }}
+              disabled={isLoadingVotes}
+              className="h-8 px-2 text-destructive hover:text-destructive"
+            >
+              <RefreshCw
+                className={`h-3 w-3 mr-1 ${isLoadingVotes ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
+        )}
 
         {/* Completed Status */}
         {/* {isPassed && (

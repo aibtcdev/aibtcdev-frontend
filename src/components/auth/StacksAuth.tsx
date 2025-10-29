@@ -11,6 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogOverlay,
+  DialogPortal,
 } from "@/components/ui/dialog";
 import { TermsOfService } from "@/components/terms-and-condition/TermsOfService";
 import dynamic from "next/dynamic";
@@ -21,6 +23,7 @@ import {
 import { createDaoAgent } from "@/services/dao-agent.service";
 import { useRouter } from "next/navigation";
 import { getStacksAddress } from "@/lib/address";
+import { getStacksAddressPair } from "@aibtc/types";
 
 // Define proper interface for wallet user data
 interface WalletAddress {
@@ -218,7 +221,6 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
     setShowTerms(false);
 
     try {
-      console.log("userData", userData);
       // Extract STX address using getStacksAddress helper function
       const stxAddress = getStacksAddress();
       if (!stxAddress) {
@@ -264,19 +266,31 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         } = await supabase.auth.getUser();
         const userId = user?.id;
 
-        // 2️⃣ grab addresses from the new wallet session structure
-        // For now, we'll use the same address for both mainnet and testnet
-        // since the new API only returns current network's address
-        const currentAddress = stxAddress;
-        const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
-        const mainnetAddr = isMainnet ? currentAddress : "";
-        const testnetAddr = !isMainnet ? currentAddress : "";
+        // 2️⃣ derive both testnet and mainnet addresses using getStacksAddressPair
+        // This function can take either a testnet or mainnet address and return both
+        // Network validation above ensures user connects with correct network for this environment
+        let mainnetAddr: string;
+        let testnetAddr: string;
+
+        try {
+          const addressPair = getStacksAddressPair(stxAddress);
+          mainnetAddr = addressPair.mainnet;
+          testnetAddr = addressPair.testnet;
+        } catch (error) {
+          console.error("Error with getStacksAddressPair:", error);
+          // Fallback: if the function fails, use the connected address for the current network
+          // and leave the other network address empty for now
+          if (stxAddress.startsWith("ST")) {
+            testnetAddr = stxAddress;
+            mainnetAddr = ""; // Will need to be derived later
+          } else {
+            mainnetAddr = stxAddress;
+            testnetAddr = ""; // Will need to be derived later
+          }
+        }
 
         // 3️⃣ patch the profile table (creates row if missing)
         if (userId) {
-          console.log(
-            "Updating profile with Stacks addresses after authentication"
-          );
           await ensureProfileHasStacksAddresses(
             userId,
             mainnetAddr,
@@ -301,6 +315,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
         description: "Authentication failed. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     }
   };
 
@@ -334,65 +349,68 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
       </Button>
 
       <Dialog open={showTerms} onOpenChange={setShowTerms}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[900px] h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
-            <DialogTitle className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-              Terms & Conditions
-            </DialogTitle>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
-              Please read the complete terms and scroll to the bottom to
-              continue.
-            </p>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-hidden">
-            <TermsOfService onScrollComplete={handleScrollComplete} />
-          </div>
-
-          <DialogFooter className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <Button
-                onClick={() => setShowTerms(false)}
-                variant="outline"
-                className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAcceptTerms}
-                disabled={isLoading || !hasScrolledToBottom}
-                className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
-                  hasScrolledToBottom
-                    ? "bg-primary hover:bg-primary/90 text-primary-foreground"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                }`}
-                title={
-                  !hasScrolledToBottom
-                    ? "Please scroll to the bottom to read all terms"
-                    : ""
-                }
-              >
-                {isLoading ? (
-                  <>
-                    <Loader />
-                    <span className="ml-2">Processing...</span>
-                  </>
-                ) : (
-                  <>
-                    {hasScrolledToBottom
-                      ? "Accept & Continue"
-                      : "Please scroll to continue"}
-                  </>
-                )}
-              </Button>
-            </div>
-            {!hasScrolledToBottom && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                You must read all terms before accepting
+        <DialogPortal>
+          <DialogOverlay className="z-[110]" />
+          <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[900px] h-[90vh] p-0 overflow-hidden z-[110]">
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+              <DialogTitle className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                Terms & Conditions
+              </DialogTitle>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+                Please read the complete terms and scroll to the bottom to
+                continue.
               </p>
-            )}
-          </DialogFooter>
-        </DialogContent>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-hidden">
+              <TermsOfService onScrollComplete={handleScrollComplete} />
+            </div>
+
+            <DialogFooter className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Button
+                  onClick={() => setShowTerms(false)}
+                  variant="outline"
+                  className="flex-1 sm:flex-none px-6 py-2.5 text-sm font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAcceptTerms}
+                  disabled={isLoading || !hasScrolledToBottom}
+                  className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-bold transition-all duration-200 ${
+                    hasScrolledToBottom
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  }`}
+                  title={
+                    !hasScrolledToBottom
+                      ? "Please scroll to the bottom to read all terms"
+                      : ""
+                  }
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader />
+                      <span className="ml-2">Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      {hasScrolledToBottom
+                        ? "Accept & Continue"
+                        : "Please scroll to continue"}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {!hasScrolledToBottom && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  You must read all terms before accepting
+                </p>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </DialogPortal>
       </Dialog>
     </StacksProvider>
   );
@@ -404,32 +422,15 @@ async function ensureProfileHasStacksAddresses(
   testnetAddr: string
 ) {
   try {
-    // Get the current profile data
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("mainnet_address, testnet_address")
-      .eq("id", userId)
-      .single();
+    // Always store both addresses - we derive them from the connected address
+    // Note: addresses might be empty strings if derivation failed
+    const updates: Record<string, string | null> = {
+      id: userId,
+      mainnet_address: mainnetAddr || null,
+      testnet_address: testnetAddr || null,
+    };
 
-    // Prepare updates object - only update fields that are null
-    const updates: Record<string, string> = { id: userId };
-    // If no profile exists or mainnet_address is null, add it to updates
-    if (!profile?.mainnet_address && mainnetAddr) {
-      updates.mainnet_address = mainnetAddr;
-    }
-
-    // If no profile exists or testnet_address is null, add it to updates
-    if (!profile?.testnet_address && testnetAddr) {
-      updates.testnet_address = testnetAddr;
-    }
-
-    // Only proceed if we have updates to make
-    if (Object.keys(updates).length <= 1) {
-      console.log("No address updates needed for profile");
-      return;
-    }
-
-    // Use upsert to create or update the profile
+    // Use upsert to create or update the profile with both addresses
     const { error: upsertErr } = await supabase
       .from("profiles")
       .upsert(updates, {
@@ -441,8 +442,6 @@ async function ensureProfileHasStacksAddresses(
       console.error("Error updating profile:", upsertErr);
       throw upsertErr;
     }
-
-    console.log("Profile updated with Stacks addresses");
   } catch (error) {
     console.error("Error in ensureProfileHasStacksAddresses:", error);
   }

@@ -59,8 +59,9 @@ export function AgentConfigDrawer({
   const { userId } = useAuth();
 
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: !!userId,
   });
 
   const daoManagerAgentId = agents[0]?.id || "";

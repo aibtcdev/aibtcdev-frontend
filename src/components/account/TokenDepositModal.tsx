@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 
 interface TokenData {
   tokenId: string;
@@ -34,23 +35,6 @@ interface TokenDepositModalProps {
   recipientAddress: string;
   recipientType: "agent" | "wallet";
   tokenData: TokenData | null;
-}
-
-function formatBalance(value: string | number, decimals: number = 8) {
-  let num = typeof value === "string" ? parseFloat(value) : value;
-  if (isNaN(num)) return "0";
-
-  num = num / Math.pow(10, decimals);
-
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(2) + "M";
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(2) + "K";
-  } else if (num < 1) {
-    return num.toFixed(decimals).replace(/\.?0+$/, "");
-  } else {
-    return num.toFixed(decimals).replace(/\.?0+$/, "");
-  }
 }
 
 export function TokenDepositModal({
@@ -218,7 +202,13 @@ export function TokenDepositModal({
                 </div>
                 <span className="text-sm text-muted-foreground">
                   Available:{" "}
-                  {formatBalance(tokenData.balance, tokenData.decimals)}
+                  <BalanceDisplay
+                    value={tokenData.balance}
+                    decimals={tokenData.decimals}
+                    variant="abbreviated"
+                    showSymbol={false}
+                    className="inline-block"
+                  />
                 </span>
               </div>
             </div>
@@ -272,7 +262,20 @@ export function TokenDepositModal({
                   Depositing...
                 </>
               ) : (
-                `Deposit ${amount || "0"} ${tokenData.tokenSymbol}`
+                <>
+                  Deposit{" "}
+                  <BalanceDisplay
+                    value={
+                      parseFloat(amount || "0") *
+                      Math.pow(10, tokenData.decimals)
+                    }
+                    symbol={tokenData.tokenSymbol}
+                    decimals={tokenData.decimals}
+                    variant="abbreviated"
+                    showSymbol={true}
+                    className="inline-block font-bold"
+                  />
+                </>
               )}
             </Button>
           </div>

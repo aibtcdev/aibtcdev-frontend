@@ -6,17 +6,19 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
 import { fetchDAOsWithExtension } from "@/services/dao.service";
 import { getStacksAddress } from "@/lib/address";
-import { AccountCard } from "@/components/account/AccountCard";
+import { useAuth } from "@/hooks/useAuth";
 import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
 import { AgentTokensTable } from "@/components/account/AgentTokensTable";
 import { ConnectedWallet } from "@/components/account/ConnectedWallet";
-import { Bot, Building2 } from "lucide-react";
+import { AccountCard } from "@/components/account/AccountCard";
+import { useXStatus } from "@/hooks/useXStatus";
+import { XLinking } from "@/components/auth/XLinking";
+import { Building2, Bot } from "lucide-react";
 
 function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
   let num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0";
-
   if (type === "stx") {
     num = num / 1e6;
   } else if (type === "btc" || type === "token") {
@@ -77,18 +79,22 @@ export function ProfileTab({
   } | null>(null);
   const { agentWallets, balances, fetchSingleBalance, fetchContractBalance } =
     useWalletStore();
+  const { userId, isAuthenticated } = useAuth();
+  const { refreshStatus } = useXStatus();
 
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+  const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   const userAgent = agents[0] || null;
   const userAgentId = userAgent?.id || "";
 
-  const { data: daos = [] } = useQuery({
-    queryKey: ["daosWithExtensions"],
+  const { data: daos = [], isLoading: isLoadingDAOs } = useQuery({
+    queryKey: ["daosWithExtensions", userId],
     queryFn: fetchDAOsWithExtension,
+    enabled: isAuthenticated && !!userId,
   });
 
   useEffect(() => {
@@ -203,42 +209,60 @@ export function ProfileTab({
         </div>
 
         {/* Agent Voting Account Section */}
-        {userAgentAddress ? (
-          <div className="mb-6 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
-            <AccountCard
-              title="Agent Account"
-              address={userAgentAddress}
-              icon={Building2}
-              isPrimary={false}
-              network={
-                userAgentAddress?.startsWith("SP") ? "mainnet" : "testnet"
-              }
-              helpText="Where your agent holds AI DAO tokens to power voting"
-            />
-
-            {/* DAO Tokens Management Table */}
-            <div className="mt-6">
-              <AgentTokensTable
-                daos={daos}
-                agentAddress={userAgentAddress}
-                agentAccountBalance={agentAccountBalance}
-                connectedWalletBalance={connectedWalletBalance}
-                userAgentWalletAddress={finalUserAgentWalletAddress}
-              />
+        <div className="mb-6 border-t pt-6">
+          <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
+          {isLoadingAgents ? (
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground">
+                  Loading agent account...
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="mb-6 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
+          ) : userAgentAddress ? (
+            <>
+              <AccountCard
+                title="Agent Account"
+                address={userAgentAddress}
+                icon={Building2}
+                isPrimary={false}
+                network={
+                  userAgentAddress?.startsWith("SP") ? "mainnet" : "testnet"
+                }
+                helpText="Your agent's voting account - deposit DAO tokens here to enable AI voting"
+              />
+
+              {/* DAO Tokens Management Table */}
+              <div className="mt-6">
+                {isLoadingDAOs ? (
+                  <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <p className="text-sm text-muted-foreground">
+                        Loading DAO tokens...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <AgentTokensTable
+                    daos={daos}
+                    agentAddress={userAgentAddress}
+                    agentAccountBalance={agentAccountBalance}
+                    connectedWalletBalance={connectedWalletBalance}
+                    userAgentWalletAddress={finalUserAgentWalletAddress}
+                  />
+                )}
+              </div>
+            </>
+          ) : (
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
               <p className="text-sm text-muted-foreground">
-                Your agent account is under deployment. Please come back in a
-                few minutes.
+                Your agent account is under deployment.
               </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Agent Wallet Section */}
         {finalUserAgentWalletAddress && (
@@ -259,6 +283,17 @@ export function ProfileTab({
             />
           </div>
         )}
+        {/* X Account Section */}
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-semibold mb-4">Social Account</h3>
+          <XLinking
+            compact={false}
+            showTitle={false}
+            onLinkingComplete={() => {
+              refreshStatus();
+            }}
+          />
+        </div>
 
         {/* Token Deposit Modal */}
         {depositRecipient && depositType && selectedTokenForDeposit && (

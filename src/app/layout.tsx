@@ -36,14 +36,19 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    title: "AIBTC",
+    description:
+      "AI-powered agents. Bitcoin-backed DAOs. Fully autonomous governance.",
     images: [
       {
         url: "https://aibtc.com/logos/aibtcdev-pattern-1-with-text-social-new.png",
-        alt: "AIBTC",
+        alt: "AIBTC - AI Bitcoin Development Platform",
         width: 1200,
         height: 630,
       },
     ],
+    creator: "@aibtcdev",
+    site: "@aibtcdev",
   },
 };
 

@@ -7,7 +7,7 @@ import { useWalletStore, WalletBalance, TokenBalance } from "@/store/wallet";
 import { Wallet } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { request } from "@stacks/connect";
 import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
@@ -53,15 +53,19 @@ function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
 export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [isRequestingSBTC, setIsRequestingSBTC] = useState(false);
+  const [isRequestingSTX, setIsRequestingSTX] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [currentTxId, setCurrentTxId] = useState<string | undefined>();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentFaucetType, setCurrentFaucetType] = useState<"stx" | "sbtc">(
+    "sbtc"
+  );
 
   const { balances } = useWalletStore();
 
-  const { signOut, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+  // const router = useRouter();
 
   const {
     transactionStatus,
@@ -137,9 +141,59 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
+  // const handleSignOut = async () => {
+  //   await signOut();
+  //   router.push("/");
+  // };
+
+  const handleRequestSTX = async () => {
+    if (!isAuthenticated || !stacksAddress) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRequestingSTX(true);
+    setCurrentFaucetType("stx");
+    reset();
+
+    try {
+      const response = await fetch(
+        `https://api.testnet.hiro.so/extended/v1/faucets/stx?address=${stacksAddress}`,
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success && data.txId) {
+        setCurrentTxId(data.txId);
+        setShowStatusModal(true);
+        await startMonitoring(data.txId);
+
+        toast({
+          title: "Faucet Request Submitted",
+          description: "STX faucet transaction submitted successfully",
+          variant: "default",
+        });
+      } else {
+        throw new Error(data.error || "Failed to request STX from faucet");
+      }
+    } catch (error) {
+      console.error("Failed to request testnet STX:", error);
+      toast({
+        title: "Error",
+        description:
+          "Failed to request testnet STX from faucet. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRequestingSTX(false);
+    }
   };
 
   const handleRequestSBTC = async () => {
@@ -153,6 +207,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
     }
 
     setIsRequestingSBTC(true);
+    setCurrentFaucetType("sbtc");
     reset();
 
     try {
@@ -203,7 +258,11 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
 
   const handleRetry = () => {
     setShowStatusModal(false);
-    handleRequestSBTC();
+    if (currentFaucetType === "stx") {
+      handleRequestSTX();
+    } else {
+      handleRequestSBTC();
+    }
   };
 
   return (
@@ -215,24 +274,35 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
           </h2>
           <div className="flex items-center gap-2">
             {process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet" && (
-              <Button
-                onClick={handleRequestSBTC}
-                disabled={isRequestingSBTC || !isAuthenticated}
-                size="sm"
-                variant="secondary"
-                className="flex items-center gap-1.5 text-xs"
-              >
-                {isRequestingSBTC ? "Requesting..." : "Get sBTC faucet"}
-              </Button>
+              <>
+                <Button
+                  onClick={handleRequestSTX}
+                  disabled={isRequestingSTX || !isAuthenticated}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {isRequestingSTX ? "Requesting..." : "Get testnet STX"}
+                </Button>
+                <Button
+                  onClick={handleRequestSBTC}
+                  disabled={isRequestingSBTC || !isAuthenticated}
+                  size="sm"
+                  variant="secondary"
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {isRequestingSBTC ? "Requesting..." : "Get testnet sBTC"}
+                </Button>
+              </>
             )}
-            <Button
+            {/* <Button
               onClick={handleSignOut}
               variant="destructive"
               size="sm"
               className="text-sm font-medium"
             >
               Sign Out
-            </Button>
+            </Button> */}
           </div>
         </div>
         <AccountCard
@@ -347,12 +417,30 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
         txId={currentTxId}
         transactionStatus={transactionStatus}
         transactionMessage={transactionMessage}
-        title="sBTC Faucet Transaction"
-        successTitle="sBTC Received!"
+        title={
+          currentFaucetType === "stx"
+            ? "STX Faucet Transaction"
+            : "sBTC Faucet Transaction"
+        }
+        successTitle={
+          currentFaucetType === "stx" ? "STX Received!" : "sBTC Received!"
+        }
         failureTitle="Faucet Request Failed"
-        successDescription="Your testnet sBTC has been successfully received from the faucet."
-        failureDescription="The sBTC faucet request could not be completed. Please try again."
-        pendingDescription="Your sBTC faucet request is being processed on the blockchain. This may take a few minutes."
+        successDescription={
+          currentFaucetType === "stx"
+            ? "Your testnet STX has been successfully received from the faucet."
+            : "Your testnet sBTC has been successfully received from the faucet."
+        }
+        failureDescription={
+          currentFaucetType === "stx"
+            ? "The STX faucet request could not be completed. Please try again."
+            : "The sBTC faucet request could not be completed. Please try again."
+        }
+        pendingDescription={
+          currentFaucetType === "stx"
+            ? "Your STX faucet request is being processed on the blockchain. This may take a few minutes."
+            : "Your sBTC faucet request is being processed on the blockchain. This may take a few minutes."
+        }
         onRetry={handleRetry}
         showRetryButton={true}
       />

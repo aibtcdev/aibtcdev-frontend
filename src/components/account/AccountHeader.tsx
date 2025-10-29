@@ -7,12 +7,16 @@ import { Wallet, User } from "lucide-react";
 import { getStacksAddress } from "@/lib/address";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AccountHeader() {
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
+  const { userId, isAuthenticated } = useAuth();
+
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   const userAgent = agents[0] || null;

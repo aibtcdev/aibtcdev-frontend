@@ -5,7 +5,16 @@ export const updateSession = async (request: NextRequest) => {
   try {
     // COMMENT IT OUT IF WE WANT TO SEE THE LANDING PAGE
     if (request.nextUrl.pathname === "/") {
-      return NextResponse.redirect(new URL("/daos", request.url));
+      return NextResponse.redirect(new URL("/aidaos", request.url));
+    }
+
+    // Handle DAO-related path redirects
+    if (request.nextUrl.pathname === "/daos") {
+      return NextResponse.redirect(new URL("/aidaos", request.url));
+    }
+
+    if (request.nextUrl.pathname === "/ai-daos") {
+      return NextResponse.redirect(new URL("/aidaos", request.url));
     }
     // Create an unmodified response
     let response = NextResponse.next({
@@ -51,7 +60,7 @@ export const updateSession = async (request: NextRequest) => {
     if (request.nextUrl.pathname.startsWith("/admin")) {
       if (userError || !user) {
         // If no user, redirect to login
-        return NextResponse.redirect(new URL("/daos", request.url));
+        return NextResponse.redirect(new URL("/aidaos", request.url));
       }
 
       // Check user role in profiles table
@@ -81,19 +90,19 @@ export const updateSession = async (request: NextRequest) => {
       request.nextUrl.pathname.startsWith("/profile") &&
       (userError || !user)
     ) {
-      return NextResponse.redirect(new URL("/daos", request.url));
+      return NextResponse.redirect(new URL("/aidaos", request.url));
     }
 
     if (
       request.nextUrl.pathname.startsWith("/account") &&
       (userError || !user)
     ) {
-      return NextResponse.redirect(new URL("/daos", request.url));
+      return NextResponse.redirect(new URL("/aidaos", request.url));
     }
 
     return response;
   } catch (error) {
     console.error(error);
-    return NextResponse.redirect(new URL("/daos", request.url));
+    return NextResponse.redirect(new URL("/aidaos", request.url));
   }
 };

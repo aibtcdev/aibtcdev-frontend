@@ -14,7 +14,7 @@ import { Copy, Check, ExternalLink, Puzzle } from "lucide-react";
 import { useClipboard } from "@/hooks/useClipboard";
 import { getExplorerLink } from "@/utils/format";
 import type { Extension } from "@/types";
-import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
+import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
 
 interface DAOExtensionsProps {
   extensions: Extension[];
@@ -115,7 +115,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
                         >
                           <a
                             href={getExplorerLink(
-                              "address",
+                              "tx",
                               extension.contract_principal
                             )}
                             target="_blank"
@@ -221,7 +221,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
                             >
                               <a
                                 href={getExplorerLink(
-                                  "address",
+                                  "tx",
                                   extension.contract_principal
                                 )}
                                 target="_blank"

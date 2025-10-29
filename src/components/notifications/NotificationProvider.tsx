@@ -14,27 +14,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { getStacksAddress } from "@/lib/address";
 import { Settings, Coins } from "lucide-react";
 import { Notification, NotificationContextType } from "./types";
+import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
 );
 
-// Custom format function for token balances with specified decimals
-const formatBalance = (balance: number, decimals: number = 8): string => {
-  if (!balance || balance === 0) return "0";
-  const divisor = Math.pow(10, decimals);
-  const formatted = (balance / divisor).toFixed(decimals);
-  return parseFloat(formatted).toString();
-};
-
-const isFakeToken = (tokenId: string) => {
+const isDAOToken = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
   const parts = cleaned.split("::");
   const asset = parts[parts.length - 1];
-  return asset === "fake";
+  const daoTokens = [
+    "fake",
+    "facerizz",
+    "facedrop",
+    "faces",
+    "facevibe",
+    "elonbtc",
+  ];
+  return daoTokens.includes(asset.toLowerCase());
 };
 
-const getFakeTokenName = (tokenId: string) => {
+const getDAOTokenName = (tokenId: string) => {
   const cleaned = tokenId.replace(/:$/, "");
   const parts = cleaned.split("::");
   if (parts.length >= 2) {
@@ -80,40 +81,53 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // Calculate token info whenever balances change
-  const { tokenBalance, tokenName } = useMemo(() => {
+  const daoTokens = useMemo(() => {
     if (!address || !balances[address]?.fungible_tokens) {
-      return { tokenBalance: 0, tokenName: "FAKE" };
+      return [];
     }
 
     const fungibleTokens = balances[address].fungible_tokens;
+    const tokens: Array<{ balance: number; name: string }> = [];
 
     for (const [tokenId, tokenData] of Object.entries(fungibleTokens)) {
-      if (isFakeToken(tokenId)) {
+      if (isDAOToken(tokenId)) {
         const balance = Number(tokenData.balance || 0);
         if (balance > 0) {
-          return {
-            tokenBalance: balance,
-            tokenName: getFakeTokenName(tokenId),
-          };
+          tokens.push({
+            balance,
+            name: getDAOTokenName(tokenId),
+          });
         }
       }
     }
 
-    return { tokenBalance: 0, tokenName: "FAKE" };
+    return tokens;
   }, [balances, address]);
 
   // Generate notifications based on current state
   const notifications = useMemo(() => {
     const notifs: Notification[] = [];
 
-    // Asset deposit notification - only show if user has tokens
-    if (tokenBalance > 0) {
-      const formattedBalance = formatBalance(tokenBalance, 8);
+    // Asset deposit notification - show for each DAO token with balance
+    daoTokens.forEach((token) => {
       notifs.push({
-        id: "asset-deposit",
+        id: `asset-deposit-${token.name.toLowerCase()}`,
         type: "asset-deposit",
         title: "Deposit Available",
-        message: `Deposit your ${formattedBalance} ${tokenName} into Agent voting contract to send contribution and provide them voting power`,
+        message: (
+          <>
+            Deposit your{" "}
+            <BalanceDisplay
+              value={token.balance}
+              symbol={token.name}
+              decimals={8}
+              variant="abbreviated"
+              showSymbol={true}
+            />{" "}
+            into Agent voting contract to send contribution and provide them
+            voting power
+          </>
+        ),
         actionText: "Deposit",
         actionUrl: "/account?tab=wallets",
         icon: Coins,
@@ -121,7 +135,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         createdAt: new Date(),
         priority: "high",
       });
-    }
+    });
 
     // Custom instructions notification - only show if user has agent but no instructions
     const hasAgent = agentWallets.length > 0;
@@ -155,9 +169,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       // Then by creation date (newest first)
       return b.createdAt.getTime() - a.createdAt.getTime();
     });
-  }, [tokenBalance, tokenName, agentWallets, prompts]);
+  }, [daoTokens, agentWallets, prompts]);
 
-  const unreadCount = notifications.length;
+  // Exclude deposit notifications from bell count (they show in banner instead)
+  const unreadCount = notifications.filter(
+    (n) => n.type !== "asset-deposit"
+  ).length;
 
   const dismissNotification = (id: string) => {
     // Notifications cannot be dismissed - they persist until conditions are resolved

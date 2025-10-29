@@ -250,7 +250,7 @@ const url =
 
 /**
  * Fetches aggregate proposal votes (For/Against counts) from a Stacks cache/read-only endpoint.
- * This function does NOT cause the Supabase N+1 issue for agents/daos.
+ * This function does NOT cause the Supabase N+1 issue for agents/aidaos.
  *
  * Query key: ['proposalVotesCounts', contractPrincipal, proposalId]
  * @param contractPrincipal e.g., "SP123.my-contract"

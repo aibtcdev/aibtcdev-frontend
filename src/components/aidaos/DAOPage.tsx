@@ -11,6 +11,7 @@ import {
   BarChart3,
   DollarSign,
   TrendingUp,
+  Bot,
 } from "lucide-react";
 import {
   fetchToken,
@@ -33,15 +34,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProposalSubmission } from "../proposals/ProposalSubmission";
-import { MissionContent } from "@/components/daos/MissionContent";
-import DAOExtensions from "@/components/daos/DaoExtensions";
-import DAOHolders from "@/components/daos/DaoHolders";
+import { MissionContent } from "@/components/aidaos/MissionContent";
+import DAOExtensions from "@/components/aidaos/DaoExtensions";
+import DAOHolders from "@/components/aidaos/DaoHolders";
 import { extractMission, formatTokenPrice } from "@/utils/format";
-import BitcoinDeposit from "@/components/btc-deposit";
+// import BitcoinDeposit from "@/components/btc-deposit";
 import { formatNumber } from "@/utils/format";
 import { hexToCV, cvToJSON } from "@stacks/transactions";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
+import { useAgentAccount } from "@/hooks/useAgentAccount";
+import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
+// import { getIdFromFaktoryDaoName } from "@aibtc/types";
+import { TwitterPreviewPanel } from "@/components/twitter/TwitterPreviewPanel";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -59,57 +64,83 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("charter");
 
+  // State for Twitter preview
+  const [twitterUrl, setTwitterUrl] = useState("");
+
+  // Twitter URL validation
+  const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
+  const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
+
+  // Agent account data
+  const { userAgentBalance } = useAgentAccount();
+
+  // Helper function to get agent balance for specific DAO token
+  const getAgentTokenBalance = useCallback(
+    (tokenContract: string | null | undefined): string => {
+      if (!userAgentBalance || !tokenContract) return "0";
+
+      // Look for the token in fungible_tokens using the contract principal
+      const tokenKey = Object.keys(userAgentBalance.fungible_tokens).find(
+        (key) => key.includes(tokenContract)
+      );
+
+      if (tokenKey && userAgentBalance.fungible_tokens[tokenKey]) {
+        const balance = userAgentBalance.fungible_tokens[tokenKey].balance;
+        return balance;
+      }
+
+      return "0";
+    },
+    [userAgentBalance]
+  );
+
   // Helper function to check if the token is bonded
-  // const checkBonded = useCallback(
-  //   async (dexContract: string): Promise<boolean | null> => {
-  //     if (!dexContract) return null;
+  const checkBonded = useCallback(
+    async (dexContract: string): Promise<boolean | null> => {
+      if (!dexContract) return null;
 
-  //     const senderAddress =
-  //       getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
-  //     const [contractAddress, contractName] = dexContract.split(".");
+      const senderAddress =
+        getStacksAddress() || "SP2Z94F6QX847PMXTPJJ2ZCCN79JZDW3PJ4E6ZABY";
+      const [contractAddress, contractName] = dexContract.split(".");
 
-  //     try {
-  //       const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-bonded?tip=latest`;
+      try {
+        const url = `${NETWORK_CONFIG.HIRO_API_URL}/v2/contracts/call-read/${contractAddress}/${contractName}/get-bonded?tip=latest`;
 
-  //       const response = await fetch(url, {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           sender: senderAddress,
-  //           arguments: [],
-  //         }),
-  //       });
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sender: senderAddress,
+            arguments: [],
+          }),
+        });
 
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-  //       const data = await response.json();
-  //       console.log("bonded data", data);
+        const data = await response.json();
 
-  //       if (data?.result) {
-  //         try {
-  //           const clarityValue = hexToCV(data.result);
-  //           const jsonValue = cvToJSON(clarityValue);
-  //           console.log("Bonded status decoded:", jsonValue);
-  //           console.log("json value", jsonValue.value);
-
-  //           return jsonValue.value === true;
-  //         } catch (error) {
-  //           console.error("Error parsing bonded status:", error);
-  //           return null;
-  //         }
-  //       }
-  //       return null;
-  //     } catch (error) {
-  //       console.error("Error fetching bonded status:", error);
-  //       return null;
-  //     }
-  //   },
-  //   []
-  // );
+        if (data?.result) {
+          try {
+            const clarityValue = hexToCV(data.result);
+            const jsonValue = cvToJSON(clarityValue);
+            return jsonValue.value?.value === true;
+          } catch (error) {
+            console.error("Error parsing bonded status:", error);
+            return null;
+          }
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching bonded status:", error);
+        return null;
+      }
+    },
+    []
+  );
 
   // Helper function to check if the market is open
   const checkMarketOpen = useCallback(
@@ -182,7 +213,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     tokenContract,
     prelaunchContract,
     buyPrelaunchContract,
-    poolContract,
+    // poolContract,
+    // bitflowAdapter,
+    // bitflowPool,
   } = useMemo(() => {
     if (!extensions)
       return {
@@ -193,6 +226,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
         prelaunchContract: null,
         buyPrelaunchContract: null,
         poolContract: null,
+        bitflowAdapter: null,
+        bitflowPool: null,
       };
 
     console.log("All extensions:", extensions);
@@ -214,11 +249,22 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
     );
 
+    // Bitflow contract extensions
+    const bitflowAdapterExtension = extensions.find(
+      (ext) =>
+        ext.type === "TRADING" && ext.subtype === "BITFLOW_BUY_AND_DEPOSIT"
+    );
+    const bitflowPoolExtension = extensions.find(
+      (ext) => ext.type === "TOKEN" && ext.subtype === "POOL"
+    );
+
     const dexPrincipal = dexExtension?.contract_principal;
     const tokenPrincipal = tokenExtension?.contract_principal;
     const prelaunchPrincipal = prelaunchExtension?.contract_principal;
     const buyPrelaunchPrincipal = buyPrelaunchExtension?.contract_principal;
     const poolPrincipal = poolExtension?.contract_principal;
+    const bitflowAdapterPrincipal = bitflowAdapterExtension?.contract_principal;
+    const bitflowPoolPrincipal = bitflowPoolExtension?.contract_principal;
 
     return {
       dex: dexPrincipal,
@@ -229,8 +275,18 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       prelaunchContract: prelaunchPrincipal,
       buyPrelaunchContract: buyPrelaunchPrincipal,
       poolContract: poolPrincipal,
+      bitflowAdapter: bitflowAdapterPrincipal,
+      bitflowPool: bitflowPoolPrincipal,
     };
   }, [extensions]);
+
+  // Check if token is bonded - NOW AFTER dexContract is defined
+  const { data: isBonded } = useQuery({
+    queryKey: ["bonded", dexContract],
+    queryFn: () => checkBonded(dexContract!),
+    enabled: !!dexContract,
+    staleTime: 300000,
+  });
 
   const { data: tokenPrice } = useQuery({
     queryKey: ["tokenPrice", dex],
@@ -239,14 +295,6 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     staleTime: 300000,
   });
 
-  // Check if token is bonded
-  // const { data: isBonded } = useQuery({
-  //   queryKey: ["bonded", dexContract],
-  //   queryFn: () => checkBonded(dexContract!),
-  //   enabled: !!dexContract,
-  //   staleTime: 300000,
-  // });
-
   // Check if market is open
   const {
     data: isMarketOpen,
@@ -254,7 +302,6 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
     isLoading: isMarketOpenLoading,
   } = useQuery({
     queryKey: ["marketOpen", prelaunchContract],
-
     queryFn: () => checkMarketOpen(prelaunchContract!),
     enabled: !!prelaunchContract,
     staleTime: 300000,
@@ -265,6 +312,8 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   console.log("- isMarketOpen:", isMarketOpen);
   console.log("- marketOpenError:", marketOpenError);
   console.log("- isMarketOpenLoading:", isMarketOpenLoading);
+  console.log("- isBonded:", isBonded);
+
   const { data: holdersData } = useQuery({
     queryKey: ["holders", id],
     queryFn: () => fetchHolders(id!),
@@ -320,7 +369,9 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   }, [marketStats, tokenPrice, holdersData, token]);
 
   const totalProposals = useMemo(() => {
-    return Array.isArray(proposals) ? proposals.length : 0;
+    if (!Array.isArray(proposals)) return 0;
+    return proposals.filter((proposal) => proposal.status === "DEPLOYED")
+      .length;
   }, [proposals]);
 
   if (isBasicLoading || !dao) {
@@ -350,19 +401,19 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
       id: "charter",
       label: "Charter",
       icon: BarChart3,
-      href: `/daos/${encodedName}/charter`,
+      href: `/aidaos/${encodedName}/charter`,
     },
     {
       id: "extensions",
       label: "Extensions",
       icon: FileText,
-      href: `/daos/${encodedName}/extension`,
+      href: `/aidaos/${encodedName}/extension`,
     },
     {
       id: "holders",
       label: "Holders",
       icon: Users,
-      href: `/daos/${encodedName}/holders`,
+      href: `/aidaos/${encodedName}/holders`,
     },
   ];
 
@@ -373,12 +424,12 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full">
-      <main className="flex-1 overflow-y-auto">
-        <div className="px-6 md:px-6 lg:px-8 py-4  max-w-screen-xl mx-auto">
-          <div className="bg-muted/10 p-6 rounded-lg mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="h-16 w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
+    <div className="flex flex-col w-full">
+      <main className="overflow-y-auto overflow-x-hidden">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-screen-xl mx-auto w-full">
+          <div className="bg-muted/10 p-4 sm:p-6 rounded-lg mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
                 <AvatarImage
                   src={
                     token?.image_url ||
@@ -386,15 +437,17 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                   }
                   alt={dao.name}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-2xl rounded-lg">
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-xl sm:text-2xl rounded-lg">
                   {dao.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-4xl text-white">{dao.name}</h1>
-                    <p className="text-zinc-400 mt-2 text-sm">
+              <div className="flex-1 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl text-white leading-tight">
+                      {dao.name}
+                    </h1>
+                    <p className="text-zinc-400 mt-2 text-sm leading-relaxed">
                       <span className="font-bold"> Mission: </span>
                       {extractMission(dao.mission)}
                     </p>
@@ -403,7 +456,7 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                     onClick={handleModalOpen}
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 px-3 py-2 text-sm"
+                    className="flex items-center gap-2 px-3 py-2 text-sm self-start sm:self-auto"
                   >
                     <BarChart3 className="h-4 w-4" />
                     Details
@@ -412,40 +465,52 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            {/* Token Stats */}
-            <div className="flex flex-wrap items-center gap-6 text-sm">
+            {/* Token Stats - Responsive grid layout */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3 sm:gap-4 lg:gap-6 text-xs sm:text-sm min-h-[24px]">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-400" />
+                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-400 flex-shrink-0" />
                 <span className="text-muted-foreground">Price:</span>
-                <span className="font-medium">
+                <span className="font-medium truncate">
                   {formatTokenPrice(enhancedMarketStats.price)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-400" />
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-400 flex-shrink-0" />
                 <span className="text-muted-foreground">Market Cap:</span>
-                <span className="font-medium">
+                <span className="font-medium truncate">
                   ${formatNumber(enhancedMarketStats.marketCap)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-purple-400" />
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-purple-400 flex-shrink-0" />
                 <span className="text-muted-foreground">Holders:</span>
                 <span className="font-medium">
                   {Math.floor(enhancedMarketStats.holderCount)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-orange-400" />
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-orange-400 flex-shrink-0" />
                 <span className="text-muted-foreground">Contributions:</span>
                 <span className="font-medium">{totalProposals}</span>
+              </div>
+              <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
+                <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-cyan-400 flex-shrink-0" />
+                <span className="text-muted-foreground">Agent Balance:</span>
+                <span className="font-medium truncate">
+                  <BalanceDisplay
+                    value={getAgentTokenBalance(tokenContract)}
+                    symbol={token?.symbol || dao?.name || ""}
+                    decimals={8}
+                    variant="abbreviated"
+                  />
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Market Status */}
-          {buyPrelaunchContract && isMarketOpen === false && (
-            <div className="mb-6 text-center">
+          {/* Market Status - Fixed height to prevent layout shift */}
+          <div className="mb-1 text-center min-h-[24px] flex items-center justify-center">
+            {buyPrelaunchContract && isMarketOpen === false && (
               <p className="text-muted-foreground">
                 Buy seats{" "}
                 <Link
@@ -456,45 +521,40 @@ export function DAOPage({ children }: { children: React.ReactNode }) {
                 </Link>{" "}
                 to participate when the market opens.
               </p>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Two-column grid layout with viewport calculations */}
-          <div
-            className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-7 items-start"
-            style={
-              {
-                "--header-height": "96px",
-                "--tabs-height": "60px",
-                "--vertical-gap": "24px",
-                "--submit-cta-height": "56px",
-                "--cta-spacing": "16px",
-                "--available-height":
-                  "calc(100dvh - var(--header-height) - var(--tabs-height) - var(--vertical-gap) - 120px)",
-              } as React.CSSProperties
-            }
-          >
+          {/* Two-column grid layout - Improved alignment and stability */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-7">
             {/* Left column - Submit Contribution */}
             <div className="order-2 lg:order-1">
               <ProposalSubmission
                 daoId={dao.id}
                 daoName={dao.name}
                 headerOffset={96}
+                onTwitterUrlChange={setTwitterUrl}
               />
             </div>
 
-            {/* Right column - Buy Panel */}
+            {/* Right column - Twitter Preview Panel */}
             <div className="order-1 lg:order-2">
-              <BitcoinDeposit
-                dexId={1}
+              <TwitterPreviewPanel
+                twitterUrl={twitterUrl}
+                isValidTwitterUrl={isValidTwitterUrl}
+              />
+              {/* <BitcoinDeposit
+                dexId={getIdFromFaktoryDaoName(dao.name.toLowerCase()) ?? 9}
                 dexContract={dexContract || ""}
                 daoName={dao.name}
                 tokenContract={tokenContract || ""}
-                headerOffset={96}
                 isMarketOpen={isMarketOpen}
+                isBonded={isBonded}
                 prelaunchContract={prelaunchContract || undefined}
                 poolContract={poolContract || undefined}
-              />
+                adapterContract={buyPrelaunchContract || undefined}
+                bitflowAdapter={bitflowAdapter || undefined}
+                bitflowPool={bitflowPool || undefined}
+              /> */}
             </div>
           </div>
 

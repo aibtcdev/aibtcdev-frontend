@@ -9,7 +9,7 @@ import {
   Check,
   ExternalLink,
   AlertCircle,
-  Gift,
+  // Gift,
   Lock,
   // X,
 } from "lucide-react";
@@ -21,6 +21,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchDAOExtensions } from "@/services/dao.service";
 import { fetchAgents } from "@/services/agent.service";
 import { fetchAirdropsBySender } from "@/services/airdrop.service";
+import { checkProposalsInBitcoinBlock } from "@/services/contribution.service";
+import { fetchLatestChainState } from "@/services/chain-state.service";
 import { getStacksAddress } from "@/lib/address";
 import {
   Dialog,
@@ -29,14 +31,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { getExplorerLink, truncateString } from "@/utils/format";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+// import { getExplorerLink } from "@/utils/format";
 import { connectWebSocketClient } from "@stacks/blockchain-api-client";
 import { getAllErrorDetails } from "@aibtc/types";
 // import {
@@ -56,6 +58,15 @@ import {
   type TwitterOEmbedResponse,
 } from "@/services/twitter.service";
 import { useWalletStore } from "@/store/wallet";
+import { useTransactionVerification } from "@/hooks/useTransactionVerification";
+import { TransactionStatusModal } from "@/components/ui/TransactionStatusModal";
+import { useXStatus } from "@/hooks/useXStatus";
+import { XLinking } from "@/components/auth/XLinking";
+import {
+  validateXUsernameMatch,
+  getLinkedXProfile,
+  type XProfile,
+} from "@/services/x-auth.service";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -111,6 +122,7 @@ interface ProposalSubmissionProps {
   daoName?: string;
   onSubmissionSuccess?: () => void;
   headerOffset?: number;
+  onTwitterUrlChange?: (url: string) => void;
 }
 
 interface ParsedOutput {
@@ -207,22 +219,21 @@ export function ProposalSubmission({
   daoId,
   daoName,
   onSubmissionSuccess,
+  onTwitterUrlChange,
 }: ProposalSubmissionProps) {
-  const [contribution, setContribution] = useState("");
   const [twitterUrl, setTwitterUrl] = useState("");
-  const [selectedAirdropTxHash, setSelectedAirdropTxHash] = useState<
-    string | null
-  >(null);
-  const [twitterEmbed, setTwitterEmbed] =
+  const [twitterEmbedData, setTwitterEmbedData] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
-  // const { issues, hasAnyIssues, cleanText } =
-  //   useUnicodeValidation(contribution);
-  // const handleClean = () => {
-  //   setContribution(cleanText);
-  // };
+  // Hover preview state - Commented out, preview now in right panel
+  // const [showHoverPreview, setShowHoverPreview] = useState(false);
+  // const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
+  //   null
+  // );
   const [showResultDialog, setShowResultDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStep, setSubmissionStep] = useState(0);
+  const [submissionButtonText, setSubmissionButtonText] = useState("");
   // const [isGenerating, setIsGenerating] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
   const name = daoName;
@@ -246,17 +257,38 @@ export function ProposalSubmission({
   const [stacksAddress, setStacksAddress] = useState<string | null>(null);
   const [showAirdropNotification, setShowAirdropNotification] = useState(false);
 
+  // X username validation state
+  const [isValidatingXUsername, setIsValidatingXUsername] = useState(false);
+  const [xUsernameError, setXUsernameError] = useState<string | null>(null);
+  const [xProfile, setXProfile] = useState<XProfile | null>(null);
+
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
+  const {
+    needsXLink,
+    isLoading: isXLoading,
+    refreshStatus,
+    verificationStatus,
+    canSubmitContribution,
+    profile,
+  } = useXStatus();
 
   // Determine if user has access token
   const hasAccessToken = !!accessToken && !isSessionLoading;
 
-  // State for DAO token balance
+  // State for DAO token balance - COMMENTED OUT: Not checking DAO token balance for now
   // const [daoTokenBalance, setDaoTokenBalance] = useState<string | null>(null);
-  const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
-    string | null
-  >(null);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  // const [agentDaoTokenBalance, setAgentDaoTokenBalance] = useState<
+  //   string | null
+  // >(null);
+  // const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
+  // State for Bitcoin block validation
+  const [hasProposalInCurrentBlock, setHasProposalInCurrentBlock] =
+    useState(false);
+  const [isCheckingBitcoinBlock, setIsCheckingBitcoinBlock] = useState(false);
+  const [currentBitcoinBlock, setCurrentBitcoinBlock] = useState<number | null>(
+    null
+  );
 
   // Error code mapping
   const errorDetailsArray = getAllErrorDetails();
@@ -267,6 +299,18 @@ export function ProposalSubmission({
     },
     {} as Record<number, (typeof errorDetailsArray)[0]> // Explicitly type the accumulator
   );
+
+  // Contract approval state
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approvalTxId, setApprovalTxId] = useState<string | null>(null);
+
+  const {
+    transactionMessage: approvalTransactionMessage,
+    transactionStatus: approvalTransactionStatus,
+    startMonitoring: startApprovalMonitoring,
+    reset: resetApprovalVerification,
+  } = useTransactionVerification();
 
   const { data: daoExtensions, isLoading: isLoadingExtensions } = useQuery({
     queryKey: ["daoExtensions", daoId],
@@ -279,12 +323,23 @@ export function ProposalSubmission({
 
   // Fetch user's DAO Manager agent
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
-    enabled: hasAccessToken, // Only fetch when authenticated
+    enabled: hasAccessToken && !!userId, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
     refetchOnMount: true, // Refetch when component mounts
     refetchOnWindowFocus: false, // Don't refetch on window focus
+  });
+
+  // Fetch current Bitcoin block height
+  const { data: chainState } = useQuery({
+    queryKey: ["latestChainState"],
+    queryFn: fetchLatestChainState,
+    enabled: hasAccessToken, // Only fetch when authenticated
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Find the user's agent based on profile_id
@@ -300,19 +355,28 @@ export function ProposalSubmission({
   console.log("  - hasAgentAccount:", hasAgentAccount);
   console.log("  - isLoadingAgents:", isLoadingAgents);
   console.log("  - hasAccessToken:", hasAccessToken);
-  console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
-  console.log(
-    "  - hasAgentDaoTokens:",
-    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
-  );
+  // console.log("  - agentDaoTokenBalance:", agentDaoTokenBalance);
+  // console.log(
+  //   "  - hasAgentDaoTokens:",
+  //   agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0
+  // );
+  console.log("  - profile:", profile);
+  console.log("  - profile.username:", profile?.username);
+  console.log("  - needsXLink:", needsXLink);
+  console.log("  - canSubmitContribution:", canSubmitContribution);
+  console.log("  - verificationStatus:", verificationStatus);
+  console.log("  - isXLoading:", isXLoading);
+  console.log("  - xProfile:", xProfile);
+  console.log("  - xProfile.username:", xProfile?.username);
 
   // Check DAO token balance (simplified - checking if user has any DAO tokens)
   const daoTokenExt = daoExtensions?.find(
     (ext) => ext.type === "TOKEN" && ext.subtype === "DAO"
   );
   // const hasDaoTokens = daoTokenBalance && parseFloat(daoTokenBalance) > 0;
-  const hasAgentDaoTokens =
-    agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
+  // COMMENTED OUT: Not checking DAO token balance for now
+  // const hasAgentDaoTokens =
+  //   agentDaoTokenBalance && parseFloat(agentDaoTokenBalance) > 0;
 
   // Fetch airdrops by sender address to check for matches
   const { data: senderAirdrops = [] } = useQuery({
@@ -329,13 +393,40 @@ export function ProposalSubmission({
   const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
-  // Calculate combined length including the Twitter URL
-  const twitterReferenceText = twitterUrl
-    ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
-    : "";
-  // No airdrop reference in message length calculation
-  const combinedLength = contribution.length + twitterReferenceText.length;
-  const isWithinLimit = combinedLength <= 2043;
+  // Notify parent component when Twitter URL changes
+  useEffect(() => {
+    if (onTwitterUrlChange) {
+      onTwitterUrlChange(twitterUrl);
+    }
+  }, [twitterUrl, onTwitterUrlChange]);
+
+  // Fetch Twitter embed data when URL changes
+  useEffect(() => {
+    if (!twitterUrl || !isValidTwitterUrl) {
+      setTwitterEmbedData(null);
+      return;
+    }
+
+    const fetchEmbed = async () => {
+      setIsLoadingEmbed(true);
+      try {
+        const embedData = await fetchTwitterEmbed(cleanTwitterUrl(twitterUrl));
+        if (isTwitterOEmbedError(embedData)) {
+          console.error("Error fetching Twitter embed:", embedData.error);
+          setTwitterEmbedData(null);
+        } else {
+          setTwitterEmbedData(embedData);
+        }
+      } catch (error) {
+        console.error("Error fetching Twitter embed:", error);
+        setTwitterEmbedData(null);
+      } finally {
+        setIsLoadingEmbed(false);
+      }
+    };
+
+    fetchEmbed();
+  }, [twitterUrl, isValidTwitterUrl]);
 
   // Cleanup WebSocket on unmount
   useEffect(() => {
@@ -343,6 +434,9 @@ export function ProposalSubmission({
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe?.();
       }
+      // if (hoverTimeoutId) {
+      //   clearTimeout(hoverTimeoutId);
+      // }
     };
   }, []);
 
@@ -354,6 +448,26 @@ export function ProposalSubmission({
       setStacksAddress(null); // Clear address when not authenticated
     }
   }, [hasAccessToken]); // Re-run when authentication state changes
+
+  // Fetch X profile when user is authenticated and has linked X account
+  useEffect(() => {
+    const fetchXProfile = async () => {
+      if (hasAccessToken && !needsXLink) {
+        try {
+          const linkedProfile = await getLinkedXProfile();
+          setXProfile(linkedProfile);
+          console.log("Fetched X profile:", linkedProfile);
+        } catch (error) {
+          console.error("Error fetching X profile:", error);
+          setXProfile(null);
+        }
+      } else {
+        setXProfile(null);
+      }
+    };
+
+    fetchXProfile();
+  }, [hasAccessToken, needsXLink]);
 
   // Fetch DAO token balance when we have the necessary data
   useEffect(() => {
@@ -377,11 +491,11 @@ export function ProposalSubmission({
       ) {
         console.log("BALANCE FETCH - Early return due to missing conditions");
         // setDaoTokenBalance(null);
-        setAgentDaoTokenBalance(null);
+        // setAgentDaoTokenBalance(null);
         return;
       }
 
-      setIsLoadingBalance(true);
+      // setIsLoadingBalance(true);
       console.log("BALANCE FETCH - Starting balance fetch...");
 
       try {
@@ -436,7 +550,7 @@ export function ProposalSubmission({
               "BALANCE FETCH - Agent DAO token balance (exact match):",
               agentTokenBalance
             );
-            setAgentDaoTokenBalance(agentTokenBalance);
+            // setAgentDaoTokenBalance(agentTokenBalance);
           } else {
             // Try to find token by matching daoName after ::
             const matchingTokenContract = Object.keys(
@@ -455,7 +569,7 @@ export function ProposalSubmission({
                 "for contract:",
                 matchingTokenContract
               );
-              setAgentDaoTokenBalance(agentTokenBalance);
+              // setAgentDaoTokenBalance(agentTokenBalance);
             } else {
               console.log(
                 "BALANCE FETCH - No agent DAO tokens found for contract:",
@@ -466,14 +580,14 @@ export function ProposalSubmission({
                 daoName
               );
               console.log("BALANCE FETCH - Setting to 0");
-              setAgentDaoTokenBalance("0");
+              // setAgentDaoTokenBalance("0");
             }
           }
         } else {
           console.log(
             "BALANCE FETCH - No agent account contract, setting agent balance to null"
           );
-          setAgentDaoTokenBalance(null);
+          // setAgentDaoTokenBalance(null);
         }
       } catch (error) {
         console.error(
@@ -481,9 +595,9 @@ export function ProposalSubmission({
           error
         );
         // setDaoTokenBalance("0");
-        setAgentDaoTokenBalance("0");
+        // setAgentDaoTokenBalance("0");
       } finally {
-        setIsLoadingBalance(false);
+        // setIsLoadingBalance(false);
         console.log("BALANCE FETCH - Finished loading");
       }
     };
@@ -497,6 +611,62 @@ export function ProposalSubmission({
     daoName,
   ]);
 
+  // Update button text based on submission step
+  useEffect(() => {
+    if (!isSubmitting) {
+      setSubmissionButtonText("");
+      return;
+    }
+
+    const stepMessages = [
+      `Submitting contribution for ${daoName}...`,
+      "Processing the contribution...",
+      "Checking agent voting account...",
+      "Setting up contribution transaction...",
+      "Broadcasting transaction to network...",
+    ];
+
+    setSubmissionButtonText(stepMessages[submissionStep] || "submitting...");
+  }, [isSubmitting, submissionStep, daoName]);
+
+  // Check for proposals in current Bitcoin block
+  useEffect(() => {
+    const checkBitcoinBlockProposals = async () => {
+      if (!hasAccessToken || !chainState?.bitcoin_block_height) {
+        setHasProposalInCurrentBlock(false);
+        setCurrentBitcoinBlock(null);
+        return;
+      }
+
+      const bitcoinBlockHeight = parseInt(chainState.bitcoin_block_height);
+      setCurrentBitcoinBlock(bitcoinBlockHeight);
+      setIsCheckingBitcoinBlock(true);
+
+      try {
+        const hasProposal = await checkProposalsInBitcoinBlock(
+          bitcoinBlockHeight,
+          daoId
+        );
+        setHasProposalInCurrentBlock(hasProposal);
+        console.log(
+          `Bitcoin block ${bitcoinBlockHeight} validation for DAO ${daoId}:`,
+          {
+            hasProposal,
+            blockHeight: bitcoinBlockHeight,
+            daoId,
+          }
+        );
+      } catch (error) {
+        console.error("Error checking Bitcoin block proposals:", error);
+        setHasProposalInCurrentBlock(false);
+      } finally {
+        setIsCheckingBitcoinBlock(false);
+      }
+    };
+
+    checkBitcoinBlockProposals();
+  }, [hasAccessToken, chainState?.bitcoin_block_height, daoId]);
+
   // Show airdrop notification if user has sent airdrops
   useEffect(() => {
     if (senderAirdrops.length > 0 && !showAirdropNotification) {
@@ -504,38 +674,39 @@ export function ProposalSubmission({
     }
   }, [senderAirdrops, showAirdropNotification]);
 
-  // Fetch Twitter embed when URL is valid
-  useEffect(() => {
-    const fetchEmbed = async () => {
-      if (isValidTwitterUrl && twitterUrl) {
-        setIsLoadingEmbed(true);
-        setTwitterEmbed(null);
+  // Hover preview handlers (desktop only)
+  // const handleMouseEnter = () => {
+  //   // Only enable hover on desktop (screens >= 1024px)
+  //   if (
+  //     window.innerWidth >= 1024 &&
+  //     twitterUrl &&
+  //     isValidTwitterUrl &&
+  //     twitterEmbedData
+  //   ) {
+  //     // Clear any existing timeout
+  //     if (hoverTimeoutId) {
+  //       clearTimeout(hoverTimeoutId);
+  //     }
+  //     // Show preview after a short delay
+  //     const timeoutId = setTimeout(() => {
+  //       setShowHoverPreview(true);
+  //     }, 300); // 300ms delay
+  //     setHoverTimeoutId(timeoutId);
+  //   }
+  // };
 
-        try {
-          const embedData = await fetchTwitterEmbed(twitterUrl);
-
-          if (!isTwitterOEmbedError(embedData)) {
-            setTwitterEmbed(embedData);
-          } else {
-            console.error("Failed to fetch Twitter embed:", embedData.error);
-            setTwitterEmbed(null);
-          }
-        } catch (error) {
-          console.error("Error fetching Twitter embed:", error);
-          setTwitterEmbed(null);
-        } finally {
-          setIsLoadingEmbed(false);
-        }
-      } else {
-        setTwitterEmbed(null);
-      }
-    };
-
-    // Debounce the API call
-    const timeoutId = setTimeout(fetchEmbed, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [twitterUrl, isValidTwitterUrl]);
+  // const handleMouseLeave = () => {
+  //   // Only handle hover on desktop
+  //   if (window.innerWidth >= 1024) {
+  //     // Clear timeout if mouse leaves before delay completes
+  //     if (hoverTimeoutId) {
+  //       clearTimeout(hoverTimeoutId);
+  //       setHoverTimeoutId(null);
+  //     }
+  //     // Hide preview immediately
+  //     setShowHoverPreview(false);
+  //   }
+  // };
 
   /* ---------------------- WebSocket helper functions --------------------- */
   const connectToWebSocket = async (txid: string) => {
@@ -573,9 +744,8 @@ export function ProposalSubmission({
         // Update modal state based on status
         if (isSuccess) {
           setTxStatusView("confirmed-success");
-          setContribution(""); // Clear proposal only after successful confirmation
           setTwitterUrl("");
-          setSelectedAirdropTxHash(null);
+          // setSelectedAirdropTxHash(null); // Commented out - airdrop feature disabled
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
         if (isFinalState) {
@@ -621,15 +791,57 @@ export function ProposalSubmission({
       return null;
     }
 
+    // Extract the caption text from Twitter embed data
+    let contribution = "";
+    if (twitterEmbedData?.html) {
+      console.log("Twitter embed HTML:", twitterEmbedData.html);
+
+      // Parse the HTML to extract the text content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(twitterEmbedData.html, "text/html");
+
+      // Try to find the blockquote which contains the tweet text
+      const blockquote = doc.querySelector("blockquote");
+      if (blockquote) {
+        // Get all text nodes, excluding links at the end (which are typically the date/author)
+        const paragraphs = blockquote.querySelectorAll("p");
+        console.log("Found paragraphs:", paragraphs.length);
+
+        const textParts: string[] = [];
+        for (let i = 0; i < paragraphs.length; i++) {
+          const text = paragraphs[i].textContent?.trim();
+          console.log(`Paragraph ${i}:`, text);
+          // Skip if this looks like metadata (contains links to twitter.com or x.com)
+          if (
+            text &&
+            !text.includes("twitter.com") &&
+            !text.includes("x.com")
+          ) {
+            textParts.push(text);
+          }
+        }
+        contribution = textParts.join("\n\n");
+      } else {
+        // Fallback: try to get all text content
+        contribution = doc.body.textContent?.trim() || "";
+      }
+
+      console.log("Extracted contribution:", contribution);
+    }
+
+    // Combine caption with Twitter reference
     const twitterReference = twitterUrl
       ? `\n\nReference: ${cleanTwitterUrl(twitterUrl)}`
       : "";
 
-    // Simple message construction - just trim
     const cleanMessage = `${contribution.trim()}${twitterReference}`.trim();
-    console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
+
+    // console.log("agentDaoTokenBalance:", agentDaoTokenBalance);
     console.log("userAgent:", userAgent);
     console.log("userAgent.account_contract:", userAgent?.account_contract);
+    console.log("Extracted contribution:", contribution);
+    console.log("Clean message:", cleanMessage);
+
     return {
       agent_account_contract: userAgent.account_contract,
       action_proposals_voting_extension:
@@ -639,7 +851,8 @@ export function ProposalSubmission({
       dao_token_contract_address: daoTokenExt.contract_principal,
       message: cleanMessage,
       memo: "Contribution submitted via aibtcdev frontend",
-      ...(selectedAirdropTxHash ? { airdrop_txid: selectedAirdropTxHash } : {}),
+      // Airdrop feature disabled
+      // ...(selectedAirdropTxHash ? { airdrop_txid: selectedAirdropTxHash } : {}),
     };
   };
 
@@ -656,25 +869,147 @@ export function ProposalSubmission({
     if (!accessToken) throw new Error("Missing access token");
 
     setIsSubmitting(true);
+    setSubmissionStep(0);
+
     try {
-      const response = await proposeSendMessage(accessToken, payload);
+      const animationController = { shouldStop: false };
+
+      // Start the step sequence while making the API call
+      const stepPromise = (async () => {
+        // Step 1: Submitting contribution
+        setSubmissionStep(0);
+        await new Promise((resolve) => {
+          const timeout = setTimeout(resolve, 1500);
+          const checkStop = () => {
+            if (animationController.shouldStop) {
+              clearTimeout(timeout);
+              resolve(undefined);
+            } else {
+              setTimeout(checkStop, 100);
+            }
+          };
+          checkStop();
+        });
+        if (animationController.shouldStop) return;
+
+        // Step 2: Processing the contribution
+        setSubmissionStep(1);
+        await new Promise((resolve) => {
+          const timeout = setTimeout(resolve, 1200);
+          const checkStop = () => {
+            if (animationController.shouldStop) {
+              clearTimeout(timeout);
+              resolve(undefined);
+            } else {
+              setTimeout(checkStop, 100);
+            }
+          };
+          checkStop();
+        });
+        if (animationController.shouldStop) return;
+
+        // Step 3: Checking agent voting account
+        setSubmissionStep(2);
+        await new Promise((resolve) => {
+          const timeout = setTimeout(resolve, 1300);
+          const checkStop = () => {
+            if (animationController.shouldStop) {
+              clearTimeout(timeout);
+              resolve(undefined);
+            } else {
+              setTimeout(checkStop, 100);
+            }
+          };
+          checkStop();
+        });
+        if (animationController.shouldStop) return;
+
+        // Step 4: Setting up contribution transaction
+        setSubmissionStep(3);
+        await new Promise((resolve) => {
+          const timeout = setTimeout(resolve, 1000);
+          const checkStop = () => {
+            if (animationController.shouldStop) {
+              clearTimeout(timeout);
+              resolve(undefined);
+            } else {
+              setTimeout(checkStop, 100);
+            }
+          };
+          checkStop();
+        });
+        if (animationController.shouldStop) return;
+
+        // Step 5: Broadcasting transaction to network
+        setSubmissionStep(4);
+      })();
+
+      // Make the actual API call
+      const apiPromise = proposeSendMessage(accessToken, payload).then(
+        (response) => {
+          // Stop animation when API call completes
+          animationController.shouldStop = true;
+          // Jump to final step
+          setSubmissionStep(4);
+          return response;
+        }
+      );
+
+      // Wait for API call to complete (animation will stop when API finishes)
+      const response = await apiPromise;
       console.log("API Response:", response);
 
+      // Ensure animation promise is cleaned up
+      await stepPromise;
+
       return response;
+    } catch (error) {
+      console.error("Submission error:", error);
+      throw error;
     } finally {
       setIsSubmitting(false);
+      setSubmissionStep(0);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !contribution.trim() ||
-      !twitterUrl.trim() ||
-      !isValidTwitterUrl ||
-      !isWithinLimit
-    )
+    console.log("=== SUBMIT ATTEMPT ===");
+    console.log("twitterUrl:", twitterUrl);
+    console.log("isValidTwitterUrl:", isValidTwitterUrl);
+    console.log("needsXLink:", needsXLink);
+    console.log("canSubmitContribution:", canSubmitContribution);
+    console.log("xProfile:", xProfile);
+
+    if (!twitterUrl.trim() || !isValidTwitterUrl || needsXLink) {
+      console.log("Early return - basic validation failed");
       return;
+    }
+
+    // Validate X username matches the linked account
+    setIsValidatingXUsername(true);
+    setXUsernameError(null);
+
+    try {
+      console.log("Starting X username validation for URL:", twitterUrl);
+      const validation = await validateXUsernameMatch(twitterUrl);
+      console.log("X username validation result:", validation);
+
+      if (!validation.isValid) {
+        console.log("Validation failed:", validation.error);
+        setXUsernameError(validation.error || "X username validation failed");
+        setIsValidatingXUsername(false);
+        return;
+      }
+
+      console.log("Validation passed, proceeding to submit");
+      setIsValidatingXUsername(false);
+    } catch (error) {
+      console.error("X username validation error:", error);
+      setXUsernameError("Failed to validate X username. Please try again.");
+      setIsValidatingXUsername(false);
+      return;
+    }
 
     const extensionData = buildExtensionData();
     if (!extensionData) {
@@ -684,6 +1019,9 @@ export function ProposalSubmission({
 
     try {
       const response = await sendRequest(extensionData);
+
+      // Small delay before showing transaction status modal
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       setApiResponse(response);
       setShowResultDialog(true);
@@ -730,6 +1068,67 @@ export function ProposalSubmission({
     }
   };
 
+  const handleApproveContract = async () => {
+    if (!accessToken || !userAgent?.account_contract || !daoExtensions) {
+      console.error("Missing required data for contract approval");
+      return;
+    }
+
+    const actionProposalsVotingExt = daoExtensions.find(
+      (ext) =>
+        ext.type === "EXTENSIONS" && ext.subtype === "ACTION_PROPOSAL_VOTING"
+    );
+
+    if (!actionProposalsVotingExt) {
+      console.error("Could not find ACTION_PROPOSAL_VOTING extension");
+      return;
+    }
+
+    setIsApproving(true);
+    setShowApprovalModal(true);
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/tools/agent_account/approve_contract?token=${accessToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_account_contract: userAgent.account_contract,
+            contract_to_approve: actionProposalsVotingExt.contract_principal,
+            approval_type: "VOTING",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API Error: ${res.status} - ${errorText}`);
+      }
+
+      const result = await res.json();
+      const parsed =
+        typeof result.output === "string"
+          ? JSON.parse(result.output)
+          : result.output;
+
+      // Extract transaction ID from the response
+      const txId = parsed?.data?.txid || parsed?.txid || result?.txid;
+      if (txId) {
+        setApprovalTxId(txId);
+        // Start monitoring the transaction
+        await startApprovalMonitoring(txId);
+      }
+    } catch (error) {
+      console.error("Contract approval error:", error);
+      setShowApprovalModal(false);
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
   // Parse the backend output for inner success and message
   const parsedApiResponse = apiResponse
     ? parseOutput(apiResponse.output)
@@ -739,12 +1138,7 @@ export function ProposalSubmission({
 
   return (
     <>
-      <div
-        className="rounded-2xl bg-muted/10 border-white/10 p-4  sm:p-6 lg:p-7 flex flex-col relative"
-        style={{
-          maxHeight: "var(--available-height)",
-        }}
-      >
+      <div className="rounded-2xl bg-muted/10 border-white/10 p-4 sm:p-5 lg:p-6 flex flex-col relative max-w-full overflow-hidden">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
           <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
@@ -754,15 +1148,15 @@ export function ProposalSubmission({
               </div>
               <div>
                 <h3 className="text-xl font-bold mb-2">
-                  Join {daoName} to unlock earning
+                  Connect Wallet to unlock earning.
                 </h3>
               </div>
             </div>
           </div>
         )}
 
-        {/* Locked Overlay for Users without Agent DAO Tokens */}
-        {hasAccessToken &&
+        {/* Locked Overlay for Users without Agent DAO Tokens - COMMENTED OUT */}
+        {/* {hasAccessToken &&
           hasAgentAccount &&
           !isLoadingBalance &&
           !hasAgentDaoTokens && (
@@ -781,25 +1175,34 @@ export function ProposalSubmission({
           )}
         {/* Header */}
         <div className="mb-4">
-          <h2 className="text-2xl font-bold mb-1">Earn ${daoName}</h2>
+          <div className="flex items-start justify-between mb-1">
+            <h2 className="text-2xl font-bold">Earn BTC</h2>
+            {/* Tip positioned at top right */}
+            <div className="relative group">
+              <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
+                💡 <strong>Tips</strong>
+              </div>
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-2 w-80 p-3 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="text-sm text-zinc-200">
+                  Make sure your contribution is clear, specific, and aligned
+                  with the DAO's mission. AI agents will vote on this
+                  contribution with {name}.
+                </div>
+                {/* Arrow pointing up */}
+                <div className="absolute -top-1 right-4 w-2 h-2 bg-zinc-800 border-l border-t border-zinc-700 rotate-45"></div>
+              </div>
+            </div>
+          </div>
           <p className="text-sm">
-            Earn{" "}
-            <span className="text-primary font-semibold">1000 ${daoName}</span>{" "}
-            for contributing work that advances the mission. <br />
-            Submit proof below. Agents will vote and grant rewards if approved.
+            Submit proof of completing the current task to earn BTC rewards.
           </p>
         </div>
 
-        {/* Scrollable Body */}
-        <div
-          className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-3"
-          style={{
-            paddingBottom:
-              "calc(var(--submit-cta-height) + var(--cta-spacing))",
-          }}
-        >
-          {/* Airdrop Notification - Only show when authenticated */}
-          {hasAccessToken ? (
+        {/* Content Body */}
+        <div className="flex-1 space-y-3">
+          {/* Airdrop notification - Commented out per user request */}
+          {/* {hasAccessToken && (
             <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -831,39 +1234,33 @@ export function ProposalSubmission({
                       </>
                     ) : (
                       <>
-                        Send boosts to enhance your contribution or{" "}
                         <a
                           href="https://faktory.fun/airdrop"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline font-medium"
                         >
-                          create one here
-                        </a>
+                          Send airdrop
+                        </a>{" "}
+                        to boost your contribution.
                       </>
                     )}
                   </div>
                 </div>
-                {/* <button
-                  onClick={() => setShowAirdropNotification(false)}
-                  className="p-1 rounded-md hover:bg-muted/50 transition-colors duration-200"
-                  aria-label="Dismiss notification"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </button> */}
               </div>
             </div>
-          ) : null}
+          )} */}
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="relative">
+            {/* Description textarea commented out - caption from Twitter post will be used */}
+            {/* <div className="relative">
               <textarea
                 value={contribution}
                 onChange={(e) => {
                   setContribution(e.target.value);
                 }}
                 placeholder={`Describe the work you've done that pushes the ${daoName} mission.`}
-                className={`w-full min-h-[100px] p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 ${!isWithinLimit ? "" : ""}`}
+                className={`w-full min-h-[107px] p-3 sm:p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 max-w-full ${!isWithinLimit ? "" : ""}`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -882,7 +1279,7 @@ export function ProposalSubmission({
                   shorten your message or use a shorter Twitter URL.
                 </div>
               )}
-            </div>
+            </div> */}
             <div className="relative">
               <input
                 type="url"
@@ -894,8 +1291,12 @@ export function ProposalSubmission({
                   const cleaned = cleanTwitterUrl(twitterUrl);
                   if (cleaned) setTwitterUrl(cleaned);
                 }}
+                // onMouseEnter={handleMouseEnter}
+                // onMouseLeave={handleMouseLeave}
                 placeholder="X.com URL to a post showing proof of your work."
-                className={`w-full p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
+                className={`w-full max-w-full p-3 sm:p-4 ${
+                  twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
+                } bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -904,16 +1305,92 @@ export function ProposalSubmission({
                 }
                 required
               />
+              {/* Clickable link button inside input */}
+              {twitterUrl && isValidTwitterUrl && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      cleanTwitterUrl(twitterUrl),
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                  // onMouseEnter={handleMouseEnter}
+                  // onMouseLeave={handleMouseLeave}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
+                  title="Open Twitter post"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+              )}
               {twitterUrl && !isValidTwitterUrl && (
                 <div className="text-xs text-red-400 mt-1">
                   ⚠️ Please enter a valid X.com (Twitter) post URL in the
                   format: https://x.com/username/status/1234567890123456789
                 </div>
               )}
+
+              {/* Hover Preview Tooltip - Desktop Only - Commented out, preview now in right panel */}
+              {/* {showHoverPreview && twitterEmbedData && (
+                <div
+                  className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
+                  onMouseEnter={() => setShowHoverPreview(true)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                    <span>Twitter Post Preview</span>
+                  </div>
+                  <div
+                    className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg [&_iframe]:max-h-80 [&_iframe]:overflow-hidden"
+                    dangerouslySetInnerHTML={{
+                      __html: twitterEmbedData.html,
+                    }}
+                  />
+                </div>
+              )} */}
             </div>
 
-            {/* Airdrop Selector - Show disabled version when not authenticated */}
-            {(senderAirdrops.length > 0 || !hasAccessToken) && (
+            {/* Twitter Embed Preview - Mobile Only - Commented out, preview now in right panel */}
+            {/* {twitterUrl && isValidTwitterUrl && (
+              <div className="lg:hidden space-y-2">
+                {isLoadingEmbed && (
+                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader />
+                      <span>Loading preview...</span>
+                    </div>
+                  </div>
+                )}
+
+                {embedError && (
+                  <div className="bg-red-900/20 border border-red-800/30 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-red-300">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Preview unavailable: {embedError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {twitterEmbedData && !isLoadingEmbed && (
+                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                    <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      <span>Twitter Post Preview</span>
+                    </div>
+                    <div
+                      className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
+                      dangerouslySetInnerHTML={{
+                        __html: twitterEmbedData.html,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )} */}
+
+            {/* Airdrop Selector - Commented out per user request */}
+            {/* {hasAccessToken && (
               <div className="space-y-1">
                 <Select
                   onValueChange={(value) =>
@@ -930,7 +1407,9 @@ export function ProposalSubmission({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      Attach boost (optional)
+                      {senderAirdrops.length > 0
+                        ? "Attach boost (optional)"
+                        : "No boosts available - Create one to attach"}
                     </SelectItem>
                     {senderAirdrops.map((airdrop) => (
                       <SelectItem key={airdrop.tx_hash} value={airdrop.tx_hash}>
@@ -961,35 +1440,19 @@ export function ProposalSubmission({
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Twitter Embed Preview */}
-            {twitterUrl && isValidTwitterUrl && (
-              <div className="bg-background/60 rounded-xl p-3 shadow-sm">
-                <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Twitter Post Preview
-                </div>
-                {isLoadingEmbed ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      Loading preview...
-                    </div>
-                  </div>
-                ) : twitterEmbed ? (
-                  <div
-                    className="twitter-embed"
-                    dangerouslySetInnerHTML={{ __html: twitterEmbed.html }}
-                  />
-                ) : (
-                  <div className="text-sm text-muted-foreground py-4">
-                    Failed to load Twitter post preview
-                  </div>
-                )}
-              </div>
-            )}
+            )} */}
 
             {/* Error/Status Messages - Only show when authenticated */}
+
+            {/* X Username Validation Error */}
+            {xUsernameError && (
+              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+                <strong>❌ X Username Mismatch</strong>
+                <div className="text-xs text-red-200 mt-1">
+                  {xUsernameError}
+                </div>
+              </div>
+            )}
 
             {/* Agent Account Validation - Only show if we have actually loaded agents data */}
             {hasAccessToken &&
@@ -1001,24 +1464,40 @@ export function ProposalSubmission({
                 </div>
               )}
 
-            {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
+            {/* Bitcoin Block Validation */}
+            {hasAccessToken &&
+              hasAgentAccount &&
+              // hasAgentDaoTokens &&
+              !isCheckingBitcoinBlock &&
+              hasProposalInCurrentBlock &&
+              currentBitcoinBlock && (
+                <div className="text-sm text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <strong>⏱️ Bitcoin Block Limit Reached</strong>
+                      <div className="text-xs text-yellow-200 mt-1">
+                        Only one contribution per Bitcoin block. Please wait
+                        until block {currentBitcoinBlock + 1}.
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-yellow-200">
+                        Current Block
+                      </div>
+                      <div className="font-bold">
+                        {currentBitcoinBlock.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            {/* {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
               <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
                 <strong>Invalid Twitter URL:</strong> URL must be in the format
                 https://x.com/username/status/1234567890123456789
               </div>
-            )}
-
-            {hasAccessToken &&
-              contribution.trim() &&
-              twitterUrl.trim() &&
-              isValidTwitterUrl &&
-              isWithinLimit && (
-                <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
-                  💡 <strong>Tip:</strong> Make sure your contribution is clear,
-                  specific, and aligned with the DAO's mission. AI agents will
-                  vote on this contribution with {name}.
-                </div>
-              )}
+            )} */}
 
             {isLoadingExtensions && (
               <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
@@ -1034,32 +1513,81 @@ export function ProposalSubmission({
           </form>
         </div>
 
-        {/* Sticky Footer CTA */}
-        <div className="sticky bottom-0 -mx-5 sm:-mx-6 lg:-mx-7  pt-4 z-20">
-          <div className="px-5 sm:px-6 lg:px-7">
+        {/* Footer CTA */}
+        <div className="pt-4">
+          <div>
             <Button
               onClick={handleSubmit}
               disabled={
                 !hasAccessToken ||
-                !contribution.trim() ||
                 !twitterUrl.trim() ||
                 !isValidTwitterUrl ||
-                !isWithinLimit ||
                 isSubmitting ||
+                isValidatingXUsername ||
                 !hasAgentAccount ||
                 // !hasDaoTokens ||
-                !hasAgentDaoTokens ||
+                // !hasAgentDaoTokens ||
                 isLoadingExtensions ||
                 isLoadingAgents ||
-                isLoadingBalance
+                // isLoadingBalance ||
+                isCheckingBitcoinBlock ||
+                hasProposalInCurrentBlock ||
+                needsXLink ||
+                isXLoading ||
+                isLoadingEmbed ||
+                !twitterEmbedData ||
+                !!xUsernameError ||
+                !canSubmitContribution
               }
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
-              style={{ height: "var(--submit-cta-height)" }}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-6 text-sm sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px]"
             >
               {isSubmitting ? (
+                <div className="flex items-center gap-2 text-center px-2">
+                  <Loader />
+                  <span className="break-words">
+                    {submissionButtonText || "Processing..."}
+                  </span>
+                </div>
+              ) : !hasAccessToken ? (
+                <span>Connect Wallet to Submit</span>
+              ) : needsXLink ? (
+                <span>Link X Account to Submit</span>
+              ) : verificationStatus.status === "pending" ? (
                 <div className="flex items-center gap-2">
                   <Loader />
-                  <span>Submitting...</span>
+                  <span>X Verification Pending</span>
+                </div>
+              ) : //  : verificationStatus.status === "not_verified" ? (
+              //   <div className="flex items-center gap-2">
+              //     <Lock className="w-4 h-4" />
+              //     <span>X Account Not Verified</span>
+              //   </div>
+              // )
+              isValidatingXUsername ? (
+                <div className="flex items-center gap-2">
+                  <Loader />
+                  <span>Validating X Username...</span>
+                </div>
+              ) : xUsernameError ? (
+                <span>Fix X Username to Submit</span>
+              ) : !hasAgentAccount ? (
+                <span>Waiting for Agent Account</span>
+              ) : // !hasAgentDaoTokens ? (
+              //   <span>Join DAO to Submit</span>
+              // ) :
+              isCheckingBitcoinBlock ? (
+                <div className="flex items-center gap-2 text-center px-2">
+                  <Loader />
+                  <span className="break-words">Checking Bitcoin Block...</span>
+                </div>
+              ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
+                <span>
+                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
+                </span>
+              ) : isLoadingEmbed ? (
+                <div className="flex items-center gap-2 text-center px-2">
+                  <Loader />
+                  <span className="break-words">Loading Post Content...</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
@@ -1070,6 +1598,79 @@ export function ProposalSubmission({
             </Button>
           </div>
         </div>
+
+        {/* X Account Lock Overlay */}
+        {hasAccessToken &&
+          /* hasAgentDaoTokens && */ needsXLink &&
+          !isXLoading && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div>
+                  <XLinking
+                    compact={false}
+                    showTitle={false}
+                    onLinkingComplete={() => {
+                      refreshStatus();
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* X Verification Lock Overlay */}
+        {hasAccessToken &&
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "not_verified" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-red-300 mb-2 flex justify-center">
+                    <svg
+                      className="w-5 h-5 flex-shrink-0 mt-1"
+                      viewBox="0 0 22 22"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"
+                        fill="#1d9bf0"
+                      />
+                    </svg>
+                    Your X account{" "}
+                    {xProfile?.username ? `@${xProfile.username} ` : ""}must have blue a check to submit contribution
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* X Verification Pending Lock Overlay */}
+        {hasAccessToken &&
+          /* hasAgentDaoTokens && */
+          !needsXLink &&
+          !isXLoading &&
+          verificationStatus.status === "pending" && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-full bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
+                  <Loader />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-300 mb-2">
+                    X Verification Pending
+                  </h3>
+                  <p className="text-sm text-yellow-200/80 leading-relaxed">
+                    Your X account verification is being processed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}
@@ -1287,9 +1888,12 @@ export function ProposalSubmission({
                                 return (
                                   <Button
                                     variant="outline"
-                                    onClick={handleRetry}
+                                    onClick={handleApproveContract}
+                                    disabled={isApproving}
                                   >
-                                    Approve Contract & Retry
+                                    {isApproving
+                                      ? "Approving..."
+                                      : "Approve Contract & Retry"}
                                   </Button>
                                 );
                               }
@@ -1386,8 +1990,14 @@ export function ProposalSubmission({
 
                     if (needsApproval) {
                       return (
-                        <Button variant="outline" onClick={handleRetry}>
-                          Approve Contract & Retry
+                        <Button
+                          variant="outline"
+                          onClick={handleApproveContract}
+                          disabled={isApproving}
+                        >
+                          {isApproving
+                            ? "Approving..."
+                            : "Approve Contract & Retry"}
                         </Button>
                       );
                     }
@@ -1411,6 +2021,34 @@ export function ProposalSubmission({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Contract Approval Status Modal */}
+      <TransactionStatusModal
+        isOpen={showApprovalModal}
+        onClose={() => {
+          setShowApprovalModal(false);
+          if (approvalTransactionStatus === "success") {
+            // After successful approval, retry the original submission
+            handleRetry();
+          }
+        }}
+        txId={approvalTxId || undefined}
+        transactionStatus={approvalTransactionStatus}
+        transactionMessage={approvalTransactionMessage}
+        title="Contract Approval Status"
+        successTitle="Approval Confirmed"
+        failureTitle="Approval Failed"
+        successDescription="The contract has been successfully approved for voting operations. You can now retry your submission."
+        failureDescription="The contract approval could not be completed. Please try again."
+        pendingDescription="The contract approval is being processed on the blockchain. This may take a few minutes."
+        onRetry={() => {
+          setShowApprovalModal(false);
+          resetApprovalVerification();
+          setApprovalTxId(null);
+          handleApproveContract();
+        }}
+        showRetryButton={true}
+      />
     </>
   );
 }

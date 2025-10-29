@@ -100,14 +100,17 @@ export const fetchDAOsWithExtension = async (): Promise<DAO[]> => {
 };
 
 /**
- * Fetches proposal counts for all DAOs.
+ * Fetches proposal counts for all DAOs (only DEPLOYED status).
  *
  * Query key: ['proposalCounts']
  */
 export const fetchProposalCounts = async (): Promise<
   Record<string, number>
 > => {
-  const { data, error } = await supabase.from("proposals").select("dao_id");
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("dao_id")
+    .eq("status", "DEPLOYED");
 
   if (error) {
     console.error("Error fetching proposal counts:", error);

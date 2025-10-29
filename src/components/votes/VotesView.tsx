@@ -67,6 +67,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/useToast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchAgents } from "@/services/agent.service";
+import { useAuth } from "@/hooks/useAuth";
 import { getProposalStatus } from "@/utils/proposal";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 
@@ -113,6 +114,8 @@ const voteToProposal = (vote: VoteType): Proposal => ({
   voting_reward: "0",
   voting_threshold: BigInt(0),
 });
+
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 import {
   fetchActiveAgentPromptByDaoAndAgent,
@@ -228,9 +231,12 @@ function VoteCard({ vote }: VoteCardProps) {
     useProposalStatus(proposalLike);
 
   // Fetch agents to get the DAO manager agent ID
+  const { userId, isAuthenticated } = useAuth();
+
   const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
+    queryKey: ["agents", userId],
     queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
   });
 
   // Get agent account address for veto checking
@@ -662,7 +668,7 @@ function VoteCard({ vote }: VoteCardProps) {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <Link href={`/daos/${encodeURIComponent(vote.dao_name)}`}>
+                  <Link href={`/aidaos/${encodeURIComponent(vote.dao_name)}`}>
                     <span className="font-bold hover:text-primary cursor-pointer transition-colors flex items-center gap-1">
                       {vote.dao_name}
                       <ExternalLink className="h-3 w-3" />
@@ -1341,9 +1347,14 @@ export function VotesView({ votes }: VotesViewProps) {
       }
     })();
 
+    let filteredByDao = byTab;
+    if (enableSingleDaoMode) {
+      filteredByDao = filteredByDao.filter((vote) => vote.dao_name?.toUpperCase() === singleDaoName.toUpperCase());
+    }
+
     return selectedDao
-      ? byTab.filter((vote) => vote.dao_name === selectedDao)
-      : byTab;
+      ? filteredByDao.filter((vote) => vote.dao_name === selectedDao)
+      : filteredByDao;
   }, [votes, activeTab, currentBitcoinHeight, selectedDao]);
 
   const paginatedVotes = filteredVotes.slice(0, visibleCount);

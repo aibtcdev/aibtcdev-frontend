@@ -24,6 +24,10 @@ interface BitcoinDepositProps {
   isMarketOpen?: boolean | null;
   prelaunchContract?: string;
   poolContract?: string;
+  adapterContract?: string;
+  isBonded?: boolean | null;
+  bitflowAdapter?: string;
+  bitflowPool?: string;
 }
 
 export default function BitcoinDeposit({
@@ -34,6 +38,10 @@ export default function BitcoinDeposit({
   isMarketOpen,
   prelaunchContract,
   poolContract,
+  adapterContract,
+  isBonded,
+  bitflowAdapter,
+  bitflowPool,
   // headerOffset = 96,
 }: BitcoinDepositProps) {
   // Get session state from Zustand store
@@ -119,14 +127,8 @@ export default function BitcoinDeposit({
   // }
 
   return (
-    <div
-      className="rounded-2xl bg-muted/10 p-5 sm:p-6 lg:p-7 lg:sticky flex flex-col"
-      style={{
-        top: `calc(var(--header-height) + 16px)`,
-        maxHeight: "var(--available-height)",
-      }}
-    >
-      <div className="flex-1 overflow-y-auto">
+    <div className="rounded-2xl bg-muted/10 p-4 sm:p-5 lg:p-6 flex flex-col lg:sticky lg:top-[120px] lg:max-h-[calc(100vh-140px)]">
+      <div className="flex-1 overflow-y-auto min-h-0">
         {isDataLoading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <Loader />
@@ -159,6 +161,10 @@ export default function BitcoinDeposit({
             isMarketOpen={isMarketOpen}
             prelaunchContract={prelaunchContract}
             poolContract={poolContract}
+            adapterContract={adapterContract}
+            isBonded={isBonded}
+            bitflowAdapter={bitflowAdapter}
+            bitflowPool={bitflowPool}
           />
         )}
       </div>

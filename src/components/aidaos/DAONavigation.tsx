@@ -11,32 +11,32 @@ interface DAONavigationProps {
 
 export function DAONavigation({ daoName, currentPath }: DAONavigationProps) {
   // Determine which tab is active
-  const isProposals = currentPath === `/daos/${daoName}`;
-  const isExtensions = currentPath === `/daos/${daoName}/extensions`;
-  const isHolders = currentPath === `/daos/${daoName}/holders`;
-  const isMission = currentPath === `/daos/${daoName}/mission`;
+  const isProposals = currentPath === `/aidaos/${daoName}`;
+  const isExtensions = currentPath === `/aidaos/${daoName}/extensions`;
+  const isHolders = currentPath === `/aidaos/${daoName}/holders`;
+  const isMission = currentPath === `/aidaos/${daoName}/mission`;
 
   const navItems = [
     {
-      href: `/daos/${daoName}`,
+      href: `/aidaos/${daoName}`,
       label: "Proposals",
       icon: Activity,
       isActive: isProposals,
     },
     {
-      href: `/daos/${daoName}/mission`,
+      href: `/aidaos/${daoName}/mission`,
       label: "Mission",
       icon: Info,
       isActive: isMission,
     },
     {
-      href: `/daos/${daoName}/extensions`,
+      href: `/aidaos/${daoName}/extensions`,
       label: "Extensions",
       icon: Blocks,
       isActive: isExtensions,
     },
     {
-      href: `/daos/${daoName}/holders`,
+      href: `/aidaos/${daoName}/holders`,
       label: "Holders",
       icon: Users,
       isActive: isHolders,

@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getProposalVotes } from "@/lib/vote-utils";
 import { fetchProposalVotes } from "@/services/vote.service";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useSmartCacheBusting } from "@/hooks/useSmartCacheBusting";
@@ -14,9 +13,6 @@ interface UseProposalVoteProps {
 }
 
 interface VoteDisplayData {
-  votesFor: string;
-  votesAgainst: string;
-  liquidTokens: string;
   rawVotesFor: string;
   rawVotesAgainst: string;
   rawLiquidTokens: string;
@@ -70,96 +66,42 @@ export function useProposalVote({
     });
 
   // Memoized format function
-  const formatBalance = useCallback(
-    (value: string | number, decimals: number = 8): string => {
-      const num = typeof value === "string" ? parseFloat(value) : value;
-      if (isNaN(num)) return "0";
+  // const formatBalance = useCallback(
+  //   (value: string | number, decimals: number = 8): string | null => {
+  //     const num = typeof value === "string" ? parseFloat(value) : value;
+  //     if (isNaN(num) || num < 0) return null;
 
-      const normalized = num / Math.pow(10, decimals);
+  //     const normalized = num / Math.pow(10, decimals);
 
-      if (normalized >= 1000000) {
-        return `${(normalized / 1000000).toFixed(2)}M`;
-      }
-      if (normalized >= 1000) {
-        return `${(normalized / 1000).toFixed(2)}K`;
-      }
-      if (normalized < 1 && normalized > 0) {
-        return normalized.toFixed(decimals).replace(/\.?0+$/, "");
-      }
+  //     if (normalized >= 1000000) {
+  //       return `${(normalized / 1000000).toFixed(2)}M`;
+  //     }
+  //     if (normalized >= 1000) {
+  //       return `${(normalized / 1000).toFixed(2)}K`;
+  //     }
+  //     if (normalized < 1 && normalized > 0) {
+  //       return normalized.toFixed(decimals).replace(/\.?0+$/, "");
+  //     }
 
-      return normalized.toFixed(decimals).replace(/\.?0+$/, "");
-    },
-    []
-  );
+  //     return normalized.toFixed(decimals).replace(/\.?0+$/, "");
+  //   },
+  //   []
+  // );
 
-  // Primary vote data source
+  // Primary vote data source - using database directly
   const primaryQuery = useQuery({
     queryKey: [
-      "proposalVotes",
-      contractPrincipal,
-      proposalId,
+      "proposalVotesDB",
+      proposal.id,
       // Cache bust for active proposals OR status transitions
       shouldAlwaysBustCache || shouldBustCache ? "fresh" : "cached",
     ],
     queryFn: async (): Promise<VoteDataSource> => {
-      if (!proposalId || !contractPrincipal) {
-        throw new Error("Missing proposal ID or contract principal");
+      if (!proposal.id) {
+        throw new Error("Missing proposal ID");
       }
 
-      const shouldForceFresh = shouldAlwaysBustCache || shouldBustCache;
-      // const cacheBustReason = shouldAlwaysBustCache ? 'Active proposal' : shouldBustCache ? 'Status transition' : 'Normal fetch';
-
-      // console.log(`🔄 Fetching vote data for proposal ${proposalId} (${cacheBustReason})`);
-      // console.log(`   shouldAlwaysBustCache: ${shouldAlwaysBustCache}, shouldBustCache: ${shouldBustCache}, shouldForceFresh: ${shouldForceFresh}`);
-
-      try {
-        const result = await getProposalVotes(
-          contractPrincipal,
-          proposalId,
-          shouldForceFresh // Force fresh data for active proposals or transitions
-        );
-
-        // Reset cache bust flag after successful fetch (only for status transitions)
-        if (shouldBustCache) {
-          resetCacheBust();
-        }
-
-        // console.log(`✅ Vote data fetched from vote-utils:`, {
-        //   votesFor: result.votesFor,
-        //   votesAgainst: result.votesAgainst,
-        //   cacheBustReason,
-        // });
-
-        return {
-          votesFor: result.votesFor || null,
-          votesAgainst: result.votesAgainst || null,
-          liquidTokens: result.liquidTokens || proposal.liquid_tokens || null,
-          source: "vote-utils",
-        };
-      } catch (error) {
-        // console.warn("❌ Primary vote fetch failed:", error);
-        throw error;
-      }
-    },
-    enabled: !!proposalId && !!contractPrincipal,
-    staleTime,
-    retry: (failureCount, error) => {
-      if (
-        error?.message?.includes("Invalid") ||
-        error?.message?.includes("missing")
-      ) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  // Fallback data source
-  const fallbackQuery = useQuery({
-    queryKey: ["proposalVotesFallback", proposal.id],
-    queryFn: async (): Promise<VoteDataSource> => {
-      // console.log(`🔄 Fetching fallback vote data for proposal ${proposal.id}`);
+      // console.log(`🔄 Fetching vote data from database for proposal ${proposal.id}`);
 
       const votes = await fetchProposalVotes(proposal.id);
 
@@ -176,7 +118,12 @@ export function useProposalVote({
         { totalFor: 0, totalAgainst: 0 }
       );
 
-      // console.log(`✅ Fallback vote data fetched from supabase:`, {
+      // Reset cache bust flag after successful fetch (only for status transitions)
+      if (shouldBustCache) {
+        resetCacheBust();
+      }
+
+      // console.log(`✅ Vote data fetched from database:`, {
       //   votesFor: totalFor.toString(),
       //   votesAgainst: totalAgainst.toString(),
       // });
@@ -185,25 +132,20 @@ export function useProposalVote({
         votesFor: totalFor.toString(),
         votesAgainst: totalAgainst.toString(),
         liquidTokens: proposal.liquid_tokens,
-        source: "supabase",
+        source: "database",
       };
     },
     enabled: !!proposal.id,
+    staleTime,
     retry: 2,
     retryDelay: 1000,
-    staleTime,
   });
 
   // Determine active data source
   const activeVoteData = useMemo(() => {
     if (primaryQuery.data && !primaryQuery.error) {
-      setDataSource("vote-utils");
+      setDataSource("database");
       return primaryQuery.data;
-    }
-
-    if (fallbackQuery.data && !fallbackQuery.error) {
-      setDataSource("supabase");
-      return fallbackQuery.data;
     }
 
     // Final fallback to proposal props
@@ -222,8 +164,6 @@ export function useProposalVote({
   }, [
     primaryQuery.data,
     primaryQuery.error,
-    fallbackQuery.data,
-    fallbackQuery.error,
     fallbackVotesFor,
     fallbackVotesAgainst,
     proposal.liquid_tokens,
@@ -240,15 +180,28 @@ export function useProposalVote({
       return null;
     }
 
+    // Validate that we have valid numeric values
+    const votesForNum = parseFloat(votesFor);
+    const votesAgainstNum = parseFloat(votesAgainst);
+    const liquidTokensNum = parseFloat(liquidTokens);
+
+    if (
+      isNaN(votesForNum) ||
+      isNaN(votesAgainstNum) ||
+      isNaN(liquidTokensNum) ||
+      votesForNum < 0 ||
+      votesAgainstNum < 0 ||
+      liquidTokensNum < 0
+    ) {
+      return null;
+    }
+
     return {
-      votesFor: formatBalance(votesFor),
-      votesAgainst: formatBalance(votesAgainst),
-      liquidTokens: formatBalance(liquidTokens),
       rawVotesFor: votesFor,
       rawVotesAgainst: votesAgainst,
       rawLiquidTokens: liquidTokens,
     };
-  }, [activeVoteData, formatBalance]);
+  }, [activeVoteData]);
 
   // Calculate vote metrics
   const calculations = useMemo((): VoteCalculations | null => {
@@ -287,47 +240,35 @@ export function useProposalVote({
 
   // Manual refresh
   const refreshVoteData = useCallback(async () => {
-    if (!contractPrincipal || !proposalId) {
-      // console.warn("⚠️ Cannot refresh: missing contractPrincipal or proposalId");
+    if (!proposal.id) {
+      // console.warn("⚠️ Cannot refresh: missing proposal ID");
       return;
     }
 
     try {
-      // console.log(`🔄 Manual refresh triggered for proposal ${proposalId}`);
+      // console.log(`🔄 Manual refresh triggered for proposal ${proposal.id}`);
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["proposalVotes", contractPrincipal, proposalId],
-          refetchType: "all",
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["proposalVotesFallback", proposal.id],
-          refetchType: "all",
-        }),
-      ]);
+      await queryClient.invalidateQueries({
+        queryKey: ["proposalVotesDB", proposal.id],
+        refetchType: "all",
+      });
 
-      // console.log(`✅ Vote data refreshed for proposal ${proposalId}`);
+      // console.log(`✅ Vote data refreshed for proposal ${proposal.id}`);
     } catch {
       console.error("❌ Failed to refresh vote data:");
     }
-  }, [queryClient, contractPrincipal, proposalId, proposal.id]);
+  }, [queryClient, proposal.id]);
 
   // Determine loading and error states
   const isLoading = useMemo(() => {
     if (voteDisplayData) return false;
-    if (primaryQuery.error && fallbackQuery.error) return false;
-    return primaryQuery.isLoading || fallbackQuery.isLoading;
-  }, [
-    voteDisplayData,
-    primaryQuery.isLoading,
-    primaryQuery.error,
-    fallbackQuery.isLoading,
-    fallbackQuery.error,
-  ]);
+    if (primaryQuery.error) return false;
+    return primaryQuery.isLoading;
+  }, [voteDisplayData, primaryQuery.isLoading, primaryQuery.error]);
 
   const hasError = useMemo(() => {
-    return !voteDisplayData && primaryQuery.error && fallbackQuery.error;
-  }, [voteDisplayData, primaryQuery.error, fallbackQuery.error]);
+    return !voteDisplayData && primaryQuery.error;
+  }, [voteDisplayData, primaryQuery.error]);
 
   return {
     // Data

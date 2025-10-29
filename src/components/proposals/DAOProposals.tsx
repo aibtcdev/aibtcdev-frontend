@@ -4,7 +4,8 @@ import { useMemo } from "react";
 import ProposalCard from "@/components/proposals/ProposalCard";
 import type { Proposal } from "@/types";
 import { FileText } from "lucide-react";
-import { DAOTabLayout } from "@/components/daos/DAOTabLayout";
+import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
+import { enableSingleDaoMode, singleDaoName } from "@/config/features";
 
 interface DAOProposalsProps {
   proposals: Proposal[];
@@ -19,8 +20,12 @@ const DAOProposals = ({
 }: DAOProposalsProps) => {
   // Filter out draft proposals to prevent ProposalCard from returning null
   const deployedProposals = useMemo(() => {
-    return proposals.filter((proposal) => proposal.status === "DEPLOYED");
-  }, [proposals]);
+    let filtered = proposals.filter((proposal) => proposal.status === "DEPLOYED");
+    if (enableSingleDaoMode && daoName.toUpperCase() !== singleDaoName.toUpperCase()) {
+      filtered = [];
+    }
+    return filtered;
+  }, [proposals, daoName]);
 
   return (
     <DAOTabLayout

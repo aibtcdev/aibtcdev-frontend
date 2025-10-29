@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useSessionStore } from "@/store/session";
+import { useWalletStore } from "@/store/wallet";
 import { supabase } from "@/utils/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UseAuthReturn {
@@ -28,6 +30,9 @@ export function useAuth(): UseAuthReturn {
     clearSession,
     refreshSession,
   } = useSessionStore();
+
+  const { clearWalletData } = useWalletStore();
+  const queryClient = useQueryClient();
 
   // Initialize session store on mount
   useEffect(() => {
@@ -66,8 +71,25 @@ export function useAuth(): UseAuthReturn {
       console.error("Error signing out from Supabase:", err);
     }
 
-    // Clear local storage
+    // Clear all browser storage
     localStorage.clear();
+    sessionStorage.clear();
+
+    // Clear all cookies
+    document.cookie.split(";").forEach((cookie) => {
+      const eqPos = cookie.indexOf("=");
+      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      // Clear cookie for current domain and all parent domains
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
+    });
+
+    // Clear React Query cache to prevent stale data
+    queryClient.clear();
+
+    // Clear wallet store data (balances, userWallet, agentWallets)
+    clearWalletData();
 
     // Clear app-specific session state
     clearSession();

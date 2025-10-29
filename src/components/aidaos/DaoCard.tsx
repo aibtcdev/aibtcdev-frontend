@@ -188,7 +188,7 @@ export const DAOCard = ({
           <div
             onClick={() => {
               if (!isMockDAO) {
-                router.push(`/daos/${encodeURIComponent(dao.name)}`);
+                router.push(`/aidaos/${encodeURIComponent(dao.name)}`);
               }
             }}
             className={`block h-full ${isMockDAO ? "cursor-not-allowed" : ""}`}
@@ -417,7 +417,7 @@ export const DAOListItem = ({
     <div
       onClick={() => {
         if (!isMockDAO) {
-          router.push(`/daos/${encodeURIComponent(dao.name)}`);
+          router.push(`/aidaos/${encodeURIComponent(dao.name)}`);
         }
       }}
       className={`group grid grid-cols-[1fr_80px] sm:grid-cols-[1fr_80px_100px] md:grid-cols-[2fr_100px_120px_100px] lg:grid-cols-[2fr_120px_140px_120px_120px] items-center gap-x-2 sm:gap-x-4 px-4 py-4 transition-all duration-300 ${
@@ -558,7 +558,7 @@ export const CompactDAOCard = ({
 
   return (
     <div
-      onClick={() => router.push(`/daos/${encodeURIComponent(dao.name)}`)}
+      onClick={() => router.push(`/aidaos/${encodeURIComponent(dao.name)}`)}
       className="group block"
     >
       <Card className="hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 bg-card/30 backdrop-blur-sm border-border/30 hover:border-primary/40 cursor-pointer hover:bg-card/50 hover:scale-[1.01] active:scale-[0.99]">
