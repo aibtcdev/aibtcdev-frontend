@@ -9,6 +9,10 @@ export const updateSession = async (request: NextRequest) => {
     }
 
     // Handle DAO-related path redirects
+    if (request.nextUrl.pathname === "/aidaos") {
+      return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
+    }
+
     if (request.nextUrl.pathname === "/daos") {
       return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
     }
