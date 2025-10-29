@@ -809,14 +809,25 @@ export function ProposalSubmission({
 
         const textParts: string[] = [];
         for (let i = 0; i < paragraphs.length; i++) {
-          const text = paragraphs[i].textContent?.trim();
+          // Clone the paragraph to avoid modifying the original
+          const p = paragraphs[i].cloneNode(true) as HTMLElement;
+          const links = p.querySelectorAll("a");
+          links.forEach((link) => {
+            const linkText = link.textContent?.trim() || "";
+            if (
+              linkText.includes("pic.twitter.com") ||
+              linkText.includes("pic.x.com") ||
+              linkText.startsWith("t.co/")
+            ) {
+              link.remove();
+            }
+          });
+
+          const text = p.textContent?.trim();
           console.log(`Paragraph ${i}:`, text);
-          // Skip if this looks like metadata (contains links to twitter.com or x.com)
-          if (
-            text &&
-            !text.includes("twitter.com") &&
-            !text.includes("x.com")
-          ) {
+
+          // Only add non-empty text
+          if (text) {
             textParts.push(text);
           }
         }
@@ -1642,7 +1653,8 @@ export function ProposalSubmission({
                       />
                     </svg>
                     Your X account{" "}
-                    {xProfile?.username ? `@${xProfile.username} ` : ""}must have blue a check to submit contribution
+                    {xProfile?.username ? `@${xProfile.username} ` : ""}must
+                    have blue a check to submit contribution
                   </h3>
                 </div>
               </div>
