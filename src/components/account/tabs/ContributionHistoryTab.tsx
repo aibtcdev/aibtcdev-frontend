@@ -182,7 +182,7 @@ export function ContributionHistoryTab({
             No Contributions Yet
           </h3>
           <p className="text-sm text-muted-foreground">
-            Your agent hasn't created any DAO contribution yet
+            Join an AI DAO to start contributing and earning tokens.
           </p>
         </div>
       </div>
