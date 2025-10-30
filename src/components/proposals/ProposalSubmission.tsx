@@ -629,6 +629,70 @@ export function ProposalSubmission({
     setSubmissionButtonText(stepMessages[submissionStep] || "submitting...");
   }, [isSubmitting, submissionStep, daoName]);
 
+  // Auto-close approval modal on success and trigger resubmission
+  useEffect(() => {
+    if (showApprovalModal && approvalTransactionStatus === "success") {
+      // Auto-close after a brief delay to show success state
+      const timer = setTimeout(async () => {
+        setShowApprovalModal(false);
+        handleRetry();
+
+        // Show the submission animation
+        setIsSubmitting(true);
+        setSubmissionStep(0);
+
+        // Rebuild and resubmit the proposal
+        const extensionData = buildExtensionData();
+        if (!extensionData) {
+          console.error(
+            "Could not determine required DAO extensions for resubmission"
+          );
+          setIsSubmitting(false);
+          setSubmissionStep(0);
+          return;
+        }
+
+        try {
+          const response = await sendRequest(extensionData);
+
+          // Small delay before showing transaction status modal
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
+          setApiResponse(response);
+          setShowResultDialog(true);
+          setTxStatusView("initial");
+          setIsSubmitting(false);
+          setSubmissionStep(0);
+
+          if (response.success) {
+            const parsed = parseOutput(response.output);
+            const txid = parsed?.data?.txid;
+            if (txid) {
+              await connectToWebSocket(txid);
+            }
+            onSubmissionSuccess?.();
+          }
+        } catch (err) {
+          const networkErrorResponse: ApiResponse = {
+            success: false,
+            error:
+              err instanceof Error
+                ? err.message
+                : "Failed to connect to the server",
+            output: "",
+          };
+          setApiResponse(networkErrorResponse);
+          setShowResultDialog(true);
+          setTxStatusView("initial");
+          setIsSubmitting(false);
+          setSubmissionStep(0);
+        }
+      }, 1000); // Show success state for 1 second before auto-closing
+
+      return () => clearTimeout(timer);
+    }
+  }, [showApprovalModal, approvalTransactionStatus]);
+
   // Check for proposals in current Bitcoin block
   useEffect(() => {
     const checkBitcoinBlockProposals = async () => {
@@ -2039,10 +2103,6 @@ export function ProposalSubmission({
         isOpen={showApprovalModal}
         onClose={() => {
           setShowApprovalModal(false);
-          if (approvalTransactionStatus === "success") {
-            // After successful approval, retry the original submission
-            handleRetry();
-          }
         }}
         txId={approvalTxId || undefined}
         transactionStatus={approvalTransactionStatus}
@@ -2050,7 +2110,7 @@ export function ProposalSubmission({
         title="Contract Approval Status"
         successTitle="Approval Confirmed"
         failureTitle="Approval Failed"
-        successDescription="The contract has been successfully approved for voting operations. You can now retry your submission."
+        successDescription="The contract has been successfully approved for voting operations. Resubmitting your contribution now..."
         failureDescription="The contract approval could not be completed. Please try again."
         pendingDescription="The contract approval is being processed on the blockchain. This may take a few minutes."
         onRetry={() => {
