@@ -22,6 +22,28 @@ const validateNetworkAddress = (address: string): boolean => {
 
 export async function connectWallet({ onCancel }: ConnectWalletOptions) {
   try {
+    // Clear any existing wallet session data to prevent JSON parse errors
+    // when switching between different wallet providers (Leather/Xverse)
+    try {
+      localStorage.removeItem("blockstack-session");
+      localStorage.removeItem("stacks-connect");
+      localStorage.removeItem("@stacks/connect");
+      localStorage.removeItem("STX_PROVIDER");
+      // Clear any other stacks-related session data
+      Object.keys(localStorage).forEach((key) => {
+        if (
+          key.startsWith("stacks") ||
+          key.startsWith("blockstack") ||
+          key.startsWith("@stacks") ||
+          key.startsWith("STX")
+        ) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.warn("Failed to clear wallet session data:", e);
+    }
+
     const response = await connect();
 
     // After successful connection, validate the network
