@@ -46,10 +46,11 @@ export async function generateMetadata({
   const seoDescription = extractMission(dao.description);
 
   return {
-    title: dao.name,
+    // title: dao.name,
+    title: "AIBTC",
     description: seoDescription,
     openGraph: {
-      title: dao.name,
+      title: "AIBTC",
       description: seoDescription,
       images: ogImageUrl
         ? [
@@ -65,7 +66,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: dao.name,
+      title: "AIBTC",
       description: seoDescription,
       // Twitter specific image with 2:1 ratio
       images: twitterImageUrl ? [twitterImageUrl] : undefined,
