@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { supabase } from "@/utils/supabase/client";
+// import { supabase } from "@/utils/supabase/client";
 import { fetchDAOByName } from "@/services/dao.service";
 import { extractMission } from "@/utils/format";
 import { DAOLayoutClient } from "./layout-client";
@@ -8,8 +8,8 @@ import { DAOLayoutClient } from "./layout-client";
 // Minimum dimensions: 300x157
 // Maximum dimensions: 4096x4096
 // Recommended dimensions: 1200x600
-const TWITTER_IMAGE_WIDTH = 1200;
-const TWITTER_IMAGE_HEIGHT = 600;
+// const TWITTER_IMAGE_WIDTH = 1200;
+// const TWITTER_IMAGE_HEIGHT = 600;
 
 // Open Graph recommends 1.91:1 ratio
 const OG_IMAGE_WIDTH = 1200;
@@ -31,20 +31,16 @@ export async function generateMetadata({
   }
 
   // Now fetch the token using the DAO ID
-  const { data: token } = await supabase
-    .from("tokens")
-    .select("image_url")
-    .eq("dao_id", dao.id)
-    .single();
+  // const { data: token } = await supabase
+  //   .from("tokens")
+  //   .select("image_url")
+  //   .eq("dao_id", dao.id)
+  //   .single();
 
   // Generate separate URLs for Twitter and Open Graph with correct dimensions
-  const twitterImageUrl = token?.image_url
-    ? `${token.image_url}?w=${TWITTER_IMAGE_WIDTH}&h=${TWITTER_IMAGE_HEIGHT}&fit=cover&auto=format`
-    : undefined;
+  const twitterImageUrl = "https://aibtc.com/logos/twitter-share-image.jpeg";
 
-  const ogImageUrl = token?.image_url
-    ? `${token.image_url}?w=${OG_IMAGE_WIDTH}&h=${OG_IMAGE_HEIGHT}&fit=cover&auto=format`
-    : undefined;
+  const ogImageUrl = "https://aibtc.com/logos/twitter-share-image.jpeg";
 
   // Extract SEO-friendly shorter description using extractMission
   const seoDescription = extractMission(dao.description);
