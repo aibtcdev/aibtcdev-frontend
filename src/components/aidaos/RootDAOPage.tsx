@@ -532,6 +532,7 @@ submit daily at aibtc.com`}
                 time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
+                link="https://x.com/aibtcdev/status/1985732853540470816"
               />
             </div>
           </div>

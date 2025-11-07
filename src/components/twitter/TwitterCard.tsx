@@ -9,6 +9,7 @@ interface TwitterCardProps {
   time: string;
   avatarUrl?: string;
   verified?: boolean;
+  link?: string;
 }
 
 export const TwitterCard: React.FC<TwitterCardProps> = ({
@@ -19,9 +20,29 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
   time,
   avatarUrl,
   verified = false,
+  link,
 }) => {
+  const handleClick = () => {
+    if (link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
-    <div className="bg-black/10 text-white rounded-sm p-6 max-w-2xl">
+    <div
+      className={`bg-black/10 text-white rounded-sm p-6 max-w-2xl transition-all ${
+        link ? "cursor-pointer hover:bg-black/20" : ""
+      }`}
+      onClick={handleClick}
+      role={link ? "button" : undefined}
+      tabIndex={link ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (link && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
