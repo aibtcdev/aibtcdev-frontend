@@ -91,14 +91,9 @@ export function XLinking({
     return (
       <div className="flex items-center gap-2">
         {needsXLink ? (
-          <Button
-            onClick={handleLinkX}
-            disabled={isLinking || isLoading}
-            size="sm"
-            className="bg-black hover:bg-gray-800 text-white"
-          >
-            {isLinking ? "Linking..." : "Link X Account"}
-          </Button>
+          <span className="text-sm text-muted-foreground">
+            {isLinking ? "Linking..." : "Link X"}
+          </span>
         ) : (
           <div className="flex items-center gap-2">
             {/* <Badge variant="secondary" className="bg-primary/10 text-primary">

@@ -3,7 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useXStatus } from "@/hooks/useXStatus";
 import { User } from "lucide-react";
-import { getStacksAddress } from "@/lib/address";
+import { XLinking } from "@/components/auth/XLinking";
 
 const DisplayUserProfile = () => {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -15,36 +15,28 @@ const DisplayUserProfile = () => {
     return null;
   }
 
-  // If user has a username, display it (username only, no badge)
+  // If user has a username, display it
   if (profile?.username) {
     return (
       <div className="flex items-center gap-2 justify-center">
-        <span className="font-inter font-bold tracking-tight text-sm">
-          @{profile.username}
-        </span>
-        <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
-          <User className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1.5">
+          <span className="font-inter font-bold tracking-tight text-sm">
+            @{profile.username}
+          </span>
+          <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
+            <User className="w-3.5 h-3.5" />
+          </div>
         </div>
       </div>
     );
   }
 
-  // If no username, show truncated Stacks address
-  const stacksAddress = getStacksAddress();
-  if (stacksAddress) {
-    return (
-      <div className="flex items-center gap-2 justify-center">
-        <span className="font-inter font-bold tracking-tight text-sm">
-          {`${stacksAddress.slice(0, 5)}...${stacksAddress.slice(-5)}`}
-        </span>
-        <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
-          <User className="w-3.5 h-3.5" />
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+  // If no username, show compact X linking button
+  return (
+    <div className="flex items-center gap-2">
+      <XLinking compact={true} showTitle={false} />
+    </div>
+  );
 };
 
 export default DisplayUserProfile;
