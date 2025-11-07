@@ -156,44 +156,43 @@ export function XLinking({
             </Button>
           </div>
         ) : (
-          <div className="flex items-start justify-between gap-3 p-4 bg-primary/5 rounded-lg">
-            <div className="flex items-start gap-3 flex-1">
-              <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h4 className="font-medium text-foreground">
-                  X Account Linked
-                </h4>
+          <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <div>
+                <span className="font-medium text-foreground">
+                  X account linked
+                </span>
                 {xProfile && (
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Username:</span>
-                      <Badge variant="secondary">@{xProfile.username}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Display Name:</span>
-                      <span className="text-sm">{xProfile.name}</span>
-                    </div>
-                    <a
-                      href={`https://x.com/${xProfile.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80"
-                    >
-                      View Profile
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    (@{xProfile.username})
+                  </span>
                 )}
               </div>
             </div>
-            <Button
-              onClick={handleUnlinkX}
-              disabled={isUnlinking}
-              variant="outline"
-              size="sm"
-            >
-              {isUnlinking ? "Unlinking..." : "Unlink"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {xProfile && (
+                <Button variant="ghost" size="sm" asChild>
+                  <a
+                    href={`https://x.com/${xProfile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1"
+                  >
+                    View Profile
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Button>
+              )}
+              <Button
+                onClick={handleUnlinkX}
+                disabled={isUnlinking}
+                variant="destructive"
+                size="sm"
+              >
+                {isUnlinking ? "Unlinking..." : "Unlink"}
+              </Button>
+            </div>
           </div>
         )}
       </div>

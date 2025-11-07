@@ -94,7 +94,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
         ([tokenId, tokenData]) => {
           // Check if this is sBTC
           if (tokenId.includes("sbtc-token")) {
-            metadata["₿ sBTC"] = `${formatBalance(tokenData.balance, "btc")}`;
+            metadata["sBTC"] = `${formatBalance(tokenData.balance, "btc")}`;
           }
         }
       );
@@ -332,12 +332,12 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                       // Handle faktory tokens - extract the speed part
                       const speedMatch = tokenName.match(/(fast|slow)\d+/);
                       if (speedMatch) {
-                        tokenName = speedMatch[0].toUpperCase();
-                        tokenSymbol = speedMatch[0].toUpperCase();
+                        tokenName = speedMatch[0];
+                        tokenSymbol = speedMatch[0];
                       }
                     } else {
                       // For other tokens, use the extracted name as both name and symbol
-                      tokenSymbol = tokenName.toUpperCase();
+                      tokenSymbol = tokenName;
                     }
 
                     return (
