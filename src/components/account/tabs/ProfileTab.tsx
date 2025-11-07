@@ -203,13 +203,23 @@ export function ProfileTab({
   return (
     <div className="flex flex-col items-center">
       <div className="w-full">
+        {/* X Account Section - Moved to top */}
+
+        <XLinking
+          compact={false}
+          showTitle={false}
+          onLinkingComplete={() => {
+            refreshStatus();
+          }}
+        />
+
         {/* Connected Wallet Section */}
-        <div className="mb-6">
+        <div className="mb-6 border-t pt-6">
           <ConnectedWallet fetchWallets={fetchWallets} />
         </div>
 
-        {/* Agent Voting Account Section */}
-        <div className="mb-6 border-t pt-6">
+        {/* Agent Voting Account Section - Commented out */}
+        {/* <div className="mb-6 border-t pt-6">
           <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
           {isLoadingAgents ? (
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
@@ -233,7 +243,6 @@ export function ProfileTab({
                 helpText="Your agent's voting account - deposit DAO tokens here to enable AI voting"
               />
 
-              {/* DAO Tokens Management Table */}
               <div className="mt-6">
                 {isLoadingDAOs ? (
                   <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
@@ -262,10 +271,10 @@ export function ProfileTab({
               </p>
             </div>
           )}
-        </div>
+        </div> */}
 
-        {/* Agent Wallet Section */}
-        {finalUserAgentWalletAddress && (
+        {/* Agent Wallet Section - Commented out */}
+        {/* {finalUserAgentWalletAddress && (
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">Agent Gas Wallet</h3>
             <AccountCard
@@ -282,21 +291,10 @@ export function ProfileTab({
               metadata={getAllBalances(agentWalletBalance)}
             />
           </div>
-        )}
-        {/* X Account Section */}
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold mb-4">Social Account</h3>
-          <XLinking
-            compact={false}
-            showTitle={false}
-            onLinkingComplete={() => {
-              refreshStatus();
-            }}
-          />
-        </div>
+        )} */}
 
-        {/* Token Deposit Modal */}
-        {depositRecipient && depositType && selectedTokenForDeposit && (
+        {/* Token Deposit Modal - Commented out */}
+        {/* {depositRecipient && depositType && selectedTokenForDeposit && (
           <TokenDepositModal
             isOpen={depositModalOpen}
             onClose={() => {
@@ -309,10 +307,10 @@ export function ProfileTab({
             recipientType={depositType}
             tokenData={selectedTokenForDeposit}
           />
-        )}
+        )} */}
 
-        {/* Token Withdraw Modal */}
-        {userAgentAddress && selectedTokenForWithdraw && (
+        {/* Token Withdraw Modal - Commented out */}
+        {/* {userAgentAddress && selectedTokenForWithdraw && (
           <TokenWithdrawModal
             isOpen={withdrawModalOpen}
             onClose={() => {
@@ -322,7 +320,7 @@ export function ProfileTab({
             agentAddress={userAgentAddress}
             tokenData={selectedTokenForWithdraw}
           />
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -205,7 +205,7 @@ export function AccountCard({
             {metadata && Object.keys(metadata).length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Details
+                  Assets
                 </p>
                 <div className="grid gap-2">
                   {Object.entries(metadata).map(([key, value]) => (

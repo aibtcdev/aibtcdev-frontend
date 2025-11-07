@@ -17,10 +17,10 @@ function AccountPageContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("wallets");
 
-  // Get the tab parameter from URL, default to "profile"
-  const initialTab = searchParams.get("tab") || "profile";
+  // Get the tab parameter from URL, default to "wallets"
+  const initialTab = searchParams.get("tab") || "wallets";
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents", userId],
@@ -94,9 +94,9 @@ function AccountPageContent() {
         };
       default:
         return {
-          title: "Wallets",
-          description:
-            "View your connected wallet, agent account, and agent wallet information.",
+          title: "Settings",
+          // description:
+          //   "View your connected wallet, agent account, and agent wallet information.",
         };
     }
   };

@@ -1,11 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, Settings, History } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  //  TabsList, TabsTrigger
+} from "@/components/ui/tabs";
+// import { LayoutDashboard, Settings, History } from "lucide-react";
 import { ProfileTab } from "./tabs/ProfileTab";
-import { AgentSettingsTab } from "./tabs/AgentSettingsTab";
-import { ContributionHistoryTab } from "./tabs/ContributionHistoryTab";
+// import { AgentSettingsTab } from "./tabs/AgentSettingsTab";
+// import { ContributionHistoryTab } from "./tabs/ContributionHistoryTab";
 import { WalletBalance } from "@/store/wallet";
 
 interface AccountTabsProps {
@@ -26,7 +30,7 @@ export function AccountTabs({
   userAgentContractBalance,
   fetchWallets,
   userId,
-  initialTab = "wallets",
+  initialTab = "settings",
   onTabChange,
 }: AccountTabsProps) {
   const router = useRouter();
@@ -55,7 +59,8 @@ export function AccountTabs({
   return (
     <div className="max-w-7xl mx-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="">
-        <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
+        {/* Tabs hidden - commented out */}
+        {/* <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
           <TabsTrigger
             value="wallets"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -79,9 +84,9 @@ export function AccountTabs({
             <History className="h-4 w-4" />
             <span className=" sm:inline">Earning History</span>
           </TabsTrigger>
-        </TabsList>
+        </TabsList> */}
 
-        <TabsContent value="wallets" className="py-6">
+        <TabsContent value="settings" className="py-6">
           <ProfileTab
             userAgentWalletAddress={userAgentWalletAddress}
             userAgentAddress={userAgentAddress}
@@ -90,13 +95,14 @@ export function AccountTabs({
           />
         </TabsContent>
 
-        <TabsContent value="agent-settings" className="py-6">
+        {/* Other tabs commented out */}
+        {/* <TabsContent value="agent-settings" className="py-6">
           <AgentSettingsTab />
         </TabsContent>
 
         <TabsContent value="earning-history" className="py-6">
           <ContributionHistoryTab agentAddress={userAgentAddress} />
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   );
