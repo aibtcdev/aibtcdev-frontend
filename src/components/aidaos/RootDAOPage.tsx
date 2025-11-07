@@ -8,9 +8,9 @@ import {
   FileText,
   Users,
   BarChart3,
-  DollarSign,
-  TrendingUp,
-  Bot,
+  // DollarSign,
+  // TrendingUp,
+  // Bot,
 } from "lucide-react";
 import {
   fetchToken,
@@ -23,9 +23,9 @@ import {
   fetchDAOByName,
 } from "@/services/dao.service";
 import { Loader } from "@/components/reusables/Loader";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -36,13 +36,13 @@ import { ProposalSubmission } from "../proposals/ProposalSubmission";
 import { MissionContent } from "@/components/aidaos/MissionContent";
 import DAOExtensions from "@/components/aidaos/DaoExtensions";
 import DAOHolders from "@/components/aidaos/DaoHolders";
-import { extractMission, formatTokenPrice } from "@/utils/format";
-import { formatNumber } from "@/utils/format";
+// import { extractMission, formatTokenPrice } from "@/utils/format";
+// import { formatNumber } from "@/utils/format";
 import { hexToCV, cvToJSON } from "@stacks/transactions";
 import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
-import { useAgentAccount } from "@/hooks/useAgentAccount";
-import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
+// import { useAgentAccount } from "@/hooks/useAgentAccount";
+// import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 import { TwitterPreviewPanel } from "@/components/twitter/TwitterPreviewPanel";
 
 // Network configuration
@@ -73,27 +73,27 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
   // Agent account data
-  const { userAgentBalance } = useAgentAccount();
+  // const { userAgentBalance } = useAgentAccount();
 
   // Helper function to get agent balance for specific DAO token
-  const getAgentTokenBalance = useCallback(
-    (tokenContract: string | null | undefined): string => {
-      if (!userAgentBalance || !tokenContract) return "0";
+  // const getAgentTokenBalance = useCallback(
+  //   (tokenContract: string | null | undefined): string => {
+  //     if (!userAgentBalance || !tokenContract) return "0";
 
-      // Look for the token in fungible_tokens using the contract principal
-      const tokenKey = Object.keys(userAgentBalance.fungible_tokens).find(
-        (key) => key.includes(tokenContract)
-      );
+  //     // Look for the token in fungible_tokens using the contract principal
+  //     const tokenKey = Object.keys(userAgentBalance.fungible_tokens).find(
+  //       (key) => key.includes(tokenContract)
+  //     );
 
-      if (tokenKey && userAgentBalance.fungible_tokens[tokenKey]) {
-        const balance = userAgentBalance.fungible_tokens[tokenKey].balance;
-        return balance;
-      }
+  //     if (tokenKey && userAgentBalance.fungible_tokens[tokenKey]) {
+  //       const balance = userAgentBalance.fungible_tokens[tokenKey].balance;
+  //       return balance;
+  //     }
 
-      return "0";
-    },
-    [userAgentBalance]
-  );
+  //     return "0";
+  //   },
+  //   [userAgentBalance]
+  // );
 
   // Helper function to check if the token is bonded
   const checkBonded = useCallback(
@@ -211,7 +211,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     dex,
     treasuryAddress,
     dexContract,
-    tokenContract,
+    // tokenContract,
     prelaunchContract,
     buyPrelaunchContract,
   } = useMemo(() => {
@@ -421,10 +421,10 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   ];
 
   // Handle modal open
-  const handleModalOpen = () => {
-    setIsModalOpen(true);
-    setActiveTab("charter"); // Default to charter when opening
-  };
+  // const handleModalOpen = () => {
+  //   setIsModalOpen(true);
+  //   setActiveTab("charter"); // Default to charter when opening
+  // };
 
   return (
     <div className="flex flex-col w-full">

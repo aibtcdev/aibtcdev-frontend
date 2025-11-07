@@ -21,7 +21,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
-import { useXStatus } from "@/hooks/useXStatus";
+// import { useXStatus } from "@/hooks/useXStatus";
 // import { ThemeToggle } from "@/components/reusables/ThemeToggle";
 import DisplayUserProfile from "@/components/reusables/DisplayUserProfile";
 import {
@@ -49,7 +49,7 @@ export default function ApplicationLayout({
   const { showAuthModal, closeAuthModal, openAuthModal } = useProtectedRoute();
 
   // Import useXStatus to check if user needs X linking
-  const { needsXLink } = useXStatus();
+  // const { needsXLink } = useXStatus();
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,12 +57,12 @@ export default function ApplicationLayout({
   };
 
   // Handle X linking
-  const handleXLinkClick = async () => {
-    if (needsXLink) {
-      const { linkXAccount } = await import("@/services/x-auth.service");
-      await linkXAccount();
-    }
-  };
+  // const handleXLinkClick = async () => {
+  //   if (needsXLink) {
+  //     const { linkXAccount } = await import("@/services/x-auth.service");
+  //     await linkXAccount();
+  //   }
+  // };
 
   // Handle navigation to protected routes
   const handleNavigation = async (href: string, e: React.MouseEvent) => {

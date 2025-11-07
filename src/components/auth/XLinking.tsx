@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ExternalLink, X } from "lucide-react";
 // Using console.log instead of toast for now to avoid dependency issues
 // import { toast } from "sonner";
