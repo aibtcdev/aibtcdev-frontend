@@ -239,7 +239,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Desktop Header - Hidden on mobile */}
-        <div className="hidden md:grid grid-cols-3 h-20 items-center px-4 lg:px-6 bg-card/20 backdrop-blur-2xl shadow-lg relative overflow-hidden">
+        <div className="hidden md:grid grid-cols-3 h-24 items-center px-8 lg:px-16 bg-card/20 backdrop-blur-2xl shadow-lg relative overflow-hidden">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
@@ -407,7 +407,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-5rem)] overflow-hidden">
+        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-6rem)] overflow-hidden">
           {/* Mobile Sidebar */}
           <aside
             className={cn(
@@ -444,12 +444,23 @@ export default function ApplicationLayout({
                 </Button>
               </div>
 
-              {/* Navigation - Empty since items moved to dropdown */}
+              {/* Navigation */}
               <nav className="flex-1 px-4 py-6 relative z-10 overflow-y-auto">
                 <div className="space-y-3">
-                  <div className="text-center text-muted-foreground text-sm py-8">
-                    Use the dropdown menu above to navigate
-                  </div>
+                  <Link
+                    href="/how-it-works"
+                    onClick={() => setLeftPanelOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
+                  >
+                    How it works
+                  </Link>
+                  <Link
+                    href="/aibtc-charter"
+                    onClick={() => setLeftPanelOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
+                  >
+                    AIBTC Charter
+                  </Link>
                 </div>
               </nav>
             </div>
