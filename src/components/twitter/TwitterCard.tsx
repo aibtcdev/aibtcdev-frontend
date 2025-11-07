@@ -31,8 +31,8 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
 
   return (
     <div
-      className={`bg-black/10 text-white rounded-sm p-6 max-w-2xl transition-all ${
-        link ? "cursor-pointer hover:bg-black/20" : ""
+      className={`bg-black/30 text-white rounded-sm p-6 max-w-2xl transition-all h-full flex flex-col ${
+        link ? "cursor-pointer hover:bg-black/50" : ""
       }`}
       onClick={handleClick}
       role={link ? "button" : undefined}
@@ -89,7 +89,7 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
       </div>
 
       {/* Tweet Content */}
-      <div className="text-white text-base leading-relaxed whitespace-pre-wrap">
+      <div className="text-white text-base leading-relaxed whitespace-pre-wrap flex-grow">
         {tweet}
       </div>
 

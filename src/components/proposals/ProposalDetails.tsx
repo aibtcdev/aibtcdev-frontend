@@ -61,7 +61,7 @@ const ProposalDetails = ({
       <MessageSection proposal={proposal} defaultOpen={true} />
 
       {/* Agent Voting and Time Remaining Section - Mobile Responsive */}
-      <div className="rounded-sm  bg-card ">
+      <div className="rounded-sm  ">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Left: Agent Voting */}
           <div className="flex items-center gap-2">

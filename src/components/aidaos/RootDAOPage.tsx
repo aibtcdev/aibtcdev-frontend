@@ -426,7 +426,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     <div className="flex flex-col w-full">
       <main className="overflow-y-auto overflow-x-hidden">
         <div className=" sm:px-6 lg:px-8 py-4 max-w-screen-xl mx-auto w-full">
-          <div className="bg-muted/10 p-4 sm:p-6 rounded-sm mb-6">
+          <div className="bg-background p-4 sm:p-6 rounded-sm mb-6">
             {/* <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
               <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-sm">
                 <AvatarImage
@@ -465,7 +465,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
             </div> */}
 
             {/* Token Stats - Responsive layout */}
-            <div className="flex flex-wrap items-center gap-6 sm:gap-8 lg:gap-16 text-sm sm:text-base">
+            <div className="flex flex-wrap  items-stretch justify-stretch gap-6 sm:gap-8 lg:gap-44 text-sm sm:text-base">
               <div className="flex items-center gap-2">
                 <span className="font-bold">Members:</span>
                 <span className="font-medium">
@@ -555,7 +555,7 @@ submit daily at aibtc.com`}
                   onValueChange={setActiveTab}
                   className="h-full flex flex-col"
                 >
-                  <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50">
+                  <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/90">
                     {expandableTabs.map((tab) => (
                       <TabsTrigger
                         key={tab.id}

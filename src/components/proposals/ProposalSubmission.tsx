@@ -1213,10 +1213,10 @@ export function ProposalSubmission({
 
   return (
     <>
-      <div className="rounded-sm bg-muted/10 border-white/10 p-4 sm:p-5 lg:p-6 flex gap-3 flex-col relative max-w-full overflow-hidden">
+      <div className="rounded-sm  bg-background  p-4 sm:p-5 lg:p-6 flex gap-3 flex-col relative max-w-full overflow-hidden h-full">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
+          <div className="absolute inset-0 bg-black backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
             <div className="text-center space-y-4 max-w-md mx-auto px-6">
               <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                 <Lock className="w-8 h-8 text-primary" />
@@ -1235,7 +1235,7 @@ export function ProposalSubmission({
           hasAgentAccount &&
           !isLoadingBalance &&
           !hasAgentDaoTokens && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
                 <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                   <Lock className="w-8 h-8 text-primary" />
@@ -1251,7 +1251,7 @@ export function ProposalSubmission({
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-start justify-between mb-1">
-            <h2 className="text-2xl font-bold">Submit to Earn</h2>
+            <h2 className="text-3xl font-extrabold">Submit to Earn</h2>
             {/* Tip positioned at top right */}
             <div className="relative group">
               <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-sm bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
@@ -1268,14 +1268,14 @@ export function ProposalSubmission({
               </div>
             </div>
           </div>
-          <p className="text-sm">
+          <p className="text-md">
             Submit proof of completion for the current order for agent
             verification.
           </p>
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1 space-y-6">
           {/* Airdrop notification - Commented out per user request */}
           {/* {hasAccessToken && (
             <div className="bg-secondary/40 rounded-sm p-3 shadow-sm">
@@ -1326,7 +1326,7 @@ export function ProposalSubmission({
             </div>
           )} */}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Description textarea commented out - caption from Twitter post will be used */}
             {/* <div className="relative">
               <textarea
@@ -1344,7 +1344,7 @@ export function ProposalSubmission({
                 }
               />
               {contribution.length > 0 && (
-                <div className="absolute bottom-3 right-3 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+                <div className="absolute bottom-3 right-3 text-xs text-muted-foreground bg-black/80 px-2 py-1 rounded">
                   {combinedLength} / 2043 characters
                 </div>
               )}
@@ -1521,7 +1521,7 @@ export function ProposalSubmission({
 
             {/* X Username Validation Error */}
             {xUsernameError && (
-              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-sm p-3">
+              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-sm p-4">
                 <strong>❌ X Username Mismatch</strong>
                 <div className="text-xs text-red-200 mt-1">
                   {xUsernameError}
@@ -1534,7 +1534,7 @@ export function ProposalSubmission({
               !isLoadingAgents &&
               agents &&
               !hasAgentAccount && (
-                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-sm p-3">
+                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-sm p-4">
                   <strong>⏳ Your agent account is being deployed</strong>
                 </div>
               )}
@@ -1544,24 +1544,20 @@ export function ProposalSubmission({
               hasAgentAccount &&
               // hasAgentDaoTokens &&
               !isCheckingBitcoinBlock &&
-              hasProposalInCurrentBlock &&
               currentBitcoinBlock && (
-                <div className="text-sm text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded-sm p-3">
+                <div
+                  className={`text-sm rounded-sm p-4 ${
+                    hasProposalInCurrentBlock
+                      ? "text-yellow-300 bg-yellow-900/20 border border-yellow-800/30"
+                      : "bg-muted/30"
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div>
-                      <strong>⏱️ Bitcoin Block Limit Reached</strong>
-                      <div className="text-xs text-yellow-200 mt-1">
-                        Only one contribution per Bitcoin block. Please wait
-                        until block {currentBitcoinBlock + 1}.
-                      </div>
+                      <strong>Current Bitcoin Block</strong>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs text-yellow-200">
-                        Current Block
-                      </div>
-                      <div className="font-bold">
-                        {currentBitcoinBlock.toLocaleString()}
-                      </div>
+                    <div className="font-bold text-2xl">
+                      {currentBitcoinBlock.toLocaleString()}
                     </div>
                   </div>
                 </div>
@@ -1575,13 +1571,13 @@ export function ProposalSubmission({
             )} */}
 
             {isLoadingExtensions && (
-              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-3">
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-4">
                 ⏳ Loading DAO extensions...
               </div>
             )}
 
             {isLoadingAgents && (
-              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-3">
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-4">
                 ⏳ Loading user agent...
               </div>
             )}
@@ -1589,7 +1585,7 @@ export function ProposalSubmission({
         </div>
 
         {/* Footer CTA */}
-        <div className="pt-4">
+        <div className="pt-6">
           <div>
             <Button
               onClick={handleSubmit}
@@ -1678,7 +1674,7 @@ export function ProposalSubmission({
         {hasAccessToken &&
           /* hasAgentDaoTokens && */ needsXLink &&
           !isXLoading && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
                 <div>
                   <XLinking
@@ -1694,11 +1690,11 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {hasAccessToken &&
+        {/* {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
                 <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
                   <Lock className="w-8 h-8 text-red-400" />
@@ -1723,7 +1719,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
@@ -1731,7 +1727,7 @@ export function ProposalSubmission({
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "pending" && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
                 <div className="w-16 h-16 rounded-sm bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
                   <Loader />

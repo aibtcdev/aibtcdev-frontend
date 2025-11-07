@@ -29,6 +29,7 @@ import {
   // NotificationBell, // Commented out per requirements
 } from "@/components/notifications";
 import { DepositNotificationBanner } from "@/components/notifications/DepositNotificationBanner";
+import { WavyBackground } from "@/components/ui/WavyBackground";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -90,7 +91,10 @@ export default function ApplicationLayout({
 
   return (
     <NotificationProvider>
-      <div className="flex flex-col h-screen bg-background">
+      <div className="flex flex-col h-screen bg-background relative">
+        {/* Wavy Background */}
+        <WavyBackground />
+
         {/* Mobile Header */}
         <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl shadow-lg relative z-30">
           <Button

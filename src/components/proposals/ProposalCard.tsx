@@ -1,7 +1,14 @@
 "use client";
 
 import type React from "react";
-import { Clock, User, BarChart3, Building2, Coins } from "lucide-react";
+import {
+  Clock,
+  User,
+  BarChart3,
+  Building2,
+  Coins,
+  ExternalLinkIcon,
+} from "lucide-react";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
@@ -146,7 +153,7 @@ export default function ProposalCard({
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
-      <div className="py-4 px-1 sm:p-5 lg:p-6 bg-muted/10 rounded-sm mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
+      <div className="py-4 px-8 rounded-sm mb-3  group-hover:bg-black/10 transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -182,7 +189,7 @@ export default function ProposalCard({
               return (
                 <div className="space-y-3 mb-4">
                   {referenceLink && (
-                    <div className="p-3 bg-background/50 rounded-sm border border-border/50">
+                    <div className=" bg-black/50 rounded-sm ">
                       <div className="text-xs text-muted-foreground mb-1">
                         Reference
                       </div>
@@ -199,22 +206,10 @@ export default function ProposalCard({
                           );
                         }}
                       >
-                        <svg
-                          className="h-4 w-4 flex-shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
                         <span className="inline-block max-w-full break-all">
                           {referenceLink}
                         </span>
+                        <ExternalLinkIcon className="h-4 w-4" />
                       </span>
                     </div>
                   )}

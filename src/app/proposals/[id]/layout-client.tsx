@@ -21,7 +21,7 @@ export function ProposalDetailsLayoutClient({
   });
 
   return (
-    <main className="w-full min-h-screen bg-background">
+    <main className="w-full min-h-screen">
       <div className="flex-1 w-full">{children}</div>
     </main>
   );
