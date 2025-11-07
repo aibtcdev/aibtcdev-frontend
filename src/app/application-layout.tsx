@@ -4,16 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Menu,
-  X,
-  Vote,
-  ChevronDown,
-  LogOut,
-  User,
-  Bot,
-  History,
-} from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Settings } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +22,7 @@ import { Footer } from "@/components/reusables/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 // import { ThemeToggle } from "@/components/reusables/ThemeToggle";
-import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
+import DisplayUserProfile from "@/components/reusables/DisplayUserProfile";
 import {
   NotificationProvider,
   // NotificationBell, // Commented out per requirements
@@ -173,47 +164,8 @@ export default function ApplicationLayout({
                     <User className="h-4 w-4" />
                     <span className="group-hover:text-white">Wallets</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=agent-settings", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Bot className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Agent Settings
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=earning-history", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <History className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Earning History
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/votes", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Vote className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Voting History
-                    </span>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
-                  <div className="px-3 py-2 border-y border-border/20">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Network Status
-                    </div>
+                  <div className="px-3 py-2">
                     <div className="mt-1">
                       <NetworkIndicator />
                     </div>
@@ -320,7 +272,7 @@ export default function ApplicationLayout({
                     aria-label="Bitcoin balance dropdown menu"
                   >
                     {/* <DisplayBtc /> */}
-                    <DisplayAgentAddress />
+                    <DisplayUserProfile />
                     <ChevronDown className="h-3 w-3 transition-transform duration-200 ease-in-out" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -331,59 +283,18 @@ export default function ApplicationLayout({
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     onClick={(e) => {
-                      handleNavigation("/account?tab=wallets", e);
+                      handleNavigation("/account?tab=settings", e);
                       setDesktopMenuOpen(false);
                     }}
                     className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                   >
-                    <User className="h-4 w-4" />
-                    <span className="group-hover:text-white">Wallets</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=agent-settings", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Bot className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Agent Settings
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=earning-history", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <History className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Earning History
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/votes", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Vote className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Voting History
-                    </span>
+                    <Settings className="h-4 w-4" />
+                    <span className="group-hover:text-white">Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
-                  <div className="px-3 py-2 border-y border-border/20">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Network Status
-                    </div>
-                    <div className="mt-1">
-                      <NetworkIndicator />
-                    </div>
-                  </div>
+
+                  <NetworkIndicator />
+
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     onClick={() => {
@@ -444,23 +355,12 @@ export default function ApplicationLayout({
                 </Button>
               </div>
 
-              {/* Navigation */}
+              {/* Navigation - Empty since items moved to dropdown */}
               <nav className="flex-1 px-4 py-6 relative z-10 overflow-y-auto">
                 <div className="space-y-3">
-                  <Link
-                    href="/how-it-works"
-                    onClick={() => setLeftPanelOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
-                  >
-                    How it works
-                  </Link>
-                  <Link
-                    href="/aibtc-charter"
-                    onClick={() => setLeftPanelOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
-                  >
-                    AIBTC Charter
-                  </Link>
+                  <div className="text-center text-muted-foreground text-sm py-8">
+                    Use the dropdown menu above to navigate
+                  </div>
                 </div>
               </nav>
             </div>

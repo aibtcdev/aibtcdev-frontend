@@ -101,9 +101,9 @@ export function XLinking({
           </Button>
         ) : (
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary">
+            {/* <Badge variant="secondary" className="bg-primary/10 text-primary">
               <CheckCircle className="h-3 w-3 mr-1" />X Linked
-            </Badge>
+            </Badge> */}
             {xProfile && (
               <span className="text-sm text-muted-foreground">
                 @{xProfile.username}

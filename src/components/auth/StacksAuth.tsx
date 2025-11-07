@@ -342,9 +342,7 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
             </span>
           </>
         ) : (
-          <span className="font-inter font-bold tracking-wide">
-            Connect Wallet
-          </span>
+          <span className="font-inter font-bold tracking-wide">Join AIBTC</span>
         )}
       </Button>
 
