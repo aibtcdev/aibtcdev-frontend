@@ -34,7 +34,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute";
 import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
 import {
   NotificationProvider,
-  NotificationBell,
+  // NotificationBell, // Commented out per requirements
 } from "@/components/notifications";
 import { DepositNotificationBanner } from "@/components/notifications/DepositNotificationBanner";
 
@@ -89,7 +89,7 @@ export default function ApplicationLayout({
     <NotificationProvider>
       <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-background/95">
         {/* Mobile Header */}
-        <div className="md:hidden h-14 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg relative z-30">
+        <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl shadow-lg relative z-30">
           <Button
             variant="ghost"
             size="sm"
@@ -102,37 +102,44 @@ export default function ApplicationLayout({
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center">
             <Link href="/aidaos" className="flex items-center gap-2">
-              <Image
+              {/* Avatar logo - commented out per requirements */}
+              {/* <Image
                 src="/logos/aibtcdev-avatar-1000px.png"
                 alt="AIBTCDEV"
                 width={28}
                 height={28}
                 className="flex-shrink-0 shadow-lg shadow-primary/20"
-              />
-              <Image
-                src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
-                alt="AIBTCDEV"
-                width={80}
-                height={20}
-                className="h-4 w-auto flex-shrink-0 block dark:hidden"
-              />
-              <Image
-                src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-                alt="AIBTCDEV"
-                width={80}
-                height={20}
-                className="h-4 w-auto flex-shrink-0 hidden dark:block"
-              />
+              /> */}
+              <div className="flex flex-col items-center">
+                <Image
+                  src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                  alt="AIBTCDEV"
+                  width={100}
+                  height={24}
+                  className="h-6 w-auto flex-shrink-0 block dark:hidden"
+                />
+                <Image
+                  src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+                  alt="AIBTCDEV"
+                  width={100}
+                  height={24}
+                  className="h-6 w-auto flex-shrink-0 hidden dark:block"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
+                  The Bitcoin Coordination Network
+                </span>
+              </div>
             </Link>
           </div>
 
           {/* Mobile User Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {isAuthenticated && (
+            {/* Notification Bell - commented out per requirements */}
+            {/* {isAuthenticated && (
               <div className="mr-2">
                 <NotificationBell />
               </div>
-            )}
+            )} */}
             {isAuthenticated ? (
               <DropdownMenu
                 open={isMobileMenuOpen}
@@ -232,7 +239,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Desktop Header - Hidden on mobile */}
-        <div className="hidden md:grid grid-cols-3 h-16 items-center px-4 lg:px-6 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
+        <div className="hidden md:grid grid-cols-3 h-20 items-center px-4 lg:px-6 bg-card/20 backdrop-blur-2xl shadow-lg relative overflow-hidden">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
 
@@ -243,7 +250,8 @@ export default function ApplicationLayout({
               className="flex items-center gap-2 lg:gap-3 group"
             >
               <div className="flex items-center gap-2 lg:gap-3 transition-all duration-300 ease-in-out group-hover:scale-105">
-                <div className="relative">
+                {/* Avatar logo - commented out per requirements */}
+                {/* <div className="relative">
                   <Image
                     src="/logos/aibtcdev-avatar-1000px.png"
                     alt="AIBTCDEV"
@@ -252,37 +260,53 @@ export default function ApplicationLayout({
                     className="lg:w-8 lg:h-8 shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
                   />
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div> */}
+                <div className="flex flex-col gap-1">
+                  <Image
+                    src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                    alt="AIBTCDEV"
+                    width={120}
+                    height={28}
+                    className="h-7 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
+                  />
+                  <Image
+                    src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+                    alt="AIBTCDEV"
+                    width={120}
+                    height={28}
+                    className="h-7 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    The Bitcoin Coordination Network
+                  </span>
                 </div>
-                <Image
-                  src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
-                  alt="AIBTCDEV"
-                  width={90}
-                  height={20}
-                  className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
-                />
-                <Image
-                  src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-                  alt="AIBTCDEV"
-                  width={90}
-                  height={20}
-                  className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
-                />
               </div>
             </Link>
           </div>
 
-          {/* Center Section - Empty since navigation moved to dropdown */}
-          <div className="flex justify-center relative z-10">
-            {/* Navigation items now in dropdown menu */}
-          </div>
+          {/* Center Section - Empty */}
+          <div className="flex justify-center items-center gap-6 relative z-10"></div>
 
-          {/* Right Section - BTC Balance Dropdown & Auth Button */}
-          <div className="flex items-center gap-2 relative z-10 justify-end">
-            {isAuthenticated && (
+          {/* Right Section - Navigation Links, BTC Balance Dropdown & Auth Button */}
+          <div className="flex items-center gap-6 relative z-10 justify-end">
+            <Link
+              href="/how-it-works"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+            >
+              How it works
+            </Link>
+            <Link
+              href="/aibtc-charter"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+            >
+              AIBTC Charter
+            </Link>
+            {/* Notification Bell - commented out per requirements */}
+            {/* {isAuthenticated && (
               <div className="mr-3">
                 <NotificationBell />
               </div>
-            )}
+            )} */}
             {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
             {isAuthenticated ? (
               <DropdownMenu
@@ -383,7 +407,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-5rem)] overflow-hidden">
           {/* Mobile Sidebar */}
           <aside
             className={cn(
