@@ -8,7 +8,7 @@ import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VoteStatusChart from "./VoteStatusChart";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
@@ -28,6 +28,34 @@ export default function ProposalCard({
   showDAOInfo = false,
 }: ProposalCardProps) {
   const router = useRouter();
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "50px",
+      }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      if (cardRef.current) {
+        observer.unobserve(cardRef.current);
+      }
+    };
+  }, []);
 
   // Use the unified status system
   const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
@@ -111,10 +139,13 @@ export default function ProposalCard({
 
   return (
     <Link
+      ref={cardRef}
       href={`/proposals/${proposal.id}`}
-      className="block group cursor-pointer"
+      className={`block group cursor-pointer transition-all duration-700 ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
     >
-      <div className="p-4 sm:p-5 lg:p-6 bg-muted/10 rounded-sm mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
+      <div className="py-4 px-1 sm:p-5 lg:p-6 bg-muted/10 rounded-sm mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">

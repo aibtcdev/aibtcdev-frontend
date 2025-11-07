@@ -243,7 +243,7 @@ const VotingProgressChart = ({
     return (
       <div className="space-y-6 overflow-x-auto">
         <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <div className="animate-spin rounded-sm h-4 w-4 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
           Loading vote data...
         </div>
 
