@@ -1103,12 +1103,12 @@ export function ProposalSubmissionOld({
 
   return (
     <>
-      <div className="rounded-2xl bg-muted/10 border-white/10 p-4 sm:p-5 lg:p-6 flex flex-col relative max-w-full overflow-hidden">
+      <div className="rounded-sm bg-muted/10 border-white/10 p-4 sm:p-5 lg:p-6 flex flex-col relative max-w-full overflow-hidden">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
             <div className="text-center space-y-4 max-w-md mx-auto px-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                 <Lock className="w-8 h-8 text-primary" />
               </div>
               <div>
@@ -1125,9 +1125,9 @@ export function ProposalSubmissionOld({
           hasAgentAccount &&
           !isLoadingBalance &&
           !hasAgentDaoTokens && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                   <Lock className="w-8 h-8 text-primary" />
                 </div>
                 <div>
@@ -1144,11 +1144,11 @@ export function ProposalSubmissionOld({
             <h2 className="text-2xl font-bold">Earn ${daoName}</h2>
             {/* Tip positioned at top right */}
             <div className="relative group">
-              <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-lg bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
+              <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-sm bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
                 💡 <strong>Tips</strong>
               </div>
               {/* Tooltip */}
-              <div className="absolute right-0 top-full mt-2 w-80 p-3 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute right-0 top-full mt-2 w-80 p-3 bg-zinc-800 border border-zinc-700 rounded-sm shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="text-sm text-zinc-200">
                   Make sure your contribution is clear, specific, and aligned
                   with the DAO's mission. AI agents will vote on this
@@ -1176,7 +1176,7 @@ export function ProposalSubmissionOld({
         {/* Content Body */}
         <div className="flex-1 space-y-3">
           {hasAccessToken && (
-            <div className="bg-secondary/40 rounded-lg p-3 shadow-sm">
+            <div className="bg-secondary/40 rounded-sm p-3 shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Gift className="h-4 w-4 text-green-300 flex-shrink-0" />
@@ -1232,7 +1232,7 @@ export function ProposalSubmissionOld({
                   setContribution(e.target.value);
                 }}
                 placeholder={`Describe the work you've done that pushes the ${daoName} mission.`}
-                className={`w-full min-h-[107px] p-3 sm:p-4 bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 max-w-full ${!isWithinLimit ? "" : ""}`}
+                className={`w-full min-h-[107px] p-3 sm:p-4 bg-background/60 border border-white/10 rounded-sm text-foreground placeholder-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200 max-w-full ${!isWithinLimit ? "" : ""}`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -1268,7 +1268,7 @@ export function ProposalSubmissionOld({
                 placeholder="X.com URL to a post showing proof of your work."
                 className={`w-full max-w-full p-3 sm:p-4 ${
                   twitterUrl && isValidTwitterUrl ? "pr-12 sm:pr-16" : ""
-                } bg-background/60 border border-white/10 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
+                } bg-background/60 border border-white/10 rounded-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200`}
                 disabled={
                   isSubmitting ||
                   // isGenerating ||
@@ -1290,7 +1290,7 @@ export function ProposalSubmissionOld({
                   }
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-sm bg-primary/10 hover:bg-primary/20 text-primary transition-colors duration-200 flex items-center justify-center"
                   title="Open Twitter post"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -1306,7 +1306,7 @@ export function ProposalSubmissionOld({
               {/* Hover Preview Tooltip - Desktop Only */}
               {showHoverPreview && twitterEmbedData && (
                 <div
-                  className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 shadow-2xl pointer-events-auto"
+                  className="hidden lg:block absolute bottom-full left-0 right-0 z-[9999] mb-2 bg-background/10 backdrop-blur-sm border border-white/20 rounded-sm p-4 shadow-2xl pointer-events-auto"
                   onMouseEnter={() => setShowHoverPreview(true)}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -1315,7 +1315,7 @@ export function ProposalSubmissionOld({
                     <span>Twitter Post Preview</span>
                   </div>
                   <div
-                    className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg [&_iframe]:max-h-80 [&_iframe]:overflow-hidden"
+                    className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-sm [&_iframe]:max-h-80 [&_iframe]:overflow-hidden"
                     dangerouslySetInnerHTML={{
                       __html: twitterEmbedData.html,
                     }}
@@ -1328,7 +1328,7 @@ export function ProposalSubmissionOld({
             {twitterUrl && isValidTwitterUrl && (
               <div className="lg:hidden space-y-2">
                 {isLoadingEmbed && (
-                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                  <div className="bg-background/60 border border-white/10 rounded-sm p-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader />
                       <span>Loading preview...</span>
@@ -1337,7 +1337,7 @@ export function ProposalSubmissionOld({
                 )}
 
                 {embedError && (
-                  <div className="bg-red-900/20 border border-red-800/30 rounded-xl p-4">
+                  <div className="bg-red-900/20 border border-red-800/30 rounded-sm p-4">
                     <div className="flex items-center gap-2 text-sm text-red-300">
                       <AlertCircle className="h-4 w-4 flex-shrink-0" />
                       <span>Preview unavailable: {embedError}</span>
@@ -1346,13 +1346,13 @@ export function ProposalSubmissionOld({
                 )}
 
                 {twitterEmbedData && !isLoadingEmbed && (
-                  <div className="bg-background/60 border border-white/10 rounded-xl p-4">
+                  <div className="bg-background/60 border border-white/10 rounded-sm p-4">
                     <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
                       <ExternalLink className="h-4 w-4" />
                       <span>Twitter Post Preview</span>
                     </div>
                     <div
-                      className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
+                      className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-sm"
                       dangerouslySetInnerHTML={{
                         __html: twitterEmbedData.html,
                       }}
@@ -1419,7 +1419,7 @@ export function ProposalSubmissionOld({
 
             {/* X Username Validation Error */}
             {xUsernameError && (
-              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-lg p-3">
+              <div className="text-sm text-red-300 bg-red-900/20 border border-red-800/30 rounded-sm p-3">
                 <strong>❌ X Username Mismatch</strong>
                 <div className="text-xs text-red-200 mt-1">
                   {xUsernameError}
@@ -1432,7 +1432,7 @@ export function ProposalSubmissionOld({
               !isLoadingAgents &&
               agents &&
               !hasAgentAccount && (
-                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-lg p-3">
+                <div className="text-sm text-orange-300 bg-orange-900/20 border border-orange-800/30 rounded-sm p-3">
                   <strong>⏳ Your agent account is being deployed</strong>
                 </div>
               )}
@@ -1444,7 +1444,7 @@ export function ProposalSubmissionOld({
               !isCheckingBitcoinBlock &&
               hasProposalInCurrentBlock &&
               currentBitcoinBlock && (
-                <div className="text-sm text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3">
+                <div className="text-sm text-yellow-300 bg-yellow-900/20 border border-yellow-800/30 rounded-sm p-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <strong>⏱️ Bitcoin Block Limit Reached</strong>
@@ -1466,20 +1466,20 @@ export function ProposalSubmissionOld({
               )}
 
             {/* {hasAccessToken && twitterUrl.trim() && !isValidTwitterUrl && (
-              <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-lg p-3">
+              <div className="text-sm text-red-300 bg-red-900/40 border border-red-800 rounded-sm p-3">
                 <strong>Invalid Twitter URL:</strong> URL must be in the format
                 https://x.com/username/status/1234567890123456789
               </div>
             )} */}
 
             {isLoadingExtensions && (
-              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-3">
                 ⏳ Loading DAO extensions...
               </div>
             )}
 
             {isLoadingAgents && (
-              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-lg p-3">
+              <div className="text-sm text-zinc-400 bg-zinc-900/40 rounded-sm p-3">
                 ⏳ Loading user agent...
               </div>
             )}
@@ -1591,7 +1591,7 @@ export function ProposalSubmissionOld({
           verificationStatus.status === "not_verified" && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-full bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
                   <Lock className="w-8 h-8 text-red-400" />
                 </div>
                 <div>
@@ -1624,7 +1624,7 @@ export function ProposalSubmissionOld({
           verificationStatus.status === "pending" && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-full bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-sm bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
                   <Loader />
                 </div>
                 <div>
@@ -1658,7 +1658,7 @@ export function ProposalSubmissionOld({
                   <>
                     {txStatusView === "initial" && (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                        <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto mb-6">
                           <Loader />
                         </div>
                         <DialogHeader className="text-center">
@@ -1673,12 +1673,12 @@ export function ProposalSubmissionOld({
 
                         <div className="mt-8 space-y-4">
                           {parsed?.data?.txid && (
-                            <div className="bg-background/60 rounded-xl p-4 shadow-sm">
+                            <div className="bg-background/60 rounded-sm p-4 shadow-sm">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">
                                   Transaction Status
                                 </span>
-                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                <span className="px-3 py-1 rounded-sm text-xs font-medium bg-primary/10 text-primary">
                                   Processing
                                 </span>
                               </div>
@@ -1714,7 +1714,7 @@ export function ProposalSubmissionOld({
 
                     {txStatusView === "confirmed-success" && (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                        <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto mb-6">
                           <Check className="w-8 h-8 text-primary" />
                         </div>
                         <DialogHeader className="text-center">
@@ -1728,12 +1728,12 @@ export function ProposalSubmissionOld({
                         </DialogHeader>
 
                         <div className="mt-8 space-y-4">
-                          <div className="bg-background/60 rounded-xl p-4 shadow-sm">
+                          <div className="bg-background/60 rounded-sm p-4 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-sm text-muted-foreground">
                                 Transaction Status
                               </span>
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                              <span className="px-3 py-1 rounded-sm text-xs font-medium bg-primary/10 text-primary">
                                 Confirmed
                               </span>
                             </div>
@@ -1779,7 +1779,7 @@ export function ProposalSubmissionOld({
 
                     {txStatusView === "confirmed-failure" && (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-6">
+                        <div className="w-16 h-16 rounded-sm bg-secondary/10 flex items-center justify-center mx-auto mb-6">
                           <AlertCircle className="w-8 h-8 text-secondary" />
                         </div>
                         <DialogHeader className="text-center">
@@ -1800,12 +1800,12 @@ export function ProposalSubmissionOld({
                         </DialogHeader>
 
                         <div className="mt-8 space-y-4">
-                          <div className="bg-background/60 rounded-xl p-4 shadow-sm">
+                          <div className="bg-background/60 rounded-sm p-4 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-sm text-muted-foreground">
                                 Transaction Status
                               </span>
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary">
+                              <span className="px-3 py-1 rounded-sm text-xs font-medium bg-secondary/10 text-secondary">
                                 Failed
                               </span>
                             </div>
@@ -1908,7 +1908,7 @@ export function ProposalSubmissionOld({
           ) : (
             // Error state (API/network)
             <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 rounded-sm bg-secondary/10 flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="w-8 h-8 text-secondary" />
               </div>
               <DialogHeader className="text-center">
@@ -1922,7 +1922,7 @@ export function ProposalSubmissionOld({
 
               <div className="mt-8 space-y-4">
                 {parsedApiResponse?.message ? (
-                  <div className="bg-background/60 rounded-xl p-4 shadow-sm">
+                  <div className="bg-background/60 rounded-sm p-4 shadow-sm">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Error: </span>
                       <span className="font-medium">
@@ -1934,7 +1934,7 @@ export function ProposalSubmissionOld({
                   </div>
                 ) : (
                   apiResponse?.error && (
-                    <div className="bg-background/60 rounded-xl p-4 shadow-sm">
+                    <div className="bg-background/60 rounded-sm p-4 shadow-sm">
                       <div className="text-sm">
                         <span className="text-muted-foreground">Error: </span>
                         <span className="font-medium">{apiResponse.error}</span>

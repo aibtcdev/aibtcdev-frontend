@@ -102,7 +102,7 @@ export function TestnetFaucet({ fetchWallets }: TestnetFaucetProps) {
     <Card className="bg-card border border-border">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-bold text-foreground flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-sm bg-accent/10 flex items-center justify-center">
             <Coins className="h-4 w-4 text-accent" />
           </div>
           Testnet Faucet
@@ -116,11 +116,11 @@ export function TestnetFaucet({ fetchWallets }: TestnetFaucetProps) {
           <button
             onClick={handleRequestSBTC}
             disabled={isRequestingSBTC || !isAuthenticated}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20 rounded-lg hover:bg-secondary/20 hover:scale-105 focus:ring-2 ring-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 motion-reduce:transition-none"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium bg-secondary/10 text-secondary border border-secondary/20 rounded-sm hover:bg-secondary/20 hover:scale-105 focus:ring-2 ring-secondary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 motion-reduce:transition-none"
           >
             {isRequestingSBTC ? (
               <>
-                <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-sm animate-spin" />
                 Requesting...
               </>
             ) : (
@@ -130,7 +130,7 @@ export function TestnetFaucet({ fetchWallets }: TestnetFaucetProps) {
               </>
             )}
           </button>
-          <div className="text-xs text-muted-foreground bg-muted/10 p-3 rounded-lg">
+          <div className="text-xs text-muted-foreground bg-muted/10 p-3 rounded-sm">
             <p className="font-medium mb-1">Note:</p>
             <p>
               Calls the testnet sBTC contract faucet function directly. Testnet

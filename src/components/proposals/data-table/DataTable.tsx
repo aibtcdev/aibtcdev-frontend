@@ -227,7 +227,7 @@ function DataTableViewToggle() {
   const { viewMode, setViewMode } = useDataTable();
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+    <div className="flex items-center gap-1 p-1 bg-muted rounded-sm">
       <Button
         variant={viewMode === "table" ? "default" : "ghost"}
         size="sm"
@@ -475,7 +475,7 @@ function DataTableError({
 }: DataTableErrorProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+      <div className="w-12 h-12 rounded-sm bg-destructive/10 flex items-center justify-center mb-4">
         <svg
           className="w-6 h-6 text-destructive"
           fill="none"

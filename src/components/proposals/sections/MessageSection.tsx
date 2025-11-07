@@ -66,7 +66,7 @@ export function MessageSection({
 
                 {/* Non-X reference link */}
                 {referenceLink && !isXReference && (
-                  <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                  <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                     <a
                       href={referenceLink}
                       target="_blank"
@@ -83,7 +83,7 @@ export function MessageSection({
 
                 {/* Airdrop reference */}
                 {airdropReferenceLink && (
-                  <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                  <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                     <div className="text-xs text-muted-foreground mb-1">
                       Airdrop Transaction ID
                     </div>

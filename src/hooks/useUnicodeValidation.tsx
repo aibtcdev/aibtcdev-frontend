@@ -78,7 +78,7 @@ export function UnicodeIssueWarning({ issues }: { issues: UnicodeIssue[] }) {
   const suspiciousCount = issues.filter((i) => i.type === "suspicious").length;
 
   return (
-    <div className="mt-1 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+    <div className="mt-1 p-3 bg-primary/10 border border-primary/20 rounded-sm">
       <div className="flex items-start gap-1">
         <AlertTriangle className="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
         <div className="text-sm flex-1 text-primary-700">

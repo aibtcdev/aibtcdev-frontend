@@ -83,7 +83,7 @@ export default function ProposalDetailsPage() {
       <ProposalHeader proposal={proposal} />
 
       {/* Creator and Timestamp Section - Mobile Responsive */}
-      <div className="mb-6 rounded-lg p-4">
+      <div className="mb-6 rounded-sm p-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground">
           {/* Creator */}
           <div className="flex items-center gap-2 min-w-0">

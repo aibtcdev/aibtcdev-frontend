@@ -66,7 +66,7 @@ const VoteStatusChart = ({
   if (isLoadingVotes && !error) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-sm h-6 w-6 border-b-2 border-primary"></div>
         <span className="ml-2 text-sm text-muted-foreground">
           Loading vote data...
         </span>
@@ -90,7 +90,7 @@ const VoteStatusChart = ({
           className="text-xs"
         >
           {localRefreshing ? (
-            <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+            <div className="animate-spin rounded-sm h-3 w-3 border-b border-current mr-1" />
           ) : (
             <RefreshCw className="h-3 w-3 mr-1" />
           )}
@@ -117,7 +117,7 @@ const VoteStatusChart = ({
     <div className="space-y-2">
       {/* Vote Progress Bar */}
       <div className="relative">
-        <div className="h-3 sm:h-4 bg-muted rounded-full overflow-hidden relative">
+        <div className="h-3 sm:h-4 bg-muted rounded-sm overflow-hidden relative">
           {/* Votes for (green) */}
           <div
             className="absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out rounded-l-full"
@@ -139,7 +139,7 @@ const VoteStatusChart = ({
       {/* Vote Counts */}
       <div className="flex justify-between items-center text-xs sm:text-sm">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <div className="w-2 h-2 bg-green-500 rounded-sm" />
           <span className="text-muted-foreground">For:</span>
           <TokenBalance
             value={voteDisplayData.rawVotesFor}
@@ -159,7 +159,7 @@ const VoteStatusChart = ({
             symbol={tokenSymbol}
             className="font-medium"
           />
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
+          <div className="w-2 h-2 bg-red-500 rounded-sm" />
         </div>
 
         {/* Liquid Tokens - Right */}

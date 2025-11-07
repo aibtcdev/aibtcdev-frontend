@@ -127,7 +127,7 @@ export function ContributionHistoryTab({
   if (isLoading) {
     return (
       <div className="text-center py-12">
-        <div className="w-12 h-12 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
           <History className="h-6 w-6 text-muted-foreground animate-pulse" />
         </div>
         <p className="text-sm text-muted-foreground mt-4">
@@ -140,7 +140,7 @@ export function ContributionHistoryTab({
   if (error) {
     return (
       <div className="text-center py-12 space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-lg bg-red-500/10 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-sm bg-red-500/10 flex items-center justify-center">
           <History className="h-6 w-6 text-red-500" />
         </div>
         <div>
@@ -158,7 +158,7 @@ export function ContributionHistoryTab({
   if (!agentAddress) {
     return (
       <div className="text-center py-12 space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
           <History className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
@@ -174,7 +174,7 @@ export function ContributionHistoryTab({
   if (contributions.length === 0) {
     return (
       <div className="text-center py-12 space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
           <History className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
@@ -215,7 +215,7 @@ export function ContributionHistoryTab({
       <div className="w-full space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
-          <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <div className="rounded-sm border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Successful</span>
             </div>
@@ -223,7 +223,7 @@ export function ContributionHistoryTab({
               {successfulContributions}
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <div className="rounded-sm border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Failed</span>
             </div>
@@ -231,7 +231,7 @@ export function ContributionHistoryTab({
               {failedContributions}
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <div className="rounded-sm border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Pending</span>
             </div>
@@ -239,7 +239,7 @@ export function ContributionHistoryTab({
               {pendingContributions}
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <div className="rounded-sm border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Rewards</span>
             </div>
@@ -247,7 +247,7 @@ export function ContributionHistoryTab({
               +{totalRewards.toLocaleString()}
             </p>
           </div>
-          <div className="rounded-lg border bg-card p-3 sm:p-4">
+          <div className="rounded-sm border bg-card p-3 sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm font-medium">Lost Bond</span>
             </div>
@@ -266,7 +266,7 @@ export function ContributionHistoryTab({
             {sortedContributions.map((contribution) => (
               <div
                 key={contribution.id}
-                className="rounded-lg border bg-card p-4 space-y-3"
+                className="rounded-sm border bg-card p-4 space-y-3"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between gap-2">
@@ -304,7 +304,7 @@ export function ContributionHistoryTab({
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block rounded-lg border bg-card overflow-hidden">
+          <div className="hidden md:block rounded-sm border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>

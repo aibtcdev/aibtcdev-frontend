@@ -85,7 +85,7 @@ export function AgentSettingsTab() {
           {agentAddress ? (
             <AgentPermissions agentAddress={agentAddress} />
           ) : !agentsLoading ? (
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+            <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
               <p className="text-sm text-muted-foreground">
                 Your agent account is under deployment. Please come back in a
                 few minutes.

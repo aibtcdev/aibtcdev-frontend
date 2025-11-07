@@ -2312,9 +2312,9 @@ export default function DepositForm({
     <div className="relative flex flex-col space-y-5 md:space-y-6 w-full max-w-lg mx-auto">
       {/* Locked Overlay when Market is Closed */}
       {isMarketOpen === false && (
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center z-50 min-h-full">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-50 min-h-full">
           <div className="text-center space-y-4 max-w-md mx-auto px-6">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
               <Lock className="w-8 h-8 text-primary" />
             </div>
             <div>
@@ -2342,7 +2342,7 @@ export default function DepositForm({
               <DialogTitle>Trading Process Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
-              <div className="bg-muted/30 p-3 rounded-lg">
+              <div className="bg-muted/30 p-3 rounded-sm">
                 <h4 className="font-medium text-sm mb-2">How it works:</h4>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-start gap-2">
@@ -2381,7 +2381,7 @@ export default function DepositForm({
                 </div>
               </div>
 
-              <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-sm border border-amber-200 dark:border-amber-800">
                 <h4 className="font-medium text-sm mb-2 text-amber-800 dark:text-amber-200">
                   Slippage Protection:
                 </h4>
@@ -2433,7 +2433,7 @@ export default function DepositForm({
       )}
 
       {/* Main amount input with integrated currency selector */}
-      <div className=" border rounded-lg p-6">
+      <div className=" border rounded-sm p-6">
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <Input
@@ -2456,7 +2456,7 @@ export default function DepositForm({
           >
             <SelectTrigger className="w-auto bg-primary hover:bg-primary/90 border-0 text-primary-foreground font-medium">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-primary-foreground/20 rounded-sm flex items-center justify-center">
                   <span className="text-primary-foreground text-xs font-bold">
                     ₿
                   </span>
@@ -2525,7 +2525,7 @@ export default function DepositForm({
       </div>
 
       {/* Available Balance - Show disabled version when not authenticated */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-zinc-300">
             Available Balance
@@ -2569,7 +2569,7 @@ export default function DepositForm({
       </div>
 
       {/* Quote display */}
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-sm p-6 text-center min-h-[84px] flex items-center justify-center">
         {loadingQuote ? (
           <div className="flex items-center gap-2">
             <Loader />
@@ -2611,7 +2611,7 @@ export default function DepositForm({
           <span>Market Closed</span>
         ) : (
           <div className="flex items-center justify-center gap-2">
-            <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+            <div className="w-6 h-6 bg-primary-foreground/20 rounded-sm flex items-center justify-center">
               <span className="text-primary-foreground text-xs font-bold">
                 ₿
               </span>
@@ -2622,7 +2622,7 @@ export default function DepositForm({
       </Button>
 
       {hasAccessToken && !hasAgentAccount && (
-        <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-lg">
+        <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-sm">
           <p className="text-yellow-200 text-sm">
             Your agent account is being deployed. Please check back in a few
             minutes.

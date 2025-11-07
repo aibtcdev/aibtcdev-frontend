@@ -15,12 +15,12 @@ export function AuthModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="bg-zinc-900 rounded-sm p-6 max-w-md w-full mx-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Authentication Required</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-zinc-800"
+            className="p-1 rounded-sm hover:bg-zinc-800"
           >
             <X className="h-5 w-5" />
           </button>

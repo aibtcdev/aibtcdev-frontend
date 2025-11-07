@@ -103,7 +103,7 @@ export function AgentPermissions({ agentAddress }: Props) {
       </p>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+        <div className="flex items-center justify-between p-3 rounded-sm border bg-background">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Vote on Contributions</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -125,7 +125,7 @@ export function AgentPermissions({ agentAddress }: Props) {
             />
           )}
         </div>
-        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+        <div className="flex items-center justify-between p-3 rounded-sm border bg-background">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Manage approved contracts</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -148,7 +148,7 @@ export function AgentPermissions({ agentAddress }: Props) {
             />
           )}
         </div>
-        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+        <div className="flex items-center justify-between p-3 rounded-sm border bg-background">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Trade sBTC and DAO tokens</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -170,7 +170,7 @@ export function AgentPermissions({ agentAddress }: Props) {
             />
           )}
         </div>
-        <div className="flex items-center justify-between p-3 rounded-md border bg-background">
+        <div className="flex items-center justify-between p-3 rounded-sm border bg-background">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium">Initiate deposit or withdraw</p>
             <p className="text-xs text-muted-foreground mt-1">

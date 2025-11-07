@@ -223,9 +223,9 @@ export function ProfileTab({
         {/* <div className="mb-6 border-t pt-6">
           <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
           {isLoadingAgents ? (
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+            <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
               <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-sm h-4 w-4 border-b-2 border-primary"></div>
                 <p className="text-sm text-muted-foreground">
                   Loading agent account...
                 </p>
@@ -246,9 +246,9 @@ export function ProfileTab({
 
               <div className="mt-6">
                 {isLoadingDAOs ? (
-                  <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+                  <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <div className="animate-spin rounded-sm h-4 w-4 border-b-2 border-primary"></div>
                       <p className="text-sm text-muted-foreground">
                         Loading DAO tokens...
                       </p>
@@ -266,7 +266,7 @@ export function ProfileTab({
               </div>
             </>
           ) : (
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
+            <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
               <p className="text-sm text-muted-foreground">
                 Your agent account is under deployment.
               </p>

@@ -30,7 +30,7 @@ export function ProposalStatusBadge({
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} border ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm font-medium ${statusConfig.bg} ${statusConfig.border} ${statusConfig.color} border ${sizeClasses[size]} ${className}`}
     >
       <StatusIcon className={iconSizes[size]} />
       {statusConfig.label}

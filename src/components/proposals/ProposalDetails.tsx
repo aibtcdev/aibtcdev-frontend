@@ -61,7 +61,7 @@ const ProposalDetails = ({
       <MessageSection proposal={proposal} defaultOpen={true} />
 
       {/* Agent Voting and Time Remaining Section - Mobile Responsive */}
-      <div className="rounded-lg  bg-card ">
+      <div className="rounded-sm  bg-card ">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Left: Agent Voting */}
           <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ const ProposalDetails = ({
 
       {/* Global Vote Data Error - Only show if VotingProgressChart doesn't handle it */}
       {hasVoteDataError && !voteDisplayData && (
-        <div className="flex items-center justify-between p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-destructive/10 border border-destructive/20 rounded-sm">
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <div>

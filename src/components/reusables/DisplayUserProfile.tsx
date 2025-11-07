@@ -23,7 +23,7 @@ const DisplayUserProfile = () => {
           <span className="font-inter font-bold tracking-tight text-sm">
             @{profile.username}
           </span>
-          <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
+          <div className="w-6 h-6 rounded-sm border border-white flex items-center justify-center">
             <User className="w-3.5 h-3.5" />
           </div>
         </div>

@@ -22,7 +22,7 @@ export function IconButton({
 
   const content = (
     <div
-      className={`${sizeClasses} rounded-md hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors`}
+      className={`${sizeClasses} rounded-sm hover:bg-muted/50 flex items-center justify-center cursor-pointer transition-colors`}
     >
       <Icon
         className={`${iconSize} ${copied ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}

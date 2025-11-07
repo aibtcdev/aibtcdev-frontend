@@ -243,13 +243,13 @@ const VotingProgressChart = ({
     return (
       <div className="space-y-6 overflow-x-auto">
         <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-sm h-4 w-4 border-b-2 border-primary"></div>
           Loading vote data...
         </div>
 
         {/* Loading skeleton */}
         <div className="space-y-3">
-          <div className="h-6 bg-muted rounded-lg animate-pulse"></div>
+          <div className="h-6 bg-muted rounded-sm animate-pulse"></div>
           <div className="flex justify-between">
             <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
             <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
@@ -258,7 +258,7 @@ const VotingProgressChart = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="p-4 rounded-lg border bg-muted/10">
+            <div key={i} className="p-4 rounded-sm border bg-muted/10">
               <div className="h-4 w-16 bg-muted rounded animate-pulse mb-2"></div>
               <div className="h-6 w-24 bg-muted rounded animate-pulse"></div>
             </div>
@@ -296,7 +296,7 @@ const VotingProgressChart = ({
 
         {/* Show basic proposal status without vote counts */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg border bg-muted/10">
+          <div className="p-4 rounded-sm border bg-muted/10">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
@@ -310,7 +310,7 @@ const VotingProgressChart = ({
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border bg-muted/10">
+          <div className="p-4 rounded-sm border bg-muted/10">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-primary" />
@@ -326,7 +326,7 @@ const VotingProgressChart = ({
 
           <div
             className={cn(
-              "p-4 rounded-lg border transition-colors",
+              "p-4 rounded-sm border transition-colors",
               resultStatus.bgColor
             )}
           >
@@ -363,7 +363,7 @@ const VotingProgressChart = ({
       {/* Loading indicator for vote data */}
       {isLoadingVotes && (
         <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-sm h-4 w-4 border-b-2 border-primary"></div>
           Updating vote data...
         </div>
       )}
@@ -396,7 +396,7 @@ const VotingProgressChart = ({
 
         <div className="relative">
           {/* Background bar */}
-          <div className="h-6 bg-muted rounded-lg overflow-hidden">
+          <div className="h-6 bg-muted rounded-sm overflow-hidden">
             {/* Votes for (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
@@ -442,7 +442,7 @@ const VotingProgressChart = ({
             }}
           >
             <div
-              className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background"
+              className="absolute -top-1 w-3 h-3 bg-primary rounded-sm border-2 border-background"
               style={{ left: "-5px" }}
             />
           </div>
@@ -450,7 +450,7 @@ const VotingProgressChart = ({
 
         {/* Vote breakdown */}
         {!voteDisplayData ? (
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-destructive/10 border border-destructive/20 rounded-sm">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <span className="text-sm">Failed to fetch vote data</span>
@@ -472,7 +472,7 @@ const VotingProgressChart = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-muted-foreground">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                <div className="w-2 h-2 bg-green-500 rounded-sm flex-shrink-0" />
                 {voteDisplayData ? (
                   <span className="break-all">
                     <TokenBalance
@@ -487,7 +487,7 @@ const VotingProgressChart = ({
                 )}
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
+                <div className="w-2 h-2 bg-red-500 rounded-sm flex-shrink-0" />
                 {voteDisplayData ? (
                   <span className="break-all">
                     <TokenBalance
@@ -503,7 +503,7 @@ const VotingProgressChart = ({
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+              <div className="w-2 h-2 bg-primary rounded-sm flex-shrink-0" />
               <span>Total: </span>
               {voteDisplayData ? (
                 <span className="break-all">
@@ -549,7 +549,7 @@ const VotingProgressChart = ({
 
         <div className="relative">
           {/* Background bar */}
-          <div className="h-6 bg-muted rounded-lg overflow-hidden">
+          <div className="h-6 bg-muted rounded-sm overflow-hidden">
             {/* Approval rate (green) */}
             <div
               className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
@@ -569,7 +569,7 @@ const VotingProgressChart = ({
             }}
           >
             <div
-              className="absolute -top-1 w-3 h-3 bg-primary rounded-full border-2 border-background"
+              className="absolute -top-1 w-3 h-3 bg-primary rounded-sm border-2 border-background"
               style={{ left: "-5px" }}
             />
           </div>
@@ -578,14 +578,14 @@ const VotingProgressChart = ({
         {/* Approval breakdown */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+            <div className="w-2 h-2 bg-green-500 rounded-sm flex-shrink-0" />
             <span className="break-words">
               Approval: {enhancedCalculations.approvalRate.toFixed(1)}% of votes
               cast
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+            <div className="w-2 h-2 bg-primary rounded-sm flex-shrink-0" />
             <span className="break-words">
               Threshold: {enhancedCalculations.thresholdPercentage}%
             </span>
@@ -598,7 +598,7 @@ const VotingProgressChart = ({
         {/* Quorum Status */}
         <div
           className={cn(
-            "p-4 rounded-lg border transition-colors",
+            "p-4 rounded-sm border transition-colors",
             isActive
               ? enhancedCalculations.metQuorum
                 ? "bg-green-500/10 border-green-500/30"
@@ -655,7 +655,7 @@ const VotingProgressChart = ({
         {/* Threshold Status */}
         <div
           className={cn(
-            "p-4 rounded-lg border transition-colors",
+            "p-4 rounded-sm border transition-colors",
             isActive
               ? enhancedCalculations.metThreshold
                 ? "bg-green-500/10 border-green-500/30"
@@ -712,7 +712,7 @@ const VotingProgressChart = ({
         {/* Overall Result */}
         <div
           className={cn(
-            "p-4 rounded-lg border transition-colors",
+            "p-4 rounded-sm border transition-colors",
             resultStatus.bgColor
           )}
         >

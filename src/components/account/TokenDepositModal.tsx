@@ -193,7 +193,7 @@ export function TokenDepositModal({
 
           <div className="space-y-4">
             {/* Token Info */}
-            <div className="bg-muted p-3 rounded-lg">
+            <div className="bg-muted p-3 rounded-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs">
@@ -244,7 +244,7 @@ export function TokenDepositModal({
             </div>
 
             {/* Recipient Info */}
-            <div className="bg-muted p-3 rounded-lg space-y-2">
+            <div className="bg-muted p-3 rounded-sm space-y-2">
               <div className="flex items-center space-x-2 text-sm">
                 <span className="font-mono text-xs">{recipientAddress}</span>
               </div>

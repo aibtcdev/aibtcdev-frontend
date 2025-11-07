@@ -930,7 +930,7 @@ const PrelaunchPage = () => {
             {isPrelaunchComplete ? (
               /* Prelaunch Complete State */
               <div className="space-y-6">
-                <div className="bg-green-900/20 border border-green-800 rounded-lg p-8 text-center">
+                <div className="bg-green-900/20 border border-green-800 rounded-sm p-8 text-center">
                   <div className="text-6xl mb-4">🎉</div>
                   <h2 className="text-2xl font-bold text-green-400 mb-2">
                     Prelaunch Complete!
@@ -938,7 +938,7 @@ const PrelaunchPage = () => {
                   <p className="text-zinc-300 mb-4">
                     All {TOTAL_SEATS} seats have been successfully sold.
                   </p>
-                  <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-4">
+                  <div className="bg-green-900/30 border border-green-700 rounded-sm p-4 mb-4">
                     <p className="text-sm text-green-200">
                       The {dao.name} token launch will begin shortly. Stay tuned
                       for updates on token distribution and trading
@@ -955,7 +955,7 @@ const PrelaunchPage = () => {
               /* Active Prelaunch State */
               <>
                 {/* Seat Selection - Main Input */}
-                <div className="border rounded-lg p-6">
+                <div className="border rounded-sm p-6">
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-4 mb-2">
@@ -1002,7 +1002,7 @@ const PrelaunchPage = () => {
                     >
                       <SelectTrigger className="w-auto bg-primary hover:bg-primary/90 border-0 text-primary-foreground font-medium">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+                          <div className="w-6 h-6 bg-primary-foreground/20 rounded-sm flex items-center justify-center">
                             <span className="text-primary-foreground text-xs font-bold">
                               ₿
                             </span>
@@ -1065,7 +1065,7 @@ const PrelaunchPage = () => {
                 </div>
 
                 {/* Available Balance */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-zinc-300">
                       Available Balance
@@ -1103,7 +1103,7 @@ const PrelaunchPage = () => {
                 </div>
 
                 {/* Current Seat Ownership */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-zinc-300">
                       Your Current Seats
@@ -1138,7 +1138,7 @@ const PrelaunchPage = () => {
                 </div>
 
                 {/* Contract Seat Limits */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-zinc-300">
                       Max Seats Allowed
@@ -1167,7 +1167,7 @@ const PrelaunchPage = () => {
 
                 {/* Actual Buyable Seats */}
                 {accessToken && userAgentAddress && (
-                  <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                  <div className="bg-blue-900/20 border border-blue-800 rounded-sm p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-300">
                         Available to Buy
@@ -1187,7 +1187,7 @@ const PrelaunchPage = () => {
                 )}
 
                 {/* Seat info display */}
-                <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-6 text-center min-h-[84px] flex items-center justify-center">
+                <div className="bg-zinc-900 border border-zinc-700 rounded-sm p-6 text-center min-h-[84px] flex items-center justify-center">
                   <div className="space-y-2">
                     <div className="text-2xl font-semibold text-white">
                       {selectedSeats} {selectedSeats === 1 ? "Seat" : "Seats"}
@@ -1199,7 +1199,7 @@ const PrelaunchPage = () => {
                 </div>
 
                 {/* Payment Method Description */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
                   <div className="text-xs text-zinc-400">
                     {paymentMethod === "btc"
                       ? !isMainnet
@@ -1232,7 +1232,7 @@ const PrelaunchPage = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2">
-                      <div className="w-6 h-6 bg-primary-foreground/20 rounded-full flex items-center justify-center">
+                      <div className="w-6 h-6 bg-primary-foreground/20 rounded-sm flex items-center justify-center">
                         <span className="text-primary-foreground text-xs font-bold">
                           ₿
                         </span>
@@ -1250,7 +1250,7 @@ const PrelaunchPage = () => {
                 {accessToken &&
                   maxSeatsAllowed === null &&
                   !isMaxSeatsLoading && (
-                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-lg">
+                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-sm">
                       <p className="text-red-200 text-sm">
                         Unable to load seat limits from contract. Please refresh
                         the page.
@@ -1261,7 +1261,7 @@ const PrelaunchPage = () => {
                 {seatsRemaining !== null &&
                   seatsRemaining !== undefined &&
                   selectedSeats > seatsRemaining && (
-                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-lg">
+                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-sm">
                       <p className="text-red-200 text-sm">
                         Only {seatsRemaining} seat
                         {seatsRemaining !== 1 ? "s" : ""} remaining. Please
@@ -1274,7 +1274,7 @@ const PrelaunchPage = () => {
                   maxSeatsAllowed !== null &&
                   selectedSeats > getMaxAffordableSeats() &&
                   getMaxAffordableSeats() > 0 && (
-                    <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-lg">
+                    <div className="text-center p-4 bg-yellow-900/40 border border-yellow-800 rounded-sm">
                       <p className="text-yellow-200 text-sm">
                         You can only afford {getMaxAffordableSeats()}{" "}
                         {getMaxAffordableSeats() === 1 ? "seat" : "seats"} with
@@ -1285,7 +1285,7 @@ const PrelaunchPage = () => {
 
                 {/* Show testnet faucet always in testnet environment */}
                 {!isMainnet && accessToken && (
-                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-sm p-4">
                     <TestnetFaucet />
                   </div>
                 )}
@@ -1293,7 +1293,7 @@ const PrelaunchPage = () => {
                 {accessToken &&
                   maxSeatsAllowed !== null &&
                   getMaxAffordableSeats() === 0 && (
-                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-lg">
+                    <div className="text-center p-4 bg-red-900/40 border border-red-800 rounded-sm">
                       <p className="text-red-200 text-sm">
                         Insufficient sBTC balance. You need at least{" "}
                         {calculateSbtcAmount(1).toFixed(8)} sBTC to buy 1 seat.

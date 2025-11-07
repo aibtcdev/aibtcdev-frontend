@@ -114,7 +114,7 @@ export default function ProposalCard({
       href={`/proposals/${proposal.id}`}
       className="block group cursor-pointer"
     >
-      <div className="p-4 sm:p-5 lg:p-6 bg-muted/10 rounded-md mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
+      <div className="p-4 sm:p-5 lg:p-6 bg-muted/10 rounded-sm mb-3 group-hover:bg-muted/20 transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export default function ProposalCard({
               return (
                 <div className="space-y-3 mb-4">
                   {referenceLink && (
-                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                    <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                       <div className="text-xs text-muted-foreground mb-1">
                         Reference
                       </div>
@@ -187,7 +187,7 @@ export default function ProposalCard({
                     </div>
                   )}
                   {airdropTxId && (
-                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                    <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                       <div className="text-xs text-muted-foreground mb-1">
                         Airdrop Transaction ID
                       </div>
@@ -321,7 +321,7 @@ export default function ProposalCard({
 
         {/* Vote Data Error Handling */}
         {hasVoteDataError && !voteDisplayData && (
-          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-sm">
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="h-4 w-4" />
               <span className="text-sm">Failed to fetch vote data</span>

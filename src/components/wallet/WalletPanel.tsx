@@ -79,9 +79,9 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
           ) : (
             <>
               {userWallet && (
-                <div className="bg-zinc-800/50 rounded-lg p-4 space-y-3">
+                <div className="bg-zinc-800/50 rounded-sm p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 flex items-center justify-center bg-zinc-900 rounded-full border border-zinc-800/40">
+                    <div className="h-8 w-8 flex items-center justify-center bg-zinc-900 rounded-sm border border-zinc-800/40">
                       <WalletIcon className="h-4 w-4 text-zinc-500" />
                     </div>
                     <span className="text-sm font-medium text-white">
@@ -181,19 +181,19 @@ export function WalletPanel({ onClose }: WalletPanelProps) {
                   return (
                     <div
                       key={wallet.id}
-                      className="bg-zinc-800/50 rounded-lg p-4 space-y-3 mt-3"
+                      className="bg-zinc-800/50 rounded-sm p-4 space-y-3 mt-3"
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative h-8 w-8">
                           <div
-                            className="absolute inset-0 rounded-full border border-zinc-800/40 bg-cover bg-center"
+                            className="absolute inset-0 rounded-sm border border-zinc-800/40 bg-cover bg-center"
                             style={{
                               backgroundImage: `url(${
                                 wallet.agent?.image_url || ""
                               })`,
                             }}
                           >
-                            <div className="absolute inset-0 bg-black/20 rounded-full flex items-center justify-center">
+                            <div className="absolute inset-0 bg-black/20 rounded-sm flex items-center justify-center">
                               <span className="text-lg font-bold text-white">
                                 {wallet.agent?.name?.[0]?.toUpperCase() || "A"}
                               </span>

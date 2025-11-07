@@ -62,7 +62,7 @@ export default function LandingPage() {
                 href="https://docs.aibtc.dev/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full transition-colors hover:bg-primary hover:text-white"
+                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-sm transition-colors hover:bg-primary hover:text-white"
                 aria-label="Documentation"
               >
                 <LiaBookSolid className="w-5 h-5 sm:w-6 sm:h-6 transition-colors" />
@@ -71,7 +71,7 @@ export default function LandingPage() {
                 href="https://github.com/aibtcdev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full transition-colors hover:bg-primary hover:text-white"
+                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-sm transition-colors hover:bg-primary hover:text-white"
                 aria-label="GitHub"
               >
                 <BsGithub className="w-5 h-5 sm:w-6 sm:h-6 transition-colors" />
@@ -80,7 +80,7 @@ export default function LandingPage() {
                 href="https://discord.com/invite/Z59Z3FNbEX"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full transition-colors hover:bg-primary hover:text-white"
+                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-sm transition-colors hover:bg-primary hover:text-white"
                 aria-label="Discord"
               >
                 <BsDiscord className="w-5 h-5 sm:w-6 sm:h-6 transition-colors" />
@@ -89,7 +89,7 @@ export default function LandingPage() {
                 href="https://x.com/aibtcdev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full transition-colors hover:bg-primary hover:text-white"
+                className="backdrop-blur-sm bg-white/10 px-4 py-2 sm:px-5 sm:py-2.5 rounded-sm transition-colors hover:bg-primary hover:text-white"
                 aria-label="Twitter"
               >
                 <BsTwitterX className="w-5 h-5 sm:w-6 sm:h-6 transition-colors" />

@@ -934,11 +934,11 @@ export default function TransactionConfirmation({
             )}
 
             {/* Transaction details */}
-            <div className="bg-zinc-900 p-4 rounded-md">
+            <div className="bg-zinc-900 p-4 rounded-sm">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-2 gap-y-3">
                 <div className="text-xs font-medium text-zinc-300">Amount:</div>
                 <div className="col-span-2 relative">
-                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                     {confirmationData.depositAmount} BTC
                   </div>
                 </div>
@@ -947,7 +947,7 @@ export default function TransactionConfirmation({
                   STX Address:
                 </div>
                 <div className="col-span-2 relative">
-                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                     {confirmationData.stxAddress}
                   </div>
                 </div>
@@ -958,7 +958,7 @@ export default function TransactionConfirmation({
                       AI Account:
                     </div>
                     <div className="col-span-2 relative">
-                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                         {aiAccountReceiver}
                       </div>
                     </div>
@@ -971,7 +971,7 @@ export default function TransactionConfirmation({
                       Pool ID:
                     </div>
                     <div className="col-span-2 relative">
-                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                         {poolId}
                       </div>
                     </div>
@@ -984,7 +984,7 @@ export default function TransactionConfirmation({
                       DEX ID:
                     </div>
                     <div className="col-span-2 relative">
-                      <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                      <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                         {dexId}
                       </div>
                     </div>
@@ -995,7 +995,7 @@ export default function TransactionConfirmation({
                   OP_RETURN:
                 </div>
                 <div className="col-span-2 relative">
-                  <div className="bg-zinc-800 p-2 rounded-md max-h-[60px] overflow-y-auto overflow-x-hidden font-mono text-xs break-all whitespace-normal leading-tight">
+                  <div className="bg-zinc-800 p-2 rounded-sm max-h-[60px] overflow-y-auto overflow-x-hidden font-mono text-xs break-all whitespace-normal leading-tight">
                     {confirmationData.opReturnHex}
                   </div>
                   <Button
@@ -1019,7 +1019,7 @@ export default function TransactionConfirmation({
                   Buy Quote:
                 </div>
                 <div className="col-span-2 relative">
-                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                     {loadingQuote ? (
                       <Loader />
                     ) : computedMinTokenOut !== undefined ? (
@@ -1035,7 +1035,7 @@ export default function TransactionConfirmation({
                   Swap Type:
                 </div>
                 <div className="col-span-2 relative">
-                  <div className="bg-zinc-800 p-2 rounded-md font-mono text-xs break-all whitespace-normal leading-tight">
+                  <div className="bg-zinc-800 p-2 rounded-sm font-mono text-xs break-all whitespace-normal leading-tight">
                     {swapType?.toUpperCase()}
                   </div>
                 </div>
@@ -1043,10 +1043,10 @@ export default function TransactionConfirmation({
             </div>
 
             {/* Wallet provider info */}
-            <div className="bg-zinc-900 p-4 rounded-md">
+            <div className="bg-zinc-900 p-4 rounded-sm">
               <p className="text-sm mb-2 font-medium">Wallet Provider</p>
               <div className="flex items-center">
-                <div className="px-3 py-1 bg-zinc-800 rounded-md text-sm">
+                <div className="px-3 py-1 bg-zinc-800 rounded-sm text-sm">
                   {activeWalletProvider
                     ? activeWalletProvider.charAt(0).toUpperCase() +
                       activeWalletProvider.slice(1)
@@ -1066,13 +1066,13 @@ export default function TransactionConfirmation({
             </div>
 
             {/* Fee details */}
-            <div className="bg-zinc-900 p-4 rounded-md">
+            <div className="bg-zinc-900 p-4 rounded-sm">
               <p className="text-sm mb-3 font-medium">Select priority</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <Card
                   className={cn(
-                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    "rounded-sm overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
                     feePriority === TransactionPriority.Low
                       ? "bg-primary/20"
                       : "bg-zinc-900"
@@ -1097,7 +1097,7 @@ export default function TransactionConfirmation({
 
                 <Card
                   className={cn(
-                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    "rounded-sm overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
                     feePriority === TransactionPriority.Medium
                       ? "bg-primary/20"
                       : "bg-zinc-900"
@@ -1124,7 +1124,7 @@ export default function TransactionConfirmation({
 
                 <Card
                   className={cn(
-                    "rounded-lg overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
+                    "rounded-sm overflow-hidden border border-zinc-700 hover:border-primary cursor-pointer",
                     feePriority === TransactionPriority.High
                       ? "bg-primary/20"
                       : "bg-zinc-900"
@@ -1198,7 +1198,7 @@ export default function TransactionConfirmation({
             <div className="space-y-6">
               {/* Success message */}
               <div className="text-center">
-                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-sm flex items-center justify-center mb-4">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
                 <p className="text-sm text-zinc-400">
@@ -1208,7 +1208,7 @@ export default function TransactionConfirmation({
               </div>
 
               {/* Transaction details */}
-              <div className="bg-zinc-900 p-4 rounded-lg space-y-3">
+              <div className="bg-zinc-900 p-4 rounded-sm space-y-3">
                 <div className="flex justify-between items-start">
                   <span className="text-xs font-medium text-zinc-300">
                     Amount:
@@ -1257,7 +1257,7 @@ export default function TransactionConfirmation({
                         "_blank"
                       )
                     }
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 transition-colors p-3 rounded-md font-mono text-xs break-all text-left text-blue-400 hover:text-blue-300 underline decoration-dotted"
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 transition-colors p-3 rounded-sm font-mono text-xs break-all text-left text-blue-400 hover:text-blue-300 underline decoration-dotted"
                   >
                     {successTxId}
                   </button>

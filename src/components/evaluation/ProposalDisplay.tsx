@@ -37,7 +37,7 @@ export default function ProposalDisplay({
         <h2 className="text-base font-semibold text-foreground">
           Proposal Details
         </h2>
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4 space-y-3">
+        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4 space-y-3">
           {/* Title */}
           <div>
             <h3 className="text-lg font-bold text-foreground mb-1">
@@ -50,12 +50,12 @@ export default function ProposalDisplay({
             {isCompleted && (
               <div className="flex items-center gap-2 mb-2">
                 {isPassed ? (
-                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-500">
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-500">
                     <CheckCircle className="h-3 w-3" />
                     Passed
                   </div>
                 ) : (
-                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-500">
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-sm text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-500">
                     <XCircle className="h-3 w-3" />
                     Failed
                   </div>
@@ -82,7 +82,7 @@ export default function ProposalDisplay({
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
                 Content
               </h4>
-              <div className="bg-muted/20 border border-muted/30 rounded-lg p-3">
+              <div className="bg-muted/20 border border-muted/30 rounded-sm p-3">
                 <pre className="text-xs text-foreground whitespace-pre-wrap font-mono leading-relaxed">
                   {proposal.content}
                 </pre>
@@ -105,7 +105,7 @@ export default function ProposalDisplay({
 
   if (selectedProposalId === "") {
     return (
-      <div className="bg-muted/20 border border-muted/30 rounded-xl p-6 text-center">
+      <div className="bg-muted/20 border border-muted/30 rounded-sm p-6 text-center">
         <p className="text-muted-foreground text-sm">
           Please select a proposal to view its details
         </p>

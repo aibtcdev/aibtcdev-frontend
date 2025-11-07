@@ -91,7 +91,7 @@ export function DesktopConfigTable({
   deleteMutation,
 }: DesktopConfigTableProps) {
   return (
-    <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-lg border border-border/30 overflow-hidden">
+    <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-sm border border-border/30 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -136,7 +136,7 @@ export function DesktopConfigTable({
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12">
                   <div className="flex flex-col items-center space-y-4">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-sm bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
                       <Settings className="h-6 w-6 text-muted-foreground/60" />
                     </div>
                     <div className="space-y-2 max-w-md">
@@ -165,7 +165,7 @@ export function DesktopConfigTable({
                   >
                     <TableCell className="font-bold text-foreground px-4 py-3 text-sm w-[150px]">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-primary to-secondary" />
+                        <div className="w-2 h-2 rounded-sm bg-gradient-to-r from-primary to-secondary" />
                         <span className="truncate">{daoName}</span>
                       </div>
                     </TableCell>
@@ -173,12 +173,12 @@ export function DesktopConfigTable({
                     <TableCell className="px-4 py-3 w-[100px]">
                       {prompt?.is_active ? (
                         <Badge className="bg-gradient-to-r from-primary/20 to-accent/20 text-foreground border-primary/40 px-2 py-1 font-semibold text-xs">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary mr-1 animate-pulse" />
+                          <div className="w-1.5 h-1.5 rounded-sm bg-primary mr-1 animate-pulse" />
                           Active
                         </Badge>
                       ) : (
                         <Badge className="bg-gradient-to-r from-muted/50 to-muted/30 text-muted-foreground border-muted/40 px-2 py-1 font-semibold text-xs">
-                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 mr-1" />
+                          <div className="w-1.5 h-1.5 rounded-sm bg-muted-foreground/50 mr-1" />
                           Disabled
                         </Badge>
                       )}
@@ -193,10 +193,10 @@ export function DesktopConfigTable({
                             handleSelectChange("model", value)
                           }
                         >
-                          <SelectTrigger className="h-8 w-full bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-lg text-sm">
+                          <SelectTrigger className="h-8 w-full bg-gradient-to-r from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground rounded-sm text-sm">
                             <SelectValue placeholder="Select model" />
                           </SelectTrigger>
-                          <SelectContent className="bg-card/95 backdrop-blur-xl border-border/40 rounded-lg">
+                          <SelectContent className="bg-card/95 backdrop-blur-xl border-border/40 rounded-sm">
                             {AI_MODELS.map(
                               (model: {
                                 value: string;
@@ -206,10 +206,10 @@ export function DesktopConfigTable({
                                 <SelectItem
                                   key={model.value}
                                   value={model.value}
-                                  className="text-foreground hover:bg-primary/10 rounded-md text-sm"
+                                  className="text-foreground hover:bg-primary/10 rounded-sm text-sm"
                                 >
                                   <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                    <div className="w-1.5 h-1.5 rounded-sm bg-primary" />
                                     {model.label}
                                   </div>
                                 </SelectItem>
@@ -219,7 +219,7 @@ export function DesktopConfigTable({
                         </Select>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary/60" />
+                          <div className="w-1.5 h-1.5 rounded-sm bg-primary/60" />
                           <span className="text-muted-foreground font-semibold text-xs truncate">
                             {prompt?.model || "openai/gpt-5"}
                           </span>
@@ -236,7 +236,7 @@ export function DesktopConfigTable({
                             value={editingData.prompt_text}
                             onChange={handleInputChange}
                             placeholder="Enter detailed AI agent instructions and decision-making criteria..."
-                            className="min-h-[60px] max-h-[100px] text-xs bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground placeholder:text-muted-foreground/70 rounded-lg resize-none"
+                            className="min-h-[60px] max-h-[100px] text-xs bg-gradient-to-br from-card/80 to-card/60 backdrop-blur-sm border-border/40 text-foreground placeholder:text-muted-foreground/70 rounded-sm resize-none"
                           />
                           {errors.prompt_text && (
                             <p className="text-xs text-destructive font-medium">
@@ -254,7 +254,7 @@ export function DesktopConfigTable({
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 text-muted-foreground/70 italic text-xs">
-                              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                              <div className="w-1.5 h-1.5 rounded-sm bg-muted-foreground/30" />
                               No configuration set
                             </div>
                           )}
@@ -270,7 +270,7 @@ export function DesktopConfigTable({
                             variant="ghost"
                             size="sm"
                             onClick={handleCancelEditing}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 rounded-lg"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 rounded-sm"
                             title="Cancel editing"
                           >
                             <X className="h-3 w-3" />
@@ -280,7 +280,7 @@ export function DesktopConfigTable({
                             size="sm"
                             onClick={() => handleSavePrompt(daoId)}
                             disabled={isLoading}
-                            className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-gradient-to-r hover:from-primary/20 hover:to-accent/20 rounded-lg"
+                            className="h-8 w-8 p-0 text-primary hover:text-primary hover:bg-gradient-to-r hover:from-primary/20 hover:to-accent/20 rounded-sm"
                             title="Save configuration"
                           >
                             {createMutation.isPending ||
@@ -297,7 +297,7 @@ export function DesktopConfigTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStartEditing(daoId)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 rounded-lg"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/30 rounded-sm"
                             title="Configure agent"
                           >
                             <Pencil className="h-3 w-3" />
@@ -308,7 +308,7 @@ export function DesktopConfigTable({
                               size="sm"
                               onClick={() => handleDelete(prompt.id)}
                               disabled={deleteMutation.isPending}
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-gradient-to-r hover:from-destructive/20 hover:to-destructive/20 rounded-lg"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-gradient-to-r hover:from-destructive/20 hover:to-destructive/20 rounded-sm"
                               title="Delete configuration"
                             >
                               {deleteMutation.isPending ? (

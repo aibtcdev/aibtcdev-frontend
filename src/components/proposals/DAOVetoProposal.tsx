@@ -409,7 +409,7 @@ export function DAOVetoProposal({
 
                       {/* Transaction Status */}
                       {parsed?.data?.txid && (
-                        <div className="border rounded-lg p-6">
+                        <div className="border rounded-sm p-6">
                           <div className="text-center space-y-4">
                             <h3 className="text-lg font-semibold">
                               Transaction Status
@@ -537,7 +537,7 @@ export function DAOVetoProposal({
               </DialogHeader>
 
               <div className="mt-6">
-                <div className="border rounded-lg p-4">
+                <div className="border rounded-sm p-4">
                   <h4 className="font-semibold mb-2">Error Details</h4>
                   <p className="text-sm text-muted-foreground">
                     {apiResponse?.error || "An unknown error occurred"}

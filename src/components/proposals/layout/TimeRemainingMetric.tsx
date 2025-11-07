@@ -20,7 +20,7 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
   } = useProposalTiming(proposal);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm text-muted-foreground bg-muted/30 rounded-md p-2">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm text-muted-foreground bg-muted/30 rounded-sm p-2">
       {/* Voting Start Time */}
       <div className="flex items-center gap-1.5 min-w-0">
         <Calendar className="h-4 w-4 text-primary flex-shrink-0" />

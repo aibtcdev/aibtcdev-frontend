@@ -69,10 +69,10 @@ function VetosContent({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between p-3 rounded-lg bg-background/50"
+            className="flex items-center justify-between p-3 rounded-sm bg-background/50"
           >
             <div className="flex items-center gap-3 flex-1">
-              <Skeleton className="w-6 h-6 rounded-full" />
+              <Skeleton className="w-6 h-6 rounded-sm" />
               <Skeleton className="h-4 w-24" />
             </div>
             <Skeleton className="h-6 w-16" />
@@ -123,7 +123,7 @@ function VetosContent({
         {vetos?.map((veto) => (
           <div
             key={veto.id}
-            className="bg-destructive/10 border border-destructive/20 rounded-lg p-3"
+            className="bg-destructive/10 border border-destructive/20 rounded-sm p-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-destructive">

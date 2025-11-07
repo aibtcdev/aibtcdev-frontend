@@ -60,7 +60,7 @@ export function AccountTabs({
     <div className="max-w-7xl mx-auto">
       <Tabs value={activeTab} onValueChange={handleTabChange} className="">
         {/* Tabs hidden - commented out */}
-        {/* <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-lg p-1">
+        {/* <TabsList className="grid w-full grid-cols-3 sticky-tabs border rounded-sm p-1">
           <TabsTrigger
             value="wallets"
             className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"

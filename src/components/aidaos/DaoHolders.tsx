@@ -146,7 +146,7 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
               return (
                 <div
                   key={holder.address}
-                  className={`rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors ${
+                  className={`rounded-sm border bg-card p-4 hover:bg-muted/50 transition-colors ${
                     isHighlighted
                       ? "bg-primary/5 border-l-4 border-l-primary"
                       : ""
@@ -260,7 +260,7 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
           </div>
         ) : (
           // Desktop table layout
-          <div className="rounded-lg border overflow-hidden">
+          <div className="rounded-sm border overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>

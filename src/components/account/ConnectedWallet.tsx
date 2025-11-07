@@ -296,7 +296,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                 </DialogHeader>
                 <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
                   {/* STX Balance */}
-                  <div className="border rounded-lg p-4">
+                  <div className="border rounded-sm p-4">
                     <h4 className="font-medium mb-2">STX</h4>
                     <p className="text-sm text-muted-foreground">
                       Balance:{" "}
@@ -341,7 +341,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                     }
 
                     return (
-                      <div key={tokenId} className="border rounded-lg p-4">
+                      <div key={tokenId} className="border rounded-sm p-4">
                         <h4 className="font-medium mb-2">{tokenName}</h4>
                         <p className="text-sm text-muted-foreground">
                           Balance:{" "}
@@ -359,7 +359,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                   {Object.entries(
                     connectedWalletBalance.non_fungible_tokens || {}
                   ).map(([nftId, nftData]) => (
-                    <div key={nftId} className="border rounded-lg p-4">
+                    <div key={nftId} className="border rounded-sm p-4">
                       <h4 className="font-medium mb-2">{nftId}</h4>
                       <p className="text-sm text-muted-foreground">
                         Count: {(nftData as { count: number }).count} NFTs

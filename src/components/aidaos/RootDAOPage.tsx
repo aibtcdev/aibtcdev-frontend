@@ -43,7 +43,7 @@ import Link from "next/link";
 import { getStacksAddress } from "@/lib/address";
 // import { useAgentAccount } from "@/hooks/useAgentAccount";
 // import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
-import { TwitterPreviewPanel } from "@/components/twitter/TwitterPreviewPanel";
+import { TwitterCard } from "@/components/twitter/TwitterCard";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -67,10 +67,6 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
 
   // State for Twitter preview
   const [twitterUrl, setTwitterUrl] = useState("");
-
-  // Twitter URL validation
-  const twitterUrlRegex = /^https:\/\/x\.com\/[a-zA-Z0-9_]+\/status\/\d+$/;
-  const isValidTwitterUrl = twitterUrlRegex.test(twitterUrl);
 
   // Agent account data
   // const { userAgentBalance } = useAgentAccount();
@@ -430,9 +426,9 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     <div className="flex flex-col w-full">
       <main className="overflow-y-auto overflow-x-hidden">
         <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-screen-xl mx-auto w-full">
-          <div className="bg-muted/10 p-4 sm:p-6 rounded-lg mb-6">
+          <div className="bg-muted/10 p-4 sm:p-6 rounded-sm mb-6">
             {/* <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
-              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-sm">
                 <AvatarImage
                   src={
                     token?.image_url ||
@@ -440,7 +436,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
                   }
                   alt={dao.name}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-xl sm:text-2xl rounded-lg">
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-xl sm:text-2xl rounded-sm">
                   {dao.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
@@ -519,11 +515,23 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               />
             </div>
 
-            {/* Right column - Twitter Preview Panel */}
+            {/* Right column - Twitter Card */}
             <div className="order-1 lg:order-2">
-              <TwitterPreviewPanel
-                twitterUrl={twitterUrl}
-                isValidTwitterUrl={isValidTwitterUrl}
+              <TwitterCard
+                name="AIBTC"
+                username="aibtcdev"
+                tweet={`AIBTC order update — proof of coffee ritual ☕
+
+quote this post with:
+1️⃣ a coffee selfie
+2️⃣ tag a blue-check builder you respect
+3️⃣ tell us what you've built today for bitcoin
+
+submit daily at aibtc.com`}
+                date="Nov 7, 2025"
+                time="8:14 PM"
+                avatarUrl="/logos/aibtcdev-avatar-250px.png"
+                verified={true}
               />
             </div>
           </div>

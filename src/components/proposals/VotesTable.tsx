@@ -268,7 +268,7 @@ const VotesTable = ({ proposalId }: VotesTableProps) => {
                   : "Unknown"}
               </span>
             </div>
-            <div className="bg-muted/50 rounded-lg p-4">
+            <div className="bg-muted/50 rounded-sm p-4">
               <p className="text-sm whitespace-pre-wrap leading-relaxed">
                 {selectedReasoning?.reasoning || "No reasoning provided"}
               </p>

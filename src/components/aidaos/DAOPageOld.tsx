@@ -421,9 +421,9 @@ export function DAOPageOld({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col w-full">
       <main className="overflow-y-auto overflow-x-hidden">
         <div className="px-4 sm:px-6 lg:px-8 py-4 max-w-screen-xl mx-auto w-full">
-          <div className="bg-muted/10 p-4 sm:p-6 rounded-lg mb-6">
+          <div className="bg-muted/10 p-4 sm:p-6 rounded-sm mb-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
-              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-lg">
+              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 flex-shrink-0 rounded-sm">
                 <AvatarImage
                   src={
                     token?.image_url ||
@@ -431,7 +431,7 @@ export function DAOPageOld({ children }: { children: React.ReactNode }) {
                   }
                   alt={dao.name}
                 />
-                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-xl sm:text-2xl rounded-lg">
+                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-secondary/20 text-foreground text-xl sm:text-2xl rounded-sm">
                   {dao.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>

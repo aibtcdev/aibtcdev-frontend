@@ -36,12 +36,12 @@ The `styles` folder manages TypeScript-related configurations for TailwindCSS, i
   ```typescript
   // styles/tailwind.ts
   export const buttonStyles = {
-    primary: 'flex px-4 py-2 text-base font-inter font-bold bg-primary text-foreground rounded-lg hover:scale-105 hover:shadow-lg focus:ring-2 ring-primary motion-reduce:transition-none sm:px-6 sm:text-lg',
-    secondary: 'flex px-4 py-2 text-base font-inter font-medium bg-transparent border border-secondary text-secondary rounded-lg hover:scale-105 focus:ring-2 ring-secondary motion-reduce:transition-none sm:px-6 sm:text-lg',
+    primary: 'flex px-4 py-2 text-base font-inter font-bold bg-primary text-foreground rounded-sm hover:scale-105 hover:shadow-lg focus:ring-2 ring-primary motion-reduce:transition-none sm:px-6 sm:text-lg',
+    secondary: 'flex px-4 py-2 text-base font-inter font-medium bg-transparent border border-secondary text-secondary rounded-sm hover:scale-105 focus:ring-2 ring-secondary motion-reduce:transition-none sm:px-6 sm:text-lg',
   };
 
   export const cardStyles = {
-    default: 'grid p-4 text-base font-inter bg-background text-foreground rounded-xl shadow-sm hover:shadow-lg hover:translate-z-5 transition duration-300 ease-in-out motion-reduce:transition-none sm:p-6 sm:text-lg',
+    default: 'grid p-4 text-base font-inter bg-background text-foreground rounded-sm shadow-sm hover:shadow-lg hover:translate-z-5 transition duration-300 ease-in-out motion-reduce:transition-none sm:p-6 sm:text-lg',
   };
   ```
 
@@ -90,5 +90,5 @@ The `styles` folder manages TypeScript-related configurations for TailwindCSS, i
 
   ```typescript
   // styles/tailwind.ts
-  export const cardStyle = 'p-4 bg-primary text-lg flex rounded-lg transition'; // Incorrect class order, missing responsive variants, no accessibility focus
+  export const cardStyle = 'p-4 bg-primary text-lg flex rounded-sm transition'; // Incorrect class order, missing responsive variants, no accessibility focus
   ```

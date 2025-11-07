@@ -28,7 +28,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
 
   if (isLoading) {
     return (
-      <div className="border border-border rounded-md p-2 w-full">
+      <div className="border border-border rounded-sm p-2 w-full">
         <div className="flex items-center gap-1.5">
           <Timer className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
           <span className="text-xs">Loading block times...</span>
@@ -40,7 +40,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
   // Handle case: Start time is null AFTER loading - this means voting has not started yet
   if (startBlockTime === null) {
     return (
-      <div className="border border-secondary/20 bg-secondary/10 rounded-md p-2 w-full">
+      <div className="border border-secondary/20 bg-secondary/10 rounded-sm p-2 w-full">
         <div className="flex items-center gap-1.5 text-secondary">
           <Timer className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">
@@ -61,7 +61,7 @@ const TimeStatus = ({ status, vote_start, vote_end }: TimeStatusProps) => {
       : null;
 
   return (
-    <div className="bg-muted/20 rounded-md p-2 w-full text-xs sm:text-sm break-words">
+    <div className="bg-muted/20 rounded-sm p-2 w-full text-xs sm:text-sm break-words">
       {/* Header (Active/Ended status) */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5">

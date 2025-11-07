@@ -107,7 +107,7 @@ export const DepositNotificationBanner: React.FC = () => {
         return (
           <div
             key={token.id}
-            className="max-w-md bg-primary text-primary-foreground rounded-md shadow-lg animate-in slide-in-from-right-2 duration-300"
+            className="max-w-md bg-primary text-primary-foreground rounded-sm shadow-lg animate-in slide-in-from-right-2 duration-300"
           >
             <div className="px-3 py-2 flex items-center justify-between gap-3">
               {/* Message with token amount - inline */}

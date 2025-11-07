@@ -102,7 +102,7 @@ export function MissionContent({ description }: MissionContentProps) {
     ),
     code: ({ children, ...props }: MarkdownComponentProps) => (
       <code
-        className="bg-muted/50 text-foreground px-2 py-1 rounded-lg text-sm font-mono border border-border/30"
+        className="bg-muted/50 text-foreground px-2 py-1 rounded-sm text-sm font-mono border border-border/30"
         {...props}
       >
         {children}
@@ -110,7 +110,7 @@ export function MissionContent({ description }: MissionContentProps) {
     ),
     pre: ({ children, ...props }: MarkdownComponentProps) => (
       <pre
-        className="bg-muted/50 text-foreground p-4 rounded-xl overflow-x-auto mb-4 border border-border/30"
+        className="bg-muted/50 text-foreground p-4 rounded-sm overflow-x-auto mb-4 border border-border/30"
         {...props}
       >
         {children}

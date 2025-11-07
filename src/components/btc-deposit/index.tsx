@@ -127,7 +127,7 @@ export default function BitcoinDeposit({
   // }
 
   return (
-    <div className="rounded-2xl bg-muted/10 p-4 sm:p-5 lg:p-6 flex flex-col lg:sticky lg:top-[120px] lg:max-h-[calc(100vh-140px)]">
+    <div className="rounded-sm bg-muted/10 p-4 sm:p-5 lg:p-6 flex flex-col lg:sticky lg:top-[120px] lg:max-h-[calc(100vh-140px)]">
       <div className="flex-1 overflow-y-auto min-h-0">
         {isDataLoading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">

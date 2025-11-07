@@ -19,7 +19,7 @@ export function AgentAvatar({ agent, className = "" }: AgentAvatarProps) {
   if (!agent?.image_url) {
     return (
       <div
-        className={`flex items-center justify-center rounded-full bg-background ${className}`}
+        className={`flex items-center justify-center rounded-sm bg-background ${className}`}
       >
         <Bot className="h-5 w-5 text-foreground/50" />
       </div>
@@ -28,7 +28,7 @@ export function AgentAvatar({ agent, className = "" }: AgentAvatarProps) {
 
   // Display agent's custom avatar with first letter overlay
   return (
-    <div className={`relative rounded-full overflow-hidden ${className}`}>
+    <div className={`relative rounded-sm overflow-hidden ${className}`}>
       <Image
         src={agent.image_url || "/placeholder.svg"}
         alt={agent.name}

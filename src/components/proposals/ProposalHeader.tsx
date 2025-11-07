@@ -95,10 +95,10 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
       {/* Enhanced Header Design - Mobile First */}
       <div className="relative overflow-hidden">
         {/* Gradient background with subtle pattern */}
-        <div className="bg-gradient-to-br from-card via-card/95 to-card/90 border rounded-2xl shadow-lg backdrop-blur-sm relative">
+        <div className="bg-gradient-to-br from-card via-card/95 to-card/90 border rounded-sm shadow-lg backdrop-blur-sm relative">
           {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-full -translate-y-16 translate-x-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary/5 to-transparent rounded-full translate-y-12 -translate-x-12" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/5 to-transparent rounded-sm -translate-y-16 translate-x-16" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-secondary/5 to-transparent rounded-sm translate-y-12 -translate-x-12" />
 
           {/* Main content */}
           <div className="relative p-6 space-y-6">
@@ -133,7 +133,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
               {/* <div className="flex items-center justify-center sm:justify-start gap-3 pt-2">
                 {/* DAO/Token Image */}
               {/* <div className="relative group">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-500 group-hover:scale-105 shadow-lg">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-sm overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/20 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-500 group-hover:scale-105 shadow-lg">
                     {daoImage ? (
                       <Image
                         src={daoImage}
@@ -155,7 +155,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                     )}
                   </div>
                   {/* Subtle glow effect */}
-              {/* <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm" />
+              {/* <div className="absolute inset-0 rounded-sm bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm" />
                 </div>
 
                 {/* DAO name */}
@@ -178,7 +178,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                 {/* Mobile: Card-style metrics with status */}
                 <div className="grid grid-cols-2 sm:hidden gap-3">
                   {/* Status Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
+                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
                     <div className="flex items-center justify-center gap-2">
                       <statusConfig.icon className="h-4 w-4 text-primary" />
                       <span className="text-sm text-muted-foreground">
@@ -200,9 +200,9 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                   </div>
 
                   {/* Quorum Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
+                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
                     <div className="flex flex-col items-center text-center space-y-2">
-                      <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                      <div className="p-2 rounded-sm bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium">
@@ -231,9 +231,9 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                   </div>
 
                   {/* Threshold Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
+                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
                     <div className="flex flex-col items-center text-center space-y-2">
-                      <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                      <div className="p-2 rounded-sm bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
                         <Target className="h-4 w-4 text-primary" />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium">
@@ -262,7 +262,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                   </div>
 
                   {/* Vetos Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
+                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="h-4 w-4 text-primary" />
                       <span className="text-sm text-muted-foreground">

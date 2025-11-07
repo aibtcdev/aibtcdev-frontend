@@ -171,7 +171,7 @@ export default function ProposalEvaluationPage() {
   if (proposalsError) {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
-        <div className="text-center p-6 bg-destructive/10 border border-destructive/20 rounded-xl max-w-md">
+        <div className="text-center p-6 bg-destructive/10 border border-destructive/20 rounded-sm max-w-md">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2 text-foreground">
             Error Loading Proposals
@@ -187,7 +187,7 @@ export default function ProposalEvaluationPage() {
   if (!authSession) {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
-        <div className="text-center p-6 bg-warning/10 border border-warning/20 rounded-xl max-w-md">
+        <div className="text-center p-6 bg-warning/10 border border-warning/20 rounded-sm max-w-md">
           <AlertCircle className="h-12 w-12 text-warning mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2 text-foreground">
             Authentication Required
@@ -247,7 +247,7 @@ export default function ProposalEvaluationPage() {
                 type="button"
                 onClick={handleEvaluationSubmit}
                 disabled={!isFormValid || isSubmitting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 focus:ring-1 focus:ring-primary focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-sm hover:bg-primary/90 focus:ring-1 focus:ring-primary focus:ring-offset-1 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
                 title={
                   !isFormValid
                     ? "Select a proposal and fill both prompts to evaluate"
@@ -256,7 +256,7 @@ export default function ProposalEvaluationPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    <div className="animate-spin rounded-sm h-4 w-4 border-2 border-white border-t-transparent" />
                     Evaluating...
                   </>
                 ) : (
@@ -268,7 +268,7 @@ export default function ProposalEvaluationPage() {
               <button
                 type="button"
                 onClick={handleResetToDefaults}
-                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border/50 rounded-md hover:bg-muted/50 transition-colors duration-200"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border/50 rounded-sm hover:bg-muted/50 transition-colors duration-200"
                 disabled={isSubmitting}
                 title="Reset all settings to defaults"
               >
@@ -283,7 +283,7 @@ export default function ProposalEvaluationPage() {
       <div className="w-full p-4 sm:p-6 lg:p-8">
         {/* Error Display */}
         {submitError && (
-          <div className="mb-6 bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+          <div className="mb-6 bg-destructive/10 border border-destructive/20 rounded-sm p-4 flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-destructive mb-1">
@@ -308,7 +308,7 @@ export default function ProposalEvaluationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* System Prompt Column */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-lg border border-border/30 p-6">
+            <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-sm border border-border/30 p-6">
               <h3 className="text-lg font-bold text-foreground mb-4">
                 System Prompt
               </h3>
@@ -321,7 +321,7 @@ export default function ProposalEvaluationPage() {
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder="You are a comprehensive DAO governance evaluator..."
                   disabled={isSubmitting}
-                  className="w-full h-64 p-3 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none font-mono"
+                  className="w-full h-64 p-3 text-sm bg-background border border-border rounded-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none font-mono"
                 />
                 <div className="text-xs text-muted-foreground">
                   {systemPrompt.length} characters
@@ -332,7 +332,7 @@ export default function ProposalEvaluationPage() {
 
           {/* User Prompt Column */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-lg border border-border/30 p-6">
+            <div className="bg-gradient-to-br from-card/60 via-card/40 to-card/20 backdrop-blur-xl rounded-sm border border-border/30 p-6">
               <h3 className="text-lg font-bold text-foreground mb-4">
                 User Prompt
               </h3>
@@ -346,7 +346,7 @@ export default function ProposalEvaluationPage() {
                   onChange={(e) => setUserPrompt(e.target.value)}
                   placeholder="Please conduct a comprehensive evaluation..."
                   disabled={isSubmitting}
-                  className="w-full h-64 p-3 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none font-mono"
+                  className="w-full h-64 p-3 text-sm bg-background border border-border rounded-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-none font-mono"
                 />
                 <div className="text-xs text-muted-foreground">
                   {userPrompt.length} characters

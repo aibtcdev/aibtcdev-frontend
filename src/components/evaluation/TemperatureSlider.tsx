@@ -66,7 +66,7 @@ export default function TemperatureSlider({
           min={min}
           max={max}
           step={step}
-          className="flex-1 h-2 bg-muted/30 rounded-lg appearance-none cursor-pointer slider"
+          className="flex-1 h-2 bg-muted/30 rounded-sm appearance-none cursor-pointer slider"
           title={`Temperature: ${value.toFixed(1)} (${creativityInfo.level})`}
         />
         <Input
@@ -77,7 +77,7 @@ export default function TemperatureSlider({
           min={min}
           max={max}
           step={step}
-          className="w-16 h-9 text-xs text-center bg-background/50 border-border/50 rounded-md"
+          className="w-16 h-9 text-xs text-center bg-background/50 border-border/50 rounded-sm"
           title="Temperature value"
         />
       </div>

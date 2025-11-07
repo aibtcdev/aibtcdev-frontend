@@ -126,10 +126,10 @@ export function XLinking({
       <div className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+            <div className="animate-spin rounded-sm h-6 w-6 border-2 border-primary border-t-transparent"></div>
           </div>
         ) : needsXLink ? (
-          <div className="flex items-start justify-between gap-3 p-4 bg-primary/5 rounded-lg">
+          <div className="flex items-start justify-between gap-3 p-4 bg-primary/5 rounded-sm">
             <div className="flex items-start gap-2 flex-1">
               <svg
                 className="w-4 h-4 flex-shrink-0 mt-0.5"
@@ -151,7 +151,7 @@ export function XLinking({
             </Button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 rounded-lg">
+          <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 rounded-sm">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
               <div>

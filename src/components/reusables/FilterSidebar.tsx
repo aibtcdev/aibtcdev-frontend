@@ -113,7 +113,7 @@ export function FilterSidebar({
                 <label
                   key={option.value}
                   className={`
-                    flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-all
+                    flex w-full cursor-pointer items-center justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm transition-all
                     ${
                       isSelected
                         ? "bg-primary/10 font-semibold text-primary"
@@ -174,7 +174,7 @@ export function FilterSidebar({
                   onFilterChange(filter.key, allValues);
                 }}
                 disabled={allSelected}
-                className="flex-1 px-3 py-2 text-xs font-inter font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted/50 hover:border-border/80 focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-background disabled:hover:border-border transition-all duration-300 motion-reduce:transition-none"
+                className="flex-1 px-3 py-2 text-xs font-inter font-medium text-foreground bg-background border border-border rounded-sm hover:bg-muted/50 hover:border-border/80 focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-background disabled:hover:border-border transition-all duration-300 motion-reduce:transition-none"
                 aria-label="Select all status filters"
               >
                 Select All
@@ -182,7 +182,7 @@ export function FilterSidebar({
               <button
                 onClick={() => onFilterChange(filter.key, [])}
                 disabled={noneSelected}
-                className="flex-1 px-3 py-2 text-xs font-inter font-medium text-foreground bg-background border border-border rounded-lg hover:bg-muted/50 hover:border-border/80 focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-background disabled:hover:border-border transition-all duration-300 motion-reduce:transition-none"
+                className="flex-1 px-3 py-2 text-xs font-inter font-medium text-foreground bg-background border border-border rounded-sm hover:bg-muted/50 hover:border-border/80 focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-background disabled:hover:border-border transition-all duration-300 motion-reduce:transition-none"
                 aria-label="Clear all status filters"
               >
                 Clear All
@@ -205,7 +205,7 @@ export function FilterSidebar({
                       onFilterChange(filter.key, newSelectedValues);
                     }}
                     className={`
-                      flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-all
+                      flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-left text-sm transition-all
                       ${
                         isSelected
                           ? "bg-primary/10 font-semibold text-primary"
