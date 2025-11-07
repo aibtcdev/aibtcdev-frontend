@@ -8,17 +8,23 @@ export const updateSession = async (request: NextRequest) => {
     //   return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
     // }
 
-    // Handle DAO-related path redirects
-    if (request.nextUrl.pathname === "/aidaos") {
-      return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
+    // Handle DAO-related path redirects - redirect to home page
+    if (
+      request.nextUrl.pathname === "/aidaos" ||
+      request.nextUrl.pathname.startsWith("/aidaos/")
+    ) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
 
-    if (request.nextUrl.pathname === "/daos") {
-      return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
+    if (
+      request.nextUrl.pathname === "/daos" ||
+      request.nextUrl.pathname.startsWith("/daos/")
+    ) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
 
     if (request.nextUrl.pathname === "/ai-daos") {
-      return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
     // Create an unmodified response
     let response = NextResponse.next({
