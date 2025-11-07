@@ -1,5 +1,6 @@
 import React from "react";
 import { MoreHorizontal } from "lucide-react";
+import Image from "next/image";
 
 interface TwitterCardProps {
   name: string;
@@ -49,9 +50,11 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
           {/* Avatar */}
           <div className="w-12 h-12 rounded-sm overflow-hidden bg-gray-800 flex-shrink-0">
             {avatarUrl ? (
-              <img
+              <Image
                 src={avatarUrl}
                 alt={name}
+                width={48}
+                height={48}
                 className="w-full h-full object-cover"
               />
             ) : (

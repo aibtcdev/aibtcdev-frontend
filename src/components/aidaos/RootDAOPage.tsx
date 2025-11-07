@@ -66,7 +66,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   const [activeTab, setActiveTab] = useState("charter");
 
   // State for Twitter preview
-  const [twitterUrl, setTwitterUrl] = useState("");
+  // const [twitterUrl, setTwitterUrl] = useState("");
 
   // Agent account data
   // const { userAgentBalance } = useAgentAccount();
@@ -511,7 +511,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
                 daoId={dao.id}
                 daoName={dao.name}
                 headerOffset={96}
-                onTwitterUrlChange={setTwitterUrl}
+                // onTwitterUrlChange={setTwitterUrl}
               />
             </div>
 

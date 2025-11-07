@@ -236,7 +236,7 @@ export function ProposalSubmission({
   const [submissionButtonText, setSubmissionButtonText] = useState("");
   // const [isGenerating, setIsGenerating] = useState(false);
   const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
-  const name = daoName;
+  // const name = daoName;
 
   // WebSocket state
   const [websocketMessage, setWebsocketMessage] =
