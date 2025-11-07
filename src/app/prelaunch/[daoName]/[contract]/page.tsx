@@ -898,7 +898,7 @@ const PrelaunchPage = () => {
   return (
     <div className="flex flex-col h-screen w-full">
       <main className="flex-1 overflow-y-auto">
-        <div className="px-6 md:px-6 lg:px-8 py-4 max-w-screen-xl mx-auto">
+        <div className="px-6 md:px-6 lg:px-8 py-4  mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">
               ${dao.name} Prelaunch

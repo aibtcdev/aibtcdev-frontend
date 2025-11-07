@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function Footer() {
   return (
     <footer className="relative overflow-hidden">
-      <div className="relative z-10 container flex flex-col justify-center items-center max-w-screen-xl mx-auto px-4 sm:px-6 py-12 space-y-8">
+      <div className="relative z-10 container flex flex-col justify-center items-center  mx-auto px-4 sm:px-6 py-12 space-y-8">
         {/* Social Media Links with Enhanced Styling */}
         <div className="flex items-center gap-3">
           {socialLinks.map((link, index) => (
