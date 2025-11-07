@@ -3,7 +3,7 @@
 import type React from "react";
 
 interface DAOTabLayoutProps {
-  title: string;
+  title?: string;
   description?: string;
   icon?: React.ElementType;
   toolbar?: React.ReactNode;
@@ -56,7 +56,7 @@ export function DAOTabLayout({
       {/* Content Section */}
       <div className="space-y-6">
         {isEmpty ? (
-          <div className="border-dashed border rounded-lg py-12">
+          <div className=" py-12">
             <div className="text-center space-y-4">
               {EmptyIcon && (
                 <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
@@ -74,9 +74,7 @@ export function DAOTabLayout({
             </div>
           </div>
         ) : (
-          <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-border/30 p-4 sm:p-8">
-            {children}
-          </div>
+          <div className="bg-card/30 backdrop-blur-sm">{children}</div>
         )}
       </div>
     </div>

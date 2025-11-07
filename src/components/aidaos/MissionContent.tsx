@@ -120,9 +120,9 @@ export function MissionContent({ description }: MissionContentProps) {
 
   return (
     <DAOTabLayout
-      title="Charter"
-      description="Learn about our vision and goals"
-      icon={Info}
+      // title="Charter"
+      // description="Learn about our vision and goals"
+      // icon={Info}
       isEmpty={!description}
       emptyTitle="No Mission Statement"
       emptyDescription="This DAO hasn't provided a mission statement yet. Check back later for updates."
