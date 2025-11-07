@@ -1216,7 +1216,7 @@ export function ProposalSubmission({
       <div className="rounded-sm  bg-background  p-4 sm:p-5 lg:p-6 flex gap-3 flex-col relative max-w-full overflow-hidden h-full">
         {/* Locked Overlay for Unauthenticated Users */}
         {!hasAccessToken && (
-          <div className="absolute inset-0 bg-black backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
             <div className="text-center space-y-4 max-w-md mx-auto px-6">
               <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                 <Lock className="w-8 h-8 text-primary" />
