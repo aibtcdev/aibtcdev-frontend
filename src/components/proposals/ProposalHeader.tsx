@@ -83,7 +83,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
     <div className="mb-6">
       {/* Back button */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="sm"
         onClick={() => router.back()}
         className="mb-4 text-muted-foreground hover:text-foreground transition-colors duration-150"

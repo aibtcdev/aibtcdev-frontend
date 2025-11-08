@@ -310,19 +310,33 @@ function DataTableVirtualized() {
     );
   }
 
+  // Helper function to determine if column should be visible based on responsive breakpoint
+  const getResponsiveClass = (responsive?: string) => {
+    if (!responsive || responsive === "always") return "";
+    return (
+      {
+        sm: "hidden sm:flex",
+        md: "hidden md:flex",
+        lg: "hidden lg:flex",
+        xl: "hidden xl:flex",
+      }[responsive] || ""
+    );
+  };
+
   return (
-    <div className="relative">
+    <div className="relative w-full overflow-x-auto">
       {/* Table Header */}
-      <div className="flex bg-muted/50 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
+      <div className="flex bg-muted/50 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10 min-w-max">
         {columns.map((column) => (
           <div
             key={column.key}
             className={cn(
-              "px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider",
+              "px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider flex-shrink-0",
               column.align === "center" && "text-center",
               column.align === "right" && "text-right",
               column.sortable &&
-                "cursor-pointer hover:text-foreground transition-colors select-none"
+                "cursor-pointer hover:text-foreground transition-colors select-none",
+              getResponsiveClass(column.responsive)
             )}
             style={{
               width: column.width || `${100 / columns.length}%`,
@@ -369,6 +383,7 @@ function DataTableVirtualized() {
             width: "100%",
             position: "relative",
           }}
+          className="min-w-max"
         >
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const row = filteredData[virtualItem.index];
@@ -396,10 +411,11 @@ function DataTableVirtualized() {
                     <div
                       key={column.key}
                       className={cn(
-                        "px-4 py-3 text-sm align-middle",
+                        "px-4 py-3 text-sm align-middle flex-shrink-0",
                         column.align === "center" && "text-center",
                         column.align === "right" && "text-right",
-                        column.className
+                        column.className,
+                        getResponsiveClass(column.responsive)
                       )}
                       style={{
                         width: column.width || `${100 / columns.length}%`,
@@ -510,7 +526,9 @@ interface DataTableContainerProps {
 }
 
 function DataTableContainer({ children, className }: DataTableContainerProps) {
-  return <Card className={cn("overflow-hidden", className)}>{children}</Card>;
+  return (
+    <Card className={cn("overflow-hidden w-full", className)}>{children}</Card>
+  );
 }
 
 // Compound Component Export

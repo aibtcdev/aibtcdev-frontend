@@ -79,21 +79,23 @@ export default function ProposalDetailsPage() {
   // };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
+    <div className="px-4 sm:px-6 lg:px-16 mx-auto w-full py-4 sm:py-6">
       <ProposalHeader proposal={proposal} />
 
       {/* Creator and Timestamp Section - Mobile Responsive */}
-      <div className="mb-6 rounded-sm p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground">
+      <div className="mb-4 sm:mb-6 rounded-sm p-3 sm:p-4 bg-card/50 border border-border/30">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
           {/* Creator */}
           <div className="flex items-center gap-2 min-w-0">
-            <User className="h-4 w-4 flex-shrink-0" />
-            <span className="whitespace-nowrap">Created by:</span>
+            <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap text-xs sm:text-sm">
+              Created by:
+            </span>
             <a
               href={getExplorerLink("tx", `${proposal.creator}`)}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-primary hover:text-primary/80 transition-colors underline truncate"
+              className="font-mono text-primary hover:text-primary/80 transition-colors underline truncate text-xs sm:text-sm"
             >
               {truncateString(proposal.creator, 5, 5)}
             </a>
@@ -101,9 +103,11 @@ export default function ProposalDetailsPage() {
 
           {/* Timestamp */}
           <div className="flex items-center gap-2 min-w-0">
-            <Clock className="h-4 w-4 flex-shrink-0" />
-            <span className="whitespace-nowrap">Timestamp:</span>
-            <span className="text-foreground truncate">
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+            <span className="whitespace-nowrap text-xs sm:text-sm">
+              Timestamp:
+            </span>
+            <span className="text-foreground truncate text-xs sm:text-sm">
               {new Date(proposal.created_at).toLocaleString()}
             </span>
           </div>

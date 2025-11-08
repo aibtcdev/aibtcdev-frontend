@@ -57,10 +57,7 @@ const ProposalDetails = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Vote Details - Top Priority, Always Visible (showing top 10) */}
-      <VotesSection proposalId={proposal.id} />
-
-      {/* On-chain Message */}
+      {/* On-chain Message - Top Priority, Always Open */}
       <MessageSection proposal={proposal} defaultOpen={true} />
 
       {/* Agent Voting and Time Remaining Section - Mobile Responsive */}
@@ -113,6 +110,9 @@ const ProposalDetails = ({
         tokenSymbol={tokenSymbol}
         contractPrincipal={proposal.contract_principal}
       />
+
+      {/* Secondary Content - Progressive Disclosure */}
+      <VotesSection proposalId={proposal.id} />
 
       <VetosSection
         proposalId={proposal.id}
