@@ -467,7 +467,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
             {/* Token Stats - Responsive layout */}
             <div className="flex flex-wrap  items-stretch justify-stretch gap-6 sm:gap-8 lg:gap-44 text-sm sm:text-base">
               <div className="flex items-center gap-2">
-                <span className="font-bold">Members:</span>
+                <span className="font-bold">Holders:</span>
                 <span className="font-medium">
                   {Math.floor(enhancedMarketStats.holderCount)}
                 </span>

@@ -18,7 +18,7 @@ export const WavyBackground = () => {
         />
 
         {/* Dark gradient overlay from top-left to bottom-right */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-black/95 to-black/40" />
       </div>
     </div>
   );

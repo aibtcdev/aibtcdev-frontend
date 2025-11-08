@@ -153,7 +153,7 @@ export default function ProposalCard({
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
-      <div className="py-4 px-8 rounded-sm mb-3  group-hover:bg-black/10 transition-colors duration-300 max-w-full overflow-hidden">
+      <div className="py-4 px-8 rounded-sm mb-3 bg-background  group-hover:bg-black transition-colors duration-300 max-w-full overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
           <div className="flex-1 min-w-0">
@@ -189,7 +189,7 @@ export default function ProposalCard({
               return (
                 <div className="space-y-3 mb-4">
                   {referenceLink && (
-                    <div className=" bg-black/50 rounded-sm ">
+                    <div className="rounded-sm ">
                       <div className="text-xs text-muted-foreground mb-1">
                         Reference
                       </div>

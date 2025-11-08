@@ -26,7 +26,7 @@ export function DAOTabLayout({
   emptyIcon: EmptyIcon,
 }: DAOTabLayoutProps) {
   return (
-    <div className=" mx-auto  py-2 space-y-6 bg-background rounded-sm">
+    <div className=" mx-auto  py-2 space-y-6  rounded-sm">
       {/* Header Section */}
       <div className="space-y-4 p-4">
         <div className="flex items-center gap-3 p-4">
