@@ -87,7 +87,7 @@ export default function ProposalCard({
   ]);
 
   // Parse liquid_tokens as a number for use in percentage calculations
-  const liquidTokens = Number(proposal.liquid_tokens);
+  // const liquidTokens = Number(proposal.liquid_tokens);
   const { totalVotes, hasVoteData } = voteSummary;
 
   // Memoize DAO info
