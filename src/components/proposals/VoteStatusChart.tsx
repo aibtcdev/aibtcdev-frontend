@@ -139,39 +139,55 @@ const VoteStatusChart = ({
       {/* Vote Counts */}
       <div className="flex justify-between items-center text-xs sm:text-sm">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-sm" />
-          <span className="text-muted-foreground">For:</span>
+          <span className="text-green-500 font-extrabold">For:</span>
           <TokenBalance
             value={voteDisplayData.rawVotesFor}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium"
+            className="font-medium hidden sm:inline"
+          />
+          <TokenBalance
+            value={voteDisplayData.rawVotesFor}
+            decimals={8}
+            variant="abbreviated"
+            className="font-medium sm:hidden"
           />
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-muted-foreground">Against:</span>
+          <span className="text-red-500 font-extrabold">Against:</span>
           <TokenBalance
             value={voteDisplayData.rawVotesAgainst}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium"
+            className="font-medium hidden sm:inline"
           />
-          <div className="w-2 h-2 bg-red-500 rounded-sm" />
+          <TokenBalance
+            value={voteDisplayData.rawVotesAgainst}
+            decimals={8}
+            variant="abbreviated"
+            className="font-medium sm:hidden"
+          />
         </div>
 
         {/* Liquid Tokens - Right */}
         {liquidTokens && Number(liquidTokens) > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Liquid:</span>
+            <span className="text-muted-foreground">Liquid Token:</span>
             <TokenBalance
               value={liquidTokens}
               decimals={8}
               variant="abbreviated"
               symbol={tokenSymbol}
-              className="font-medium"
+              className="font-medium hidden sm:inline"
+            />
+            <TokenBalance
+              value={liquidTokens}
+              decimals={8}
+              variant="abbreviated"
+              className="font-medium sm:hidden"
             />
           </div>
         )}
