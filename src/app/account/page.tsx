@@ -94,7 +94,7 @@ function AccountPageContent() {
         };
       default:
         return {
-          title: "Settings",
+          // title: "Settings",
           // description:
           //   "View your connected wallet, agent account, and agent wallet information.",
         };
