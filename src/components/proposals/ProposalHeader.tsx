@@ -4,15 +4,16 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 // import { useQuery } from "@tanstack/react-query";
 // import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, Target, Shield } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
 import { useProposalHasVetos } from "@/hooks/useVetos";
 import { safeNumberFromBigInt } from "@/utils/proposal";
+import { getExplorerLink, truncateString } from "@/utils/format";
 // import { fetchToken } from "@/services/dao.service";
 import type { ProposalWithDAO } from "@/types";
 
@@ -104,27 +105,42 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
           <div className="relative p-6 space-y-6">
             {/* Content - Mobile centered, desktop left-aligned */}
             <div className="flex-1 min-w-0 w-full text-center sm:text-left space-y-4">
-              {/* Main heading: Contribution ID with DAO name */}
+              {/* Main heading: Contribution ID with Status and Created at */}
               <div className="space-y-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                  Contribution #{proposal.proposal_id} ·{" "}
-                  {proposal.daos?.name ? (
-                    <Link
-                      href={`/aidaos/${proposal.daos.name}`}
-                      className="hover:text-primary transition-colors duration-200"
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center sm:text-left">
+                    Contribution #{proposal.proposal_id}
+                  </h1>
+                  <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-4 flex-wrap">
+                    {/* Created at */}
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                      <span className="whitespace-nowrap font-semibold text-muted-foreground">
+                        Created at:
+                      </span>
+                      <span className="text-foreground whitespace-nowrap font-normal">
+                        {new Date(proposal.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <Badge
+                      variant={statusConfig.variant}
+                      className={cn(
+                        "flex items-center gap-1 flex-shrink-0 sm:text-sm sm:px-2.5 sm:py-1",
+                        statusConfig.bg,
+                        statusConfig.border,
+                        statusConfig.color
+                      )}
                     >
-                      {proposal.daos.name}
-                    </Link>
-                  ) : (
-                    "Unknown DAO"
-                  )}
-                </h1>
+                      <statusConfig.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {statusConfig.label}
+                    </Badge>
+                  </div>
+                </div>
               </div>
 
               {/* Subheading: Agent Summary */}
               <div className="space-y-1">
                 <h2 className="text-lg sm:text-xl text-muted-foreground leading-tight break-words font-semibold">
-                  <span className="font-normal">Agent Summary:</span>{" "}
+                  <span className="font-extrabold">Agent Summary:</span>{" "}
                   {proposal.title}
                 </h2>
               </div>
@@ -173,187 +189,90 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                 )}
               </div> */}
 
-              {/* Status and Metrics - Inline on same line */}
-              <div className="space-y-4">
-                {/* Mobile: Card-style metrics with status */}
-                <div className="grid grid-cols-2 sm:hidden gap-3">
-                  {/* Status Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <statusConfig.icon className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">
-                        Status:
-                      </span>
-                      <Badge
-                        variant={statusConfig.variant}
-                        className={cn(
-                          "flex items-center gap-1",
-                          statusConfig.bg,
-                          statusConfig.border,
-                          statusConfig.color
-                        )}
-                      >
-                        <statusConfig.icon className="h-3 w-3" />
-                        {statusConfig.label}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Quorum Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
-                    <div className="flex flex-col items-center text-center space-y-2">
-                      <div className="p-2 rounded-sm bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                        <Users className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        Quorum
-                      </span>
-                      {enhancedCalculations ? (
-                        <span
-                          className={cn(
-                            "text-sm font-bold",
-                            enhancedCalculations.metQuorum
-                              ? "text-green-600"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {getStatusText(
-                            enhancedCalculations.metQuorum,
-                            enhancedCalculations.participationRate
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {isLoadingVotes ? "..." : "Failed"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Threshold Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group">
-                    <div className="flex flex-col items-center text-center space-y-2">
-                      <div className="p-2 rounded-sm bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
-                        <Target className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        Threshold
-                      </span>
-                      {enhancedCalculations ? (
-                        <span
-                          className={cn(
-                            "text-sm font-bold",
-                            enhancedCalculations.metThreshold
-                              ? "text-green-600"
-                              : "text-muted-foreground"
-                          )}
-                        >
-                          {getStatusText(
-                            enhancedCalculations.metThreshold,
-                            enhancedCalculations.approvalRate
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">
-                          {isLoadingVotes ? "..." : "Failed"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Vetos Card */}
-                  <div className="bg-background/60 backdrop-blur-sm rounded-sm p-4 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg group col-span-2">
-                    <div className="flex items-center justify-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">
-                        Vetos:
-                      </span>
-                      <span className="text-sm font-bold text-foreground">
-                        {vetoCount}
-                      </span>
-                    </div>
-                  </div>
+              {/* Creator */}
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center sm:justify-start text-sm sm:text-base">
+                <div className="flex items-center gap-1.5">
+                  <span className="whitespace-nowrap font-bold text-muted-foreground">
+                    Creator:
+                  </span>
+                  <a
+                    href={getExplorerLink("tx", `${proposal.creator}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-primary hover:text-primary/80 transition-colors underline whitespace-nowrap font-normal inline-flex items-center gap-1"
+                  >
+                    {truncateString(proposal.creator, 5, 5)}
+                    <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </a>
                 </div>
+              </div>
 
-                {/* Desktop: All inline on same line */}
-                <div className="hidden sm:flex sm:items-center sm:gap-4 sm:flex-wrap text-sm">
-                  {/* Status */}
-                  <div className="flex items-center gap-2">
-                    <statusConfig.icon className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Status:</span>
-                    <Badge
-                      variant={statusConfig.variant}
+              {/* Metrics - Badge style */}
+              <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+                {/* Quorum */}
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 sm:text-sm sm:px-2.5 sm:py-1"
+                >
+                  <span className="text-muted-foreground">Quorum:</span>
+                  {enhancedCalculations ? (
+                    <span
                       className={cn(
-                        "flex items-center gap-1",
-                        statusConfig.bg,
-                        statusConfig.border,
-                        statusConfig.color
+                        "font-semibold",
+                        enhancedCalculations.metQuorum
+                          ? "text-green-600"
+                          : "text-muted-foreground"
                       )}
                     >
-                      <statusConfig.icon className="h-3 w-3" />
-                      {statusConfig.label}
-                    </Badge>
-                  </div>
-
-                  {/* Quorum */}
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Quorum:</span>
-                    {enhancedCalculations ? (
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          enhancedCalculations.metQuorum
-                            ? "text-green-600"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {getStatusText(
-                          enhancedCalculations.metQuorum,
-                          enhancedCalculations.participationRate
-                        )}
-                      </span>
-                    ) : (
-                      <span className="font-semibold text-muted-foreground">
-                        {isLoadingVotes ? "Loading..." : "Failed"}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Threshold */}
-                  <div className="flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Threshold:</span>
-                    {enhancedCalculations ? (
-                      <span
-                        className={cn(
-                          "font-semibold",
-                          enhancedCalculations.metThreshold
-                            ? "text-green-600"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {getStatusText(
-                          enhancedCalculations.metThreshold,
-                          enhancedCalculations.approvalRate
-                        )}
-                      </span>
-                    ) : (
-                      <span className="font-semibold text-muted-foreground">
-                        {isLoadingVotes ? "Loading..." : "Failed"}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Vetos */}
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Vetos:</span>
-                    <span className="font-semibold text-foreground">
-                      {vetoCount}
+                      {getStatusText(
+                        enhancedCalculations.metQuorum,
+                        enhancedCalculations.participationRate
+                      )}
                     </span>
-                  </div>
-                </div>
+                  ) : (
+                    <span className="font-semibold text-muted-foreground">
+                      {isLoadingVotes ? "..." : "Failed"}
+                    </span>
+                  )}
+                </Badge>
+
+                {/* Threshold */}
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 sm:text-sm sm:px-2.5 sm:py-1"
+                >
+                  <span className="text-muted-foreground">Threshold:</span>
+                  {enhancedCalculations ? (
+                    <span
+                      className={cn(
+                        "font-semibold",
+                        enhancedCalculations.metThreshold
+                          ? "text-green-600"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {getStatusText(
+                        enhancedCalculations.metThreshold,
+                        enhancedCalculations.approvalRate
+                      )}
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-muted-foreground">
+                      {isLoadingVotes ? "..." : "Failed"}
+                    </span>
+                  )}
+                </Badge>
+
+                {/* Vetos */}
+                <Badge
+                  variant="outline"
+                  className="gap-1.5 sm:text-sm sm:px-2.5 sm:py-1"
+                >
+                  <span className="text-muted-foreground">Vetos:</span>
+                  <span className="font-semibold text-foreground">
+                    {vetoCount}
+                  </span>
+                </Badge>
               </div>
             </div>
           </div>
