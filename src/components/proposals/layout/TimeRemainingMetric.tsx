@@ -11,39 +11,50 @@ export function TimeRemainingMetric({ proposal }: TimeRemainingMetricProps) {
   const {
     startTime,
     endTime,
+    isActive,
     estimatedTimeRemaining,
     isEstimated,
     estimatedStartTime,
     isStartEstimated,
   } = useProposalTiming(proposal);
 
-  // Build a natural sentence
-  let sentence = "";
-
-  // Determine tense and build sentence
-  if (endTime) {
-    // Voting has ended
-    const startText = startTime || estimatedStartTime || "unknown time";
-    sentence = `Agent voting started at ${startText}${isStartEstimated ? " (est.)" : ""} and ended at ${endTime}.`;
-  } else if (startTime) {
-    // Voting has started and is active
-    if (estimatedTimeRemaining) {
-      sentence = `Agent voting started at ${startTime}${isStartEstimated ? " (est.)" : ""} and ends in ${estimatedTimeRemaining}${isEstimated ? " (est.)" : ""}.`;
-    } else {
-      sentence = `Agent voting started at ${startTime}${isStartEstimated ? " (est.)" : ""}.`;
-    }
-  } else if (estimatedStartTime) {
-    // Voting hasn't started yet
-    if (estimatedTimeRemaining) {
-      sentence = `Agent voting starts at ${estimatedStartTime}${isStartEstimated ? " (est.)" : ""} and ends in ${estimatedTimeRemaining}${isEstimated ? " (est.)" : ""}.`;
-    } else {
-      sentence = `Agent voting starts at ${estimatedStartTime}${isStartEstimated ? " (est.)" : ""}.`;
-    }
-  }
-
   return (
-    <div className="text-xs sm:text-sm text-muted-foreground italic">
-      <span>{sentence || "Voting information not available."}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm text-foreground rounded-sm p-2">
+      {/* Voting Start Time */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="whitespace-nowrap">
+          {startTime ? "Voting Started:" : "Voting Starts:"}
+        </span>
+        <span className="truncate">
+          {startTime || estimatedStartTime || "TBD"}
+        </span>
+        {isStartEstimated && (
+          <span className="text-xs px-1 py-0.5 rounded whitespace-nowrap">
+            est.
+          </span>
+        )}
+      </div>
+
+      {/* Voting End Time */}
+      {endTime && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="whitespace-nowrap">Ended:</span>
+          <span className="truncate">{endTime}</span>
+        </div>
+      )}
+
+      {/* Estimated Time Remaining */}
+      {isActive && estimatedTimeRemaining && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="whitespace-nowrap">Ends in:</span>
+          <span className="truncate">{estimatedTimeRemaining}</span>
+          {isEstimated && (
+            <span className="text-xs px-1 py-0.5 rounded whitespace-nowrap">
+              est.
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
