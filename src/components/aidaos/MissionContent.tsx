@@ -129,7 +129,7 @@ export function MissionContent({ description }: MissionContentProps) {
       emptyIcon={Info}
     >
       {description && (
-        <div className="prose prose-invert prose-zinc max-w-none">
+        <div className=" border rounded-sm p-5">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             className="text-muted-foreground leading-relaxed"
