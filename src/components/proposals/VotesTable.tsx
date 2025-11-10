@@ -155,16 +155,16 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
               <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                 Vote
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                 Amount
               </th>
               <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                 Score
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Reasoning
               </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                 TX
               </th>
             </tr>
@@ -203,7 +203,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
                 </td>
 
                 {/* Amount */}
-                <td className="px-4 py-3 text-sm text-center">
+                <td className="px-4 py-3 text-sm text-center hidden sm:table-cell">
                   {vote.amount !== null && vote.amount !== undefined ? (
                     <TokenBalance value={vote.amount} variant="abbreviated" />
                   ) : (
@@ -221,7 +221,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
                 </td>
 
                 {/* Reasoning */}
-                <td className="px-4 py-3 text-sm hidden md:table-cell">
+                <td className="px-4 py-3 text-sm">
                   {!vote.reasoning ? (
                     <span className="text-muted-foreground text-xs">-</span>
                   ) : (
@@ -236,7 +236,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
                       title="Click to view full reasoning"
                     >
                       <Eye className="h-3 w-3 opacity-60 group-hover:opacity-100 flex-shrink-0" />
-                      <span className="truncate max-w-[300px]">
+                      <span className="truncate max-w-[200px] sm:max-w-[400px]">
                         {vote.reasoning}
                       </span>
                     </button>
@@ -244,7 +244,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
                 </td>
 
                 {/* TX */}
-                <td className="px-4 py-3 text-sm text-center">
+                <td className="px-4 py-3 text-sm text-center hidden sm:table-cell">
                   {!vote.tx_id ? (
                     <span className="text-muted-foreground text-xs">-</span>
                   ) : (
