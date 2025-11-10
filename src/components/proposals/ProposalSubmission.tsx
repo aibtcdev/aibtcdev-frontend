@@ -1732,7 +1732,7 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {/* {hasAccessToken &&
+        {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
@@ -1761,7 +1761,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )} */}
+          )}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
