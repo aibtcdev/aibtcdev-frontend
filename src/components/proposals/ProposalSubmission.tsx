@@ -225,6 +225,7 @@ export function ProposalSubmission({
   const [twitterEmbedData, setTwitterEmbedData] =
     useState<TwitterOEmbedResponse | null>(null);
   const [isLoadingEmbed, setIsLoadingEmbed] = useState(false);
+  const [showUrlCleanedMessage, setShowUrlCleanedMessage] = useState(false);
   // Hover preview state - Commented out, preview now in right panel
   // const [showHoverPreview, setShowHoverPreview] = useState(false);
   // const [hoverTimeoutId, setHoverTimeoutId] = useState<NodeJS.Timeout | null>(
@@ -1360,11 +1361,48 @@ export function ProposalSubmission({
                 type="url"
                 value={twitterUrl}
                 onChange={(e) => {
-                  setTwitterUrl(e.target.value);
+                  const url = e.target.value;
+                  // Check if URL has query parameters and clean immediately
+                  try {
+                    const parsed = new URL(url.trim());
+                    if (
+                      parsed.search &&
+                      parsed.hostname.match(/^(x\.com|twitter\.com)$/)
+                    ) {
+                      setShowUrlCleanedMessage(true);
+                      // Clean immediately
+                      const cleanedUrl = `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`;
+                      setTwitterUrl(cleanedUrl);
+                      setTimeout(() => setShowUrlCleanedMessage(false), 0);
+                    } else {
+                      setTwitterUrl(url);
+                      setShowUrlCleanedMessage(false);
+                    }
+                  } catch {
+                    setTwitterUrl(url);
+                    setShowUrlCleanedMessage(false);
+                  }
                 }}
                 onBlur={() => {
+                  const originalUrl = twitterUrl.trim();
                   const cleaned = cleanTwitterUrl(twitterUrl);
-                  if (cleaned) setTwitterUrl(cleaned);
+                  if (cleaned) {
+                    setTwitterUrl(cleaned);
+                  } else if (originalUrl) {
+                    // If cleanTwitterUrl returns empty but we have a URL,
+                    // still try to strip query params if it's a twitter/x.com URL
+                    try {
+                      const url = new URL(originalUrl);
+                      if (url.hostname.match(/^(x\.com|twitter\.com)$/)) {
+                        // Keep everything before the query string
+                        const cleanedUrl = `${url.protocol}//${url.hostname}${url.pathname}`;
+                        setTwitterUrl(cleanedUrl);
+                      }
+                    } catch {
+                      // Invalid URL, leave as is
+                    }
+                  }
+                  setShowUrlCleanedMessage(false);
                 }}
                 // onMouseEnter={handleMouseEnter}
                 // onMouseLeave={handleMouseLeave}
@@ -1399,12 +1437,16 @@ export function ProposalSubmission({
                   <ExternalLink className="h-4 w-4" />
                 </button>
               )}
-              {twitterUrl && !isValidTwitterUrl && (
+              {showUrlCleanedMessage ? (
+                <div className="text-xs text-blue-400 mt-1">
+                  Cleaning X URL...
+                </div>
+              ) : twitterUrl && !isValidTwitterUrl ? (
                 <div className="text-xs text-red-400 mt-1">
                   ⚠️ Please enter a valid X.com (Twitter) post URL in the
                   format: https://x.com/username/status/1234567890123456789
                 </div>
-              )}
+              ) : null}
 
               {/* Hover Preview Tooltip - Desktop Only - Commented out, preview now in right panel */}
               {/* {showHoverPreview && twitterEmbedData && (
@@ -1690,7 +1732,7 @@ export function ProposalSubmission({
           )}
 
         {/* X Verification Lock Overlay */}
-        {hasAccessToken &&
+        {/* {hasAccessToken &&
           !needsXLink &&
           !isXLoading &&
           verificationStatus.status === "not_verified" && (
@@ -1719,7 +1761,7 @@ export function ProposalSubmission({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
         {/* X Verification Pending Lock Overlay */}
         {hasAccessToken &&
