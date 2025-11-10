@@ -21,7 +21,10 @@ export default function ProposalSelector({
   };
 
   const filteredProposals = enableSingleDaoMode
-    ? proposals.filter(proposal => proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase())
+    ? proposals.filter(
+        (proposal) =>
+          proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase()
+      )
     : proposals;
 
   return (
@@ -37,7 +40,7 @@ export default function ProposalSelector({
           id="proposal-select"
           value={selectedProposalId}
           onChange={(e) => handleProposalSelect(e.target.value)}
-          className="w-full px-3 py-2 text-sm bg-background/50 border border-border/50 rounded-md focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 appearance-none cursor-pointer hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-3 py-2 text-sm bg-background/50 border border-border/50 rounded-sm focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 appearance-none cursor-pointer hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={disabled}
           title="Choose a proposal to evaluate"
         >

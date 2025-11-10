@@ -20,8 +20,13 @@ const DAOProposals = ({
 }: DAOProposalsProps) => {
   // Filter out draft proposals to prevent ProposalCard from returning null
   const deployedProposals = useMemo(() => {
-    let filtered = proposals.filter((proposal) => proposal.status === "DEPLOYED");
-    if (enableSingleDaoMode && daoName.toUpperCase() !== singleDaoName.toUpperCase()) {
+    let filtered = proposals.filter(
+      (proposal) => proposal.status === "DEPLOYED"
+    );
+    if (
+      enableSingleDaoMode &&
+      daoName.toUpperCase() !== singleDaoName.toUpperCase()
+    ) {
       filtered = [];
     }
     return filtered;
@@ -29,9 +34,11 @@ const DAOProposals = ({
 
   return (
     <DAOTabLayout
-      title={`${daoName}  Contribution History`}
-      description={`Explore all work submitted in pursuit of the ${daoName} mission`}
-      icon={FileText}
+      // title={`${daoName}  Contribution History`}
+      title="Submission History"
+      // description={`Explore all work submitted in pursuit of the ${daoName} mission`}
+      description="Explore all the work that has been submitted to AIBTC."
+      // icon={FileText}
       isEmpty={deployedProposals.length === 0}
       emptyTitle="No Contributions Found"
       emptyDescription="This DAO has no active or concluded contributions."

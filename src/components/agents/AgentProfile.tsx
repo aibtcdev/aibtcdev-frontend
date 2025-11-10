@@ -47,7 +47,7 @@ export function AgentProfile({
         <CardContent>
           {/* Wallet Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-lg bg-zinc-800 p-4">
+            <div className="rounded-sm bg-zinc-800 p-4">
               <div className="flex items-center space-x-3">
                 <Wallet className="h-5 w-5 text-zinc-400" />
                 <div>
@@ -58,7 +58,7 @@ export function AgentProfile({
                 </div>
               </div>
             </div>
-            <div className="rounded-lg bg-zinc-800 p-4">
+            <div className="rounded-sm bg-zinc-800 p-4">
               <div className="flex items-center space-x-3">
                 <Bot className="h-5 w-5 text-zinc-400" />
                 <div>

@@ -75,11 +75,11 @@ const CustomInstructionsNotification = () => {
         isDismissed ? "translate-x-full opacity-0" : "translate-x-0 opacity-100"
       }`}
     >
-      <div className="bg-primary/90 backdrop-blur-sm rounded-lg shadow-lg animate-in slide-in-from-right-5 duration-300 border border-white/10">
+      <div className="bg-primary/90 backdrop-blur-sm rounded-sm shadow-lg animate-in slide-in-from-right-5 duration-300 border border-white/10">
         <div className="flex items-center gap-3 p-3">
           {/* Settings Icon */}
           <div className="flex-shrink-0">
-            <div className="h-5 w-5 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="h-5 w-5 bg-white/20 rounded-sm flex items-center justify-center">
               <Settings className="h-3 w-3 text-white" />
             </div>
           </div>
@@ -108,7 +108,7 @@ const CustomInstructionsNotification = () => {
           <div className="flex-shrink-0">
             <button
               onClick={handleDismiss}
-              className="p-0.5 hover:bg-white/20 rounded-full transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-white/50"
+              className="p-0.5 hover:bg-white/20 rounded-sm transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-white/50"
               aria-label="Dismiss notification"
             >
               <X className="h-3 w-3 text-white" />

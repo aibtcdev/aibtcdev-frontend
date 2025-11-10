@@ -113,7 +113,7 @@ function ProposalSectionHeader({
       <CardTitle className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {icon && (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-sm bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
               {icon}
             </div>
           )}

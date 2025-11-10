@@ -39,7 +39,7 @@ function EmptyStateBase({
     <Card className={cn("border-dashed border-2", className)}>
       <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
         {icon && (
-          <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-sm bg-muted/30 flex items-center justify-center mb-4">
             {icon}
           </div>
         )}

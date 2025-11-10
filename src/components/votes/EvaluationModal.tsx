@@ -127,7 +127,7 @@ export function EvaluationModal({
                   </Badge>
                 </div>
               </div>
-              <div className="rounded-lg p-3 sm:p-4 bg-muted/30">
+              <div className="rounded-sm p-3 sm:p-4 bg-muted/30">
                 <p className="text-xs sm:text-sm leading-relaxed break-words overflow-wrap-anywhere">
                   {evaluationData.summary}
                 </p>
@@ -143,7 +143,7 @@ export function EvaluationModal({
                 return (
                   <div
                     key={index}
-                    className="text-xs sm:text-sm leading-relaxed bg-muted/30 p-2 sm:p-3 rounded-md"
+                    className="text-xs sm:text-sm leading-relaxed bg-muted/30 p-2 sm:p-3 rounded-sm"
                   >
                     <span className="font-bold text-sm sm:text-base block sm:inline">
                       {category.category} ({category.score})
@@ -168,7 +168,7 @@ export function EvaluationModal({
                   {evaluationData.flags.map((flag, index) => (
                     <div
                       key={index}
-                      className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2 sm:p-3"
+                      className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-sm p-2 sm:p-3"
                     >
                       <p className="text-xs sm:text-sm text-yellow-800 dark:text-yellow-200 break-words overflow-wrap-anywhere">
                         {flag}
@@ -181,7 +181,7 @@ export function EvaluationModal({
             {/* Detailed Explanation */}
             {/* <div className="space-y-3">
               <h3 className="text-lg font-semibold">Detailed Explanation</h3>
-              <div className="bg-muted/30 rounded-lg p-4">
+              <div className="bg-muted/30 rounded-sm p-4">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">
                   {evaluationData.explanation}
                 </p>

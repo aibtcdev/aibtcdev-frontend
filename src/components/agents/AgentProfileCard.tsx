@@ -15,7 +15,7 @@ export function AgentProfileCard({ agent }: AgentProfileCardProps) {
             src={agent.image_url || "/placeholder-agent.png"}
             alt={agent.name}
             fill
-            className="object-cover rounded-lg"
+            className="object-cover rounded-sm"
           />
         </div>
         <div className="flex justify-between items-center mb-4">

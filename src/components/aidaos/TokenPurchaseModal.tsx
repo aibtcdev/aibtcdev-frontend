@@ -120,7 +120,7 @@ export function TokenPurchaseModal({
 
       {/* body */}
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="bg-muted p-4 rounded-lg flex items-start mb-6">
+        <div className="bg-muted p-4 rounded-sm flex items-start mb-6">
           <Info className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0 text-primary" />
           <p>
             You will spend <strong>{btcValue} BTC</strong> to receive{" "}
@@ -206,7 +206,7 @@ export function TokenPurchaseModal({
           <div className="text-center mb-6">
             {isSuccess ? (
               <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto  rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto  rounded-sm flex items-center justify-center">
                   <CheckCircle className="w-8 h-8" />
                 </div>
                 <div>
@@ -220,7 +220,7 @@ export function TokenPurchaseModal({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="w-16 h-16 mx-auto  rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto  rounded-sm flex items-center justify-center">
                   <XCircle className="w-8 h-8" />
                 </div>
                 <div>
@@ -256,7 +256,7 @@ export function TokenPurchaseModal({
                   const parsed = JSON.parse(apiResponse.output) as ParsedOutput;
                   const txLink = parsed.data?.link;
                   return txLink ? (
-                    <div className="border rounded-lg p-4">
+                    <div className="border rounded-sm p-4">
                       <h4 className="font-medium mb-3 flex items-center">
                         <Info className="w-4 h-4 mr-2" />
                         Transaction Details
@@ -269,7 +269,7 @@ export function TokenPurchaseModal({
                           href={txLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 transition-colors"
+                          className="inline-flex items-center px-3 py-2 bg-primary text-primary-foreground text-sm rounded-sm hover:bg-primary/90 transition-colors"
                         >
                           View Transaction
                           <ExternalLink className="w-4 h-4 ml-2" />
@@ -277,7 +277,7 @@ export function TokenPurchaseModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-4">
+                    <div className="border rounded-sm p-4">
                       <p className="text-muted-foreground">
                         Transaction completed successfully. Check your wallet
                         for the new tokens.
@@ -286,7 +286,7 @@ export function TokenPurchaseModal({
                   );
                 } catch {
                   return (
-                    <div className="border rounded-lg p-4">
+                    <div className="border rounded-sm p-4">
                       <p className="text-muted-foreground">
                         Transaction completed successfully. Check your wallet
                         for the new tokens.
@@ -348,7 +348,7 @@ export function TokenPurchaseModal({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] h-[500px] p-0 rounded-lg overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] h-[500px] p-0 rounded-sm overflow-hidden">
         <DialogTitle className="sr-only">
           {apiResponse ? "Transaction Result" : `Buy ${tokenName} Tokens`}
         </DialogTitle>

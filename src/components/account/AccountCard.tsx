@@ -46,7 +46,7 @@ export function AccountCard({
       <Card className="border-dashed border-muted-foreground/30 bg-muted/5">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-muted/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-12 h-12 rounded-sm bg-muted/20 flex items-center justify-center flex-shrink-0">
               <WifiOff className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
@@ -81,7 +81,7 @@ export function AccountCard({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                  className={`w-12 h-12 rounded-sm flex items-center justify-center flex-shrink-0 ${
                     isPrimary
                       ? "bg-primary/15 border border-primary/20"
                       : "bg-muted/30 border border-border/50"
@@ -111,12 +111,12 @@ export function AccountCard({
                 >
                   {network === "mainnet" ? (
                     <span className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-sm"></div>
                       Mainnet
                     </span>
                   ) : (
                     <span className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-sm"></div>
                       Testnet
                     </span>
                   )}
@@ -125,7 +125,7 @@ export function AccountCard({
             </div>
 
             {/* Address Section */}
-            <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+            <div className="bg-muted/30 rounded-sm p-3 border border-border/50">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground mb-1">Address</p>
@@ -205,13 +205,13 @@ export function AccountCard({
             {metadata && Object.keys(metadata).length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Details
+                  Assets
                 </p>
                 <div className="grid gap-2">
                   {Object.entries(metadata).map(([key, value]) => (
                     <div
                       key={key}
-                      className="flex flex-col sm:flex-row sm:justify-between gap-1 p-2 bg-muted/20 rounded-md"
+                      className="flex flex-col sm:flex-row sm:justify-between gap-1 p-2 bg-muted/20 rounded-sm"
                     >
                       <span className="text-xs text-muted-foreground capitalize font-medium">
                         {key.replace(/[_-]/g, " ")}

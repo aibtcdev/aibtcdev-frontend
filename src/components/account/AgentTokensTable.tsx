@@ -414,7 +414,7 @@ export function AgentTokensTable({
             return (
               <div
                 key={dao.id}
-                className="rounded-lg border bg-card p-4 space-y-3"
+                className="rounded-sm border bg-card p-4 space-y-3"
               >
                 {/* Token Header */}
                 <div className="flex items-center justify-between">
@@ -458,7 +458,7 @@ export function AgentTokensTable({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden sm:block rounded-lg border">
+      <div className="hidden sm:block rounded-sm border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -543,7 +543,7 @@ export function AgentTokensTable({
                           }
                           disabled={isUpdating}
                           className={`
-                          flex items-center space-x-1 px-2 py-1 rounded-full text-xs transition-colors
+                          flex items-center space-x-1 px-2 py-1 rounded-sm text-xs transition-colors
                           ${
                             isApproved
                               ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-300"

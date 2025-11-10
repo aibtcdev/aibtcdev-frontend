@@ -20,7 +20,7 @@ function SkeletonSectionHeader() {
   return (
     <CardHeader className="pb-4">
       <div className="flex items-center gap-3">
-        <Skeleton className="w-10 h-10 rounded-xl" />
+        <Skeleton className="w-10 h-10 rounded-sm" />
         <div className="flex-1">
           <Skeleton className="h-5 w-32 mb-2" />
           <Skeleton className="h-3 w-48" />
@@ -42,7 +42,7 @@ export function VotingProgressSkeleton() {
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-4 w-16" />
           </div>
-          <Skeleton className="h-3 w-full rounded-full" />
+          <Skeleton className="h-3 w-full rounded-sm" />
           <div className="flex justify-between">
             <Skeleton className="h-3 w-12" />
             <Skeleton className="h-3 w-12" />
@@ -53,19 +53,19 @@ export function VotingProgressSkeleton() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-8 w-full rounded-lg" />
+            <Skeleton className="h-8 w-full rounded-sm" />
             <Skeleton className="h-3 w-20" />
           </div>
           <div className="space-y-2">
             <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-8 w-full rounded-lg" />
+            <Skeleton className="h-8 w-full rounded-sm" />
             <Skeleton className="h-3 w-20" />
           </div>
         </div>
 
         {/* Status Badge */}
         <div className="flex justify-center">
-          <Skeleton className="h-8 w-24 rounded-full" />
+          <Skeleton className="h-8 w-24 rounded-sm" />
         </div>
       </CardContent>
     </SkeletonSection>
@@ -124,16 +124,16 @@ export function VetosSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between p-3 rounded-lg bg-background/50"
+            className="flex items-center justify-between p-3 rounded-sm bg-background/50"
           >
             <div className="flex items-center gap-3 flex-1">
-              <Skeleton className="w-6 h-6 rounded-full" />
+              <Skeleton className="w-6 h-6 rounded-sm" />
               <div className="space-y-1 flex-1">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-3 w-32" />
               </div>
             </div>
-            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded-sm" />
           </div>
         ))}
       </CardContent>
@@ -214,7 +214,7 @@ export function MessageSkeleton() {
         <Skeleton className="h-4 w-3/4" />
 
         {/* Reference Link */}
-        <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/50">
+        <div className="mt-4 p-3 bg-background/50 rounded-sm border border-border/50">
           <Skeleton className="h-4 w-48" />
         </div>
       </CardContent>
@@ -232,7 +232,7 @@ export function ProposalSidebarSkeleton() {
           <Skeleton className="h-5 w-16" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-8 w-20 rounded-full" />
+          <Skeleton className="h-8 w-20 rounded-sm" />
         </CardContent>
       </Card>
 
@@ -242,7 +242,7 @@ export function ProposalSidebarSkeleton() {
           <Card key={i} className="border-border/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="w-8 h-8 rounded-lg" />
+                <Skeleton className="w-8 h-8 rounded-sm" />
                 <div className="min-w-0 flex-1">
                   <Skeleton className="h-3 w-16 mb-1" />
                   <Skeleton className="h-4 w-24" />
@@ -255,8 +255,8 @@ export function ProposalSidebarSkeleton() {
 
       {/* Primary Actions */}
       <div className="space-y-2 pt-2">
-        <Skeleton className="h-12 w-full rounded-md" />
-        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-12 w-full rounded-sm" />
+        <Skeleton className="h-10 w-full rounded-sm" />
       </div>
 
       {/* Quick Info */}
@@ -279,7 +279,7 @@ export function ProposalCardSkeleton() {
             <Skeleton className="h-5 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2" />
           </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-sm" />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -292,8 +292,8 @@ export function ProposalCardSkeleton() {
         </div>
 
         <div className="flex gap-2">
-          <Skeleton className="h-6 w-16 rounded-full" />
-          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-sm" />
+          <Skeleton className="h-6 w-20 rounded-sm" />
         </div>
       </CardContent>
     </Card>

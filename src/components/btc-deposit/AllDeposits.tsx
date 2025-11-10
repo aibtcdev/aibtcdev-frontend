@@ -52,7 +52,7 @@ const AddressCell = ({ address }: { address: string }) => {
 
   return (
     <div
-      className="inline-block px-2 py-1 rounded-lg text-xs cursor-pointer hover:opacity-80"
+      className="inline-block px-2 py-1 rounded-sm text-xs cursor-pointer hover:opacity-80"
       style={{ backgroundColor: bgColor }}
       onClick={handleAddressClick}
     >
@@ -199,7 +199,7 @@ export default function AllDeposits({
         <Card className="bg-card border-border/30 relative overflow-hidden">
           {/* Add refetching overlay */}
           {isRefetching && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10 rounded-md">
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10 rounded-sm">
               <div className="flex flex-col items-center space-y-2">
                 <Loader />
                 <p className="text-sm">Updating history...</p>

@@ -35,7 +35,7 @@ export function SocialLinks() {
         <span>Links</span>
       </button>
 
-      <div className="hidden group-hover:block absolute z-50 right-0 mt-2 w-48 rounded-md shadow-lg bg-zinc-800 ring-1 ring-black ring-opacity-5">
+      <div className="hidden group-hover:block absolute z-50 right-0 mt-2 w-48 rounded-sm shadow-lg bg-zinc-800 ring-1 ring-black ring-opacity-5">
         <div className="py-1" role="menu" aria-orientation="vertical">
           {links.map((link) => (
             <a

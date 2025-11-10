@@ -179,7 +179,7 @@ export function ApproveContractButton({
               <Button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="px-3 py-1 text-sm rounded-md border"
+                className="px-3 py-1 text-sm rounded-sm border"
               >
                 Close
               </Button>
@@ -192,7 +192,7 @@ export function ApproveContractButton({
                 type="button"
                 onClick={() => setConfirmOpen(false)}
                 disabled={isLoading}
-                className="px-3 py-1 text-sm rounded-md border"
+                className="px-3 py-1 text-sm rounded-sm border"
               >
                 Cancel
               </Button>
@@ -200,7 +200,7 @@ export function ApproveContractButton({
                 type="button"
                 onClick={handleApprove}
                 disabled={isLoading}
-                className="bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-md"
+                className="bg-primary hover:bg-primary/90 text-white text-sm px-3 py-1 rounded-sm"
               >
                 {isLoading ? (
                   <>
@@ -225,7 +225,7 @@ export function ApproveContractButton({
               setConfirmOpen(true);
               setResponse(null);
             }}
-            className={`flex w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-transparent px-4 py-2 text-sm font-bold text-primary shadow-md backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 motion-reduce:transition-none sm:px-4 sm:py-3 sm:text-base ${className}`}
+            className={`flex w-full items-center justify-center gap-2 rounded-sm border border-primary/20 bg-transparent px-4 py-2 text-sm font-bold text-primary shadow-md backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 motion-reduce:transition-none sm:px-4 sm:py-3 sm:text-base ${className}`}
           >
             Enable Contributions
           </Button>

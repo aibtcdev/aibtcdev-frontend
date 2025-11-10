@@ -52,9 +52,9 @@ export default function EvaluationResults({
 }: EvaluationResultsProps) {
   if (isSubmitting) {
     return (
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
         <div className="flex items-center justify-center space-x-3">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
+          <div className="animate-spin rounded-sm h-6 w-6 border-2 border-primary border-t-transparent" />
           <div className="text-center">
             <h3 className="text-base font-semibold text-foreground mb-1">
               Evaluating Proposal
@@ -70,7 +70,7 @@ export default function EvaluationResults({
 
   if (!result) {
     return (
-      <div className="bg-muted/20 border border-muted/30 rounded-xl p-6 text-center">
+      <div className="bg-muted/20 border border-muted/30 rounded-sm p-6 text-center">
         <Brain className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
         <h3 className="text-base font-semibold text-foreground mb-2">
           Ready for Evaluation
@@ -117,7 +117,7 @@ export default function EvaluationResults({
   return (
     <div className="space-y-3">
       {/* Overall Result Header */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             {result.decision ? (
@@ -147,7 +147,7 @@ export default function EvaluationResults({
         </div>
 
         {/* Overall Assessment */}
-        <div className="bg-background/50 rounded-lg p-3">
+        <div className="bg-background/50 rounded-sm p-3">
           <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm">
             <FileText className="h-4 w-4" />
             Overall Assessment
@@ -162,7 +162,7 @@ export default function EvaluationResults({
       {result.flags &&
         Array.isArray(result.flags) &&
         result.flags.length > 0 && (
-          <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+          <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
             <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
               Flags & Recommendations
@@ -171,7 +171,7 @@ export default function EvaluationResults({
               {result.flags.map((flag, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg"
+                  className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-sm"
                 >
                   <Info className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <span className="text-xs text-foreground">{flag}</span>
@@ -182,12 +182,12 @@ export default function EvaluationResults({
         )}
 
       {/* Summary */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
         <h3 className="text-base font-semibold text-foreground mb-2 flex items-center gap-2">
           <Info className="h-4 w-4" />
           Executive Summary
         </h3>
-        <div className="bg-background/50 rounded-lg p-3">
+        <div className="bg-background/50 rounded-sm p-3">
           <p className="text-xs text-foreground leading-relaxed">
             {result.summary}
           </p>
@@ -195,7 +195,7 @@ export default function EvaluationResults({
       </div>
 
       {/* Detailed Category Scores */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
         <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
           <BarChart3 className="h-4 w-4" />
           Detailed Analysis by Category
@@ -210,7 +210,7 @@ export default function EvaluationResults({
               return (
                 <div
                   key={index}
-                  className="border border-border/20 rounded-lg p-3"
+                  className="border border-border/20 rounded-sm p-3"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -235,9 +235,9 @@ export default function EvaluationResults({
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-muted/30 rounded-full h-1.5 mb-2">
+                  <div className="w-full bg-muted/30 rounded-sm h-1.5 mb-2">
                     <div
-                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                      className={`h-1.5 rounded-sm transition-all duration-500 ${
                         category.score >= 80
                           ? "bg-green-500"
                           : category.score >= 60
@@ -269,7 +269,7 @@ export default function EvaluationResults({
       </div>
 
       {/* Metadata */}
-      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-xl p-4">
+      <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-sm p-4">
         <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
           <Zap className="h-4 w-4" />
           Evaluation Metadata

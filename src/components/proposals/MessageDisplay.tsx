@@ -47,7 +47,7 @@ const MessageDisplay = ({ message }: MessageDisplayProps) => {
           {tags.map((tag, index) => (
             <span
               key={index}
-              className="text-xs text-primary/80 bg-primary/10 px-2 py-1 rounded-full"
+              className="text-xs text-primary/80 bg-primary/10 px-2 py-1 rounded-sm"
             >
               #{tag.replace(/\s+/g, "")}
             </span>

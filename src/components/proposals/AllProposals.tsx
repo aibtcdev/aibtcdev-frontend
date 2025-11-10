@@ -119,7 +119,10 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
     let filtered = proposals;
 
     if (enableSingleDaoMode) {
-      filtered = filtered.filter((proposal) => proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase());
+      filtered = filtered.filter(
+        (proposal) =>
+          proposal.daos?.name?.toUpperCase() === singleDaoName.toUpperCase()
+      );
     }
 
     filtered = filtered.filter((proposal) => {
@@ -266,7 +269,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all duration-300 flex-shrink-0"
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-sm transition-all duration-300 flex-shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -301,9 +304,9 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
             {/* Proposals List */}
             <div ref={proposalsRef}>
               {paginatedProposals.length === 0 ? (
-                <div className="border-dashed border rounded-lg py-12">
+                <div className="border-dashed border rounded-sm py-12">
                   <div className="text-center space-y-4 px-4">
-                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                    <div className="w-12 h-12 rounded-sm bg-muted/50 flex items-center justify-center mx-auto">
                       <FileText className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <div className="space-y-2">
@@ -335,7 +338,7 @@ const AllProposals = ({ proposals }: AllProposalsProps) => {
             {/* Pagination */}
             {filteredAndSortedProposals.length > 0 && (
               <div className="mt-8">
-                <div className="bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 p-4 overflow-x-auto">
+                <div className="bg-card/30 backdrop-blur-sm rounded-sm border border-border/50 p-4 overflow-x-auto">
                   <div className="min-w-[320px]">
                     <Pagination
                       currentPage={currentPage}

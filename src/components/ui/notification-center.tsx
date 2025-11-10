@@ -78,7 +78,7 @@ export const NotificationCenter = ({
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 rounded-lg border ${
+                className={`p-4 rounded-sm border ${
                   notification.type === "success"
                     ? "bg-green-500/10 border-green-500/20"
                     : notification.type === "error"

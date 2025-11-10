@@ -108,7 +108,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
     return (
       <div className="w-full">
         <div className="text-center py-16 px-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6">
+          <div className="w-16 h-16 mx-auto rounded-sm bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-6">
             <Coins className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-xl font-bold text-foreground mb-2">
@@ -137,7 +137,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
         {assets.map((asset, index) => (
           <div
             key={asset.id}
-            className="group relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-r from-card to-card/80 p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]"
+            className="group relative overflow-hidden rounded-sm border border-border/50 bg-gradient-to-r from-card to-card/80 p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.98]"
           >
             {/* Background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/[0.02] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -148,7 +148,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
                 {/* Icon with gradient background */}
                 <div className="relative">
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    className={`w-12 h-12 rounded-sm flex items-center justify-center ${
                       asset.type === "stx"
                         ? "bg-gradient-to-br from-orange-100 to-orange-50 border border-orange-200/50"
                         : asset.symbol === "BTC"
@@ -170,7 +170,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
                   </div>
                   {/* Rank indicator for first few assets - Hidden on mobile */}
                   {index < 3 && (
-                    <div className="hidden sm:flex absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full items-center justify-center">
+                    <div className="hidden sm:flex absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-sm items-center justify-center">
                       <span className="text-xs font-bold text-primary-foreground">
                         {index + 1}
                       </span>
@@ -185,7 +185,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
                       {asset.symbol}
                     </h3>
                     {asset.type === "stx" && (
-                      <span className="hidden sm:inline px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+                      <span className="hidden sm:inline px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-sm">
                         Native
                       </span>
                     )}
@@ -230,7 +230,7 @@ export function AssetsDataTable({ walletBalance }: AssetsDataTableProps) {
       </div>
 
       {/* Summary Footer - Hidden on mobile */}
-      <div className="hidden sm:block mt-6 p-4 rounded-xl bg-muted/30 border border-border/50">
+      <div className="hidden sm:block mt-6 p-4 rounded-sm bg-muted/30 border border-border/50">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Total Portfolio Value</span>
           <span className="font-bold text-foreground">

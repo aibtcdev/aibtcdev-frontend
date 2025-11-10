@@ -78,7 +78,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
             return (
               <div
                 key={extension.id}
-                className="rounded-lg border bg-card p-4 hover:bg-muted/50 transition-colors"
+                className="rounded-sm border bg-card p-4 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex flex-col space-y-3">
                   {/* Header row with type and actions */}
@@ -154,7 +154,7 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
         </div>
       ) : (
         // Desktop table layout
-        <div className="rounded-lg border bg-card overflow-hidden">
+        <div className="rounded-sm border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

@@ -2,14 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ExternalLink, X } from "lucide-react";
 // Using console.log instead of toast for now to avoid dependency issues
 // import { toast } from "sonner";
@@ -98,23 +91,14 @@ export function XLinking({
     return (
       <div className="flex items-center gap-2">
         {needsXLink ? (
-          <Button
-            onClick={handleLinkX}
-            disabled={isLinking || isLoading}
-            size="sm"
-            className="bg-black hover:bg-gray-800 text-white"
-          >
-            <X className="h-4 w-4 mr-2" />
-            {isLinking ? "Linking..." : "Link X Account"}
-          </Button>
+          <span className="text-sm text-muted-foreground">
+            {isLinking ? "Linking..." : "Link X"}
+          </span>
         ) : (
           <div className="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              className="bg-green-100 text-green-800 border-green-200"
-            >
+            {/* <Badge variant="secondary" className="bg-primary/10 text-primary">
               <CheckCircle className="h-3 w-3 mr-1" />X Linked
-            </Badge>
+            </Badge> */}
             {xProfile && (
               <span className="text-sm text-muted-foreground">
                 @{xProfile.username}
@@ -127,26 +111,26 @@ export function XLinking({
   }
 
   return (
-    <Card className="w-full">
+    <div className="w-full">
       {showTitle && (
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
             <X className="h-5 w-5" />X Account Linking
-          </CardTitle>
-          <CardDescription>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
             Link your X (formerly Twitter) account to verify your identity for
             proposal submissions.
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
       )}
-      <CardContent className="space-y-4">
+      <div className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6  border-primary"></div>
+            <div className="animate-spin rounded-sm h-6 w-6 border-2 border-primary border-t-transparent"></div>
           </div>
         ) : needsXLink ? (
-          <div className="space-y-4">
-            <div className="flex items-start gap-1 p-4">
+          <div className="flex items-start justify-between gap-3 p-4 bg-primary/5 rounded-sm">
+            <div className="flex items-start gap-2 flex-1">
               <svg
                 className="w-4 h-4 flex-shrink-0 mt-0.5"
                 viewBox="0 0 22 22"
@@ -162,59 +146,51 @@ export function XLinking({
                 Verified X Account Required to Submit Contribution
               </h4>
             </div>
-
-            <Button
-              onClick={handleLinkX}
-              disabled={isLinking}
-              className="w-full "
-            >
-              <X className="h-4 w-4 mr-2" />
+            <Button onClick={handleLinkX} disabled={isLinking} size="sm">
               {isLinking ? "Linking..." : "Link X Account"}
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-green-900 dark:text-green-100">
-                  X Account Linked
-                </h4>
+          <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 rounded-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+              <div>
+                <span className="font-medium text-foreground">
+                  X account linked
+                </span>
                 {xProfile && (
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Username:</span>
-                      <Badge variant="secondary">@{xProfile.username}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Display Name:</span>
-                      <span className="text-sm">{xProfile.name}</span>
-                    </div>
-                    <a
-                      href={`https://x.com/${xProfile.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      View Profile
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    (@{xProfile.username})
+                  </span>
                 )}
               </div>
             </div>
-
-            <Button
-              onClick={handleUnlinkX}
-              disabled={isUnlinking}
-              variant="outline"
-              className="w-full"
-            >
-              {isUnlinking ? "Unlinking..." : "Unlink X Account"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {xProfile && (
+                <Button variant="ghost" size="sm" asChild>
+                  <a
+                    href={`https://x.com/${xProfile.username}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1"
+                  >
+                    View Profile
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </Button>
+              )}
+              <Button
+                onClick={handleUnlinkX}
+                disabled={isUnlinking}
+                variant="destructive"
+                size="sm"
+              >
+                {isUnlinking ? "Unlinking..." : "Unlink"}
+              </Button>
+            </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -120,7 +120,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
     return (
       <div
         className={cn(
-          " rounded-lg p-4 bg-card hover:bg-accent/50 transition-colors cursor-pointer",
+          " rounded-sm p-4 bg-card hover:bg-accent/50 transition-colors cursor-pointer",
           className
         )}
         onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
@@ -138,7 +138,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
   return (
     <div
       className={cn(
-        "bg-muted/30 rounded-lg transition-colors cursor-pointer group overflow-hidden",
+        "bg-muted/30 rounded-sm transition-colors cursor-pointer group overflow-hidden",
         className
       )}
       onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
@@ -172,7 +172,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
       {twitterEmbedData && !isLoadingEmbed && (
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-sm flex items-center justify-center flex-shrink-0">
               <span className="text-gray-600 dark:text-gray-300 font-bold text-sm">
                 𝕏
               </span>
@@ -211,7 +211,7 @@ export function XCard({ url, className, showFullUrl = false }: XCardProps) {
       {!twitterEmbedData && !isLoadingEmbed && !embedError && (
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-sm">𝕏</span>
             </div>
             <div className="flex-1 min-w-0">

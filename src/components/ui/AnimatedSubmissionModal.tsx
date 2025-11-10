@@ -91,7 +91,7 @@ export function AnimatedSubmissionModal({
         <div className="py-8">
           {isError ? (
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-sm bg-destructive/10 flex items-center justify-center mx-auto">
                 <AlertCircle className="w-8 h-8 text-destructive" />
               </div>
               <div className="space-y-2">
@@ -106,7 +106,7 @@ export function AnimatedSubmissionModal({
           ) : (
             <div className="text-center space-y-6">
               {/* Animated Icon */}
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                 {isCompleted ? (
                   <Check className="w-10 h-10 text-primary" />
                 ) : (
@@ -128,10 +128,10 @@ export function AnimatedSubmissionModal({
 
               {/* Simple Progress Bar */}
               <div className="w-full max-w-xs mx-auto">
-                <div className="w-full bg-muted rounded-full h-2">
+                <div className="w-full bg-muted rounded-sm h-2">
                   <div
                     className={cn(
-                      "h-2 rounded-full transition-all duration-500 ease-out",
+                      "h-2 rounded-sm transition-all duration-500 ease-out",
                       isError
                         ? "bg-destructive"
                         : isCompleted

@@ -717,7 +717,7 @@ function VoteCard({ vote }: VoteCardProps) {
               return (
                 <div className="space-y-3 mb-4">
                   {referenceLink && (
-                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                    <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                       <div className="text-xs text-muted-foreground mb-1">
                         Reference
                       </div>
@@ -754,7 +754,7 @@ function VoteCard({ vote }: VoteCardProps) {
                     </div>
                   )}
                   {airdropTxId && (
-                    <div className="p-3 bg-background/50 rounded-lg border border-border/50">
+                    <div className="p-3 bg-background/50 rounded-sm border border-border/50">
                       <div className="text-xs text-muted-foreground mb-1">
                         Airdrop Transaction ID
                       </div>
@@ -802,7 +802,7 @@ function VoteCard({ vote }: VoteCardProps) {
                   <div className="space-y-2">
                     <div className="relative">
                       {/* Background bar */}
-                      <div className="h-6 bg-muted rounded-lg overflow-hidden">
+                      <div className="h-6 bg-muted rounded-sm overflow-hidden">
                         {/* Votes for (green) */}
                         <div
                           className={`absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out ${
@@ -876,16 +876,16 @@ function VoteCard({ vote }: VoteCardProps) {
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                       <div className="flex items-center gap-4 flex-wrap">
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          <div className="w-2 h-2 bg-green-500 rounded-sm" />
                           <span>For: {voteDisplayData.votesFor}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-red-500 rounded-full" />
+                          <div className="w-2 h-2 bg-red-500 rounded-sm" />
                           <span>Against: {voteDisplayData.votesAgainst}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                        <div className="w-2 h-2 bg-blue-600 rounded-sm" />
                         <span>Total: {voteDisplayData.liquidTokens}</span>
                       </div>
                     </div>
@@ -938,7 +938,7 @@ function VoteCard({ vote }: VoteCardProps) {
                 {evaluationData ? (
                   <div className="space-y-3">
                     {/* Decision and Score */}
-                    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <div className="bg-muted/50 rounded-sm p-3 space-y-2">
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {evaluationData.summary}
                       </p>
@@ -972,7 +972,7 @@ function VoteCard({ vote }: VoteCardProps) {
                       )}
                   </div>
                 ) : (
-                  <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="bg-muted/50 rounded-sm p-3">
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {reasoningPreview}
                     </p>
@@ -1005,7 +1005,7 @@ function VoteCard({ vote }: VoteCardProps) {
                       {vetoes.slice(0, 3).map((veto, index) => (
                         <div
                           key={index}
-                          className="bg-destructive/10 border border-destructive/20 rounded-lg p-3"
+                          className="bg-destructive/10 border border-destructive/20 rounded-sm p-3"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-destructive">
@@ -1349,7 +1349,9 @@ export function VotesView({ votes }: VotesViewProps) {
 
     let filteredByDao = byTab;
     if (enableSingleDaoMode) {
-      filteredByDao = filteredByDao.filter((vote) => vote.dao_name?.toUpperCase() === singleDaoName.toUpperCase());
+      filteredByDao = filteredByDao.filter(
+        (vote) => vote.dao_name?.toUpperCase() === singleDaoName.toUpperCase()
+      );
     }
 
     return selectedDao
@@ -1489,7 +1491,7 @@ export function VotesView({ votes }: VotesViewProps) {
                   }`}
                 >
                   <div
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-sm transition-colors ${
                       activeTab === "all"
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -1517,7 +1519,7 @@ export function VotesView({ votes }: VotesViewProps) {
                     >
                       <div className="w-4 h-4 flex items-center justify-center">
                         <div
-                          className={`w-2 h-2 rounded-full ${
+                          className={`w-2 h-2 rounded-sm ${
                             isSelected ? "bg-primary" : "bg-muted-foreground/30"
                           }`}
                         />
@@ -1559,7 +1561,7 @@ export function VotesView({ votes }: VotesViewProps) {
         {filteredVotes.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="text-center py-16">
-              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 rounded-sm bg-muted/50 flex items-center justify-center mx-auto mb-4">
                 {(() => {
                   const IconComponent = getTabIcon(activeTab!);
                   return (
