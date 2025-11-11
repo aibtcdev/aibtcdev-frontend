@@ -254,12 +254,13 @@ export default function ApplicationLayout({
 
           {/* Right Section - Navigation Links, BTC Balance Dropdown & Auth Button */}
           <div className="flex items-center gap-6 relative z-10 justify-end">
-            <Link
-              href="/how-it-works"
+            <a
+              href="https://docs.aibtc.com/how-aibtc-works"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+              target="_blank"
             >
               How it works
-            </Link>
+            </a>
             <Link
               href="/aibtc-charter"
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
