@@ -16,14 +16,12 @@ export const metadata: Metadata = {
     default: "AIBTC",
     template: "%s | AIBTC",
   },
-  description:
-    "AI-powered agents. Bitcoin-backed DAOs. Fully autonomous governance.",
+  description: "The Bitcoin Coordination Network.",
   keywords: ["Bitcoin", "AI", "Stacks", "L2", "Trading", "DAO"],
   authors: [{ name: "AIBTC" }],
   openGraph: {
     title: "AIBTC",
-    description:
-      "AI-powered agents. Bitcoin-backed DAOs. Fully autonomous governance.",
+    description: "The Bitcoin Coordination Network.",
     type: "website",
     images: [
       {
@@ -37,8 +35,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AIBTC",
-    description:
-      "AI-powered agents. Bitcoin-backed DAOs. Fully autonomous governance.",
+    description: "The Bitcoin Coordination Network.",
     images: [
       {
         url: "https://aibtc.com/logos/twitter-share-image.jpeg",
