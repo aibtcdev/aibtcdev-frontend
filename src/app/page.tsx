@@ -12,11 +12,12 @@ import {
   fetchProposals,
 } from "@/services/dao.service";
 import { RootDAOPage } from "@/components/aidaos/RootDAOPage";
+import { singleDaoName } from "@/config/features";
 
 export const runtime = "edge";
 
 function PageContent() {
-  const daoName = "AIBTC-BREW";
+  const daoName = singleDaoName;
 
   const { data: dao, isLoading: isLoadingDAO } = useQuery({
     queryKey: ["dao", daoName],
@@ -56,7 +57,9 @@ function PageContent() {
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-semibold text-white">DAO Not Found</h2>
-          <p className="text-zinc-400">Could not find the AIBTC-BREW DAO</p>
+          <p className="text-zinc-400">
+            Could not find the {singleDaoName} DAO
+          </p>
         </div>
       </div>
     );
@@ -74,7 +77,7 @@ function PageContent() {
 
 export default function RootPage() {
   return (
-    <RootDAOPage daoName="AIBTC-BREW">
+    <RootDAOPage daoName={singleDaoName}>
       <Suspense
         fallback={
           <div className="flex justify-center items-center min-h-[400px] w-full">
