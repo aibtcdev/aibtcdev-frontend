@@ -270,7 +270,7 @@ export function TokenWithdrawModal({
 
           <div className="space-y-4">
             {/* Token Info */}
-            <div className="bg-muted p-3 rounded-lg">
+            <div className="bg-muted p-3 rounded-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs">
@@ -292,7 +292,7 @@ export function TokenWithdrawModal({
 
             {/* Token Approval Status */}
             {tokenData && (
-              <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div className="bg-muted p-3 rounded-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
                     Token Withdrawal Status
@@ -336,7 +336,7 @@ export function TokenWithdrawModal({
             </div>
 
             {/* Recipient Info */}
-            <div className="bg-muted p-3 rounded-lg space-y-2">
+            <div className="bg-muted p-3 rounded-sm space-y-2">
               <div className="text-sm text-muted-foreground mb-1">
                 Withdraw to your wallet:
               </div>

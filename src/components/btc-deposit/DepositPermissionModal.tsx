@@ -104,7 +104,7 @@ export function DepositPermissionModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-orange-100 dark:bg-orange-900/20">
               <AlertTriangle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
@@ -119,7 +119,7 @@ export function DepositPermissionModal({
         </DialogHeader>
 
         <div className="py-4">
-          <div className="rounded-lg bg-muted p-4">
+          <div className="rounded-sm bg-muted p-4">
             <h4 className="text-sm font-medium mb-2">What this enables:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Allows your agent to receive deposited tokens</li>

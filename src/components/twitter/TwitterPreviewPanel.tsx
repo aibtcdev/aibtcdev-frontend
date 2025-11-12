@@ -62,9 +62,9 @@ export function TwitterPreviewPanel({
 
   if (!twitterUrl) {
     return (
-      <div className="rounded-2xl bg-muted/10 border border-white/10 p-6 flex flex-col items-center justify-center h-full">
+      <div className="rounded-sm bg-muted/10 border border-white/10 p-6 flex flex-col items-center justify-center h-full">
         <div className="text-center space-y-3 max-w-md">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
             <ExternalLink className="w-6 h-6 text-primary/50" />
           </div>
           <div>
@@ -80,9 +80,9 @@ export function TwitterPreviewPanel({
 
   if (!isValidTwitterUrl) {
     return (
-      <div className="rounded-2xl bg-muted/10 border border-white/10 p-6 flex flex-col items-center justify-center h-full">
+      <div className="rounded-sm bg-muted/10 border border-white/10 p-6 flex flex-col items-center justify-center h-full">
         <div className="text-center space-y-3 max-w-md">
-          <div className="w-12 h-12 rounded-full bg-red-900/20 flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-sm bg-red-900/20 flex items-center justify-center mx-auto">
             <AlertCircle className="w-6 h-6 text-red-400" />
           </div>
           <div>
@@ -101,7 +101,7 @@ export function TwitterPreviewPanel({
   }
 
   return (
-    <div className="rounded-2xl bg-muted/10 border border-white/10 p-6 flex flex-col h-full">
+    <div className="rounded-sm bg-muted/10 border border-white/10 p-6 flex flex-col h-full">
       <div className="mb-4 flex items-center justify-between flex-shrink-0">
         <h3 className="text-lg font-semibold">Post Preview</h3>
         <a
@@ -117,7 +117,7 @@ export function TwitterPreviewPanel({
 
       <div className="flex-1 flex flex-col">
         {isLoadingEmbed && (
-          <div className="bg-background/60 border border-white/10 rounded-xl p-6 flex items-center justify-center flex-1">
+          <div className="bg-background/60 border border-white/10 rounded-sm p-6 flex items-center justify-center flex-1">
             <div className="flex flex-col items-center gap-2 text-xs text-muted-foreground">
               <Loader />
               <span>Loading preview...</span>
@@ -126,7 +126,7 @@ export function TwitterPreviewPanel({
         )}
 
         {embedError && (
-          <div className="bg-red-900/20 border border-red-800/30 rounded-xl p-4 flex items-center gap-3 flex-1">
+          <div className="bg-red-900/20 border border-red-800/30 rounded-sm p-4 flex items-center gap-3 flex-1">
             <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-300" />
             <div className="text-xs text-red-300">
               <strong>Preview unavailable:</strong> {embedError}
@@ -135,9 +135,9 @@ export function TwitterPreviewPanel({
         )}
 
         {twitterEmbedData && !isLoadingEmbed && (
-          <div className="bg-background/60 border border-white/10 rounded-xl p-4 flex-1">
+          <div className="bg-background/60 border border-white/10 rounded-sm p-4 flex-1">
             <div
-              className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-lg"
+              className="twitter-embed-container [&_iframe]:w-full [&_iframe]:max-w-none [&_iframe]:border-0 [&_iframe]:rounded-sm"
               dangerouslySetInnerHTML={{
                 __html: twitterEmbedData.html,
               }}

@@ -222,7 +222,7 @@ export function AgentForm({
                         {tools.map((tool) => (
                           <div
                             key={tool.id}
-                            className="flex flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-2 p-2 hover:bg-white/5 rounded-lg"
+                            className="flex flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-2 p-2 hover:bg-white/5 rounded-sm"
                           >
                             <Checkbox
                               id={tool.id}

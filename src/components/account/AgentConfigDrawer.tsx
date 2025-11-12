@@ -218,7 +218,7 @@ export function AgentConfigDrawer({
         <div className="h-full flex flex-col">
           <SheetHeader className="space-y-3 flex-shrink-0">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Bot className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
@@ -289,7 +289,7 @@ export function AgentConfigDrawer({
                   </SelectContent>
                 </Select>
                 {selectedModel && (
-                  <div className="flex items-center gap-2 p-3 bg-muted/10 rounded-lg">
+                  <div className="flex items-center gap-2 p-3 bg-muted/10 rounded-sm">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">
                         {selectedModel.label}
@@ -354,7 +354,7 @@ export function AgentConfigDrawer({
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-sm animate-spin mr-2" />
                   <span className="truncate">
                     {existingPrompt ? "Updating..." : "Creating..."}
                   </span>

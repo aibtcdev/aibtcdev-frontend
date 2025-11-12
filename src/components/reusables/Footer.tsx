@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export function Footer() {
   return (
     <footer className="relative overflow-hidden">
-      <div className="relative z-10 container flex flex-col justify-center items-center max-w-screen-xl mx-auto px-4 sm:px-6 py-12 space-y-8">
+      <div className="relative z-10 container flex flex-col justify-center items-center  mx-auto px-4 sm:px-6 py-12 space-y-8">
         {/* Social Media Links with Enhanced Styling */}
         <div className="flex items-center gap-3">
           {socialLinks.map((link, index) => (
@@ -22,7 +22,7 @@ export function Footer() {
               variant="ghost"
               size="icon"
               asChild
-              className="h-12 w-12 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-card/40 hover:scale-110 hover:shadow-lg transition-all duration-300 ease-in-out group backdrop-blur-sm border border-border/20 hover:border-border/40"
+              className="h-12 w-12 rounded-sm text-muted-foreground hover:text-foreground hover:bg-card/40 hover:scale-110 hover:shadow-lg transition-all duration-300 ease-in-out group backdrop-blur-sm border border-border/20 hover:border-border/40"
               style={{
                 animationDelay: `${index * 0.1}s`,
               }}
@@ -37,7 +37,7 @@ export function Footer() {
                 <span className="sr-only">{link.name}</span>
 
                 {/* Subtle hover glow effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+                <div className="absolute inset-0 rounded-sm bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
               </a>
             </Button>
           ))}
@@ -45,7 +45,7 @@ export function Footer() {
 
         {/* Enhanced Disclaimer Container */}
         <div className="w-full max-w-4xl">
-          <div className="p-6 rounded-2xl border border-border/20 hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
+          <div className="p-6 rounded-sm border border-border/20 hover:shadow-lg transition-all duration-300 hover:scale-[1.01]">
             <Disclaimer />
           </div>
         </div>
@@ -54,7 +54,7 @@ export function Footer() {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/80">
             <span>© {new Date().getFullYear()} AIBTC</span>
-            <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+            <div className="w-1 h-1 rounded-sm bg-muted-foreground/40" />
             <span>AI DAOs on Bitcoin</span>
           </div>
         </div>
@@ -97,7 +97,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            "block select-none space-y-1 rounded-2xl p-4 leading-none no-underline outline-none",
+            "block select-none space-y-1 rounded-sm p-4 leading-none no-underline outline-none",
             "transition-all duration-300 ease-in-out hover:bg-card/30 hover:text-foreground hover:scale-105",
             "focus:bg-card/30 focus:text-foreground backdrop-blur-sm border border-border/20 hover:border-border/40"
           )}

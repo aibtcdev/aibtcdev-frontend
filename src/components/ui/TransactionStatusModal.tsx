@@ -50,19 +50,19 @@ export function TransactionStatusModal({
     switch (transactionStatus) {
       case "success":
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+          <span className="px-3 py-1 rounded-sm text-xs font-medium bg-green-100 text-green-800 border border-green-200">
             Confirmed
           </span>
         );
       case "failed":
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+          <span className="px-3 py-1 rounded-sm text-xs font-medium bg-red-100 text-red-800 border border-red-200">
             Failed
           </span>
         );
       default:
         return (
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+          <span className="px-3 py-1 rounded-sm text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
             Processing
           </span>
         );
@@ -118,7 +118,7 @@ export function TransactionStatusModal({
       <DialogContent className="p-6 sm:max-w-lg">
         <div className="text-center py-8">
           <div
-            className={`w-16 h-16 rounded-full ${getIconBgColor()} flex items-center justify-center mx-auto mb-6`}
+            className={`w-16 h-16 rounded-sm ${getIconBgColor()} flex items-center justify-center mx-auto mb-6`}
           >
             {getIcon()}
           </div>
@@ -134,7 +134,7 @@ export function TransactionStatusModal({
 
           <div className="mt-8 space-y-4">
             {/* Transaction Status Card */}
-            <div className="bg-background/50 border border-border/50 rounded-xl p-4">
+            <div className="bg-background/50 border border-border/50 rounded-sm p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-muted-foreground">
                   Transaction Status

@@ -61,13 +61,15 @@ export function AgentConfigTable({
 
   let filteredDaos = daos;
   if (enableSingleDaoMode) {
-    filteredDaos = daos.filter(dao => dao.name.toUpperCase() === singleDaoName.toUpperCase());
+    filteredDaos = daos.filter(
+      (dao) => dao.name.toUpperCase() === singleDaoName.toUpperCase()
+    );
   }
 
   if (filteredDaos.length === 0) {
     return (
       <div className="text-center py-12 space-y-4">
-        <div className="w-12 h-12 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
           <Bot className="h-6 w-6 text-muted-foreground" />
         </div>
         <div>
@@ -81,7 +83,7 @@ export function AgentConfigTable({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-sm overflow-hidden">
       <div className="overflow-x-auto sm:overflow-visible">
         <Table className="min-w-full table-fixed">
           <TableHeader>
@@ -108,7 +110,7 @@ export function AgentConfigTable({
                 <TableRow key={dao.id} className="hover:bg-muted/5">
                   <TableCell className="sm:min-w-[160px]">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                      <div className="w-2 h-2 rounded-sm bg-primary flex-shrink-0" />
                       <span className="font-semibold truncate">{dao.name}</span>
                     </div>
                   </TableCell>
@@ -116,7 +118,7 @@ export function AgentConfigTable({
                   <TableCell className="sm:min-w-[80px]">
                     {isConfigured ? (
                       <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-600 mr-1 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-sm bg-green-600 mr-1 flex-shrink-0" />
                         <span>Custom</span>
                       </Badge>
                     ) : (
@@ -124,7 +126,7 @@ export function AgentConfigTable({
                         variant="outline"
                         className="text-muted-foreground text-xs"
                       >
-                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mr-1 flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-sm bg-muted-foreground mr-1 flex-shrink-0" />
                         <span>Default</span>
                       </Badge>
                     )}
@@ -133,7 +135,7 @@ export function AgentConfigTable({
                   <TableCell className="sm:min-w-[100px] hidden sm:table-cell">
                     {isConfigured ? (
                       <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-sm bg-primary flex-shrink-0" />
                         <span className="text-sm font-medium truncate">
                           {prompt.model}
                         </span>

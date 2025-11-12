@@ -19,7 +19,7 @@ const DisplayAgentAddress = () => {
         <span className="font-inter font-bold tracking-tight text-sm break-all">
           {`${stacksAddress?.slice(0, 5)}...${stacksAddress?.slice(-5)}`}
         </span>
-        <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
+        <div className="w-6 h-6 rounded-sm border border-white flex items-center justify-center">
           <User className="w-3.5 h-3.5 " />
         </div>
       </div>

@@ -416,7 +416,7 @@
 //             <div className="grid gap-4 py-4">
 //               <div className="space-y-2">
 //                 <h3 className="text-sm font-medium">Transaction Details</h3>
-//                 <div className="bg-muted p-3 rounded-md space-y-2 text-sm">
+//                 <div className="bg-muted p-3 rounded-sm space-y-2 text-sm">
 //                   <div className="flex justify-between">
 //                     <span className="text-muted-foreground">Amount:</span>
 //                     <span className="font-medium">
@@ -449,7 +449,7 @@
 //               {preparedTransaction && (
 //                 <div className="space-y-2">
 //                   <h3 className="text-sm font-medium">Fee Details</h3>
-//                   <div className="bg-muted p-3 rounded-md space-y-2 text-sm">
+//                   <div className="bg-muted p-3 rounded-sm space-y-2 text-sm">
 //                     <div className="flex justify-between">
 //                       <span className="text-muted-foreground">Fee:</span>
 //                       <span className="font-medium">
@@ -519,7 +519,7 @@
 //               network.
 //             </p>
 //             {txId && (
-//               <div className="w-full bg-muted p-3 rounded-md overflow-hidden mb-4">
+//               <div className="w-full bg-muted p-3 rounded-sm overflow-hidden mb-4">
 //                 <p className="font-mono text-xs break-all">
 //                   Transaction ID: {txId}
 //                 </p>
@@ -544,7 +544,7 @@
 //             {sdkError && (
 //               <div className="w-full mb-4">
 //                 <p className="text-sm font-medium mb-1">SDK Error Details:</p>
-//                 <div className="bg-muted p-3 rounded-md overflow-auto max-h-32 text-xs font-mono">
+//                 <div className="bg-muted p-3 rounded-sm overflow-auto max-h-32 text-xs font-mono">
 //                   {sdkError}
 //                 </div>
 //               </div>

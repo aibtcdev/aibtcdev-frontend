@@ -10,12 +10,9 @@ import { NextStepProvider, NextStep } from "nextstepjs";
 import CustomCard from "@/components/reusables/CustomCard";
 import { tourSteps } from "@/lib/config/tour-config";
 import { SupabaseRealtimeProvider } from "@/providers/SupabaseRealtimeProvider";
-import { usePathname } from "next/navigation";
 import ApplicationLayout from "@/app/application-layout";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
   // Use useState to ensure the QueryClient persists between renders
   const [queryClient] = useState(
     () =>
@@ -31,12 +28,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
       })
   );
 
-  const content =
-    pathname === "/" ? (
-      children
-    ) : (
-      <ApplicationLayout>{children}</ApplicationLayout>
-    );
+  // All pages now use ApplicationLayout including root
+  const content = <ApplicationLayout>{children}</ApplicationLayout>;
 
   return (
     <ThemeProvider

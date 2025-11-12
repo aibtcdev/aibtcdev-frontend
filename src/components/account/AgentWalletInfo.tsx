@@ -65,9 +65,9 @@ function MobileAssetCard({
   };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/20">
+    <div className="flex items-center justify-between p-3 bg-muted/10 rounded-sm border border-border/20">
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-primary" />
+        <div className="w-2 h-2 rounded-sm bg-primary" />
         <span className="font-semibold text-foreground text-sm">{symbol}</span>
       </div>
       <div className="text-right">{renderBalance()}</div>
@@ -130,10 +130,10 @@ export function WalletInfoCard({
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+    <div className="bg-card rounded-sm border border-border p-4 space-y-4">
       {/* Header Section */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-sm bg-secondary/10 flex items-center justify-center">
           <Wallet className="h-4 w-4 text-secondary" />
         </div>
         <div>
@@ -147,7 +147,7 @@ export function WalletInfoCard({
       {/* Wallet Address Section */}
       {walletAddress ? (
         <div className="space-y-3">
-          <div className="p-3 bg-muted/10 rounded-lg border border-border/20">
+          <div className="p-3 bg-muted/10 rounded-sm border border-border/20">
             <p className="font-mono text-xs text-foreground break-all mb-1">
               {walletAddress}
             </p>
@@ -193,7 +193,7 @@ export function WalletInfoCard({
       ) : (
         /* No Wallet State */
         <div className="text-center py-6 space-y-2">
-          <div className="w-8 h-8 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+          <div className="w-8 h-8 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="space-y-1">
@@ -245,7 +245,7 @@ export function WalletInfoCard({
         </div>
 
         {/* Desktop Layout - Table */}
-        <div className="hidden lg:block bg-card rounded-lg border border-border overflow-hidden">
+        <div className="hidden lg:block bg-card rounded-sm border border-border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="border-border bg-muted/5">
@@ -263,7 +263,7 @@ export function WalletInfoCard({
                 <TableRow className="border-border hover:bg-muted/5">
                   <TableCell className="font-semibold text-foreground px-4 py-2 text-xs">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <div className="w-2 h-2 rounded-sm bg-primary" />
                       STX
                     </div>
                   </TableCell>
@@ -293,7 +293,7 @@ export function WalletInfoCard({
                       >
                         <TableCell className="font-semibold text-foreground px-4 py-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-secondary" />
+                            <div className="w-2 h-2 rounded-sm bg-secondary" />
                             {displaySymbol}
                           </div>
                         </TableCell>
@@ -329,7 +329,7 @@ export function WalletInfoCard({
                       >
                         <TableCell className="font-semibold text-foreground px-4 py-2 text-xs">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-accent" />
+                            <div className="w-2 h-2 rounded-sm bg-accent" />
                             {displaySymbol}
                           </div>
                         </TableCell>
@@ -350,7 +350,7 @@ export function WalletInfoCard({
                 <TableRow>
                   <TableCell colSpan={2} className="text-center py-8">
                     <div className="flex flex-col items-center space-y-2">
-                      <div className="w-8 h-8 rounded-lg bg-muted/20 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-sm bg-muted/20 flex items-center justify-center">
                         <Coins className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="space-y-1">

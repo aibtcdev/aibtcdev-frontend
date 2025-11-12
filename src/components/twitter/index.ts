@@ -1,0 +1,1 @@
+export { TwitterCard } from "./TwitterCard";

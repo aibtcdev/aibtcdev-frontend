@@ -56,7 +56,7 @@ export function BalanceSummaryCard({
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-bold text-foreground flex items-center gap-3">
           <div
-            className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center`}
+            className={`w-8 h-8 rounded-sm ${iconBg} flex items-center justify-center`}
           >
             <Icon className={`h-4 w-4 ${iconColor}`} />
           </div>
@@ -66,7 +66,7 @@ export function BalanceSummaryCard({
       <CardContent className="pt-0">
         {!walletBalance ? (
           <div className="text-center py-6 space-y-2">
-            <div className="w-8 h-8 mx-auto rounded-lg bg-muted/20 flex items-center justify-center">
+            <div className="w-8 h-8 mx-auto rounded-sm bg-muted/20 flex items-center justify-center">
               <Coins className="h-4 w-4 text-muted-foreground" />
             </div>
             <div className="space-y-1">
@@ -81,7 +81,7 @@ export function BalanceSummaryCard({
         ) : (
           <div className="space-y-4">
             {/* Quick Summary */}
-            <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-muted/10 rounded-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Total Assets</p>
                 <p className="text-lg font-bold text-foreground">
@@ -118,7 +118,7 @@ export function BalanceSummaryCard({
                     <TableRow className="border-border hover:bg-muted/5">
                       <TableCell className="text-xs">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          <div className="w-2 h-2 rounded-sm bg-primary" />
                           <span className="font-semibold">STX</span>
                         </div>
                       </TableCell>
@@ -148,7 +148,7 @@ export function BalanceSummaryCard({
                           >
                             <TableCell className="text-xs">
                               <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-secondary" />
+                                <div className="w-2 h-2 rounded-sm bg-secondary" />
                                 <span className="font-semibold">
                                   {displaySymbol}
                                 </span>
@@ -187,7 +187,7 @@ export function BalanceSummaryCard({
                           >
                             <TableCell className="text-xs">
                               <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-accent" />
+                                <div className="w-2 h-2 rounded-sm bg-accent" />
                                 <span className="font-semibold">
                                   {displaySymbol}
                                 </span>
@@ -207,9 +207,9 @@ export function BalanceSummaryCard({
             {/* Mobile Cards */}
             <div className="md:hidden space-y-2">
               {walletBalance.stx && (
-                <div className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/20">
+                <div className="flex items-center justify-between p-3 bg-muted/10 rounded-sm border border-border/20">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <div className="w-2 h-2 rounded-sm bg-primary" />
                     <span className="font-semibold text-foreground text-sm">
                       STX
                     </span>
@@ -233,10 +233,10 @@ export function BalanceSummaryCard({
                     return (
                       <div
                         key={tokenId}
-                        className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/20"
+                        className="flex items-center justify-between p-3 bg-muted/10 rounded-sm border border-border/20"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-secondary" />
+                          <div className="w-2 h-2 rounded-sm bg-secondary" />
                           <span className="font-semibold text-foreground text-sm">
                             {displaySymbol}
                           </span>
@@ -264,10 +264,10 @@ export function BalanceSummaryCard({
                     return (
                       <div
                         key={tokenId}
-                        className="flex items-center justify-between p-3 bg-muted/10 rounded-lg border border-border/20"
+                        className="flex items-center justify-between p-3 bg-muted/10 rounded-sm border border-border/20"
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-accent" />
+                          <div className="w-2 h-2 rounded-sm bg-accent" />
                           <span className="font-semibold text-foreground text-sm">
                             {displaySymbol}
                           </span>

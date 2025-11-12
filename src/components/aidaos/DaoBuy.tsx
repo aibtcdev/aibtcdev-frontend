@@ -107,7 +107,7 @@ export function TokenBuyInput({
                 disabled={disabled || isLoading}
                 className={cn(
                   "h-11 pr-16 py-2.5 px-4 border border-muted text-base placeholder:text-muted-foreground",
-                  "rounded-xl md:rounded-2xl focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+                  "rounded-sm md:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
                 )}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm font-medium text-muted-foreground text-orange-500">
@@ -119,7 +119,7 @@ export function TokenBuyInput({
               type="submit"
               variant="ghost"
               disabled={disabled || isLoading || !amount.trim()}
-              className="h-11 px-4 flex items-center gap-2 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-lg sm:rounded-xl hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+              className="h-11 px-4 flex items-center gap-2 text-sm sm:text-base font-inter font-bold bg-transparent text-primary border border-primary/20 rounded-sm sm:rounded-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
             >
               {isLoading ? (
                 <span className="animate-pulse">Processing…</span>

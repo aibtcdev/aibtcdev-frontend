@@ -106,7 +106,7 @@ export const DAOCard = ({
                   payload[0].value !== undefined
                 ) {
                   return (
-                    <div className="bg-card/95 backdrop-blur-sm text-foreground rounded-xl shadow-lg p-3 text-xs border border-border/50">
+                    <div className="bg-card/95 backdrop-blur-sm text-foreground rounded-sm shadow-lg p-3 text-xs border border-border/50">
                       <p className="font-medium">
                         Price: ${Number(payload[0].value).toFixed(8)}
                       </p>
@@ -152,7 +152,7 @@ export const DAOCard = ({
 
     return (
       <div
-        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md ${
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm ${
           isPositive
             ? "text-success bg-success/10"
             : "text-destructive bg-destructive/10"
@@ -205,7 +205,7 @@ export const DAOCard = ({
                   {/* Logo & Name */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="relative flex-shrink-0">
-                      <div className="h-12 w-12 overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-110 transition-transform duration-300 ring-2 ring-border/30 group-hover:ring-primary/30">
+                      <div className="h-12 w-12 overflow-hidden rounded-sm bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-110 transition-transform duration-300 ring-2 ring-border/30 group-hover:ring-primary/30">
                         <Image
                           src={
                             token?.image_url ||
@@ -229,7 +229,7 @@ export const DAOCard = ({
                           {dao.name}
                         </h3>
                         {isMockDAO && (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full border border-border/50">
+                          <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-sm border border-border/50">
                             Coming Soon
                           </span>
                         )}
@@ -247,7 +247,7 @@ export const DAOCard = ({
                 <div className="flex-1 space-y-4">
                   {/* Price Chart Section - Only show if there's trade data */}
                   {trades.data.length > 0 && (
-                    <div className="bg-muted/20 rounded-lg p-1 border border-border/30">
+                    <div className="bg-muted/20 rounded-sm p-1 border border-border/30">
                       {renderChart(trades)}
                     </div>
                   )}
@@ -258,7 +258,7 @@ export const DAOCard = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="bg-primary/5 rounded-lg p-3 sm:p-4 border border-primary/20 ring-1 ring-primary/10">
+                          <div className="bg-primary/5 rounded-sm p-3 sm:p-4 border border-primary/20 ring-1 ring-primary/10">
                             <p className="text-xs text-muted-foreground mb-1 font-medium">
                               Market Cap
                             </p>
@@ -287,7 +287,7 @@ export const DAOCard = ({
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                          <div className="bg-muted/30 rounded-sm p-3 border border-border/50">
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-xs text-muted-foreground">
                                 Price
@@ -399,7 +399,7 @@ export const DAOListItem = ({
     const Icon = isPositive ? ArrowUpRight : ArrowDownRight;
     return (
       <div
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs ${
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-xs ${
           isPositive
             ? "text-success bg-success/10"
             : "text-destructive bg-destructive/10"
@@ -429,7 +429,7 @@ export const DAOListItem = ({
       {/* DAO Info Column */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="relative flex-shrink-0">
-          <div className="h-10 w-10 overflow-hidden rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+          <div className="h-10 w-10 overflow-hidden rounded-sm bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
             <Image
               src={token?.image_url || dao.image_url || "/placeholder.svg"}
               alt={dao.name}
@@ -449,7 +449,7 @@ export const DAOListItem = ({
               {dao.name}
             </h3>
             {isMockDAO && (
-              <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-full border border-border/50">
+              <span className="px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded-sm border border-border/50">
                 Coming Soon
               </span>
             )}
@@ -566,7 +566,7 @@ export const CompactDAOCard = ({
           <div className="flex items-center gap-4">
             {/* Logo */}
             <div className="relative flex-shrink-0">
-              <div className="h-10 w-10 overflow-hidden rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
+              <div className="h-10 w-10 overflow-hidden rounded-sm bg-gradient-to-br from-primary/20 to-secondary/20 group-hover:scale-105 transition-transform duration-300">
                 <Image
                   src={token?.image_url || dao.image_url || "/placeholder.svg"}
                   alt={dao.name}

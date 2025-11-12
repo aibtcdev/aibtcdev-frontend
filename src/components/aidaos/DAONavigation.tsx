@@ -51,7 +51,7 @@ export function DAONavigation({ daoName, currentPath }: DAONavigationProps) {
           return (
             <Link key={item.href} href={item.href}>
               <div
-                className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all duration-300 ${
+                className={`flex items-center gap-3 px-6 py-3 rounded-sm transition-all duration-300 ${
                   item.isActive
                     ? "bg-primary text-primary-foreground font-semibold shadow-lg scale-105"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/50 hover:scale-105"

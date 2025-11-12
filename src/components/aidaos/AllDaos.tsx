@@ -49,7 +49,7 @@ function SearchAndFilters({
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => onSortChange("market_cap")}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "market_cap"
                   ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20"
                   : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-primary/10 hover:to-primary/5 hover:text-primary border border-border/50 hover:border-primary/30"
@@ -60,7 +60,7 @@ function SearchAndFilters({
             </button>
             <button
               onClick={() => onSortChange("created")}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "created"
                   ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg shadow-secondary/25 ring-2 ring-secondary/20"
                   : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-secondary/10 hover:to-secondary/5 hover:text-secondary border border-border/50 hover:border-secondary/30"
@@ -71,7 +71,7 @@ function SearchAndFilters({
             </button>
             <button
               onClick={() => onSortChange("holders")}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "holders"
                   ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 ring-2 ring-primary/20"
                   : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-primary/10 hover:to-primary/5 hover:text-primary border border-border/50 hover:border-primary/30"
@@ -82,7 +82,7 @@ function SearchAndFilters({
             </button>
             <button
               onClick={() => onSortChange("price_change")}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-sm text-xs font-semibold transition-all duration-300 transform hover:scale-105 ${
                 sortBy === "price_change"
                   ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg shadow-secondary/25 ring-2 ring-secondary/20"
                   : "bg-gradient-to-r from-card to-card/80 text-foreground hover:from-secondary/10 hover:to-secondary/5 hover:text-secondary border border-border/50 hover:border-secondary/30"
@@ -351,7 +351,8 @@ export default function AllDaos() {
   }, [daos, searchQuery, sortBy, tokenPrices, holdersMap, proposalCounts]);
 
   // Check if we should show search and filters (hide when only one real DAO)
-  const shouldShowSearchAndFilters = !enableSingleDaoMode && daos && daos.length > 1;
+  const shouldShowSearchAndFilters =
+    !enableSingleDaoMode && daos && daos.length > 1;
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedDAOs.length / itemsPerPage);
   const paginatedDAOs = filteredAndSortedDAOs.slice(
@@ -438,7 +439,7 @@ export default function AllDaos() {
           {isLoadingDAOs ? (
             <div className="flex min-h-[40vh] items-center justify-center">
               <div className="text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-sm bg-muted/50 flex items-center justify-center mx-auto">
                   <Loader />
                 </div>
                 <div className="space-y-2">
@@ -452,9 +453,9 @@ export default function AllDaos() {
               </div>
             </div>
           ) : filteredAndSortedDAOs.length === 0 ? (
-            <div className="border-dashed border rounded-lg py-12">
+            <div className="border-dashed border rounded-sm py-12">
               <div className="text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-sm bg-muted/50 flex items-center justify-center mx-auto">
                   <Search className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div className="space-y-2">
@@ -480,7 +481,7 @@ export default function AllDaos() {
             </div>
           ) : (
             <>
-              <div className="rounded-xl overflow-hidden bg-gradient-to-br from-card/50 via-card/30 to-card/20 backdrop-blur-md shadow-lg">
+              <div className="rounded-sm overflow-hidden bg-gradient-to-br from-card/50 via-card/30 to-card/20 backdrop-blur-md shadow-lg">
                 <ListHeader />
                 <div className="divide-y divide-border/30">
                   {paginatedDAOs.map((dao) => (
@@ -500,7 +501,7 @@ export default function AllDaos() {
               {/* Pagination - Bottom Right */}
               {filteredAndSortedDAOs.length > itemsPerPage && (
                 <div className="mt-6 flex justify-end">
-                  <div className="bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-md rounded-xl px-4 py-3 shadow-lg">
+                  <div className="bg-gradient-to-r from-card/40 to-card/20 backdrop-blur-md rounded-sm px-4 py-3 shadow-lg">
                     <div className="flex items-center gap-3">
                       {/* Page Info */}
                       <span className="text-xs text-muted-foreground font-medium">
@@ -512,7 +513,7 @@ export default function AllDaos() {
                         <button
                           onClick={() => handlePageChange(currentPage - 1)}
                           disabled={currentPage === 1}
-                          className="p-1.5 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
+                          className="p-1.5 rounded-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
                         >
                           <svg
                             className="w-4 h-4"
@@ -532,7 +533,7 @@ export default function AllDaos() {
                         <button
                           onClick={() => handlePageChange(currentPage + 1)}
                           disabled={currentPage === totalPages}
-                          className="p-1.5 rounded-lg transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
+                          className="p-1.5 rounded-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-primary"
                         >
                           <svg
                             className="w-4 h-4"

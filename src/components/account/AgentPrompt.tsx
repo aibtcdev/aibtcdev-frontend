@@ -314,7 +314,7 @@ export function AgentPromptForm() {
             </div>
           ) : uniqueDaoIds.length === 0 ? (
             <div className="text-center py-8 space-y-4">
-              <div className="w-12 h-12 mx-auto rounded-lg bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto rounded-sm bg-gradient-to-br from-muted/50 to-muted/30 backdrop-blur-sm border border-border/30 flex items-center justify-center">
                 <Settings className="h-6 w-6 text-muted-foreground/60" />
               </div>
               <div className="space-y-2 max-w-sm mx-auto">

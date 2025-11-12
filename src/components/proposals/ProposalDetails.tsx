@@ -57,11 +57,14 @@ const ProposalDetails = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* On-chain Message - Top Priority, Always Open */}
+      {/* Vote Details - Top Priority, Always Visible (showing top 10) */}
+      <VotesSection proposalId={proposal.id} />
+
+      {/* On-chain Message */}
       <MessageSection proposal={proposal} defaultOpen={true} />
 
       {/* Agent Voting and Time Remaining Section - Mobile Responsive */}
-      <div className="rounded-lg  bg-card ">
+      <div className="rounded-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Left: Agent Voting */}
           <div className="flex items-center gap-2">
@@ -79,7 +82,7 @@ const ProposalDetails = ({
 
       {/* Global Vote Data Error - Only show if VotingProgressChart doesn't handle it */}
       {hasVoteDataError && !voteDisplayData && (
-        <div className="flex items-center justify-between p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-destructive/10 border border-destructive/20 rounded-sm">
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
             <div>
@@ -110,9 +113,6 @@ const ProposalDetails = ({
         tokenSymbol={tokenSymbol}
         contractPrincipal={proposal.contract_principal}
       />
-
-      {/* Secondary Content - Progressive Disclosure */}
-      <VotesSection proposalId={proposal.id} defaultOpen={false} />
 
       <VetosSection
         proposalId={proposal.id}

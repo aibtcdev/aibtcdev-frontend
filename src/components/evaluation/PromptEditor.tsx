@@ -46,7 +46,7 @@ const VariableBadge = ({
   displayTitle: string;
 }) => (
   <span
-    className="inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium bg-primary/10 text-primary border border-primary/20 rounded-md variable-badge"
+    className="inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium bg-primary/10 text-primary border border-primary/20 rounded-sm variable-badge"
     data-variable={variableName}
     title={`Variable: {${variableName}}`}
   >
@@ -71,7 +71,7 @@ const DraggableBadge = ({
     <div
       draggable
       onDragStart={handleDragStart}
-      className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium bg-primary/5 text-primary border border-primary/30 rounded-lg hover:bg-primary/10 hover:border-primary/50 cursor-grab active:cursor-grabbing transition-all duration-200 select-none"
+      className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium bg-primary/5 text-primary border border-primary/30 rounded-sm hover:bg-primary/10 hover:border-primary/50 cursor-grab active:cursor-grabbing transition-all duration-200 select-none"
       title={`Drag to add {${variableName}} to your prompt`}
     >
       <Plus className="h-3 w-3" />
@@ -91,7 +91,7 @@ const VariablePalette = () => (
         Drag & drop into prompts
       </div>
     </div>
-    <div className="flex flex-wrap gap-2 p-3 bg-muted/10 border border-muted/20 rounded-lg">
+    <div className="flex flex-wrap gap-2 p-3 bg-muted/10 border border-muted/20 rounded-sm">
       {AVAILABLE_VARIABLES.map((variable) => (
         <DraggableBadge
           key={variable}
@@ -186,7 +186,7 @@ const VariableEditor = ({
           } else {
             const span = document.createElement("span");
             span.className =
-              "inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium bg-primary/10 text-primary border border-primary/20 rounded-md variable-badge";
+              "inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium bg-primary/10 text-primary border border-primary/20 rounded-sm variable-badge";
             span.textContent = part.props.displayTitle;
             span.setAttribute("data-variable", part.props.variableName);
             span.setAttribute(
@@ -321,7 +321,7 @@ export default function PromptEditor({
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted/30 transition-colors duration-200"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground border border-border rounded-sm hover:bg-muted/30 transition-colors duration-200"
             disabled={isSubmitting}
           >
             <RotateCcw className="h-3 w-3" />
@@ -331,7 +331,7 @@ export default function PromptEditor({
       </div>
 
       {promptsLoading && (
-        <div className="bg-muted/20 border border-muted/30 rounded-lg p-4 flex items-center gap-3">
+        <div className="bg-muted/20 border border-muted/30 rounded-sm p-4 flex items-center gap-3">
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
             Loading default prompts...
@@ -340,7 +340,7 @@ export default function PromptEditor({
       )}
 
       {promptsError && (
-        <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 flex items-start gap-3">
+        <div className="bg-warning/10 border border-warning/20 rounded-sm p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
           <div>
             <h3 className="font-medium text-warning mb-1">
@@ -378,7 +378,7 @@ export default function PromptEditor({
             onChange={setSystemPrompt}
             placeholder="You are a comprehensive DAO governance evaluator with expertise across multiple domains..."
             disabled={isSubmitting}
-            className="w-full p-4 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-y font-mono"
+            className="w-full p-4 text-sm bg-background border border-border rounded-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-y font-mono"
             minHeight="min-h-[200px]"
           />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
@@ -407,7 +407,7 @@ export default function PromptEditor({
             onChange={setUserPrompt}
             placeholder="Please conduct a comprehensive evaluation of the following proposal..."
             disabled={isSubmitting}
-            className="w-full p-4 text-sm bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-y font-mono"
+            className="w-full p-4 text-sm bg-background border border-border rounded-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 resize-y font-mono"
             minHeight="min-h-[250px]"
           />
           <div className="flex justify-between items-center text-xs text-muted-foreground">
@@ -417,7 +417,7 @@ export default function PromptEditor({
 
         {/* Submission Error */}
         {submitError && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-sm p-4 flex items-start gap-3">
             <X className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-destructive mb-1">
@@ -433,11 +433,11 @@ export default function PromptEditor({
           <button
             type="submit"
             disabled={!isFormValid || isSubmitting}
-            className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary min-w-[200px] justify-center"
+            className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary rounded-sm hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary min-w-[200px] justify-center"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                <div className="animate-spin rounded-sm h-4 w-4 border-2 border-white border-t-transparent" />
                 Evaluating...
               </>
             ) : (

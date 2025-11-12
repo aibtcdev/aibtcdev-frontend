@@ -47,7 +47,7 @@ function MetricCard({
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-background/50 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-sm bg-background/50 flex items-center justify-center flex-shrink-0">
             {icon}
           </div>
           <div className="min-w-0 flex-1">

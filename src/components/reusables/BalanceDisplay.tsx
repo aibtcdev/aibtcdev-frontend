@@ -75,7 +75,7 @@ export function BalanceDisplay({
               {showSymbol && symbol ? ` ${symbol}` : ""}
             </span>
           </TooltipTrigger>
-          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-lg shadow-lg">
+          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-sm shadow-lg">
             <p className="font-space-mono">{fullDisplay}</p>
           </TooltipContent>
         </Tooltip>
@@ -98,7 +98,7 @@ export function BalanceDisplay({
               {showSymbol && symbol ? ` ${symbol}` : ""}
             </span>
           </TooltipTrigger>
-          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-lg shadow-lg">
+          <TooltipContent className="px-3 py-2 text-xs font-inter bg-background border border-border/20 rounded-sm shadow-lg">
             <p className="font-space-mono">{fullDisplay}</p>
           </TooltipContent>
         </Tooltip>

@@ -83,57 +83,19 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
     ? balances[stacksAddress]
     : undefined;
 
-  const getAllBalances = (balance?: WalletBalance) => {
+  const getSBTCBalance = (balance?: WalletBalance) => {
     if (!balance) return undefined;
 
     const metadata: Record<string, string> = {};
 
-    if (balance.stx?.balance) {
-      metadata["STX"] = `${formatBalance(balance.stx.balance, "stx")} STX`;
-    }
-
+    // Only show sBTC balance with Bitcoin symbol
     if (balance.fungible_tokens) {
       Object.entries(balance.fungible_tokens).forEach(
         ([tokenId, tokenData]) => {
-          // Extract clean token name - handle different formats
-          let tokenName = tokenId;
-          let tokenSymbol = tokenId;
-
-          // If it contains "::", split by that first
-          if (tokenId.includes("::")) {
-            tokenName = tokenId.split("::")[1] || tokenId;
-          } else if (tokenId.includes(".")) {
-            // Otherwise split by "." and take the last part
-            tokenName = tokenId.split(".").pop() || tokenId;
+          // Check if this is sBTC
+          if (tokenId.includes("sbtc-token")) {
+            metadata["sBTC"] = `${formatBalance(tokenData.balance, "btc")}`;
           }
-
-          // Map specific tokens to their proper names and symbols
-          if (tokenName === "sbtc-token") {
-            tokenName = "sBTC";
-            tokenSymbol = "sBTC";
-          } else if (tokenName.includes("faktory")) {
-            // Handle faktory tokens - extract the speed part
-            const speedMatch = tokenName.match(/(fast|slow)\d+/);
-            if (speedMatch) {
-              tokenName = speedMatch[0].toUpperCase();
-              tokenSymbol = speedMatch[0].toUpperCase();
-            }
-          } else {
-            // For other tokens, use the extracted name as both name and symbol
-            tokenSymbol = tokenName.toUpperCase();
-          }
-
-          metadata[tokenName] =
-            `${formatBalance(tokenData.balance, "token")} ${tokenSymbol}`;
-        }
-      );
-    }
-
-    if (balance.non_fungible_tokens) {
-      Object.entries(balance.non_fungible_tokens).forEach(
-        ([nftId, nftData]) => {
-          const nftName = nftId.split(".").pop() || nftId;
-          metadata[nftName] = `${nftData.count} NFTs`;
         }
       );
     }
@@ -316,7 +278,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
               : "testnet"
           }
           helpText="Connected wallet through the browser"
-          metadata={getAllBalances(connectedWalletBalance)}
+          metadata={getSBTCBalance(connectedWalletBalance)}
         />
 
         {/* All Assets Modal */}
@@ -334,7 +296,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                 </DialogHeader>
                 <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-2">
                   {/* STX Balance */}
-                  <div className="border rounded-lg p-4">
+                  <div className="border rounded-sm p-4">
                     <h4 className="font-medium mb-2">STX</h4>
                     <p className="text-sm text-muted-foreground">
                       Balance:{" "}
@@ -370,16 +332,16 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                       // Handle faktory tokens - extract the speed part
                       const speedMatch = tokenName.match(/(fast|slow)\d+/);
                       if (speedMatch) {
-                        tokenName = speedMatch[0].toUpperCase();
-                        tokenSymbol = speedMatch[0].toUpperCase();
+                        tokenName = speedMatch[0];
+                        tokenSymbol = speedMatch[0];
                       }
                     } else {
                       // For other tokens, use the extracted name as both name and symbol
-                      tokenSymbol = tokenName.toUpperCase();
+                      tokenSymbol = tokenName;
                     }
 
                     return (
-                      <div key={tokenId} className="border rounded-lg p-4">
+                      <div key={tokenId} className="border rounded-sm p-4">
                         <h4 className="font-medium mb-2">{tokenName}</h4>
                         <p className="text-sm text-muted-foreground">
                           Balance:{" "}
@@ -397,7 +359,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                   {Object.entries(
                     connectedWalletBalance.non_fungible_tokens || {}
                   ).map(([nftId, nftData]) => (
-                    <div key={nftId} className="border rounded-lg p-4">
+                    <div key={nftId} className="border rounded-sm p-4">
                       <h4 className="font-medium mb-2">{nftId}</h4>
                       <p className="text-sm text-muted-foreground">
                         Count: {(nftData as { count: number }).count} NFTs

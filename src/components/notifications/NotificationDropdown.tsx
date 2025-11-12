@@ -63,7 +63,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       ref={dropdownRef}
       className={cn(
         "fixed top-16 right-4 w-80 max-w-sm z-[99999]",
-        "bg-background/95 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl",
+        "bg-background/95 backdrop-blur-lg border border-border/20 rounded-sm shadow-2xl",
         "animate-in slide-in-from-top-2 duration-200"
       )}
       style={{ zIndex: 99999 }}
@@ -95,14 +95,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               return (
                 <div
                   key={notification.id}
-                  className="group relative p-3 rounded-lg hover:bg-primary/5 transition-colors duration-200"
+                  className="group relative p-3 rounded-sm hover:bg-primary/5 transition-colors duration-200"
                 >
                   <div className="flex items-start gap-3">
                     {/* Icon */}
                     <div className="flex-shrink-0 mt-0.5">
                       <div
                         className={cn(
-                          "h-8 w-8 rounded-full flex items-center justify-center",
+                          "h-8 w-8 rounded-sm flex items-center justify-center",
                           notification.type === "asset-deposit" &&
                             "bg-yellow-500/20",
                           notification.type === "custom-instructions" &&
@@ -128,7 +128,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                             )}
                           />
                         ) : (
-                          <div className="h-2 w-2 bg-primary rounded-full" />
+                          <div className="h-2 w-2 bg-primary rounded-sm" />
                         )}
                       </div>
                     </div>
@@ -166,7 +166,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
                   {/* Priority Indicator */}
                   {notification.priority === "high" && (
-                    <div className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                    <div className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-sm animate-pulse" />
                   )}
                 </div>
               );

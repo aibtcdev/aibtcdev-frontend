@@ -41,7 +41,7 @@ const ProposalMetrics = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors p-4 rounded-lg cursor-pointer border border-zinc-700/50">
+              <div className="bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors p-4 rounded-sm cursor-pointer border border-zinc-700/50">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs uppercase tracking-wide text-zinc-400 font-medium">
@@ -80,7 +80,7 @@ const ProposalMetrics = ({
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "p-4 rounded-lg cursor-pointer border transition-colors",
+                  "p-4 rounded-sm cursor-pointer border transition-colors",
                   isActive || isNotStartedYet
                     ? "bg-orange-500/10 border-orange-500/30"
                     : proposal.met_quorum
@@ -141,7 +141,7 @@ const ProposalMetrics = ({
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "p-4 rounded-lg cursor-pointer border transition-colors",
+                  "p-4 rounded-sm cursor-pointer border transition-colors",
                   isActive || isNotStartedYet
                     ? "bg-orange-500/10 border-orange-500/30"
                     : proposal.met_threshold
@@ -203,7 +203,7 @@ const ProposalMetrics = ({
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "p-4 rounded-lg cursor-pointer border transition-colors",
+                  "p-4 rounded-sm cursor-pointer border transition-colors",
                   isActive || isNotStartedYet
                     ? "bg-orange-500/10 border-orange-500/30"
                     : isFailed

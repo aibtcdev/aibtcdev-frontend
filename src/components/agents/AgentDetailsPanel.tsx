@@ -49,7 +49,7 @@ export function AgentDetailsPanel({ agent }: AgentDetailsPanelProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           {agent.is_archived && (
-            <div className="px-3 py-1 rounded-full bg-zinc-800/40 text-zinc-400 text-xs font-medium">
+            <div className="px-3 py-1 rounded-sm bg-zinc-800/40 text-zinc-400 text-xs font-medium">
               Archived
             </div>
           )}
@@ -70,7 +70,7 @@ export function AgentDetailsPanel({ agent }: AgentDetailsPanelProps) {
             <div className="sm:sticky sm:top-8">
               <div
                 className={cn(
-                  "w-40 h-40 sm:w-full sm:h-auto sm:aspect-square mx-auto overflow-hidden rounded-2xl border border-zinc-800/40 bg-zinc-900/50 relative",
+                  "w-40 h-40 sm:w-full sm:h-auto sm:aspect-square mx-auto overflow-hidden rounded-sm border border-zinc-800/40 bg-zinc-900/50 relative",
                   agent.is_archived && "grayscale"
                 )}
                 style={{
@@ -98,7 +98,7 @@ export function AgentDetailsPanel({ agent }: AgentDetailsPanelProps) {
 
               {/* Wallet Information */}
               {!agent.is_archived && agentWallet && (
-                <div className="mt-6 p-4 rounded-xl bg-zinc-800/40 text-sm">
+                <div className="mt-6 p-4 rounded-sm bg-zinc-800/40 text-sm">
                   <h3 className="font-medium text-zinc-300 mb-3">Wallet</h3>
                   {walletAddress ? (
                     <>
@@ -203,7 +203,7 @@ export function AgentDetailsPanel({ agent }: AgentDetailsPanelProps) {
                   {agent.agent_tools?.map((tool) => (
                     <div
                       key={tool}
-                      className="rounded-full bg-zinc-800/40 px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium text-zinc-300"
+                      className="rounded-sm bg-zinc-800/40 px-3 sm:px-4 py-1 text-xs sm:text-sm font-medium text-zinc-300"
                     >
                       {tool}
                     </div>

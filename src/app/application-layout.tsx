@@ -4,16 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  Menu,
-  X,
-  Vote,
-  ChevronDown,
-  LogOut,
-  User,
-  Bot,
-  History,
-} from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, User, Settings } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +21,15 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { Footer } from "@/components/reusables/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { useProtectedRoute } from "@/hooks/useProtectedRoute";
+// import { useXStatus } from "@/hooks/useXStatus";
 // import { ThemeToggle } from "@/components/reusables/ThemeToggle";
-import DisplayAgentAddress from "@/components/reusables/DisplayAgentAddress";
+import DisplayUserProfile from "@/components/reusables/DisplayUserProfile";
 import {
   NotificationProvider,
-  NotificationBell,
+  // NotificationBell, // Commented out per requirements
 } from "@/components/notifications";
 import { DepositNotificationBanner } from "@/components/notifications/DepositNotificationBanner";
+import { WavyBackground } from "@/components/ui/WavyBackground";
 
 interface ApplicationLayoutProps {
   children: React.ReactNode;
@@ -56,10 +49,21 @@ export default function ApplicationLayout({
   const { isAuthenticated, signOut } = useAuth();
   const { showAuthModal, closeAuthModal, openAuthModal } = useProtectedRoute();
 
+  // Import useXStatus to check if user needs X linking
+  // const { needsXLink } = useXStatus();
+
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
   };
+
+  // Handle X linking
+  // const handleXLinkClick = async () => {
+  //   if (needsXLink) {
+  //     const { linkXAccount } = await import("@/services/x-auth.service");
+  //     await linkXAccount();
+  //   }
+  // };
 
   // Handle navigation to protected routes
   const handleNavigation = async (href: string, e: React.MouseEvent) => {
@@ -87,14 +91,17 @@ export default function ApplicationLayout({
 
   return (
     <NotificationProvider>
-      <div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-background/95">
+      <div className="flex flex-col h-screen bg-background relative">
+        {/* Wavy Background */}
+        <WavyBackground />
+
         {/* Mobile Header */}
-        <div className="md:hidden h-14 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl border-b border-border/20 shadow-lg relative z-30">
+        <div className="md:hidden h-16 px-4 flex items-center justify-between bg-card/30 backdrop-blur-xl shadow-lg relative z-30">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-            className="text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105 rounded-xl h-10 w-10 p-0 transition-all duration-300 ease-in-out flex-shrink-0"
+            className="text-muted-foreground hover:text-foreground hover:bg-primary/10 hover:scale-105 rounded-sm h-10 w-10 p-0 transition-all duration-300 ease-in-out flex-shrink-0"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -102,37 +109,44 @@ export default function ApplicationLayout({
           {/* Mobile Logo - Centered */}
           <div className="flex-1 flex justify-center">
             <Link href="/aidaos" className="flex items-center gap-2">
-              <Image
+              {/* Avatar logo - commented out per requirements */}
+              {/* <Image
                 src="/logos/aibtcdev-avatar-1000px.png"
                 alt="AIBTCDEV"
                 width={28}
                 height={28}
                 className="flex-shrink-0 shadow-lg shadow-primary/20"
-              />
-              <Image
-                src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
-                alt="AIBTCDEV"
-                width={80}
-                height={20}
-                className="h-4 w-auto flex-shrink-0 block dark:hidden"
-              />
-              <Image
-                src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-                alt="AIBTCDEV"
-                width={80}
-                height={20}
-                className="h-4 w-auto flex-shrink-0 hidden dark:block"
-              />
+              /> */}
+              <div className="flex flex-col items-center">
+                <Image
+                  src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                  alt="AIBTCDEV"
+                  width={100}
+                  height={24}
+                  className="h-6 w-auto flex-shrink-0 block dark:hidden"
+                />
+                <Image
+                  src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+                  alt="AIBTCDEV"
+                  width={100}
+                  height={24}
+                  className="h-6 w-auto flex-shrink-0 hidden dark:block"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 whitespace-nowrap">
+                  The Bitcoin Coordination Network
+                </span>
+              </div>
             </Link>
           </div>
 
           {/* Mobile User Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {isAuthenticated && (
+            {/* Notification Bell - commented out per requirements */}
+            {/* {isAuthenticated && (
               <div className="mr-2">
                 <NotificationBell />
               </div>
-            )}
+            )} */}
             {isAuthenticated ? (
               <DropdownMenu
                 open={isMobileMenuOpen}
@@ -142,10 +156,10 @@ export default function ApplicationLayout({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-transparent rounded-lg"
+                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary bg-transparent rounded-sm"
                   >
                     {/* Mobile: Show only icon */}
-                    <div className="w-6 h-6 rounded-full border border-white flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-sm border border-white flex items-center justify-center">
                       <User className="w-3.5 h-3.5" />
                     </div>
                     <ChevronDown className="h-3 w-3 text-primary/70" />
@@ -153,7 +167,7 @@ export default function ApplicationLayout({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="center"
-                  className="w-56 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
+                  className="w-56 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-sm shadow-2xl"
                 >
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
@@ -161,52 +175,13 @@ export default function ApplicationLayout({
                       handleNavigation("/account?tab=wallets", e);
                       setMobileMenuOpen(false);
                     }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-sm hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                   >
                     <User className="h-4 w-4" />
                     <span className="group-hover:text-white">Wallets</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=agent-settings", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Bot className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Agent Settings
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=earning-history", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <History className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Earning History
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/votes", e);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Vote className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Voting History
-                    </span>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
-                  <div className="px-3 py-2 border-y border-border/20">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Network Status
-                    </div>
+                  <div className="px-3 py-2">
                     <div className="mt-1">
                       <NetworkIndicator />
                     </div>
@@ -217,7 +192,7 @@ export default function ApplicationLayout({
                       handleSignOut();
                       setMobileMenuOpen(false);
                     }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
+                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-sm hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
                     <span className="group-hover:text-white">Sign out</span>
@@ -232,10 +207,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Desktop Header - Hidden on mobile */}
-        <div className="hidden md:grid grid-cols-3 h-16 items-center px-4 lg:px-6 bg-card/20 backdrop-blur-2xl border-b border-border/20 shadow-lg relative overflow-hidden">
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
-
+        <div className="hidden md:grid grid-cols-3 h-24 items-center px-8 lg:px-16 bg-card/20 backdrop-blur-2xl shadow-lg relative overflow-hidden">
           {/* Left Section - Logo */}
           <div className="flex items-center gap-2 lg:gap-3 relative z-10 justify-start">
             <Link
@@ -243,7 +215,8 @@ export default function ApplicationLayout({
               className="flex items-center gap-2 lg:gap-3 group"
             >
               <div className="flex items-center gap-2 lg:gap-3 transition-all duration-300 ease-in-out group-hover:scale-105">
-                <div className="relative">
+                {/* Avatar logo - commented out per requirements */}
+                {/* <div className="relative">
                   <Image
                     src="/logos/aibtcdev-avatar-1000px.png"
                     alt="AIBTCDEV"
@@ -252,37 +225,54 @@ export default function ApplicationLayout({
                     className="lg:w-8 lg:h-8 shadow-lg shadow-primary/20 transition-all duration-300 group-hover:shadow-xl group-hover:shadow-primary/40"
                   />
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div> */}
+                <div className="flex flex-col gap-1">
+                  <Image
+                    src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                    alt="AIBTCDEV"
+                    width={120}
+                    height={28}
+                    className="h-7 transition-all duration-300 group-hover:brightness-110 block dark:hidden"
+                  />
+                  <Image
+                    src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+                    alt="AIBTCDEV"
+                    width={120}
+                    height={28}
+                    className="h-10 w-auto  transition-all duration-300 group-hover:brightness-110 hidden dark:block"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    The Bitcoin Coordination Network
+                  </span>
                 </div>
-                <Image
-                  src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
-                  alt="AIBTCDEV"
-                  width={90}
-                  height={20}
-                  className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 block dark:hidden"
-                />
-                <Image
-                  src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
-                  alt="AIBTCDEV"
-                  width={90}
-                  height={20}
-                  className="h-5 w-auto transition-all duration-300 group-hover:brightness-110 hidden dark:block"
-                />
               </div>
             </Link>
           </div>
 
-          {/* Center Section - Empty since navigation moved to dropdown */}
-          <div className="flex justify-center relative z-10">
-            {/* Navigation items now in dropdown menu */}
-          </div>
+          {/* Center Section - Empty */}
+          <div className="flex justify-center items-center gap-6 relative z-10"></div>
 
-          {/* Right Section - BTC Balance Dropdown & Auth Button */}
-          <div className="flex items-center gap-2 relative z-10 justify-end">
-            {isAuthenticated && (
+          {/* Right Section - Navigation Links, BTC Balance Dropdown & Auth Button */}
+          <div className="flex items-center gap-6 relative z-10 justify-end">
+            <a
+              href="https://docs.aibtc.com/how-aibtc-works"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+              target="_blank"
+            >
+              How it works
+            </a>
+            <Link
+              href="/aibtc-charter"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+            >
+              AIBTC Charter
+            </Link>
+            {/* Notification Bell - commented out per requirements */}
+            {/* {isAuthenticated && (
               <div className="mr-3">
                 <NotificationBell />
               </div>
-            )}
+            )} */}
             {/* BTC Balance Dropdown (Only shown when user is authenticated) */}
             {isAuthenticated ? (
               <DropdownMenu
@@ -292,81 +282,40 @@ export default function ApplicationLayout({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-bold bg-transparent hover:bg-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-inter font-bold bg-transparent hover:bg-primary rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300 ease-in-out motion-reduce:transition-none backdrop-blur-sm shadow-md"
                     aria-label="Bitcoin balance dropdown menu"
                   >
                     {/* <DisplayBtc /> */}
-                    <DisplayAgentAddress />
+                    <DisplayUserProfile />
                     <ChevronDown className="h-3 w-3 transition-transform duration-200 ease-in-out" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="center"
-                  className="w-64 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-xl shadow-2xl"
+                  className="w-64 p-2 bg-background/80 backdrop-blur-lg border border-border/20 rounded-sm shadow-2xl"
                 >
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     onClick={(e) => {
-                      handleNavigation("/account?tab=wallets", e);
+                      handleNavigation("/account?tab=settings", e);
                       setDesktopMenuOpen(false);
                     }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
+                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-sm hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                   >
-                    <User className="h-4 w-4" />
-                    <span className="group-hover:text-white">Wallets</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=agent-settings", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Bot className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Agent Settings
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/account?tab=earning-history", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <History className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Earning History
-                    </span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      handleNavigation("/votes", e);
-                      setDesktopMenuOpen(false);
-                    }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
-                  >
-                    <Vote className="h-4 w-4" />
-                    <span className="group-hover:text-white">
-                      Voting History
-                    </span>
+                    <Settings className="h-4 w-4" />
+                    <span className="group-hover:text-white">Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
-                  <div className="px-3 py-2 border-y border-border/20">
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Network Status
-                    </div>
-                    <div className="mt-1">
-                      <NetworkIndicator />
-                    </div>
-                  </div>
+
+                  <NetworkIndicator />
+
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     onClick={() => {
                       handleSignOut();
                       setDesktopMenuOpen(false);
                     }}
-                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-lg hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
+                    className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive rounded-sm hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive transition-colors duration-200 ease-in-out cursor-pointer"
                   >
                     <LogOut className="h-4 w-4" />
                     <span className="group-hover:text-white">Sign out</span>
@@ -383,7 +332,7 @@ export default function ApplicationLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden">
+        <div className="flex-1 flex min-w-0 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-6rem)] overflow-hidden">
           {/* Mobile Sidebar */}
           <aside
             className={cn(
@@ -394,8 +343,6 @@ export default function ApplicationLayout({
             )}
           >
             <div className="flex flex-col h-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
-
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-4 border-b border-border/20 relative z-10">
                 <div className="flex items-center gap-3">
@@ -414,7 +361,7 @@ export default function ApplicationLayout({
                   variant="ghost"
                   size="icon"
                   onClick={() => setLeftPanelOpen(false)}
-                  className="text-muted-foreground h-10 w-10 hover:bg-primary/10 hover:text-primary hover:scale-110 rounded-xl transition-all duration-300"
+                  className="text-muted-foreground h-10 w-10 hover:bg-primary/10 hover:text-primary hover:scale-110 rounded-sm transition-all duration-300"
                 >
                   <X className="h-5 w-5" />
                 </Button>

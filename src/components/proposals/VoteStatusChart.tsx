@@ -90,7 +90,7 @@ const VoteStatusChart = ({
           className="text-xs"
         >
           {localRefreshing ? (
-            <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+            <div className="animate-spin rounded-sm h-3 w-3 border-b border-current mr-1" />
           ) : (
             <RefreshCw className="h-3 w-3 mr-1" />
           )}
@@ -117,7 +117,7 @@ const VoteStatusChart = ({
     <div className="space-y-2">
       {/* Vote Progress Bar */}
       <div className="relative">
-        <div className="h-3 sm:h-4 bg-muted rounded-full overflow-hidden relative">
+        <div className="h-3 sm:h-4 bg-muted rounded-sm overflow-hidden relative">
           {/* Votes for (green) */}
           <div
             className="absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out rounded-l-full"
@@ -139,39 +139,55 @@ const VoteStatusChart = ({
       {/* Vote Counts */}
       <div className="flex justify-between items-center text-xs sm:text-sm">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
-          <span className="text-muted-foreground">For:</span>
+          <span className="text-green-500 font-extrabold">For:</span>
           <TokenBalance
             value={voteDisplayData.rawVotesFor}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium"
+            className="font-medium hidden sm:inline"
+          />
+          <TokenBalance
+            value={voteDisplayData.rawVotesFor}
+            decimals={8}
+            variant="abbreviated"
+            className="font-medium sm:hidden"
           />
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-muted-foreground">Against:</span>
+          <span className="text-red-500 font-extrabold">Against:</span>
           <TokenBalance
             value={voteDisplayData.rawVotesAgainst}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium"
+            className="font-medium hidden sm:inline"
           />
-          <div className="w-2 h-2 bg-red-500 rounded-full" />
+          <TokenBalance
+            value={voteDisplayData.rawVotesAgainst}
+            decimals={8}
+            variant="abbreviated"
+            className="font-medium sm:hidden"
+          />
         </div>
 
         {/* Liquid Tokens - Right */}
         {liquidTokens && Number(liquidTokens) > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Liquid:</span>
+            <span className="text-muted-foreground">Liquid Token:</span>
             <TokenBalance
               value={liquidTokens}
               decimals={8}
               variant="abbreviated"
               symbol={tokenSymbol}
-              className="font-medium"
+              className="font-medium hidden sm:inline"
+            />
+            <TokenBalance
+              value={liquidTokens}
+              decimals={8}
+              variant="abbreviated"
+              className="font-medium sm:hidden"
             />
           </div>
         )}

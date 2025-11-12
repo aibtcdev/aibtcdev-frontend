@@ -31,7 +31,7 @@ export default function Home() {
         priority
         className="absolute inset-0 z-0 opacity-80"
       />
-      <div className="relative z-10 w-full max-w-md space-y-6 p-6 sm:p-8 bg-zinc-800/90 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-2xl border border-zinc-700">
+      <div className="relative z-10 w-full max-w-md space-y-6 p-6 sm:p-8 bg-zinc-800/90 backdrop-blur-md rounded-sm sm:rounded-sm shadow-2xl border border-zinc-700">
         {/* Logo Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -41,7 +41,7 @@ export default function Home() {
               height={48}
               width={48}
               priority
-              className="rounded-full shadow-lg"
+              className="rounded-sm shadow-lg"
             />
             <Image
               alt="AIBTC.DEV"
