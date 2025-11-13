@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { singleDaoName } from "@/config/features";
 
 export const updateSession = async (request: NextRequest) => {
   try {
