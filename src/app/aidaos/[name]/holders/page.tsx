@@ -18,7 +18,7 @@ export default function HoldersPage() {
   const decodedName = decodeURIComponent(encodedName);
   // console.log(decodedName);
 
-  // First, fetch the DAO by name to get its ID
+  // First, fetch by name to get its ID
   const { data: dao, isLoading: isLoadingDAO } = useQuery({
     queryKey: ["dao", decodedName],
     queryFn: () => fetchDAOByName(decodedName),
@@ -63,10 +63,9 @@ export default function HoldersPage() {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-white">DAO Not Found</h2>
+          <h2 className="text-2xl font-semibold text-white">Not Found</h2>
           <p className="text-zinc-400">
-            Could not find a DAO with the name &apos;
-            {decodeURIComponent(encodedName)}&apos;
+            Could not find &apos;{decodeURIComponent(encodedName)}&apos;
           </p>
         </div>
       </div>

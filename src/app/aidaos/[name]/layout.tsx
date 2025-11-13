@@ -25,12 +25,12 @@ export async function generateMetadata({
 
   if (!dao) {
     return {
-      title: "DAO Not Found",
-      description: "The requested DAO could not be found.",
+      title: "Not Found",
+      description: "The requested item could not be found.",
     };
   }
 
-  // Now fetch the token using the DAO ID
+  // Now fetch the token using the ID
   // const { data: token } = await supabase
   //   .from("tokens")
   //   .select("image_url")
@@ -79,7 +79,7 @@ export async function generateMetadata({
       index: true,
       follow: true,
     },
-    keywords: [dao.name, "DAO", "Blockchain", "Governance", "Token"],
+    keywords: [dao.name, "Blockchain", "Governance", "Token"],
   };
 }
 

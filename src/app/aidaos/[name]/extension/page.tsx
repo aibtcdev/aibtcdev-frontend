@@ -43,7 +43,7 @@ export default function ExtensionsPage() {
   if (!extensions || extensions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-zinc-400">No extensions found for this DAO.</p>
+        <p className="text-zinc-400">No extensions found.</p>
       </div>
     );
   }

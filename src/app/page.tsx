@@ -1,7 +1,7 @@
 "use client";
 
-// Root page now shows the aibtc-brw DAO page directly
-// The landing page has been replaced with the DAO view
+// Root page now shows the aibtc-brw page directly
+// The landing page has been replaced with the main view
 import { Suspense } from "react";
 import { Loader } from "@/components/reusables/Loader";
 import DAOProposals from "@/components/proposals/DAOProposals";
@@ -56,10 +56,8 @@ function PageContent() {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-white">DAO Not Found</h2>
-          <p className="text-zinc-400">
-            Could not find the {singleDaoName} DAO
-          </p>
+          <h2 className="text-2xl font-semibold text-white">Not Found</h2>
+          <p className="text-zinc-400">Could not find {singleDaoName}</p>
         </div>
       </div>
     );

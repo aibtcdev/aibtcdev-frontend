@@ -380,12 +380,12 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
           <Building2 className="h-12 w-12 text-muted-foreground/50" />
           <div>
             <h1 className="text-xl font-semibold text-foreground">
-              {isBasicLoading ? "Loading DAO..." : "DAO Not Found"}
+              {isBasicLoading ? "Loading..." : "Not Found"}
             </h1>
             <p className="max-w-md text-muted-foreground">
               {isBasicLoading
-                ? "Please wait while we fetch the DAO details."
-                : "The DAO you're looking for doesn't exist or has been removed."}
+                ? "Please wait while we fetch the details."
+                : "The item you're looking for doesn't exist or has been removed."}
             </p>
           </div>
           {isBasicLoading && <Loader />}
