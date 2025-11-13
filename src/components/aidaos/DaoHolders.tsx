@@ -120,7 +120,6 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
     return (
       <div key={sectionKey} className="mb-8">
         <div className="mb-4 flex items-center gap-3">
-          <span className="text-2xl">{sectionInfo.icon}</span>
           <div>
             <h3 className="text-lg font-semibold text-white">
               {sectionInfo.title}
@@ -393,12 +392,12 @@ export default function DAOHolders({ holders, tokenSymbol }: DAOHoldersProps) {
 
   return (
     <DAOTabLayout
-      title="Token Holders"
-      description="View token distribution organized by holder type"
-      icon={Users}
+      // title="Token Holders"
+      // description="View token distribution organized by holder type"
+      // icon={Users}
       isEmpty={holders.length === 0}
       emptyTitle="No Holders Found"
-      emptyDescription="No token holders found for this DAO."
+      // emptyDescription="No token holders found for this DAO."
       emptyIcon={Users}
     >
       <div className="space-y-6">

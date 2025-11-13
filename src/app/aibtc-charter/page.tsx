@@ -4,13 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { MissionContent } from "@/components/aidaos/MissionContent";
 import { fetchDAOByName } from "@/services/dao.service";
 import { Loader } from "@/components/reusables/Loader";
+import { singleDaoName } from "@/config/features";
 
 export const runtime = "edge";
 
 export default function AIBTCCharterPage() {
   const { data: dao, isLoading } = useQuery({
-    queryKey: ["dao", "AIBTC-BREW"],
-    queryFn: () => fetchDAOByName("AIBTC-BREW"),
+    queryKey: ["dao", singleDaoName],
+    queryFn: () => fetchDAOByName(singleDaoName),
   });
 
   if (isLoading) {
@@ -32,7 +33,7 @@ export default function AIBTCCharterPage() {
             Charter Not Found
           </h2>
           <p className="text-zinc-400">
-            Could not find the AIBTC Brew charter information.
+            Could not find the {singleDaoName} charter information.
           </p>
         </div>
       </div>
