@@ -56,12 +56,12 @@ export default function DAOExtensions({ extensions }: DAOExtensionsProps) {
 
   return (
     <DAOTabLayout
-      title="Extensions"
-      description="Manage and monitor your DAO's active extensions and capabilities"
-      icon={Puzzle}
+      // title="Extensions"
+      // description="Manage and monitor your DAO's active extensions and capabilities"
+      // icon={Puzzle}
       isEmpty={extensions.length === 0}
       emptyTitle="No Extensions Found"
-      emptyDescription="This DAO has no active extensions."
+      // emptyDescription="This DAO has no active extensions."
       emptyIcon={Puzzle}
     >
       {isMobile ? (

@@ -1,21 +1,20 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import DAOExtensions from "@/components/aidaos/DaoExtensions";
 import { fetchDAOByName, fetchDAOExtensions } from "@/services/dao.service";
 import { Loader } from "@/components/reusables/Loader";
+import { singleDaoName } from "@/config/features";
 
 export const runtime = "edge";
 
 export default function ExtensionsPage() {
-  const params = useParams();
-  const encodedName = params.name as string;
+  const daoName = singleDaoName;
 
   // Fetch DAO to get its ID
   const { data: dao, isLoading: loadingDao } = useQuery({
-    queryKey: ["dao", encodedName],
-    queryFn: () => fetchDAOByName(encodedName),
+    queryKey: ["dao", daoName],
+    queryFn: () => fetchDAOByName(daoName),
   });
   const daoId = dao?.id;
 
@@ -48,5 +47,9 @@ export default function ExtensionsPage() {
     );
   }
 
-  return <DAOExtensions extensions={extensions} />;
+  return (
+    <div className="w-full px-16">
+      <DAOExtensions extensions={extensions} />
+    </div>
+  );
 }

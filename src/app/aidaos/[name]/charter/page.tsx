@@ -22,7 +22,7 @@ export default function CharterDAOPage() {
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
           <Loader />
-          <p className="text-zinc-400">Loading DAO information...</p>
+          <p className="text-zinc-400">Loading information...</p>
         </div>
       </div>
     );
@@ -32,10 +32,9 @@ export default function CharterDAOPage() {
     return (
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-white">DAO Not Found</h2>
+          <h2 className="text-2xl font-semibold text-white">Not Found</h2>
           <p className="text-zinc-400">
-            Could not find a DAO with the name '
-            {decodeURIComponent(encodedName)}'
+            Could not find '{decodeURIComponent(encodedName)}'
           </p>
         </div>
       </div>

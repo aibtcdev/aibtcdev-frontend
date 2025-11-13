@@ -2,20 +2,21 @@
 
 // import { useState, useEffect } from "react";
 // import { useWalletStore, WalletBalance } from "@/store/wallet";
-// import { useQuery } from "@tanstack/react-query";
-// import { fetchAgents } from "@/services/agent.service";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAgents } from "@/services/agent.service";
 // import { fetchDAOsWithExtension } from "@/services/dao.service";
 // import { getStacksAddress } from "@/lib/address";
-// import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 // import { TokenDepositModal } from "@/components/account/TokenDepositModal";
 // import { TokenWithdrawModal } from "@/components/account/TokenWithdrawModal";
 // import { AgentTokensTable } from "@/components/account/AgentTokensTable";
 import { WalletBalance } from "@/store/wallet";
 import { ConnectedWallet } from "@/components/account/ConnectedWallet";
-// import { AccountCard } from "@/components/account/AccountCard";
+import { AccountCard } from "@/components/account/AccountCard";
 import { useXStatus } from "@/hooks/useXStatus";
 import { XLinking } from "@/components/auth/XLinking";
-// import { Building2, Bot } from "lucide-react";
+import { Building2 } from "lucide-react";
+// import { Bot } from "lucide-react";
 
 // function formatBalance(value: string | number, type: "stx" | "btc" | "token") {
 //   let num = typeof value === "string" ? parseFloat(value) : value;
@@ -52,7 +53,7 @@ interface ProfileTabProps {
 
 export function ProfileTab({
   // userAgentWalletAddress: propUserAgentWalletAddress,
-  // userAgentAddress,
+  userAgentAddress,
   fetchWallets,
 }: ProfileTabProps) {
   // const [stacksAddress, setStacksAddress] = useState<string | null>(null);
@@ -80,17 +81,18 @@ export function ProfileTab({
   // } | null>(null);
   // const { agentWallets, balances, fetchSingleBalance, fetchContractBalance } =
   //   useWalletStore();
-  // const { userId, isAuthenticated } = useAuth();
+  const { userId, isAuthenticated } = useAuth();
   const { refreshStatus } = useXStatus();
 
-  // const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
-  //   queryKey: ["agents", userId],
-  //   queryFn: fetchAgents,
-  //   enabled: isAuthenticated && !!userId,
-  // });
+  const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents", userId],
+    queryFn: fetchAgents,
+    enabled: isAuthenticated && !!userId,
+  });
 
-  // const userAgent = agents[0] || null;
+  const userAgent = agents[0] || null;
   // const userAgentId = userAgent?.id || "";
+  console.log("User agent:", userAgent); // Prevent unused variable warning
 
   // const { data: daos = [], isLoading: isLoadingDAOs } = useQuery({
   //   queryKey: ["daosWithExtensions", userId],
@@ -219,8 +221,8 @@ export function ProfileTab({
           <ConnectedWallet fetchWallets={fetchWallets} />
         </div>
 
-        {/* Agent Voting Account Section - Commented out */}
-        {/* <div className="mb-6 border-t pt-6">
+        {/* Agent Voting Account Section */}
+        <div className="mb-6 border-t pt-6">
           <h3 className="text-lg font-semibold mb-4">Agent Voting Account</h3>
           {isLoadingAgents ? (
             <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
@@ -241,10 +243,10 @@ export function ProfileTab({
                 network={
                   userAgentAddress?.startsWith("SP") ? "mainnet" : "testnet"
                 }
-                helpText="Your agent's voting account - deposit DAO tokens here to enable AI voting"
+                // helpText="Your agent's voting account - deposit DAO tokens here to enable AI voting"
               />
-
-              <div className="mt-6">
+              {/* Assets table removed - only showing account */}
+              {/* <div className="mt-6">
                 {isLoadingDAOs ? (
                   <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
                     <div className="flex items-center gap-2">
@@ -263,7 +265,7 @@ export function ProfileTab({
                     userAgentWalletAddress={finalUserAgentWalletAddress}
                   />
                 )}
-              </div>
+              </div> */}
             </>
           ) : (
             <div className="rounded-sm border bg-card text-card-foreground shadow-sm p-6 flex items-center justify-center">
@@ -272,7 +274,7 @@ export function ProfileTab({
               </p>
             </div>
           )}
-        </div> */}
+        </div>
 
         {/* Agent Wallet Section - Commented out */}
         {/* {finalUserAgentWalletAddress && (

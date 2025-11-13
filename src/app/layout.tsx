@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     template: "%s | AIBTC",
   },
   description: "The Bitcoin Coordination Network.",
-  keywords: ["Bitcoin", "AI", "Stacks", "L2", "Trading", "DAO"],
+  keywords: ["Bitcoin", "AI", "Stacks", "L2", "Trading"],
   authors: [{ name: "AIBTC" }],
   openGraph: {
     title: "AIBTC",

@@ -26,17 +26,17 @@ export function DAOTabLayout({
   emptyIcon: EmptyIcon,
 }: DAOTabLayoutProps) {
   return (
-    <div className=" mx-auto  py-2 space-y-6  rounded-sm">
+    <div className="mx-auto space-y-4 rounded-sm">
       {/* Header Section */}
-      <div className="space-y-4 p-4">
-        <div className="flex items-center gap-3 p-4">
+      <div className="space-y-2 px-2">
+        <div className="flex items-center gap-3 px-2">
           {Icon && (
             <div className="w-10 h-10 rounded-sm bg-gradient-to-br from-secondary/20 to-secondary/10 flex items-center justify-center">
               <Icon className="h-5 w-5 text-secondary" />
             </div>
           )}
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground p-">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               {title}
             </h2>
             {description && (
@@ -44,7 +44,6 @@ export function DAOTabLayout({
             )}
           </div>
         </div>
-        <hr />
         {/* Toolbar Section */}
         {toolbar && (
           <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
@@ -54,7 +53,7 @@ export function DAOTabLayout({
       </div>
 
       {/* Content Section */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {isEmpty ? (
           <div className=" ">
             <div className="text-center space-y-4">

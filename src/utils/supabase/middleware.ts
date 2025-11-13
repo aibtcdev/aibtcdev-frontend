@@ -5,7 +5,7 @@ export const updateSession = async (request: NextRequest) => {
   try {
     // COMMENT IT OUT IF WE WANT TO SEE THE LANDING PAGE
     // if (request.nextUrl.pathname === "/") {
-    //   return NextResponse.redirect(new URL("/aidaos/AIBTC-BREW", request.url));
+    //   return NextResponse.redirect(new URL(`/aidaos/${singleDaoName}`, request.url));
     // }
 
     // Handle DAO-related path redirects - redirect to home page

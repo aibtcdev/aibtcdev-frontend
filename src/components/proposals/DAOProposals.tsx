@@ -41,7 +41,7 @@ const DAOProposals = ({
       // icon={FileText}
       isEmpty={deployedProposals.length === 0}
       emptyTitle="No Contributions Found"
-      emptyDescription="This DAO has no active or concluded contributions."
+      // emptyDescription="No active or concluded contributions."
       emptyIcon={FileText}
     >
       <div className="space-y-4">
