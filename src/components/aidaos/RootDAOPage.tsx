@@ -533,6 +533,7 @@ submit daily at aibtc.com`}
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
                 link="https://x.com/aibtcdev/status/1985732853540470816"
+                title="The Current Order"
               />
             </div>
           </div>
