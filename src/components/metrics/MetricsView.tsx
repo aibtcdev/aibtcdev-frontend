@@ -54,7 +54,7 @@ const MetricsView = ({ metrics }: MetricsViewProps) => {
   // Filter and sort metrics
   const filteredAndSortedMetrics = useMemo(() => {
     // Filter by search query
-    let filtered = metrics.filter((metric) => {
+    const filtered = metrics.filter((metric) => {
       const query = searchQuery.toLowerCase();
       return (
         (metric.username && metric.username.toLowerCase().includes(query)) ||

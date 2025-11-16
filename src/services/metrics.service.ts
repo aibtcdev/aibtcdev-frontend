@@ -94,8 +94,6 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
 
   // Calculate metrics for each user
   const metricsArray: UserMetrics[] = [];
-  let matchedUsers = 0;
-  let unmatchedUsers = 0;
 
   Array.from(accountProposalsMap.entries()).forEach(
     ([accountContract, userProposals]) => {
@@ -142,11 +140,11 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
         username = accountToUsernameMap.get(contractName);
       }
 
-      if (username) {
-        matchedUsers++;
-      } else {
-        unmatchedUsers++;
-      }
+      // if (username) {
+      //   matchedUsers++;
+      // } else {
+      //   unmatchedUsers++;
+      // }
 
       metricsArray.push({
         username: username || "",
