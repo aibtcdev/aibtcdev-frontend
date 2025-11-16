@@ -51,9 +51,12 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
   const accountToAddressMap = new Map<string, string>();
 
   if (agentsWithProfiles) {
-    agentsWithProfiles.forEach((agent: any) => {
+    agentsWithProfiles.forEach((agent) => {
       if (agent.account_contract) {
-        const username = agent.profiles?.username;
+        const profile = Array.isArray(agent.profiles)
+          ? agent.profiles[0]
+          : agent.profiles;
+        const username = profile?.username;
         const accountContract = agent.account_contract;
 
         if (username) {
