@@ -253,23 +253,23 @@ export default function ApplicationLayout({
           <div className="flex justify-center items-center gap-6 relative z-10"></div>
 
           {/* Right Section - Navigation Links, BTC Balance Dropdown & Auth Button */}
-          <div className="flex items-center gap-6 relative z-10 justify-end">
+          <div className="flex items-center gap-2 lg:gap-3 xl:gap-6 relative z-10 justify-end flex-nowrap">
             <a
               href="https://docs.aibtc.com/how-aibtc-works"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+              className="text-xs lg:text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200 whitespace-nowrap"
               target="_blank"
             >
               How it works
             </a>
             <Link
               href="/aibtc-charter"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+              className="text-xs lg:text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200 whitespace-nowrap"
             >
               AIBTC Charter
             </Link>
             <Link
               href="/leaderboard"
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+              className="text-xs lg:text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200 whitespace-nowrap"
             >
               Leaderboard
             </Link>

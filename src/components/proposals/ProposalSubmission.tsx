@@ -67,6 +67,7 @@ import {
   getLinkedXProfile,
   type XProfile,
 } from "@/services/x-auth.service";
+import AuthButton from "@/components/home/AuthButton";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -1252,7 +1253,7 @@ export function ProposalSubmission({
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-2">
-                    Connect Wallet to unlock earning.
+                    Connect your testnet Bitcoin Wallet.
                   </h3>
                 </div>
               </div>
@@ -1683,88 +1684,91 @@ export function ProposalSubmission({
 
         {/* Footer CTA */}
         <div className="pt-6">
-          <div>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                !hasAccessToken ||
-                !twitterUrl.trim() ||
-                !isValidTwitterUrl ||
-                isSubmitting ||
-                isValidatingXUsername ||
-                !hasAgentAccount ||
-                // !hasDaoTokens ||
-                // !hasAgentDaoTokens ||
-                isLoadingExtensions ||
-                isLoadingAgents ||
-                // isLoadingBalance ||
-                isCheckingBitcoinBlock ||
-                hasProposalInCurrentBlock ||
-                needsXLink ||
-                isXLoading ||
-                isLoadingEmbed ||
-                !twitterEmbedData ||
-                !!xUsernameError ||
-                !canSubmitContribution
-              }
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">
-                    {submissionButtonText || "Processing..."}
+          {!hasAccessToken ? (
+            <AuthButton buttonText="Connect Wallet" />
+          ) : (
+            <div>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  !twitterUrl.trim() ||
+                  !isValidTwitterUrl ||
+                  isSubmitting ||
+                  isValidatingXUsername ||
+                  !hasAgentAccount ||
+                  // !hasDaoTokens ||
+                  // !hasAgentDaoTokens ||
+                  isLoadingExtensions ||
+                  isLoadingAgents ||
+                  // isLoadingBalance ||
+                  isCheckingBitcoinBlock ||
+                  hasProposalInCurrentBlock ||
+                  needsXLink ||
+                  isXLoading ||
+                  isLoadingEmbed ||
+                  !twitterEmbedData ||
+                  !!xUsernameError ||
+                  !canSubmitContribution
+                }
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">
+                      {submissionButtonText || "Processing..."}
+                    </span>
+                  </div>
+                ) : needsXLink ? (
+                  <span>Link X Account to Submit</span>
+                ) : verificationStatus.status === "pending" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader />
+                    <span>X Verification Pending</span>
+                  </div>
+                ) : //  : verificationStatus.status === "not_verified" ? (
+                //   <div className="flex items-center gap-2">
+                //     <Lock className="w-4 h-4" />
+                //     <span>X Account Not Verified</span>
+                //   </div>
+                // )
+                isValidatingXUsername ? (
+                  <div className="flex items-center gap-2">
+                    <Loader />
+                    <span>Validating X Username...</span>
+                  </div>
+                ) : xUsernameError ? (
+                  <span>Fix X Username to Submit</span>
+                ) : !hasAgentAccount ? (
+                  <span>Waiting for Agent Account</span>
+                ) : // !hasAgentDaoTokens ? (
+                //   <span>Join DAO to Submit</span>
+                // ) :
+                isCheckingBitcoinBlock ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">
+                      Checking Bitcoin Block...
+                    </span>
+                  </div>
+                ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
+                  <span>
+                    Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
                   </span>
-                </div>
-              ) : !hasAccessToken ? (
-                <span>Connect Wallet to Submit</span>
-              ) : needsXLink ? (
-                <span>Link X Account to Submit</span>
-              ) : verificationStatus.status === "pending" ? (
-                <div className="flex items-center gap-2">
-                  <Loader />
-                  <span>X Verification Pending</span>
-                </div>
-              ) : //  : verificationStatus.status === "not_verified" ? (
-              //   <div className="flex items-center gap-2">
-              //     <Lock className="w-4 h-4" />
-              //     <span>X Account Not Verified</span>
-              //   </div>
-              // )
-              isValidatingXUsername ? (
-                <div className="flex items-center gap-2">
-                  <Loader />
-                  <span>Validating X Username...</span>
-                </div>
-              ) : xUsernameError ? (
-                <span>Fix X Username to Submit</span>
-              ) : !hasAgentAccount ? (
-                <span>Waiting for Agent Account</span>
-              ) : // !hasAgentDaoTokens ? (
-              //   <span>Join DAO to Submit</span>
-              // ) :
-              isCheckingBitcoinBlock ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">Checking Bitcoin Block...</span>
-                </div>
-              ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
-                <span>
-                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
-                </span>
-              ) : isLoadingEmbed ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">Loading Post Content...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  <span>Submit Contribution</span>
-                </div>
-              )}
-            </Button>
-          </div>
+                ) : isLoadingEmbed ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">Loading Post Content...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    <span>Submit Contribution</span>
+                  </div>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
