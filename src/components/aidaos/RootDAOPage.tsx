@@ -531,10 +531,10 @@ submit daily, earn btc
 @balajis prompt us: what order should be next?
 `}
                 date="Nov 17, 2025"
-                time="8:14 PM"
+                // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                // link="https://x.com/aibtcdev/status/1985732853540470816"
+                link="https://x.com/aibtcdev/status/1990455534554841152"
                 title="The Current Order"
               />
             </div>
