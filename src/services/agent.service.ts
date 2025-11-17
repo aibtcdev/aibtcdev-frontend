@@ -4,19 +4,25 @@ import type { Agent } from "@/types";
 /**
  * Fetches all DAO Manager agents that are not archived
  *
+ * @param profileId Optional profile ID to filter agents by user
  * @returns Promise resolving to an array of agents
  *
- * Query key: ['agents']
+ * Query key: ['agents', profileId]
  * Used in:
  * - src/components/chat/agent-selector.tsx
  * - src/components/aidaos/DaoAgentSelector.tsx
+ * - src/hooks/useAgentAccount.ts
  */
-export const fetchAgents = async (): Promise<Agent[]> => {
+export const fetchAgents = async (profileId?: string): Promise<Agent[]> => {
   try {
-    const { data, error } = await supabase
-      .from("agents")
-      .select("*")
-      .eq("is_archived", false);
+    let query = supabase.from("agents").select("*").eq("is_archived", false);
+
+    // Filter by profile_id if provided (for user-specific agents)
+    if (profileId) {
+      query = query.eq("profile_id", profileId);
+    }
+
+    const { data, error } = await query;
     // .order("name", { ascending: true });
 
     if (error) {

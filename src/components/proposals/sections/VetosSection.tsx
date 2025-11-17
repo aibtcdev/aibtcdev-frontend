@@ -168,7 +168,7 @@ export function VetosSection({
   // Fetch user's agents to get agent account address
   const { data: agents = [] } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: isAuthenticated && !!userId,
   });
 

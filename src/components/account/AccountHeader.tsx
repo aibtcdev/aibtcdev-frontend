@@ -15,7 +15,7 @@ export function AccountHeader() {
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: isAuthenticated && !!userId,
   });
 
