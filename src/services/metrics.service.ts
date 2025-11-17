@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { singleDaoName } from "@/config/features";
 
 export interface UserMetrics {
   username: string;
@@ -8,16 +9,36 @@ export interface UserMetrics {
   failedProposals: number;
   pendingProposals: number;
   successRate: number;
+  btcEarned: number;
 }
 
 export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
-  // Fetch all DEPLOYED proposals
+  // First fetch the DAO ID for singleDaoName
+  const { data: dao, error: daoError } = await supabase
+    .from("daos")
+    .select("id")
+    .eq("name", singleDaoName)
+    .eq("is_broadcasted", true)
+    .single();
+
+  if (daoError) {
+    console.error("Error fetching DAO:", daoError);
+    throw daoError;
+  }
+
+  if (!dao) {
+    console.error(`DAO not found: ${singleDaoName}`);
+    return [];
+  }
+
+  // Fetch all DEPLOYED proposals for the specific DAO
   const { data: proposals, error } = await supabase
     .from("proposals")
     .select(
-      "id, contract_caller, concluded_by, executed, met_quorum, met_threshold, passed, status"
+      "id, contract_caller, concluded_by, executed, met_quorum, met_threshold, passed, status, dao_id"
     )
     .eq("status", "DEPLOYED")
+    .eq("dao_id", dao.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -157,6 +178,7 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
         failedProposals,
         pendingProposals,
         successRate,
+        btcEarned: passedProposals * 50,
       });
     }
   );

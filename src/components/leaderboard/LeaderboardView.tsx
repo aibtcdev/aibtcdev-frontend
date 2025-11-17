@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-interface MetricsViewProps {
+interface LeaderboardViewProps {
   metrics: UserMetrics[];
 }
 
@@ -31,10 +31,11 @@ type SortField =
   | "passedProposals"
   | "failedProposals"
   | "pendingProposals"
-  | "successRate";
+  | "successRate"
+  | "btcEarned";
 type SortDirection = "asc" | "desc";
 
-const MetricsView = ({ metrics }: MetricsViewProps) => {
+const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("totalProposals");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -114,6 +115,9 @@ const MetricsView = ({ metrics }: MetricsViewProps) => {
 
   return (
     <div className="py-2 space-y-6 md:px-16">
+      {/* Leaderboard Title */}
+      <h1 className="text-3xl font-bold text-center">Leaderboard</h1>
+
       {/* Header with sorting and search */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -209,12 +213,22 @@ const MetricsView = ({ metrics }: MetricsViewProps) => {
                 <SortIcon field="pendingProposals" />
               </Button>
             </TableHead>
+            <TableHead className="text-center">
+              <Button
+                variant="ghost"
+                onClick={() => handleSort("btcEarned")}
+                className="h-auto p-0 font-medium hover:bg-transparent"
+              >
+                BTC Earned
+                <SortIcon field="btcEarned" />
+              </Button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredAndSortedMetrics.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
+              <TableCell colSpan={6} className="h-24 text-center">
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <p className="text-muted-foreground">No users found</p>
                   {searchQuery && (
@@ -259,6 +273,9 @@ const MetricsView = ({ metrics }: MetricsViewProps) => {
                 <TableCell className="text-center">
                   <span className="font-mono">{metric.pendingProposals}</span>
                 </TableCell>
+                <TableCell className="text-center">
+                  <span className="font-mono">${metric.btcEarned}</span>
+                </TableCell>
               </TableRow>
             ))
           )}
@@ -268,4 +285,4 @@ const MetricsView = ({ metrics }: MetricsViewProps) => {
   );
 };
 
-export default MetricsView;
+export default LeaderboardView;

@@ -2,12 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "@/components/reusables/Loader";
-import MetricsView from "@/components/metrics/MetricsView";
+import LeaderboardView from "@/components/leaderboard/LeaderboardView";
 import { fetchAllUserMetrics } from "@/services/metrics.service";
 
 export const runtime = "edge";
 
-export default function MetricsPage() {
+export default function LeaderboardPage() {
   const {
     data: metrics,
     isLoading,
@@ -39,5 +39,5 @@ export default function MetricsPage() {
     );
   }
 
-  return <MetricsView metrics={metrics || []} />;
+  return <LeaderboardView metrics={metrics || []} />;
 }
