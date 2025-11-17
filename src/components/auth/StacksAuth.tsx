@@ -54,7 +54,13 @@ const StacksProvider = dynamic(
   }
 );
 
-export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
+export default function StacksAuth({
+  redirectUrl,
+  buttonText = "Join AIBTC",
+}: {
+  redirectUrl?: string;
+  buttonText?: string;
+}) {
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -342,7 +348,9 @@ export default function StacksAuth({ redirectUrl }: { redirectUrl?: string }) {
             </span>
           </>
         ) : (
-          <span className="font-inter font-bold tracking-wide">Join AIBTC</span>
+          <span className="font-inter font-bold tracking-wide">
+            {buttonText}
+          </span>
         )}
       </Button>
 
