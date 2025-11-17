@@ -309,7 +309,9 @@ const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
               <tr>
                 <td colSpan={3} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2">
-                    <p className="text-muted-foreground">No users found</p>
+                    <p className="text-muted-foreground">
+                      No contributions yet
+                    </p>
                     {searchQuery && (
                       <Button
                         variant="link"

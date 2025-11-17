@@ -172,13 +172,13 @@ export default function ApplicationLayout({
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     onClick={(e) => {
-                      handleNavigation("/account?tab=wallets", e);
+                      handleNavigation("/account?tab=settings", e);
                       setMobileMenuOpen(false);
                     }}
                     className="group flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground rounded-sm hover:bg-primary/10 focus:bg-primary/10 focus:text-primary transition-colors duration-200 ease-in-out cursor-pointer"
                   >
-                    <User className="h-4 w-4" />
-                    <span className="group-hover:text-white">Wallets</span>
+                    <Settings className="h-4 w-4" />
+                    <span className="group-hover:text-white">Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
                   <div className="px-3 py-2">

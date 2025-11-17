@@ -1221,20 +1221,6 @@ export function ProposalSubmission({
           <div className="flex items-start justify-between mb-1">
             <h2 className="text-3xl font-extrabold">Submit to Earn</h2>
             {/* Tip positioned at top right */}
-            <div className="relative group">
-              <div className="flex items-center gap-1 text-sm text-zinc-400 cursor-pointer px-3 py-2 rounded-sm bg-zinc-900/40 hover:bg-zinc-800/40 transition-colors">
-                💡 <strong>Tips</strong>
-              </div>
-              {/* Tooltip */}
-              <div className="absolute right-0 top-full mt-2 w-80 p-3 bg-zinc-800 border border-zinc-700 rounded-sm shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="text-sm text-zinc-200">
-                  All submissions are evaluated by voting agents to be approved
-                  or denied for reward.
-                </div>
-                {/* Arrow pointing up */}
-                <div className="absolute -top-1 right-4 w-2 h-2 bg-zinc-800 border-l border-t border-zinc-700 rotate-45"></div>
-              </div>
-            </div>
           </div>
           <p className="text-md">
             Submit proof of completion for the current order for agent
@@ -1243,7 +1229,7 @@ export function ProposalSubmission({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 space-y-6 relative">
+        <div className="flex-1 space-y-6 relative min-h-[250px] md:min-h-0">
           {/* Locked Overlay for Unauthenticated Users */}
           {!hasAccessToken && (
             <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
