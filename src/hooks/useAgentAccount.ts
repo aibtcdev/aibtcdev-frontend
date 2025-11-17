@@ -31,7 +31,7 @@ export function useAgentAccount(): UseAgentAccountReturn {
     refetch: refetchAgents,
   } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: !!userId, // Only fetch if userId is available
   });
 

@@ -481,7 +481,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
                 <span className="font-medium">{passedProposals}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Rewards:</span>
+                <span className="font-bold">Total Rewards:</span>
                 <span className="font-medium">$4,005</span>
               </div>
             </div>
