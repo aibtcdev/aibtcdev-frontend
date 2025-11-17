@@ -40,5 +40,9 @@ export default function AIBTCCharterPage() {
     );
   }
 
-  return <MissionContent description={dao.description} />;
+  return (
+    <div className="px-1 md:px-16">
+      <MissionContent description={dao.description} />
+    </div>
+  );
 }

@@ -267,6 +267,12 @@ export default function ApplicationLayout({
             >
               AIBTC Charter
             </Link>
+            <Link
+              href="/leaderboard"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors duration-200"
+            >
+              Leaderboard
+            </Link>
             {/* Notification Bell - commented out per requirements */}
             {/* {isAuthenticated && (
               <div className="mr-3">
@@ -346,16 +352,25 @@ export default function ApplicationLayout({
               {/* Sidebar Header */}
               <div className="flex items-center justify-between p-4 border-b border-border/20 relative z-10">
                 <div className="flex items-center gap-3">
-                  <Image
-                    src="/logos/aibtcdev-avatar-1000px.png"
-                    alt="AIBTC"
-                    width={24}
-                    height={24}
-                    className="shadow-lg shadow-primary/20"
-                  />
-                  <span className="text-lg font-bold text-foreground">
-                    Menu
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <Image
+                      src="/logos/aibtcdev-primary-logo-black-wide-1000px.png"
+                      alt="AIBTCDEV"
+                      width={100}
+                      height={24}
+                      className="h-6 w-auto block dark:hidden"
+                    />
+                    <Image
+                      src="/logos/aibtcdev-primary-logo-white-wide-1000px.png"
+                      alt="AIBTCDEV"
+                      width={100}
+                      height={24}
+                      className="h-6 w-auto hidden dark:block"
+                    />
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      The Bitcoin Coordination Network
+                    </span>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -367,12 +382,31 @@ export default function ApplicationLayout({
                 </Button>
               </div>
 
-              {/* Navigation - Empty since items moved to dropdown */}
+              {/* Navigation */}
               <nav className="flex-1 px-4 py-6 relative z-10 overflow-y-auto">
                 <div className="space-y-3">
-                  <div className="text-center text-muted-foreground text-sm py-8">
-                    Use the dropdown menu above to navigate
-                  </div>
+                  <a
+                    href="https://docs.aibtc.com/how-aibtc-works"
+                    target="_blank"
+                    className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-sm transition-colors duration-200"
+                    onClick={() => setLeftPanelOpen(false)}
+                  >
+                    How it works
+                  </a>
+                  <Link
+                    href="/aibtc-charter"
+                    className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-sm transition-colors duration-200"
+                    onClick={() => setLeftPanelOpen(false)}
+                  >
+                    AIBTC Charter
+                  </Link>
+                  <Link
+                    href="/leaderboard"
+                    className="block px-4 py-3 text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-primary/10 rounded-sm transition-colors duration-200"
+                    onClick={() => setLeftPanelOpen(false)}
+                  >
+                    Leaderboard
+                  </Link>
                 </div>
               </nav>
             </div>

@@ -482,7 +482,7 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Rewards:</span>
-                <span className="font-medium">$3,630</span>
+                <span className="font-medium">$4,005</span>
               </div>
             </div>
           </div>
@@ -533,6 +533,7 @@ submit daily at aibtc.com`}
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
                 link="https://x.com/aibtcdev/status/1985732853540470816"
+                title="The Current Order"
               />
             </div>
           </div>
