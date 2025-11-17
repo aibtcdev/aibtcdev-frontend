@@ -235,7 +235,7 @@ function VoteCard({ vote }: VoteCardProps) {
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: isAuthenticated && !!userId,
   });
 

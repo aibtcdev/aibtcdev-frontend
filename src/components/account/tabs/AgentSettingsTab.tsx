@@ -36,7 +36,7 @@ export function AgentSettingsTab() {
 
   const { data: agents = [], isLoading: agentsLoading } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: isAuthenticated && !!userId,
   });
 

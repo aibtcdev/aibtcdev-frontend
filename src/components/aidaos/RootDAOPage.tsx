@@ -380,12 +380,12 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
           <Building2 className="h-12 w-12 text-muted-foreground/50" />
           <div>
             <h1 className="text-xl font-semibold text-foreground">
-              {isBasicLoading ? "Loading DAO..." : "DAO Not Found"}
+              {isBasicLoading ? "Loading..." : "Not Found"}
             </h1>
             <p className="max-w-md text-muted-foreground">
               {isBasicLoading
-                ? "Please wait while we fetch the DAO details."
-                : "The DAO you're looking for doesn't exist or has been removed."}
+                ? "Please wait while we fetch the details."
+                : "The item you're looking for doesn't exist or has been removed."}
             </p>
           </div>
           {isBasicLoading && <Loader />}
@@ -481,8 +481,8 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
                 <span className="font-medium">{passedProposals}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Rewards:</span>
-                <span className="font-medium">$3,630</span>
+                <span className="font-bold">Total Rewards:</span>
+                <span className="font-medium">$4,005</span>
               </div>
             </div>
           </div>
@@ -533,6 +533,7 @@ submit daily at aibtc.com`}
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
                 link="https://x.com/aibtcdev/status/1985732853540470816"
+                title="The Current Order"
               />
             </div>
           </div>

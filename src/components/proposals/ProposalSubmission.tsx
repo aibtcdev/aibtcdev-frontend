@@ -67,6 +67,7 @@ import {
   getLinkedXProfile,
   type XProfile,
 } from "@/services/x-auth.service";
+import AuthButton from "@/components/home/AuthButton";
 
 interface WebSocketTransactionMessage {
   tx_id: string;
@@ -325,7 +326,7 @@ export function ProposalSubmission({
   // Fetch user's DAO Manager agent
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: hasAccessToken && !!userId, // Only fetch when authenticated
     staleTime: 10 * 60 * 1000, // 10 min
     refetchOnMount: true, // Refetch when component mounts
@@ -1215,40 +1216,6 @@ export function ProposalSubmission({
   return (
     <>
       <div className="rounded-sm  bg-background  p-4 sm:p-5 lg:p-6 flex gap-3 flex-col relative max-w-full overflow-hidden h-full">
-        {/* Locked Overlay for Unauthenticated Users */}
-        {!hasAccessToken && (
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
-            <div className="text-center space-y-4 max-w-md mx-auto px-6">
-              <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
-                <Lock className="w-8 h-8 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold mb-2">
-                  Connect Wallet to unlock earning.
-                </h3>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Locked Overlay for Users without Agent DAO Tokens - COMMENTED OUT */}
-        {/* {hasAccessToken &&
-          hasAgentAccount &&
-          !isLoadingBalance &&
-          !hasAgentDaoTokens && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] rounded-sm flex flex-col items-center justify-center z-10">
-              <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
-                  <Lock className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold mb-2">
-                    Join {daoName} to unlock earning
-                  </h3>
-                </div>
-              </div>
-            </div>
-          )}
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-start justify-between mb-1">
@@ -1276,7 +1243,96 @@ export function ProposalSubmission({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-6 relative">
+          {/* Locked Overlay for Unauthenticated Users */}
+          {!hasAccessToken && (
+            <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+              <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Connect your testnet Bitcoin Wallet.
+                  </h3>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* X Account Lock Overlay */}
+          {hasAccessToken &&
+            /* hasAgentDaoTokens && */ needsXLink &&
+            !isXLoading && (
+              <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+                <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                  <div>
+                    <XLinking
+                      compact={false}
+                      showTitle={false}
+                      onLinkingComplete={() => {
+                        refreshStatus();
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+          {/* X Verification Lock Overlay */}
+          {hasAccessToken &&
+            !needsXLink &&
+            !isXLoading &&
+            verificationStatus.status === "not_verified" && (
+              <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+                <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                  <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                    <Lock className="w-8 h-8 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-red-300 mb-2 flex justify-center">
+                      <svg
+                        className="w-5 h-5 flex-shrink-0 mt-1"
+                        viewBox="0 0 22 22"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"
+                          fill="#1d9bf0"
+                        />
+                      </svg>
+                      Your X account{" "}
+                      {xProfile?.username ? `@${xProfile.username} ` : ""}must
+                      have a blue check to submit contribution
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          {/* X Verification Pending Lock Overlay */}
+          {hasAccessToken &&
+            /* hasAgentDaoTokens && */
+            !needsXLink &&
+            !isXLoading &&
+            verificationStatus.status === "pending" && (
+              <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+                <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                  <div className="w-16 h-16 rounded-sm bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
+                    <Loader />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-yellow-300 mb-2">
+                      X Verification Pending
+                    </h3>
+                    <p className="text-sm text-yellow-200/80 leading-relaxed">
+                      Your X account verification is being processed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           {/* Airdrop notification - Commented out per user request */}
           {/* {hasAccessToken && (
             <div className="bg-secondary/40 rounded-sm p-3 shadow-sm">
@@ -1628,163 +1684,92 @@ export function ProposalSubmission({
 
         {/* Footer CTA */}
         <div className="pt-6">
-          <div>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                !hasAccessToken ||
-                !twitterUrl.trim() ||
-                !isValidTwitterUrl ||
-                isSubmitting ||
-                isValidatingXUsername ||
-                !hasAgentAccount ||
-                // !hasDaoTokens ||
-                // !hasAgentDaoTokens ||
-                isLoadingExtensions ||
-                isLoadingAgents ||
-                // isLoadingBalance ||
-                isCheckingBitcoinBlock ||
-                hasProposalInCurrentBlock ||
-                needsXLink ||
-                isXLoading ||
-                isLoadingEmbed ||
-                !twitterEmbedData ||
-                !!xUsernameError ||
-                !canSubmitContribution
-              }
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">
-                    {submissionButtonText || "Processing..."}
+          {!hasAccessToken ? (
+            <AuthButton buttonText="Connect Wallet" />
+          ) : (
+            <div>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  !twitterUrl.trim() ||
+                  !isValidTwitterUrl ||
+                  isSubmitting ||
+                  isValidatingXUsername ||
+                  !hasAgentAccount ||
+                  // !hasDaoTokens ||
+                  // !hasAgentDaoTokens ||
+                  isLoadingExtensions ||
+                  isLoadingAgents ||
+                  // isLoadingBalance ||
+                  isCheckingBitcoinBlock ||
+                  hasProposalInCurrentBlock ||
+                  needsXLink ||
+                  isXLoading ||
+                  isLoadingEmbed ||
+                  !twitterEmbedData ||
+                  !!xUsernameError ||
+                  !canSubmitContribution
+                }
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">
+                      {submissionButtonText || "Processing..."}
+                    </span>
+                  </div>
+                ) : needsXLink ? (
+                  <span>Link X Account to Submit</span>
+                ) : verificationStatus.status === "pending" ? (
+                  <div className="flex items-center gap-2">
+                    <Loader />
+                    <span>X Verification Pending</span>
+                  </div>
+                ) : //  : verificationStatus.status === "not_verified" ? (
+                //   <div className="flex items-center gap-2">
+                //     <Lock className="w-4 h-4" />
+                //     <span>X Account Not Verified</span>
+                //   </div>
+                // )
+                isValidatingXUsername ? (
+                  <div className="flex items-center gap-2">
+                    <Loader />
+                    <span>Validating X Username...</span>
+                  </div>
+                ) : xUsernameError ? (
+                  <span>Fix X Username to Submit</span>
+                ) : !hasAgentAccount ? (
+                  <span>Waiting for Agent Account</span>
+                ) : // !hasAgentDaoTokens ? (
+                //   <span>Join DAO to Submit</span>
+                // ) :
+                isCheckingBitcoinBlock ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">
+                      Checking Bitcoin Block...
+                    </span>
+                  </div>
+                ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
+                  <span>
+                    Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
                   </span>
-                </div>
-              ) : !hasAccessToken ? (
-                <span>Connect Wallet to Submit</span>
-              ) : needsXLink ? (
-                <span>Link X Account to Submit</span>
-              ) : verificationStatus.status === "pending" ? (
-                <div className="flex items-center gap-2">
-                  <Loader />
-                  <span>X Verification Pending</span>
-                </div>
-              ) : //  : verificationStatus.status === "not_verified" ? (
-              //   <div className="flex items-center gap-2">
-              //     <Lock className="w-4 h-4" />
-              //     <span>X Account Not Verified</span>
-              //   </div>
-              // )
-              isValidatingXUsername ? (
-                <div className="flex items-center gap-2">
-                  <Loader />
-                  <span>Validating X Username...</span>
-                </div>
-              ) : xUsernameError ? (
-                <span>Fix X Username to Submit</span>
-              ) : !hasAgentAccount ? (
-                <span>Waiting for Agent Account</span>
-              ) : // !hasAgentDaoTokens ? (
-              //   <span>Join DAO to Submit</span>
-              // ) :
-              isCheckingBitcoinBlock ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">Checking Bitcoin Block...</span>
-                </div>
-              ) : hasProposalInCurrentBlock && currentBitcoinBlock ? (
-                <span>
-                  Wait for Block {(currentBitcoinBlock + 1).toLocaleString()}
-                </span>
-              ) : isLoadingEmbed ? (
-                <div className="flex items-center gap-2 text-center px-2">
-                  <Loader />
-                  <span className="break-words">Loading Post Content...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  <span>Submit Contribution</span>
-                </div>
-              )}
-            </Button>
-          </div>
+                ) : isLoadingEmbed ? (
+                  <div className="flex items-center gap-2 text-center px-2">
+                    <Loader />
+                    <span className="break-words">Loading Post Content...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    <span>Submit Contribution</span>
+                  </div>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
-
-        {/* X Account Lock Overlay */}
-        {hasAccessToken &&
-          /* hasAgentDaoTokens && */ needsXLink &&
-          !isXLoading && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px]  flex flex-col items-center justify-center z-10">
-              <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div>
-                  <XLinking
-                    compact={false}
-                    showTitle={false}
-                    onLinkingComplete={() => {
-                      refreshStatus();
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* X Verification Lock Overlay */}
-        {hasAccessToken &&
-          !needsXLink &&
-          !isXLoading &&
-          verificationStatus.status === "not_verified" && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
-              <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
-                  <Lock className="w-8 h-8 text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-red-300 mb-2 flex justify-center">
-                    <svg
-                      className="w-5 h-5 flex-shrink-0 mt-1"
-                      viewBox="0 0 22 22"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"
-                        fill="#1d9bf0"
-                      />
-                    </svg>
-                    Your X account{" "}
-                    {xProfile?.username ? `@${xProfile.username} ` : ""}must
-                    have blue a check to submit contribution
-                  </h3>
-                </div>
-              </div>
-            </div>
-          )}
-
-        {/* X Verification Pending Lock Overlay */}
-        {hasAccessToken &&
-          /* hasAgentDaoTokens && */
-          !needsXLink &&
-          !isXLoading &&
-          verificationStatus.status === "pending" && (
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
-              <div className="text-center space-y-4 max-w-md mx-auto px-6">
-                <div className="w-16 h-16 rounded-sm bg-yellow-900/20 border border-yellow-800/30 flex items-center justify-center mx-auto">
-                  <Loader />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-yellow-300 mb-2">
-                    X Verification Pending
-                  </h3>
-                  <p className="text-sm text-yellow-200/80 leading-relaxed">
-                    Your X account verification is being processed.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}

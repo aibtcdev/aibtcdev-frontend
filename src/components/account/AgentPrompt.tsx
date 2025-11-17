@@ -75,7 +75,7 @@ export function AgentPromptForm() {
 
   const { data: agents = [], isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents", userId],
-    queryFn: fetchAgents,
+    queryFn: () => fetchAgents(userId || undefined),
     enabled: isAuthenticated && !!userId,
   });
 

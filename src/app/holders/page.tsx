@@ -1,6 +1,5 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Loader } from "@/components/reusables/Loader";
 import DAOHolders from "@/components/aidaos/DaoHolders";
@@ -9,23 +8,20 @@ import {
   fetchHolders,
   fetchDAOByName,
 } from "@/services/dao.service";
+import { singleDaoName } from "@/config/features";
 
 export const runtime = "edge";
 
 export default function HoldersPage() {
-  const params = useParams();
-  const encodedName = params.name as string;
-  const decodedName = decodeURIComponent(encodedName);
-  // console.log(decodedName);
+  const daoName = singleDaoName;
 
   // First, fetch by name to get its ID
   const { data: dao, isLoading: isLoadingDAO } = useQuery({
-    queryKey: ["dao", decodedName],
-    queryFn: () => fetchDAOByName(decodedName),
+    queryKey: ["dao", daoName],
+    queryFn: () => fetchDAOByName(daoName),
   });
 
   const daoId = dao?.id;
-  console.log(daoId);
 
   // Then use the ID to fetch the token
   const { data: token, isLoading: isLoadingToken } = useQuery({
@@ -42,15 +38,11 @@ export default function HoldersPage() {
     enabled: !!daoId,
   });
 
-  // console.log(token?.id);
-  // console.log(token?.symbol);
-  // console.log(token?.contract_principal);
-
   const isLoading = isLoadingDAO || isLoadingToken || isLoadingHolders;
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px] w-full">
+      <div className="flex justify-center items-center  w-full">
         <div className="text-center space-y-4">
           <Loader />
           <p className="text-zinc-400">Loading holders...</p>
@@ -64,18 +56,18 @@ export default function HoldersPage() {
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-semibold text-white">Not Found</h2>
-          <p className="text-zinc-400">
-            Could not find &apos;{decodeURIComponent(encodedName)}&apos;
-          </p>
+          <p className="text-zinc-400">Could not find {singleDaoName}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <DAOHolders
-      holders={holdersData?.holders || []}
-      tokenSymbol={token?.symbol || ""}
-    />
+    <div className="w-full px-16">
+      <DAOHolders
+        holders={holdersData?.holders || []}
+        tokenSymbol={token?.symbol || ""}
+      />
+    </div>
   );
 }

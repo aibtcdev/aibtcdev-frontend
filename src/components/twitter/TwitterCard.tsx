@@ -11,6 +11,7 @@ interface TwitterCardProps {
   avatarUrl?: string;
   verified?: boolean;
   link?: string;
+  title?: string;
 }
 
 export const TwitterCard: React.FC<TwitterCardProps> = ({
@@ -22,6 +23,7 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
   avatarUrl,
   verified = false,
   link,
+  title,
 }) => {
   const handleClick = () => {
     if (link) {
@@ -44,6 +46,9 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
         }
       }}
     >
+      {/* Title */}
+      {title && <h2 className="text-2xl font-bold mb-4">{title}</h2>}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">

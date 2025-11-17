@@ -7,14 +7,18 @@ const SignIn = dynamic(() => import("../auth/StacksAuth"), {
 
 interface AuthButtonProps {
   redirectUrl?: string;
+  buttonText?: string;
 }
 
-export default function AuthButton({ redirectUrl }: AuthButtonProps) {
+export default function AuthButton({
+  redirectUrl,
+  buttonText,
+}: AuthButtonProps) {
   return (
-    <div className="flex items-center justify-center px-2 py-1 sm:px-4 sm:py-2 text-sm sm:text-base">
+    <div>
       {/* Sign In Section */}
-      <div className="w-auto">
-        <SignIn redirectUrl={redirectUrl} />
+      <div>
+        <SignIn redirectUrl={redirectUrl} buttonText={buttonText} />
       </div>
     </div>
   );
