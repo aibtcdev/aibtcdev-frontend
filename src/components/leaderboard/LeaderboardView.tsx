@@ -112,14 +112,16 @@ const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
       <h1 className="text-3xl font-bold text-center">Leaderboard</h1>
 
       {/* Header with sorting and search */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <span className="text-sm font-medium">Sort by:</span>
+      <div className="flex flex-col items-stretch gap-4">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium whitespace-nowrap">
+            Sort by:
+          </span>
 
           <Badge
             variant={sortField === "totalProposals" ? "default" : "outline"}
             onClick={() => handleSort("totalProposals")}
-            className="cursor-pointer hover:bg-accent"
+            className="cursor-pointer hover:bg-accent text-xs px-1.5 py-0 h-5"
           >
             Contributions
           </Badge>
@@ -127,7 +129,7 @@ const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
           <Badge
             variant={sortField === "btcEarned" ? "default" : "outline"}
             onClick={() => handleSort("btcEarned")}
-            className="cursor-pointer hover:bg-accent"
+            className="cursor-pointer hover:bg-accent text-xs px-1.5 py-0 h-5"
           >
             BTC Earned
           </Badge>
@@ -135,7 +137,7 @@ const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
           <Badge
             variant={sortField === "passedProposals" ? "default" : "outline"}
             onClick={() => handleSort("passedProposals")}
-            className="cursor-pointer hover:bg-accent"
+            className="cursor-pointer hover:bg-accent text-xs px-1.5 py-0 h-5"
           >
             Passed
           </Badge>
@@ -143,13 +145,13 @@ const LeaderboardView = ({ metrics }: LeaderboardViewProps) => {
           <Badge
             variant={sortField === "failedProposals" ? "default" : "outline"}
             onClick={() => handleSort("failedProposals")}
-            className="cursor-pointer hover:bg-accent"
+            className="cursor-pointer hover:bg-accent text-xs px-1.5 py-0 h-5"
           >
             Failed
           </Badge>
         </div>
 
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full md:w-80 md:ml-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by username or address..."
