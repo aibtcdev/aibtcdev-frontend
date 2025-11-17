@@ -230,13 +230,13 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
   return (
     <>
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-foreground">
-            Connected Wallet
-          </h2>
-          <div className="flex items-center gap-2">
+        <div className="mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+            <h2 className="text-xl font-bold text-foreground">
+              Connected Wallet
+            </h2>
             {process.env.NEXT_PUBLIC_STACKS_NETWORK === "testnet" && (
-              <>
+              <div className="flex items-center gap-2">
                 <Button
                   onClick={handleRequestSTX}
                   disabled={isRequestingSTX || !isAuthenticated}
@@ -255,7 +255,7 @@ export function ConnectedWallet({ fetchWallets }: ConnectedWalletProps) {
                 >
                   {isRequestingSBTC ? "Requesting..." : "Get testnet sBTC"}
                 </Button>
-              </>
+              </div>
             )}
             {/* <Button
               onClick={handleSignOut}

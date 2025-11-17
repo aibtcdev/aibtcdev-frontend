@@ -129,8 +129,8 @@ export function XLinking({
             <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
           </div>
         ) : needsXLink ? (
-          <div className="flex items-start justify-between gap-3 p-4 rounded-sm">
-            <div className="flex items-start gap-2 flex-1">
+          <div className="flex flex-col gap-4 p-4 rounded-sm">
+            <div className="flex items-start gap-1.5 flex-1">
               <svg
                 className="w-4 h-4 flex-shrink-0 mt-0.5"
                 viewBox="0 0 22 22"
@@ -142,11 +142,16 @@ export function XLinking({
                   fill="#1d9bf0"
                 />
               </svg>
-              <h4 className="font-medium">
+              <h4 className="font-medium text-left">
                 Verified X Account Required to Submit Contribution
               </h4>
             </div>
-            <Button onClick={handleLinkX} disabled={isLinking} size="sm">
+            <Button
+              onClick={handleLinkX}
+              disabled={isLinking}
+              size="sm"
+              className="w-full"
+            >
               {isLinking ? "Linking..." : "Link X Account"}
             </Button>
           </div>
