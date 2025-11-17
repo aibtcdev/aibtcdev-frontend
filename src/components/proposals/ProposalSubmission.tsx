@@ -1303,7 +1303,7 @@ export function ProposalSubmission({
                       </svg>
                       Your X account{" "}
                       {xProfile?.username ? `@${xProfile.username} ` : ""}must
-                      have blue a check to submit contribution
+                      have a blue check to submit contribution
                     </h3>
                   </div>
                 </div>
