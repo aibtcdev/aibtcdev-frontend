@@ -172,6 +172,22 @@ const VotingProgressChart = ({
   const getResultStatus = () => {
     const StatusIcon = statusConfig.icon;
 
+    // Override status if voting ended and requirements were met
+    // This handles cases where the proposal passed but execution window expired
+    if (
+      isEnded &&
+      enhancedCalculations?.metQuorum &&
+      enhancedCalculations?.metThreshold
+    ) {
+      const PassedIcon = CheckCircle2;
+      return {
+        status: "Passed",
+        color: "text-success",
+        icon: <PassedIcon className="h-4 w-4" />,
+        bgColor: "bg-success/10 border-success/20",
+      };
+    }
+
     switch (status) {
       case "DRAFT":
         return {
@@ -753,17 +769,10 @@ const VotingProgressChart = ({
                       ⏳ Veto period active
                     </div>
                   )}
-                  {enhancedCalculations.failedToExecute && (
-                    <div className="text-destructive">
-                      ⚠️ Execution deadline passed
-                    </div>
-                  )}
-                  {status === "FAILED" &&
+                  {enhancedCalculations.failedToExecute &&
                     enhancedCalculations.metQuorum &&
                     enhancedCalculations.metThreshold && (
-                      <div className="text-destructive">
-                        ⚠️ Failed despite meeting requirements
-                      </div>
+                      <div className="text-yellow-500">Delayed Execution</div>
                     )}
                 </div>
               ) : (
