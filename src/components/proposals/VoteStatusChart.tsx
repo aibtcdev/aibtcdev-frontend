@@ -22,7 +22,7 @@ const VoteStatusChart = ({
   initialVotesAgainst,
   // refreshing = false,
   tokenSymbol = "",
-  liquidTokens,
+  // liquidTokens,
   proposal,
 }: VoteStatusChartProps) => {
   const [localRefreshing, setLocalRefreshing] = useState(false);

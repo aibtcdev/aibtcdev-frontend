@@ -325,7 +325,10 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     staleTime: 600000,
   });
 
-  const proposalsArray = Array.isArray(proposals) ? proposals : [];
+  const proposalsArray = useMemo(
+    () => (Array.isArray(proposals) ? proposals : []),
+    [proposals]
+  );
 
   const proposalVoteQueries = useQueries({
     queries: proposalsArray.map((proposal) => ({

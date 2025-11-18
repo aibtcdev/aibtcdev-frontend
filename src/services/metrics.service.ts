@@ -3,6 +3,7 @@ import { singleDaoName, rewardPerPassedProposal } from "@/config/features";
 import { fetchProposalVotes } from "./vote.service";
 import { fetchLatestChainState } from "./chain-state.service";
 import { getProposalStatus } from "@/utils/proposal";
+import type { Proposal } from "@/types";
 
 type ProposalRecord = {
   id: string;
@@ -241,7 +242,10 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
 
       const passedProposals = userProposals.filter((proposal) => {
         // Get proposal status to check if it meets quorum and threshold
-        const status = getProposalStatus(proposal as any, currentBlockHeight);
+        const status = getProposalStatus(
+          proposal as Proposal,
+          currentBlockHeight
+        );
 
         // Count as passed if: ACTIVE and met requirements, or in any ended state and met requirements
         const isActiveOrEnded = [
