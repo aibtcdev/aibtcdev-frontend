@@ -180,6 +180,8 @@ export default function ProposalCard({
                   proposal={proposal}
                   size="sm"
                   className="flex-shrink-0"
+                  metQuorum={quorumThresholdData?.metQuorum}
+                  metThreshold={quorumThresholdData?.metThreshold}
                 />
                 {quorumThresholdData && (
                   <div

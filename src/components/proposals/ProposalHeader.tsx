@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 // import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
@@ -23,7 +23,7 @@ interface ProposalHeaderProps {
 
 export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   const router = useRouter();
-  const { statusConfig } = useProposalStatus(proposal);
+  const { statusConfig, isEnded } = useProposalStatus(proposal);
 
   // Get vote data for calculations
   const { calculations, isLoading: isLoadingVotes } = useProposalVote({
@@ -80,6 +80,25 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   //     ? (proposal.daos.image_url as string)
   //     : undefined);
 
+  // Override status config if voting ended and requirements were met
+  const finalStatusConfig = useMemo(() => {
+    if (
+      isEnded &&
+      enhancedCalculations?.metQuorum &&
+      enhancedCalculations?.metThreshold
+    ) {
+      return {
+        icon: CheckCircle2,
+        color: "text-success",
+        bg: "bg-success/10",
+        border: "border-success/20",
+        label: "Passed",
+        variant: "secondary" as const,
+      };
+    }
+    return statusConfig;
+  }, [isEnded, enhancedCalculations, statusConfig]);
+
   return (
     <div className="mb-6">
       {/* Back button */}
@@ -122,16 +141,16 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
                       </span>
                     </div>
                     <Badge
-                      variant={statusConfig.variant}
+                      variant={finalStatusConfig.variant}
                       className={cn(
                         "flex items-center gap-1 flex-shrink-0 sm:text-sm sm:px-2.5 sm:py-1",
-                        statusConfig.bg,
-                        statusConfig.border,
-                        statusConfig.color
+                        finalStatusConfig.bg,
+                        finalStatusConfig.border,
+                        finalStatusConfig.color
                       )}
                     >
-                      <statusConfig.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      {statusConfig.label}
+                      <finalStatusConfig.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      {finalStatusConfig.label}
                     </Badge>
                   </div>
                 </div>
