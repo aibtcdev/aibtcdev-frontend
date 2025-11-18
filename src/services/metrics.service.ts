@@ -1,5 +1,39 @@
 import { supabase } from "./supabase";
 import { singleDaoName, rewardPerPassedProposal } from "@/config/features";
+import { fetchProposalVotes } from "./vote.service";
+import { fetchLatestChainState } from "./chain-state.service";
+import { getProposalStatus } from "@/utils/proposal";
+
+type ProposalRecord = {
+  id: string;
+  contract_caller: string | null;
+  concluded_by: string | null;
+  executed: boolean | null;
+  dao_id: string;
+  status: string | null;
+  liquid_tokens: string | number | null;
+  voting_quorum: string | number | null;
+  voting_threshold: string | number | null;
+  votes_for: string | number | null;
+  votes_against: string | number | null;
+  met_quorum: boolean | null;
+  met_threshold: boolean | null;
+  passed: boolean | null;
+  vote_start: string | number | bigint | null;
+  vote_end: string | number | bigint | null;
+  exec_start: string | number | bigint | null;
+  exec_end: string | number | bigint | null;
+};
+
+const parseNumericValue = (value: unknown): number => {
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
 
 export interface UserMetrics {
   username: string;
@@ -31,11 +65,34 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
     return [];
   }
 
+  // Fetch current block height
+  const latestChainState = await fetchLatestChainState();
+  const currentBlockHeight = latestChainState?.bitcoin_block_height
+    ? Number(latestChainState.bitcoin_block_height)
+    : null;
+
   // Fetch all DEPLOYED proposals for the specific DAO
   const { data: proposals, error } = await supabase
     .from("proposals")
     .select(
-      "id, contract_caller, concluded_by, executed, met_quorum, met_threshold, passed, status, dao_id"
+      `id,
+      contract_caller,
+      concluded_by,
+      executed,
+      status,
+      dao_id,
+      liquid_tokens,
+      voting_quorum,
+      voting_threshold,
+      votes_for,
+      votes_against,
+      met_quorum,
+      met_threshold,
+      passed,
+      vote_start,
+      vote_end,
+      exec_start,
+      exec_end`
     )
     .eq("status", "DEPLOYED")
     .eq("dao_id", dao.id)
@@ -49,6 +106,59 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
   if (!proposals || proposals.length === 0) {
     return [];
   }
+
+  const typedProposals = proposals as ProposalRecord[];
+
+  // Fetch individual votes for all proposals to calculate accurate quorum/threshold
+  const proposalOutcomeMap = new Map<
+    string,
+    { metQuorum: boolean; metThreshold: boolean }
+  >();
+
+  await Promise.all(
+    typedProposals.map(async (proposal) => {
+      try {
+        const votes = await fetchProposalVotes(proposal.id);
+
+        const { totalFor, totalAgainst } = votes.reduce(
+          (acc, vote) => {
+            const amount = vote.amount ? parseFloat(vote.amount) : 1;
+            if (vote.answer === true) {
+              acc.totalFor += amount;
+            } else {
+              acc.totalAgainst += amount;
+            }
+            return acc;
+          },
+          { totalFor: 0, totalAgainst: 0 }
+        );
+
+        const liquidTokens = parseNumericValue(proposal.liquid_tokens);
+        const quorumRequired = parseNumericValue(proposal.voting_quorum);
+        const thresholdRequired = parseNumericValue(proposal.voting_threshold);
+        const totalVotes = totalFor + totalAgainst;
+
+        const participationRate =
+          liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
+        const approvalRate = totalVotes > 0 ? (totalFor / totalVotes) * 100 : 0;
+
+        proposalOutcomeMap.set(proposal.id, {
+          metQuorum: participationRate >= quorumRequired,
+          metThreshold: approvalRate >= thresholdRequired,
+        });
+      } catch (error) {
+        console.error(
+          `Error fetching votes for proposal ${proposal.id}:`,
+          error
+        );
+        // Default to false if we can't fetch votes
+        proposalOutcomeMap.set(proposal.id, {
+          metQuorum: false,
+          metThreshold: false,
+        });
+      }
+    })
+  );
 
   // Fetch agents with their profiles
   const { data: agentsWithProfiles, error: agentsError } = await supabase.from(
@@ -102,7 +212,7 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
   // Group proposals by contract_caller (account_contract)
   const accountProposalsMap = new Map<string, typeof proposals>();
 
-  proposals.forEach((proposal) => {
+  typedProposals.forEach((proposal) => {
     const contractCaller = proposal.contract_caller;
     if (!contractCaller) return;
 
@@ -123,38 +233,39 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
     ([accountContract, userProposals]) => {
       const totalProposals = userProposals.length;
 
-      // Pending proposals (not concluded yet)
       const pendingProposals = userProposals.filter(
-        (p) => p.concluded_by === null
+        (proposal) => !proposal.concluded_by
       ).length;
 
-      // Passed proposals (successful contributions)
-      const passedProposals = userProposals.filter(
-        (p) =>
-          p.concluded_by !== null &&
-          p.executed === true &&
-          p.met_quorum === true &&
-          p.met_threshold === true &&
-          p.passed === true
-      ).length;
+      const concludedProposalsCount = totalProposals - pendingProposals;
 
-      // Failed proposals (concluded but not successful)
-      const failedProposals = userProposals.filter(
-        (p) =>
-          p.concluded_by !== null &&
-          !(
-            p.executed === true &&
-            p.met_quorum === true &&
-            p.met_threshold === true &&
-            p.passed === true
-          )
-      ).length;
+      const passedProposals = userProposals.filter((proposal) => {
+        // Get proposal status to check if it meets quorum and threshold
+        const status = getProposalStatus(proposal as any, currentBlockHeight);
 
-      // Calculate success rate (excluding pending)
-      const concludedProposals = totalProposals - pendingProposals;
+        // Count as passed if: ACTIVE and met requirements, or in any ended state and met requirements
+        const isActiveOrEnded = [
+          "ACTIVE",
+          "PASSED",
+          "FAILED",
+          "VETO_PERIOD",
+          "EXECUTION_WINDOW",
+        ].includes(status);
+
+        if (!isActiveOrEnded) return false;
+
+        const outcome = proposalOutcomeMap.get(proposal.id);
+        return outcome?.metQuorum && outcome?.metThreshold;
+      }).length;
+
+      const failedProposals = Math.max(
+        concludedProposalsCount - passedProposals,
+        0
+      );
+
       const successRate =
-        concludedProposals > 0
-          ? Math.round((passedProposals / concludedProposals) * 100)
+        concludedProposalsCount > 0
+          ? Math.round((passedProposals / concludedProposalsCount) * 100)
           : 0;
 
       // Try to get username - first try full match, then contract name only
