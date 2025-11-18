@@ -22,7 +22,7 @@ const VoteStatusChart = ({
   initialVotesAgainst,
   // refreshing = false,
   tokenSymbol = "",
-  liquidTokens,
+  // liquidTokens,
   proposal,
 }: VoteStatusChartProps) => {
   const [localRefreshing, setLocalRefreshing] = useState(false);
@@ -116,7 +116,7 @@ const VoteStatusChart = ({
   return (
     <div className="space-y-2">
       {/* Vote Progress Bar */}
-      <div className="relative">
+      <div className="relative pb-8">
         <div className="h-3 sm:h-4 bg-muted rounded-sm overflow-hidden relative">
           {/* Votes for (green) */}
           <div
@@ -134,63 +134,46 @@ const VoteStatusChart = ({
             }}
           />
         </div>
-      </div>
 
-      {/* Vote Counts */}
-      <div className="flex justify-between items-center text-xs sm:text-sm">
-        <div className="flex items-center gap-1">
-          <span className="text-green-500 font-extrabold">For:</span>
-          <TokenBalance
-            value={voteDisplayData.rawVotesFor}
-            decimals={8}
-            variant="abbreviated"
-            symbol={tokenSymbol}
-            className="font-medium hidden sm:inline"
-          />
-          <TokenBalance
-            value={voteDisplayData.rawVotesFor}
-            decimals={8}
-            variant="abbreviated"
-            className="font-medium sm:hidden"
-          />
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="text-red-500 font-extrabold">Against:</span>
-          <TokenBalance
-            value={voteDisplayData.rawVotesAgainst}
-            decimals={8}
-            variant="abbreviated"
-            symbol={tokenSymbol}
-            className="font-medium hidden sm:inline"
-          />
-          <TokenBalance
-            value={voteDisplayData.rawVotesAgainst}
-            decimals={8}
-            variant="abbreviated"
-            className="font-medium sm:hidden"
-          />
-        </div>
-
-        {/* Liquid Tokens - Right */}
-        {liquidTokens && Number(liquidTokens) > 0 && (
+        {/* For Label - positioned below at start of green bar */}
+        <div className="absolute left-0 top-5 text-xs sm:text-sm">
           <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Liquid Token:</span>
+            <span className="text-green-500 font-extrabold">For:</span>
             <TokenBalance
-              value={liquidTokens}
+              value={voteDisplayData.rawVotesFor}
               decimals={8}
               variant="abbreviated"
               symbol={tokenSymbol}
               className="font-medium hidden sm:inline"
             />
             <TokenBalance
-              value={liquidTokens}
+              value={voteDisplayData.rawVotesFor}
               decimals={8}
               variant="abbreviated"
               className="font-medium sm:hidden"
             />
           </div>
-        )}
+        </div>
+
+        {/* Against Label - positioned below at end (right side) */}
+        <div className="absolute right-0 top-5 text-xs sm:text-sm">
+          <div className="flex items-center gap-1">
+            <span className="text-red-500 font-extrabold">Against:</span>
+            <TokenBalance
+              value={voteDisplayData.rawVotesAgainst}
+              decimals={8}
+              variant="abbreviated"
+              symbol={tokenSymbol}
+              className="font-medium hidden sm:inline"
+            />
+            <TokenBalance
+              value={voteDisplayData.rawVotesAgainst}
+              decimals={8}
+              variant="abbreviated"
+              className="font-medium sm:hidden"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -130,11 +130,38 @@ export const getProposalStatus = (
 
   // Completed (after exec_end or vote_end if no execution window)
   if (currentBlockHeight >= execEnd) {
-    if (proposal.passed) {
+    // Check if proposal met voting requirements by calculating directly from votes
+    // Handle both string and bigint types
+    const votesFor =
+      typeof proposal.votes_for === "string"
+        ? parseFloat(proposal.votes_for)
+        : Number(proposal.votes_for || 0);
+    const votesAgainst =
+      typeof proposal.votes_against === "string"
+        ? parseFloat(proposal.votes_against)
+        : Number(proposal.votes_against || 0);
+    const liquidTokens =
+      typeof proposal.liquid_tokens === "string"
+        ? parseFloat(proposal.liquid_tokens)
+        : Number(proposal.liquid_tokens || 0);
+    const quorum = safeNumberFromBigInt(proposal.voting_quorum);
+    const threshold = safeNumberFromBigInt(proposal.voting_threshold);
+
+    const totalVotes = votesFor + votesAgainst;
+    const participationRate =
+      liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
+    const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
+
+    const metQuorum = participationRate >= quorum;
+    const metThreshold = approvalRate >= threshold;
+
+    // If voting requirements are met, show as PASSED (even if execution window expired)
+    if (metQuorum && metThreshold) {
       return "PASSED";
-    } else {
-      return "FAILED";
     }
+
+    // Otherwise it failed voting requirements
+    return "FAILED";
   }
 
   // Fallback

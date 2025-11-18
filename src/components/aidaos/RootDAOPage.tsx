@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { useMemo, useState, useCallback } from "react";
 import {
   Building2,
@@ -45,6 +45,8 @@ import { getStacksAddress } from "@/lib/address";
 // import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 import { TwitterCard } from "@/components/twitter/TwitterCard";
 import { rewardPerPassedProposal } from "@/config/features";
+import { safeNumberFromBigInt } from "@/utils/proposal";
+import { fetchProposalVotes } from "@/services/vote.service";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -323,6 +325,29 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     staleTime: 600000,
   });
 
+  const proposalsArray = useMemo(
+    () => (Array.isArray(proposals) ? proposals : []),
+    [proposals]
+  );
+
+  const proposalVoteQueries = useQueries({
+    queries: proposalsArray.map((proposal) => ({
+      queryKey: ["proposalVotesDB", proposal.id],
+      queryFn: () => fetchProposalVotes(proposal.id),
+      enabled: !!proposal.id,
+      staleTime: 60000,
+    })),
+  });
+
+  const hasProposals = proposalsArray.length > 0;
+  const proposalVotesReady =
+    !hasProposals ||
+    (proposalVoteQueries.length === proposalsArray.length &&
+      proposalVoteQueries.every(
+        (query) =>
+          Array.isArray(query.data) && !query.isLoading && !query.isFetching
+      ));
+
   const { data: marketStats } = useQuery({
     queryKey: ["marketStats", id, dex, token?.max_supply],
     queryFn: () => fetchMarketStats(dex!, id!, token!.max_supply || 0),
@@ -364,19 +389,84 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   }, [marketStats, tokenPrice, holdersData, token]);
 
   const totalProposals = useMemo(() => {
-    if (!Array.isArray(proposals)) return 0;
-    return proposals.filter((proposal) => proposal.status === "DEPLOYED")
+    return proposalsArray.filter((proposal) => proposal.status === "DEPLOYED")
       .length;
-  }, [proposals]);
+  }, [proposalsArray]);
 
   const passedProposals = useMemo(() => {
-    if (!Array.isArray(proposals)) return 0;
-    return proposals.filter((proposal) => proposal.passed === true).length;
-  }, [proposals]);
+    if (!proposalVotesReady) return 0;
+
+    const parseVoteValue = (
+      value: string | number | null | undefined
+    ): number | null => {
+      if (typeof value === "number") return value;
+      if (typeof value === "string" && value.trim().length > 0) {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) ? numericValue : null;
+      }
+      return null;
+    };
+
+    return proposalsArray.filter((proposal, index) => {
+      if (proposal.status !== "DEPLOYED") {
+        return false;
+      }
+
+      const voteQuery = proposalVoteQueries[index];
+      const votesFromQuery = Array.isArray(voteQuery?.data)
+        ? voteQuery.data
+        : null;
+
+      const aggregatedFromQuery = votesFromQuery
+        ? votesFromQuery.reduce(
+            (acc, vote) => {
+              const amount =
+                typeof vote.amount === "string" && vote.amount.trim().length > 0
+                  ? Number(vote.amount)
+                  : 1;
+              const safeAmount = Number.isFinite(amount) ? amount : 1;
+
+              if (vote.answer === true) {
+                acc.votesFor += safeAmount;
+              } else {
+                acc.votesAgainst += safeAmount;
+              }
+              return acc;
+            },
+            { votesFor: 0, votesAgainst: 0 }
+          )
+        : null;
+
+      const votesFor = aggregatedFromQuery
+        ? aggregatedFromQuery.votesFor
+        : parseVoteValue(proposal.votes_for);
+      const votesAgainst = aggregatedFromQuery
+        ? aggregatedFromQuery.votesAgainst
+        : parseVoteValue(proposal.votes_against);
+
+      if (votesFor === null || votesAgainst === null) {
+        return false;
+      }
+
+      const totalVotes = votesFor + votesAgainst;
+      const liquidTokens = parseVoteValue(proposal.liquid_tokens) || 0;
+      const quorumRequired = safeNumberFromBigInt(proposal.voting_quorum);
+      const thresholdRequired = safeNumberFromBigInt(proposal.voting_threshold);
+
+      const participationRate =
+        liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
+      const approvalRate = totalVotes > 0 ? (votesFor / totalVotes) * 100 : 0;
+
+      return (
+        participationRate >= quorumRequired && approvalRate >= thresholdRequired
+      );
+    }).length;
+  }, [proposalVoteQueries, proposalVotesReady, proposalsArray]);
 
   const totalRewards = useMemo(() => {
+    if (!proposalVotesReady) return 0;
     return passedProposals * rewardPerPassedProposal;
-  }, [passedProposals]);
+  }, [passedProposals, proposalVotesReady]);
 
   if (isBasicLoading || !dao) {
     return (
@@ -483,12 +573,16 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Passed:</span>
-                <span className="font-medium">{passedProposals}</span>
+                <span className="font-medium">
+                  {proposalVotesReady ? passedProposals : "Loading..."}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Total Rewards:</span>
                 <span className="font-medium">
-                  ${totalRewards.toLocaleString()}
+                  {proposalVotesReady
+                    ? `$${totalRewards.toLocaleString()}`
+                    : "Loading..."}
                 </span>
               </div>
             </div>
