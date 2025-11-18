@@ -31,7 +31,8 @@ export default function ProposalCard({
   const router = useRouter();
 
   // Use the unified status system
-  const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
+  const { status, statusConfig, isActive, isPassed, isEnded } =
+    useProposalStatus(proposal);
 
   // Use centralized vote hook for consistent data fetching
   const {
@@ -95,8 +96,8 @@ export default function ProposalCard({
     if (!hasVoteData || totalVotes === null) return null;
 
     const liquidTokens = Number(proposal.liquid_tokens || 0);
-    const quorumPercentage = Number(proposal.voting_quorum || 0) / 100;
-    const thresholdPercentage = Number(proposal.voting_threshold || 0) / 100;
+    const quorumPercentage = Number(proposal.voting_quorum || 0);
+    const thresholdPercentage = Number(proposal.voting_threshold || 0);
 
     // Calculate participation rate (quorum)
     const participationRate =
@@ -181,18 +182,94 @@ export default function ProposalCard({
                   className="flex-shrink-0"
                 />
                 {quorumThresholdData && (
-                  <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-sm flex-shrink-0">
+                  <div
+                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded-sm flex-shrink-0 ${
+                      status === "PENDING" || status === "DRAFT"
+                        ? quorumThresholdData.metQuorum
+                          ? "bg-green-500/10 border border-green-500/30"
+                          : "bg-gray-500/10 border border-gray-500/30"
+                        : isActive
+                          ? quorumThresholdData.metQuorum
+                            ? "bg-green-500/10 border border-green-500/30"
+                            : "bg-orange-500/10 border border-orange-500/30"
+                          : !isEnded
+                            ? "bg-gray-500/10 border border-gray-500/30"
+                            : quorumThresholdData.metQuorum
+                              ? "bg-green-500/10 border border-green-500/30"
+                              : "bg-red-500/10 border border-red-500/30"
+                    }`}
+                  >
                     <span className="text-muted-foreground">Quorum:</span>
-                    <span className="font-medium text-foreground">
-                      {quorumThresholdData.participationRate.toFixed(1)}%
+                    <span
+                      className={`font-medium ${
+                        status === "PENDING" || status === "DRAFT"
+                          ? quorumThresholdData.metQuorum
+                            ? "text-green-400"
+                            : "text-gray-400"
+                          : isActive
+                            ? quorumThresholdData.metQuorum
+                              ? "text-green-400"
+                              : "text-orange-400"
+                            : !isEnded
+                              ? "text-gray-400"
+                              : quorumThresholdData.metQuorum
+                                ? "text-green-400"
+                                : "text-red-400"
+                      }`}
+                    >
+                      {quorumThresholdData.metQuorum
+                        ? "Passed"
+                        : status === "VETO_PERIOD" ||
+                            status === "EXECUTION_WINDOW" ||
+                            isEnded
+                          ? "Failed"
+                          : `${quorumThresholdData.participationRate.toFixed(1)}%`}
                     </span>
                   </div>
                 )}
                 {quorumThresholdData && (
-                  <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-sm flex-shrink-0">
+                  <div
+                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded-sm flex-shrink-0 ${
+                      status === "PENDING" || status === "DRAFT"
+                        ? quorumThresholdData.metThreshold
+                          ? "bg-green-500/10 border border-green-500/30"
+                          : "bg-gray-500/10 border border-gray-500/30"
+                        : isActive
+                          ? quorumThresholdData.metThreshold
+                            ? "bg-green-500/10 border border-green-500/30"
+                            : "bg-orange-500/10 border border-orange-500/30"
+                          : !isEnded
+                            ? "bg-gray-500/10 border border-gray-500/30"
+                            : quorumThresholdData.metThreshold
+                              ? "bg-green-500/10 border border-green-500/30"
+                              : "bg-red-500/10 border border-red-500/30"
+                    }`}
+                  >
                     <span className="text-muted-foreground">Threshold:</span>
-                    <span className="font-medium text-foreground">
-                      {quorumThresholdData.approvalRate.toFixed(1)}%
+                    <span
+                      className={`font-medium ${
+                        status === "PENDING" || status === "DRAFT"
+                          ? quorumThresholdData.metThreshold
+                            ? "text-green-400"
+                            : "text-gray-400"
+                          : isActive
+                            ? quorumThresholdData.metThreshold
+                              ? "text-green-400"
+                              : "text-orange-400"
+                            : !isEnded
+                              ? "text-gray-400"
+                              : quorumThresholdData.metThreshold
+                                ? "text-green-400"
+                                : "text-red-400"
+                      }`}
+                    >
+                      {quorumThresholdData.metThreshold
+                        ? "Passed"
+                        : status === "VETO_PERIOD" ||
+                            status === "EXECUTION_WINDOW" ||
+                            isEnded
+                          ? "Failed"
+                          : `${quorumThresholdData.approvalRate.toFixed(1)}%`}
                     </span>
                   </div>
                 )}
