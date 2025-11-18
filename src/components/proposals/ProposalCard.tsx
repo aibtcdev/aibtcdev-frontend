@@ -88,7 +88,40 @@ export default function ProposalCard({
 
   // Parse liquid_tokens as a number for use in percentage calculations
   // const liquidTokens = Number(proposal.liquid_tokens);
-  const { totalVotes, hasVoteData } = voteSummary;
+  const { totalVotes, hasVoteData, votesFor } = voteSummary;
+
+  // Calculate quorum and threshold percentages similar to VotingProgressChart
+  const quorumThresholdData = useMemo(() => {
+    if (!hasVoteData || totalVotes === null) return null;
+
+    const liquidTokens = Number(proposal.liquid_tokens || 0);
+    const quorumPercentage = Number(proposal.voting_quorum || 0) / 100;
+    const thresholdPercentage = Number(proposal.voting_threshold || 0) / 100;
+
+    // Calculate participation rate (quorum)
+    const participationRate =
+      liquidTokens > 0 ? (totalVotes / liquidTokens) * 100 : 0;
+
+    // Calculate approval rate (threshold)
+    const approvalRate =
+      totalVotes > 0 && votesFor !== null ? (votesFor / totalVotes) * 100 : 0;
+
+    return {
+      quorumPercentage,
+      thresholdPercentage,
+      participationRate,
+      approvalRate,
+      metQuorum: participationRate >= quorumPercentage,
+      metThreshold: approvalRate >= thresholdPercentage,
+    };
+  }, [
+    hasVoteData,
+    totalVotes,
+    votesFor,
+    proposal.liquid_tokens,
+    proposal.voting_quorum,
+    proposal.voting_threshold,
+  ]);
 
   // Memoize DAO info
   const daoInfo = useMemo(() => {
@@ -125,17 +158,12 @@ export default function ProposalCard({
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2 mb-2">
-                {proposal.proposal_id
-                  ? `#${proposal.proposal_id}: ${proposal.title}`
-                  : proposal.title}
-              </h3>
-              <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                <ProposalStatusBadge
-                  proposal={proposal}
-                  size="sm"
-                  className="flex-shrink-0"
-                />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-2">
+                  {proposal.proposal_id
+                    ? `#${proposal.proposal_id}: ${proposal.title}`
+                    : proposal.title}
+                </h3>
                 <div className="flex items-center gap-1 text-xs text-foreground/75 flex-shrink-0">
                   <Clock className="h-3 w-3 flex-shrink-0" />
                   <span className="whitespace-nowrap">
@@ -145,6 +173,29 @@ export default function ProposalCard({
                     )}
                   </span>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                <ProposalStatusBadge
+                  proposal={proposal}
+                  size="sm"
+                  className="flex-shrink-0"
+                />
+                {quorumThresholdData && (
+                  <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-sm flex-shrink-0">
+                    <span className="text-muted-foreground">Quorum:</span>
+                    <span className="font-medium text-foreground">
+                      {quorumThresholdData.participationRate.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+                {quorumThresholdData && (
+                  <div className="flex items-center gap-1 text-xs bg-muted/50 px-2 py-1 rounded-sm flex-shrink-0">
+                    <span className="text-muted-foreground">Threshold:</span>
+                    <span className="font-medium text-foreground">
+                      {quorumThresholdData.approvalRate.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Reference Links - Extract from content and display below title */}

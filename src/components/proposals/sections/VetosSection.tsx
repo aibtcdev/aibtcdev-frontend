@@ -144,11 +144,6 @@ function VetosContent({
             </div>
           </div>
         ))}
-        {vetos && vetos.length > 3 && (
-          <p className="text-xs text-muted-foreground text-center">
-            +{vetos.length - 3} more vetos
-          </p>
-        )}
       </div>
     </div>
   );
