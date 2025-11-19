@@ -380,15 +380,6 @@ export default function TestPostPage() {
                     {evaluationResult.usage_output_tokens.toLocaleString()}
                   </p>
                 </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Est. Cost
-                  </p>
-                  <p className="text-lg font-semibold text-primary">
-                    {evaluationResult.usage_est_cost}
-                  </p>
-                </div>
               </div>
             </div>
 
