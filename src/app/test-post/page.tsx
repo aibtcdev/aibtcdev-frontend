@@ -31,7 +31,7 @@ interface NetworkSchoolEvaluation {
   raw_response: string;
   citations: string[];
   search_queries: string[];
-  raw_openrouter_response: any;
+  raw_openrouter_response: string[];
 }
 
 export default function TestPostPage() {
