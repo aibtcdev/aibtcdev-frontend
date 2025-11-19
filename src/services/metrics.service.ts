@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { singleDaoName } from "@/config/features";
+import { singleDaoName, rewardPerPassedProposal } from "@/config/features";
 
 export interface UserMetrics {
   username: string;
@@ -178,7 +178,7 @@ export async function fetchAllUserMetrics(): Promise<UserMetrics[]> {
         failedProposals,
         pendingProposals,
         successRate,
-        btcEarned: passedProposals * 50,
+        btcEarned: passedProposals * rewardPerPassedProposal,
       });
     }
   );

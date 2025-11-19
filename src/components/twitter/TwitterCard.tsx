@@ -7,7 +7,7 @@ interface TwitterCardProps {
   username: string;
   tweet: string;
   date: string;
-  time: string;
+  // time: string;
   avatarUrl?: string;
   verified?: boolean;
   link?: string;
@@ -19,7 +19,7 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
   username,
   tweet,
   date,
-  time,
+  // time,
   avatarUrl,
   verified = false,
   link,
@@ -100,7 +100,8 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
 
       {/* Date and Time */}
       <div className="mt-4 text-gray-400 text-sm">
-        {date} · {time}
+        {date}
+        {/* · {time} */}
       </div>
     </div>
   );

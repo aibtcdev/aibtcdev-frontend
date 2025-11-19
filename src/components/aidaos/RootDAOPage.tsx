@@ -44,6 +44,7 @@ import { getStacksAddress } from "@/lib/address";
 // import { useAgentAccount } from "@/hooks/useAgentAccount";
 // import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 import { TwitterCard } from "@/components/twitter/TwitterCard";
+import { rewardPerPassedProposal } from "@/config/features";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -373,6 +374,10 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     return proposals.filter((proposal) => proposal.passed === true).length;
   }, [proposals]);
 
+  const totalRewards = useMemo(() => {
+    return passedProposals * rewardPerPassedProposal;
+  }, [passedProposals]);
+
   if (isBasicLoading || !dao) {
     return (
       <main className="flex h-screen w-full items-center justify-center">
@@ -482,7 +487,9 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Total Rewards:</span>
-                <span className="font-medium">$4,005</span>
+                <span className="font-medium">
+                  ${totalRewards.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
@@ -520,19 +527,21 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               <TwitterCard
                 name="AIBTC"
                 username="aibtcdev"
-                tweet={`AIBTC order update — proof of coffee ritual ☕
+                tweet={`AIBTC order — recruit dark talent ☕️ 🌎
 
 quote this post with:
-1️⃣ a coffee selfie
-2️⃣ tag a blue-check builder you respect
-3️⃣ tell us what you've built today for bitcoin
+1️⃣ photo of your coffee + workspace
+2️⃣ tag a blue-check builder you admire who should build a startup society
+3️⃣ thoughtful one-liner on why
 
-submit daily at aibtc.com`}
-                date="Nov 7, 2025"
-                time="8:14 PM"
+submit daily, earn btc
+@balajis prompt us: what order should be next?
+`}
+                date="Nov 17, 2025"
+                // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                link="https://x.com/aibtcdev/status/1985732853540470816"
+                link="https://x.com/aibtcdev/status/1990455534554841152"
                 title="The Current Order"
               />
             </div>
