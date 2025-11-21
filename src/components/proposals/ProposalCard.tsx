@@ -7,7 +7,6 @@ import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
 import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
@@ -16,26 +15,27 @@ import { useProposalVote } from "@/hooks/useProposalVote";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { safeNumberFromBigInt } from "@/utils/proposal";
+import { cn } from "@/lib/utils";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
-  tokenSymbol?: string;
   showDAOInfo?: boolean;
 }
 
 export default function ProposalCard({
   proposal,
-  tokenSymbol = "",
   showDAOInfo = false,
 }: ProposalCardProps) {
   const router = useRouter();
 
   // Use the unified status system
-  const { statusConfig, isActive, isPassed } = useProposalStatus(proposal);
+  const { status, statusConfig, isActive } = useProposalStatus(proposal);
 
   // Use centralized vote hook for consistent data fetching
   const {
     voteDisplayData,
+    calculations,
     error: hasVoteDataError,
     refreshVoteData,
     isLoading: isLoadingVotes,
@@ -90,6 +90,43 @@ export default function ProposalCard({
   // const liquidTokens = Number(proposal.liquid_tokens);
   const { totalVotes, hasVoteData } = voteSummary;
 
+  // Enhanced calculations for quorum and threshold display
+  const enhancedCalculations = useMemo(() => {
+    if (!calculations) return null;
+
+    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
+    const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
+
+    // Calculate if requirements are met
+    const metQuorum = calculations.participationRate >= quorumPercentage;
+    const metThreshold =
+      calculations.totalVotes > 0
+        ? calculations.approvalRate >= thresholdPercentage
+        : false;
+
+    return {
+      ...calculations,
+      quorumPercentage,
+      thresholdPercentage,
+      metQuorum,
+      metThreshold,
+    };
+  }, [calculations, proposal]);
+
+  // Helper function for status display
+  const getStatusText = (met: boolean, percentage?: number) => {
+    // If voting hasn't started (PENDING, DRAFT), show "Pending"
+    if (status === "PENDING" || status === "DRAFT") {
+      return "Pending";
+    }
+
+    if (isActive) {
+      return percentage !== undefined ? `${percentage.toFixed(1)}%` : "0%";
+    }
+
+    return met ? "Passed" : "Failed";
+  };
+
   // Memoize DAO info
   const daoInfo = useMemo(() => {
     const proposalWithDAO = proposal as ProposalWithDAO;
@@ -130,12 +167,86 @@ export default function ProposalCard({
                   ? `#${proposal.proposal_id}: ${proposal.title}`
                   : proposal.title}
               </h3>
-              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <ProposalStatusBadge
                   proposal={proposal}
                   size="sm"
                   className="flex-shrink-0"
                 />
+
+                {/* Quorum and Threshold Badges */}
+                {enhancedCalculations &&
+                  statusConfig.label !== "Pending" &&
+                  statusConfig.label !== "Draft" && (
+                    <>
+                      {/* Quorum Badge */}
+                      <div
+                        className={cn(
+                          "px-2 py-0.5 rounded-sm text-xs font-medium border flex-shrink-0",
+                          isActive
+                            ? enhancedCalculations.metQuorum
+                              ? "bg-success/10 border-success/20"
+                              : "bg-primary/10 border-primary/20"
+                            : enhancedCalculations.metQuorum
+                              ? "bg-success/10 border-success/20"
+                              : "bg-destructive/10 border-destructive/20"
+                        )}
+                      >
+                        <span className="text-muted-foreground">Quorum:</span>{" "}
+                        <span
+                          className={cn(
+                            isActive
+                              ? enhancedCalculations.metQuorum
+                                ? "text-success"
+                                : "text-primary"
+                              : enhancedCalculations.metQuorum
+                                ? "text-success"
+                                : "text-destructive"
+                          )}
+                        >
+                          {getStatusText(
+                            enhancedCalculations.metQuorum,
+                            enhancedCalculations.participationRate
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Threshold Badge */}
+                      <div
+                        className={cn(
+                          "px-2 py-0.5 rounded-sm text-xs font-medium border flex-shrink-0",
+                          isActive
+                            ? enhancedCalculations.metThreshold
+                              ? "bg-success/10 border-success/20"
+                              : "bg-primary/10 border-primary/20"
+                            : enhancedCalculations.metThreshold
+                              ? "bg-success/10 border-success/20"
+                              : "bg-destructive/10 border-destructive/20"
+                        )}
+                      >
+                        <span className="text-muted-foreground">
+                          Threshold:
+                        </span>{" "}
+                        <span
+                          className={cn(
+                            isActive
+                              ? enhancedCalculations.metThreshold
+                                ? "text-success"
+                                : "text-primary"
+                              : enhancedCalculations.metThreshold
+                                ? "text-success"
+                                : "text-destructive"
+                          )}
+                        >
+                          {getStatusText(
+                            enhancedCalculations.metThreshold,
+                            enhancedCalculations.approvalRate
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
                 <div className="flex items-center gap-1 text-xs text-foreground/75 flex-shrink-0">
                   <Clock className="h-3 w-3 flex-shrink-0" />
                   <span className="whitespace-nowrap">
@@ -363,23 +474,6 @@ export default function ProposalCard({
             </span>
           </div>
         )} */}
-
-          {/* Enhanced Chart Section for detailed view - Hide for pending proposals */}
-          {(isActive ||
-            statusConfig.label === "Veto Period" ||
-            statusConfig.label === "Execution Window" ||
-            isPassed ||
-            statusConfig.label === "Failed") &&
-            statusConfig.label !== "Pending" && (
-              <div className="">
-                <VoteStatusChart
-                  proposalId={proposal.proposal_id?.toString()}
-                  tokenSymbol={tokenSymbol}
-                  liquidTokens={proposal.liquid_tokens}
-                  proposal={proposal}
-                />
-              </div>
-            )}
         </div>
       </Link>
     </motion.div>
