@@ -171,26 +171,6 @@ const VoteStatusChart = ({
             className="font-medium sm:hidden"
           />
         </div>
-
-        {/* Liquid Tokens - Right */}
-        {liquidTokens && Number(liquidTokens) > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Liquid Token:</span>
-            <TokenBalance
-              value={liquidTokens}
-              decimals={8}
-              variant="abbreviated"
-              symbol={tokenSymbol}
-              className="font-medium hidden sm:inline"
-            />
-            <TokenBalance
-              value={liquidTokens}
-              decimals={8}
-              variant="abbreviated"
-              className="font-medium sm:hidden"
-            />
-          </div>
-        )}
       </div>
     </div>
   );
