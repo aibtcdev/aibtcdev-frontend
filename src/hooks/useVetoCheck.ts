@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { fetchProposalVetos } from "@/services/veto.service";
 import type { Proposal, ProposalWithDAO } from "@/types";
 import { useMemo } from "react";
+import { useProposalVetos } from "@/hooks/useVetos";
 
 interface UseVetoCheckProps {
   proposal: Proposal | ProposalWithDAO;
@@ -24,23 +23,7 @@ export function useVetoCheck({
   proposal,
   votesForNum = 0,
 }: UseVetoCheckProps): VetoCheckResult {
-  // Fetch vetos for this proposal
-  const {
-    data: vetos,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["proposalVetos", proposal.id],
-    queryFn: async () => {
-      if (!proposal.id) {
-        return [];
-      }
-      return await fetchProposalVetos(proposal.id);
-    },
-    enabled: !!proposal.id,
-    staleTime: 30000, // 30 seconds
-    retry: 2,
-  });
+  const { data: vetos, isLoading, error } = useProposalVetos(proposal.id || "");
 
   // Calculate total veto amount
   const vetoCalculations = useMemo(() => {
