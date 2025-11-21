@@ -170,9 +170,9 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
             </tr>
           </thead>
           <tbody>
-            {displayedVotes.map((vote, index) => (
+            {displayedVotes.map((vote) => (
               <tr
-                key={vote.tx_id || index}
+                key={vote.id}
                 className="border-b border-border/50 hover:bg-muted/30 transition-colors"
               >
                 {/* Voter */}

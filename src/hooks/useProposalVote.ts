@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProposalVotes } from "@/services/vote.service";
 import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useSmartCacheBusting } from "@/hooks/useSmartCacheBusting";
+import { useVetoCheck } from "@/hooks/useVetoCheck";
 import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface UseProposalVoteProps {
@@ -270,6 +271,12 @@ export function useProposalVote({
     return !voteDisplayData && primaryQuery.error;
   }, [voteDisplayData, primaryQuery.error]);
 
+  // Check if veto amount exceeds For votes
+  const vetoCheck = useVetoCheck({
+    proposal,
+    votesForNum: calculations?.votesForNum || 0,
+  });
+
   return {
     // Data
     voteDisplayData,
@@ -290,6 +297,9 @@ export function useProposalVote({
 
     // Raw data
     rawData: activeVoteData,
+
+    // Veto check
+    vetoCheck,
 
     // Debug info
     cacheInfo: {
