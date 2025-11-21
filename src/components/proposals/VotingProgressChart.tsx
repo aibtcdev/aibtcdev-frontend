@@ -57,6 +57,7 @@ const VotingProgressChart = ({
     error: voteDataError,
     hasData,
     refreshVoteData,
+    vetoCheck,
   } = useProposalVote({
     proposal,
     contractPrincipal,
@@ -171,6 +172,17 @@ const VotingProgressChart = ({
   // Enhanced result status logic using the new status system
   const getResultStatus = () => {
     const StatusIcon = statusConfig.icon;
+
+    // Check if veto amount exceeds For votes - this overrides other status
+    if (vetoCheck.vetoExceedsForVote && !isActive) {
+      return {
+        status: "Failed",
+        color: "text-destructive",
+        icon: <XCircle className="h-4 w-4" />,
+        bgColor: "bg-destructive/10 border-destructive/20",
+        reason: "Veto amount exceeds For votes",
+      };
+    }
 
     switch (status) {
       case "DRAFT":
@@ -742,6 +754,13 @@ const VotingProgressChart = ({
                     />
                   </div>
 
+                  {/* Veto override message */}
+                  {resultStatus.reason && (
+                    <div className="text-destructive">
+                      ⚠️ {resultStatus.reason}
+                    </div>
+                  )}
+
                   {/* Additional status-specific information */}
                   {status === "EXECUTION_WINDOW" && (
                     <div className="text-accent-foreground">
@@ -760,7 +779,8 @@ const VotingProgressChart = ({
                   )}
                   {status === "FAILED" &&
                     enhancedCalculations.metQuorum &&
-                    enhancedCalculations.metThreshold && (
+                    enhancedCalculations.metThreshold &&
+                    !resultStatus.reason && (
                       <div className="text-destructive">
                         ⚠️ Failed despite meeting requirements
                       </div>

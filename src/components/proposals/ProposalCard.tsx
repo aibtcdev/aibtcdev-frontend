@@ -42,6 +42,7 @@ export default function ProposalCard({
     error: hasVoteDataError,
     refreshVoteData,
     isLoading: isLoadingVotes,
+    vetoCheck,
   } = useProposalVote({
     proposal,
     contractPrincipal: proposal.contract_principal,
@@ -249,6 +250,13 @@ export default function ProposalCard({
                       </div>
                     </>
                   )}
+
+                {/* Veto Override Warning Badge */}
+                {vetoCheck?.vetoExceedsForVote && !isActive && (
+                  <div className="px-2 py-0.5 rounded-sm text-xs font-medium border flex-shrink-0 bg-destructive/10 border-destructive/20">
+                    <span className="text-destructive">⚠️ Vetoed</span>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-1 text-xs text-foreground/75 flex-shrink-0">
                   <Clock className="h-3 w-3 flex-shrink-0" />
