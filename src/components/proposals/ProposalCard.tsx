@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { truncateString, getExplorerLink, formatAction } from "@/utils/format";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import VoteStatusChart from "./VoteStatusChart";
 import { useMemo } from "react";
 import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
@@ -20,11 +21,13 @@ import { cn } from "@/lib/utils";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
+  tokenSymbol?: string;
   showDAOInfo?: boolean;
 }
 
 export default function ProposalCard({
   proposal,
+  tokenSymbol = "",
   showDAOInfo = false,
 }: ProposalCardProps) {
   const router = useRouter();
@@ -458,22 +461,22 @@ export default function ProposalCard({
             </div>
           )}
 
-          {/* Completed Status */}
-          {/* {isPassed && (
-          <div className="text-sm">
-            <span className="text-foreground/75">Final result: </span>
-            <span className="font-medium">
-              <span className="text-success">
-                <TokenBalance variant="abbreviated" value={votesFor} /> For
-              </span>
-              ,{" "}
-              <span className="text-destructive">
-                <TokenBalance variant="abbreviated" value={votesAgainst} />{" "}
-                Against
-              </span>
-            </span>
-          </div>
-        )} */}
+          {/* Vote Status Chart - Show for active, veto period, execution window, passed, and failed proposals */}
+          {(isActive ||
+            statusConfig.label === "Veto Period" ||
+            statusConfig.label === "Execution Window" ||
+            statusConfig.label === "Passed" ||
+            statusConfig.label === "Failed") &&
+            statusConfig.label !== "Pending" && (
+              <div className="">
+                <VoteStatusChart
+                  proposalId={proposal.proposal_id?.toString()}
+                  tokenSymbol={tokenSymbol}
+                  liquidTokens={proposal.liquid_tokens}
+                  proposal={proposal}
+                />
+              </div>
+            )}
         </div>
       </Link>
     </motion.div>
