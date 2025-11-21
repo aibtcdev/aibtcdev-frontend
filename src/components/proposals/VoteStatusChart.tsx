@@ -63,6 +63,34 @@ const VoteStatusChart = ({
     [refreshVoteData]
   );
 
+  // Calculate progress bar size based on quorum (must be before early returns)
+  const progressBarCalculations = useMemo(() => {
+    if (!proposal || !calculations) return null;
+
+    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
+    const liquidTokensNum = calculations.liquidTokensNum;
+
+    // Calculate quorum amount in tokens
+    const quorumAmount = (liquidTokensNum * quorumPercentage) / 100;
+
+    // Bar width is quorum + 10%, or total votes if exceeded
+    const barWidth = Math.max(quorumAmount * 1.1, calculations.totalVotes);
+
+    // Calculate percentages based on the bar width
+    const votesForPercentage = (calculations.votesForNum / barWidth) * 100;
+    const votesAgainstPercentage =
+      (calculations.votesAgainstNum / barWidth) * 100;
+    const quorumLinePercentage = (quorumAmount / barWidth) * 100;
+
+    return {
+      votesForPercentage,
+      votesAgainstPercentage,
+      quorumLinePercentage,
+      quorumAmount,
+      barWidth,
+    };
+  }, [proposal, calculations]);
+
   // Show loading state
   if (isLoadingVotes && !error) {
     return (
@@ -101,47 +129,7 @@ const VoteStatusChart = ({
     );
   }
 
-  if (!voteDisplayData || !calculations) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <span className="text-sm text-muted-foreground">
-          No vote data available
-        </span>
-      </div>
-    );
-  }
-
-  // const isRefreshingAny = localRefreshing || refreshing;
-
-  // Calculate progress bar size based on quorum
-  const progressBarCalculations = useMemo(() => {
-    if (!proposal || !calculations) return null;
-
-    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
-    const liquidTokensNum = calculations.liquidTokensNum;
-
-    // Calculate quorum amount in tokens
-    const quorumAmount = (liquidTokensNum * quorumPercentage) / 100;
-
-    // Bar width is quorum + 10%, or total votes if exceeded
-    const barWidth = Math.max(quorumAmount * 1.1, calculations.totalVotes);
-
-    // Calculate percentages based on the bar width
-    const votesForPercentage = (calculations.votesForNum / barWidth) * 100;
-    const votesAgainstPercentage =
-      (calculations.votesAgainstNum / barWidth) * 100;
-    const quorumLinePercentage = (quorumAmount / barWidth) * 100;
-
-    return {
-      votesForPercentage,
-      votesAgainstPercentage,
-      quorumLinePercentage,
-      quorumAmount,
-      barWidth,
-    };
-  }, [proposal, calculations]);
-
-  if (!progressBarCalculations) {
+  if (!voteDisplayData || !calculations || !progressBarCalculations) {
     return (
       <div className="flex items-center justify-center p-4">
         <span className="text-sm text-muted-foreground">
