@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { TokenBalance } from "@/components/reusables/BalanceDisplay";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { useProposalVote } from "@/hooks/useProposalVote";
+import { safeNumberFromBigInt } from "@/utils/proposal";
 import type { Proposal, ProposalWithDAO } from "@/types";
 
 interface VoteStatusChartProps {
@@ -22,7 +23,7 @@ const VoteStatusChart = ({
   initialVotesAgainst,
   // refreshing = false,
   tokenSymbol = "",
-  liquidTokens,
+  // liquidTokens,
   proposal,
 }: VoteStatusChartProps) => {
   const [localRefreshing, setLocalRefreshing] = useState(false);
@@ -62,6 +63,34 @@ const VoteStatusChart = ({
     [refreshVoteData]
   );
 
+  // Calculate progress bar size based on quorum (must be before early returns)
+  const progressBarCalculations = useMemo(() => {
+    if (!proposal || !calculations) return null;
+
+    const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
+    const liquidTokensNum = calculations.liquidTokensNum;
+
+    // Calculate quorum amount in tokens
+    const quorumAmount = (liquidTokensNum * quorumPercentage) / 100;
+
+    // Bar width is quorum + 10%, or total votes if exceeded
+    const barWidth = Math.max(quorumAmount * 1.1, calculations.totalVotes);
+
+    // Calculate percentages based on the bar width
+    const votesForPercentage = (calculations.votesForNum / barWidth) * 100;
+    const votesAgainstPercentage =
+      (calculations.votesAgainstNum / barWidth) * 100;
+    const quorumLinePercentage = (quorumAmount / barWidth) * 100;
+
+    return {
+      votesForPercentage,
+      votesAgainstPercentage,
+      quorumLinePercentage,
+      quorumAmount,
+      barWidth,
+    };
+  }, [proposal, calculations]);
+
   // Show loading state
   if (isLoadingVotes && !error) {
     return (
@@ -100,7 +129,7 @@ const VoteStatusChart = ({
     );
   }
 
-  if (!voteDisplayData || !calculations) {
+  if (!voteDisplayData || !calculations || !progressBarCalculations) {
     return (
       <div className="flex items-center justify-center p-4">
         <span className="text-sm text-muted-foreground">
@@ -109,8 +138,6 @@ const VoteStatusChart = ({
       </div>
     );
   }
-
-  // const isRefreshingAny = localRefreshing || refreshing;
 
   // Main vote display
   return (
@@ -122,17 +149,29 @@ const VoteStatusChart = ({
           <div
             className="absolute left-0 top-0 h-full bg-green-500/80 transition-all duration-500 ease-out rounded-l-full"
             style={{
-              width: `${Math.min(calculations.barPercentageFor, 100)}%`,
+              width: `${Math.min(progressBarCalculations.votesForPercentage, 100)}%`,
             }}
           />
           {/* Votes against (red) */}
           <div
             className="absolute top-0 h-full bg-red-500/80 transition-all duration-500 ease-out"
             style={{
-              width: `${Math.min(calculations.barPercentageAgainst, 100)}%`,
-              left: `${Math.min(calculations.barPercentageFor, 100)}%`,
+              width: `${Math.min(progressBarCalculations.votesAgainstPercentage, 100)}%`,
+              left: `${Math.min(progressBarCalculations.votesForPercentage, 100)}%`,
             }}
           />
+          {/* Quorum line indicator */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-primary z-10"
+            style={{
+              left: `${Math.min(progressBarCalculations.quorumLinePercentage, 100)}%`,
+            }}
+          >
+            <div
+              className="absolute -top-1 w-3 h-3 bg-primary rounded-sm border-2 border-background"
+              style={{ left: "-5px" }}
+            />
+          </div>
         </div>
       </div>
 
@@ -171,26 +210,6 @@ const VoteStatusChart = ({
             className="font-medium sm:hidden"
           />
         </div>
-
-        {/* Liquid Tokens - Right */}
-        {liquidTokens && Number(liquidTokens) > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-muted-foreground">Liquid Token:</span>
-            <TokenBalance
-              value={liquidTokens}
-              decimals={8}
-              variant="abbreviated"
-              symbol={tokenSymbol}
-              className="font-medium hidden sm:inline"
-            />
-            <TokenBalance
-              value={liquidTokens}
-              decimals={8}
-              variant="abbreviated"
-              className="font-medium sm:hidden"
-            />
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1319,6 +1319,28 @@ export function ProposalSubmission({
                 </div>
               </div>
             )}
+
+          {/* Blocked User Lock Overlay */}
+          {hasAccessToken &&
+            !needsXLink &&
+            !isXLoading &&
+            profile?.is_blocked === true && (
+              <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+                <div className="text-center space-y-4 max-w-md mx-auto px-6">
+                  <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
+                    <Lock className="w-8 h-8 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-red-300 mb-2">
+                      Account Restricted
+                    </h3>
+                    <p className="text-sm text-red-200/80 leading-relaxed">
+                      Your account is restricted from submitting contributions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           {/* Airdrop notification - Commented out per user request */}
           {/* {hasAccessToken && (
             <div className="bg-secondary/40 rounded-sm p-3 shadow-sm">
@@ -1694,7 +1716,8 @@ export function ProposalSubmission({
                   isLoadingEmbed ||
                   !twitterEmbedData ||
                   !!xUsernameError ||
-                  !canSubmitContribution
+                  !canSubmitContribution ||
+                  profile?.is_blocked === true
                 }
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
               >
@@ -1745,6 +1768,11 @@ export function ProposalSubmission({
                   <div className="flex items-center gap-2 text-center px-2">
                     <Loader />
                     <span className="break-words">Loading Post Content...</span>
+                  </div>
+                ) : profile?.is_blocked === true ? (
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    <span>Account Restricted</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
