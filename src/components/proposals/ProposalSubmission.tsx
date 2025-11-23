@@ -69,14 +69,6 @@ import {
 } from "@/services/x-auth.service";
 import AuthButton from "@/components/home/AuthButton";
 
-// Blocked usernames list - users who cannot submit contributions
-const BLOCKED_USERNAMES = [
-  "blockeduser1",
-  "blockeduser2",
-  "ablino",
-  // Add more usernames here as needed
-];
-
 interface WebSocketTransactionMessage {
   tx_id: string;
   tx_status:
@@ -1274,7 +1266,7 @@ export function ProposalSubmission({
             )}
 
           {/* X Verification Lock Overlay */}
-          {hasAccessToken &&
+          {/* {hasAccessToken &&
             !needsXLink &&
             !isXLoading &&
             verificationStatus.status === "not_verified" && (
@@ -1303,7 +1295,7 @@ export function ProposalSubmission({
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
           {/* X Verification Pending Lock Overlay */}
           {hasAccessToken &&
@@ -1332,8 +1324,7 @@ export function ProposalSubmission({
           {hasAccessToken &&
             !needsXLink &&
             !isXLoading &&
-            xProfile?.username &&
-            BLOCKED_USERNAMES.includes(xProfile.username.toLowerCase()) && (
+            profile?.is_blocked === true && (
               <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
                 <div className="text-center space-y-4 max-w-md mx-auto px-6">
                   <div className="w-16 h-16 rounded-sm bg-red-900/20 border border-red-800/30 flex items-center justify-center mx-auto">
@@ -1344,8 +1335,7 @@ export function ProposalSubmission({
                       Account Restricted
                     </h3>
                     <p className="text-sm text-red-200/80 leading-relaxed">
-                      Your account (@{xProfile.username}) is restricted from
-                      submitting contributions.
+                      Your account is restricted from submitting contributions.
                     </p>
                   </div>
                 </div>
@@ -1727,10 +1717,7 @@ export function ProposalSubmission({
                   !twitterEmbedData ||
                   !!xUsernameError ||
                   !canSubmitContribution ||
-                  !!(
-                    xProfile?.username &&
-                    BLOCKED_USERNAMES.includes(xProfile.username.toLowerCase())
-                  )
+                  profile?.is_blocked === true
                 }
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-2 text-sm rounded-sm shadow-md hover:shadow-lg transition-all duration-200"
               >
@@ -1782,10 +1769,7 @@ export function ProposalSubmission({
                     <Loader />
                     <span className="break-words">Loading Post Content...</span>
                   </div>
-                ) : xProfile?.username &&
-                  BLOCKED_USERNAMES.includes(
-                    xProfile.username.toLowerCase()
-                  ) ? (
+                ) : profile?.is_blocked === true ? (
                   <div className="flex items-center gap-2">
                     <Lock className="w-4 h-4" />
                     <span>Account Restricted</span>
