@@ -543,7 +543,7 @@ details in next post`}
                 // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                // link="https://x.com/aibtcdev/status/1990455534554841152"
+                link="https://x.com/aibtcdev/status/1993343004846047683"
                 title="The Current Order"
               />
             </div>
