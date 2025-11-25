@@ -264,6 +264,9 @@ export function ProposalSubmission({
   const [xUsernameError, setXUsernameError] = useState<string | null>(null);
   const [xProfile, setXProfile] = useState<XProfile | null>(null);
 
+  // Consent checkbox state
+  const [consentChecked, setConsentChecked] = useState(false);
+
   const { accessToken, isLoading: isSessionLoading, userId } = useAuth();
   const {
     needsXLink,
@@ -811,6 +814,7 @@ export function ProposalSubmission({
         if (isSuccess) {
           setTxStatusView("confirmed-success");
           setTwitterUrl("");
+          setConsentChecked(false);
           // setSelectedAirdropTxHash(null); // Commented out - airdrop feature disabled
         } else if (isFailed) setTxStatusView("confirmed-failure");
 
@@ -1690,6 +1694,28 @@ export function ProposalSubmission({
           </form>
         </div>
 
+        {/* Consent Checkbox - Outside overlays */}
+        {hasAccessToken && (
+          <div className="flex items-start gap-3  rounded-sm">
+            <input
+              type="checkbox"
+              id="consent-checkbox"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+              disabled={isSubmitting || isLoadingExtensions || isLoadingAgents}
+              className="mt-1 h-4 w-4 rounded border-white/10 bg-background text-primary cursor-pointer"
+            />
+            <label
+              htmlFor="consent-checkbox"
+              className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none"
+            >
+              By submitting, you confirm you obtained consent from everyone
+              identifiable in these photos or videos and authorize AIBTC to
+              share and repost them.
+            </label>
+          </div>
+        )}
+
         {/* Footer CTA */}
         <div className="pt-6">
           {!hasAccessToken ? (
@@ -1701,6 +1727,7 @@ export function ProposalSubmission({
                 disabled={
                   !twitterUrl.trim() ||
                   !isValidTwitterUrl ||
+                  !consentChecked ||
                   isSubmitting ||
                   isValidatingXUsername ||
                   !hasAgentAccount ||

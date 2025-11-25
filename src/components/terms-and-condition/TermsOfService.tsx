@@ -58,7 +58,34 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
         <div className="space-y-6">
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              1. AIBTC Does Not Control Funds or DAOs
+              1. User-Submitted Content
+            </h2>
+            <p>
+              By submitting any photo, video, audio, or other content, you
+              confirm you obtained consent from all identifiable individuals and
+              hold the rights to share it, and you grant AIBTC a worldwide,
+              perpetual license to use, repost, and distribute it and accept
+              responsibility for any related claims.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold mb-3">
+              2. Promotion and Rewards
+            </h2>
+            <p>
+              AIBTC may offer BTC rewards for qualifying submissions.
+              Eligibility, judging criteria, timing, and any geographic or age
+              limits will be stated in the submission instructions. Not all
+              submissions will receive rewards, and all payouts are
+              discretionary, subject to verification, and void where prohibited.
+              No purchase is necessary.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold mb-3">
+              3. AIBTC Does Not Control Funds or DAOs
             </h2>
             <p>
               AIBTC provides software to assist users more easily interact with
@@ -69,7 +96,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              2. Users Control All Token and DAO Activities
+              4. Users Control All Token and DAO Activities
             </h2>
             <p>
               Users initiate and execute all tokens, purchase seats, and launch
@@ -79,7 +106,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              3. User Responsibility for Funds and DAO Treasuries
+              5. User Responsibility for Funds and DAO Treasuries
             </h2>
             <p>
               Users are responsible for their own secret keys and control of
@@ -90,7 +117,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              4. Use of Personal Funds
+              6. Use of Personal Funds
             </h2>
             <p>
               By using the App, you represent that any funds deployed or tokens
@@ -100,7 +127,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              5. AI Agent Responsibility
+              7. AI Agent Responsibility
             </h2>
             <p>
               Users are responsible for all of the action taken by user driven
@@ -111,7 +138,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              6. Legal Setup and Compliance
+              8. Legal Setup and Compliance
             </h2>
             <p>
               AIBTC does not make any sort of representation towards the legal
@@ -125,7 +152,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              7. Professional Advisors
+              9. Professional Advisors
             </h2>
             <p>
               Any documents, examples, or demos provided by AIBTC only serve
@@ -137,7 +164,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              8. Compliance with Applicable Laws
+              10. Compliance with Applicable Laws
             </h2>
             <p>
               By using the App, users agree to comply with all applicable laws
@@ -150,7 +177,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              9. Sanctions and Restricted Territories
+              11. Sanctions and Restricted Territories
             </h2>
             <p className="mb-3">
               By using this App, you represent and warrant that:
@@ -186,7 +213,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              10. VPN and Circumvention Restrictions
+              12. VPN and Circumvention Restrictions
             </h2>
             <p>
               You do not, and will not, use VPN software or any other privacy or
@@ -197,7 +224,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              11. Prohibited Activities
+              13. Prohibited Activities
             </h2>
             <p>
               The use of the App to launder funds, violate third party rights,
@@ -210,7 +237,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              12. Blockchain Technology Risks
+              14. Blockchain Technology Risks
             </h2>
             <p className="mb-3">
               You understand the inherent risks associated with cryptographic
@@ -247,7 +274,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              13. Transaction Finality and Risk Acceptance
+              15. Transaction Finality and Risk Acceptance
             </h2>
             <p className="mb-3">
               By using this App, you acknowledge and accept that:
@@ -277,7 +304,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              14. Private Key Responsibility
+              16. Private Key Responsibility
             </h2>
             <p>
               You alone are responsible for securing any of your private key(s)
@@ -299,7 +326,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              15. Market Volatility and Token Risks
+              17. Market Volatility and Token Risks
             </h2>
             <p>
               Crypto markets tend to experience heavy price volatility and the
@@ -321,7 +348,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              16. AI Compute Services
+              18. AI Compute Services
             </h2>
             <p>
               AIBTC may, at its sole discretion, provide AI compute services
@@ -337,7 +364,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              17. Third-Party Bridging Services
+              19. Third-Party Bridging Services
             </h2>
             <p>
               All bridging activities accessible via the App is carried out by a
@@ -352,7 +379,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              18. Limitation of Liability
+              20. Limitation of Liability
             </h2>
             <p>
               Under no circumstances shall AIBTC be liable for indirect,
@@ -363,7 +390,7 @@ export function TermsOfService({ onScrollComplete }: TermsOfServiceProps) {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              19. Agreement Acknowledgment
+              21. Agreement Acknowledgment
             </h2>
             <p>
               By continuing to use AIBTC, you confirm that you have read,
