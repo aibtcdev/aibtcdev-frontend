@@ -44,6 +44,7 @@ import { getStacksAddress } from "@/lib/address";
 // import { useAgentAccount } from "@/hooks/useAgentAccount";
 // import { BalanceDisplay } from "@/components/reusables/BalanceDisplay";
 import { TwitterCard } from "@/components/twitter/TwitterCard";
+import { rewardPerPassedProposal } from "@/config/features";
 
 // Network configuration
 const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
@@ -373,6 +374,10 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
     return proposals.filter((proposal) => proposal.passed === true).length;
   }, [proposals]);
 
+  const totalRewards = useMemo(() => {
+    return passedProposals * rewardPerPassedProposal;
+  }, [passedProposals]);
+
   if (isBasicLoading || !dao) {
     return (
       <main className="flex h-screen w-full items-center justify-center">
@@ -482,7 +487,9 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Total Rewards:</span>
-                <span className="font-medium">$4,005</span>
+                <span className="font-medium">
+                  ${totalRewards.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
@@ -520,19 +527,23 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               <TwitterCard
                 name="AIBTC"
                 username="aibtcdev"
-                tweet={`AIBTC order update — proof of coffee ritual ☕
+                tweet={`AIBTC order — LA interviews 🌴
 
-quote this post with:
-1️⃣ a coffee selfie
-2️⃣ tag a blue-check builder you respect
-3️⃣ tell us what you've built today for bitcoin
+hit the streets of LA and record a video asking a stranger:
 
-submit daily at aibtc.com`}
-                date="Nov 7, 2025"
-                time="8:14 PM"
+• "What do you love about LA?"
+• "What's one thing you'd fix about LA?"
+
+quote this post with the video and neighborhood you were in
+
+approved entries earn $50 BTC
+
+details in next post`}
+                date="Nov 25, 2025"
+                // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                link="https://x.com/aibtcdev/status/1985732853540470816"
+                // link="https://x.com/aibtcdev/status/1990455534554841152"
                 title="The Current Order"
               />
             </div>
