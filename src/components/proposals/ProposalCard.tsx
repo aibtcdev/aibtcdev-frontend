@@ -101,7 +101,7 @@ export default function ProposalCard({
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
-    // Calculate if requirements are met
+    // Calculate if requirements are met (using exact floating point comparison)
     const metQuorum = calculations.participationRate >= quorumPercentage;
     const metThreshold =
       calculations.totalVotes > 0
@@ -125,7 +125,7 @@ export default function ProposalCard({
     }
 
     if (isActive) {
-      return percentage !== undefined ? `${percentage.toFixed(1)}%` : "0%";
+      return percentage !== undefined ? `${percentage.toFixed(4)}%` : "0%";
     }
 
     return met ? "Passed" : "Failed";
