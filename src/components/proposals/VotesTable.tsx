@@ -72,7 +72,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
         return (
           <Badge variant="secondary" className="text-xs">
             {typeof finalScore === "number"
-              ? finalScore.toFixed(1)
+              ? finalScore.toFixed(4)
               : String(finalScore)}
           </Badge>
         );
@@ -82,7 +82,7 @@ const VotesTable = ({ proposalId, limit }: VotesTableProps) => {
       return (
         <Badge variant="secondary" className="text-xs">
           {typeof parsedScore === "number"
-            ? parsedScore.toFixed(1)
+            ? parsedScore.toFixed(4)
             : String(parsedScore)}
         </Badge>
       );

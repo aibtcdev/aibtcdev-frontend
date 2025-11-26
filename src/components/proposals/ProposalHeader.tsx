@@ -51,7 +51,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
-    // Calculate if requirements are met
+    // Calculate if requirements are met (using exact floating point comparison)
     const metQuorum = calculations.participationRate >= quorumPercentage;
     const metThreshold =
       calculations.totalVotes > 0
@@ -70,7 +70,7 @@ export function ProposalHeader({ proposal }: ProposalHeaderProps) {
   // Helper function to get status text
   const getStatusText = (isMet: boolean, percentage: number) => {
     if (isMet) return "Passed";
-    return `${percentage.toFixed(1)}%`;
+    return `${percentage.toFixed(4)}%`;
   };
 
   // Get DAO/token image - prioritize token image, fallback to DAO image if available
