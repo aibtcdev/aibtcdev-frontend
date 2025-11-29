@@ -176,38 +176,42 @@ const VoteStatusChart = ({
       </div>
 
       {/* Vote Counts */}
-      <div className="flex justify-between items-center text-xs sm:text-sm">
-        <div className="flex items-center gap-1">
-          <span className="text-green-500 font-extrabold">For:</span>
+      <div className="flex justify-between items-center text-xs sm:text-sm overflow-hidden">
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span className="text-green-500 font-extrabold flex-shrink-0">
+            For:
+          </span>
           <TokenBalance
             value={voteDisplayData.rawVotesFor}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium hidden sm:inline"
+            className="font-medium hidden sm:inline truncate"
           />
           <TokenBalance
             value={voteDisplayData.rawVotesFor}
             decimals={8}
             variant="abbreviated"
-            className="font-medium sm:hidden"
+            className="font-medium sm:hidden truncate"
           />
         </div>
 
-        <div className="flex items-center gap-1">
-          <span className="text-red-500 font-extrabold">Against:</span>
+        <div className="flex items-center gap-1 min-w-0 flex-1 justify-end">
+          <span className="text-red-500 font-extrabold flex-shrink-0">
+            Against:
+          </span>
           <TokenBalance
             value={voteDisplayData.rawVotesAgainst}
             decimals={8}
             variant="abbreviated"
             symbol={tokenSymbol}
-            className="font-medium hidden sm:inline"
+            className="font-medium hidden sm:inline truncate"
           />
           <TokenBalance
             value={voteDisplayData.rawVotesAgainst}
             decimals={8}
             variant="abbreviated"
-            className="font-medium sm:hidden"
+            className="font-medium sm:hidden truncate"
           />
         </div>
       </div>

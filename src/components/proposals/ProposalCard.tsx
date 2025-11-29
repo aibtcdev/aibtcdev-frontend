@@ -162,7 +162,7 @@ export default function ProposalCard({
         href={`/proposals/${proposal.id}`}
         className="block group cursor-pointer"
       >
-        <div className="py-4 px-8 rounded-sm mb-3 bg-background  group-hover:bg-black transition-colors duration-300 max-w-full overflow-hidden">
+        <div className="py-4 px-4 sm:px-8 rounded-sm mb-3 bg-background  group-hover:bg-black transition-colors duration-300 max-w-full overflow-hidden">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
             <div className="flex-1 min-w-0">
@@ -171,7 +171,7 @@ export default function ProposalCard({
                   ? `#${proposal.proposal_id}: ${proposal.title}`
                   : proposal.title}
               </h3>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2 overflow-hidden">
                 <ProposalStatusBadge
                   proposal={proposal}
                   size="sm"
@@ -294,7 +294,7 @@ export default function ProposalCard({
                         </div>
                         <span
                           role="link"
-                          className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                          className="text-sm text-primary hover:text-primary/80 transition-colors break-words cursor-pointer flex items-center gap-2"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -305,7 +305,7 @@ export default function ProposalCard({
                             );
                           }}
                         >
-                          <span className="inline-block max-w-full break-all">
+                          <span className="inline-block max-w-full break-words">
                             {referenceLink}
                           </span>
                           <ExternalLinkIcon className="h-4 w-4" />
@@ -319,7 +319,7 @@ export default function ProposalCard({
                         </div>
                         <span
                           role="link"
-                          className="text-sm text-primary hover:text-primary/80 transition-colors break-all cursor-pointer flex items-center gap-2"
+                          className="text-sm text-primary hover:text-primary/80 transition-colors break-words cursor-pointer flex items-center gap-2"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -343,7 +343,7 @@ export default function ProposalCard({
                               d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                             />
                           </svg>
-                          <span className="inline-block max-w-full break-all">
+                          <span className="inline-block max-w-full break-words">
                             {airdropTxId}
                           </span>
                         </span>
@@ -383,7 +383,7 @@ export default function ProposalCard({
           </div>
 
           {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs text-foreground/75 mb-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs text-foreground/75 mb-4 overflow-hidden">
             {showDAOInfo && (
               <div className="flex items-center gap-1 min-w-0 max-w-[120px] sm:max-w-none">
                 <Building2 className="h-3 w-3 flex-shrink-0" />
