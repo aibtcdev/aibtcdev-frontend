@@ -428,8 +428,8 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   // };
 
   return (
-    <div className="flex flex-col w-full">
-      <main className="overflow-y-auto overflow-x-hidden">
+    <div className="flex flex-col w-full min-h-0">
+      <div className="flex-1">
         <div className=" sm:px-6 lg:px-14 py-4  mx-auto w-full">
           <div className="bg-background p-4 sm:p-6 rounded-sm mb-6">
             {/* <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
@@ -625,7 +625,7 @@ details in next post`}
             </DialogContent>
           </Dialog>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
