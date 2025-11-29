@@ -94,7 +94,7 @@ const VoteStatusChart = ({
   // Show loading state
   if (isLoadingVotes && !error) {
     return (
-      <div className="flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4 min-h-[60px]">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
         <span className="ml-2 text-sm text-muted-foreground">
           Loading vote data...
@@ -106,7 +106,7 @@ const VoteStatusChart = ({
   // Show error state with retry
   if (error || (!hasData && !isLoadingVotes)) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 space-y-2">
+      <div className="flex flex-col items-center justify-center p-4 space-y-2 min-h-[60px]">
         <div className="flex items-center text-destructive">
           <AlertCircle className="h-4 w-4 mr-2" />
           <span className="text-sm">Failed to load vote data</span>
@@ -131,7 +131,7 @@ const VoteStatusChart = ({
 
   if (!voteDisplayData || !calculations || !progressBarCalculations) {
     return (
-      <div className="flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4 min-h-[60px]">
         <span className="text-sm text-muted-foreground">
           No vote data available
         </span>
@@ -141,7 +141,7 @@ const VoteStatusChart = ({
 
   // Main vote display
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-h-[60px]">
       {/* Vote Progress Bar */}
       <div className="relative">
         <div className="h-3 sm:h-4 bg-muted rounded-sm overflow-hidden relative">
