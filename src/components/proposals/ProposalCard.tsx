@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -151,7 +152,12 @@ export default function ProposalCard({
   }, [proposal]);
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, margin: "0px 0px -100px 0px", amount: 0.3 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <Link
         href={`/proposals/${proposal.id}`}
         className="block group cursor-pointer"
@@ -481,6 +487,6 @@ export default function ProposalCard({
             )}
         </div>
       </Link>
-    </div>
+    </motion.div>
   );
 }
