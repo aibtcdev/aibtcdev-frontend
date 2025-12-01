@@ -12,7 +12,6 @@ interface TwitterCardProps {
   verified?: boolean;
   link?: string;
   title?: string;
-  image?: string;
 }
 
 export const TwitterCard: React.FC<TwitterCardProps> = ({
@@ -25,7 +24,6 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
   verified = false,
   link,
   title,
-  image,
 }) => {
   const handleClick = () => {
     if (link) {
@@ -98,17 +96,6 @@ export const TwitterCard: React.FC<TwitterCardProps> = ({
       {/* Tweet Content */}
       <div className="text-white text-base leading-relaxed whitespace-pre-wrap flex-grow">
         {tweet}
-        {image && (
-          <div className="mt-4 rounded-sm overflow-hidden">
-            <Image
-              src={image}
-              alt="Tweet image"
-              width={600}
-              height={400}
-              className="w-full h-auto object-cover rounded-sm"
-            />
-          </div>
-        )}
       </div>
 
       {/* Date and Time */}
