@@ -538,13 +538,12 @@ quote this post with the video and neighborhood you were in
 
 approved entries earn $50 BTC
 
-click for full details`}
+details in next post`}
                 date="Nov 25, 2025"
                 // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
                 link="https://x.com/aibtcdev/status/1995580321014976795"
-                image="https://pbs.twimg.com/media/G7G5uZ4aoAAMS9g?format=jpg&name=medium"
                 title="AIBTC Current Order"
               />
             </div>
