@@ -542,7 +542,7 @@ details in thread 👇`}
                 // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                // link="https://x.com/aibtcdev/status/1995580321014976795"
+                link="https://x.com/aibtcdev/status/1998419647918698867" // x post link
                 title="AIBTC Current Order"
               />
             </div>
