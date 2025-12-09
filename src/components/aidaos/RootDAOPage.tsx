@@ -428,8 +428,8 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
   // };
 
   return (
-    <div className="flex flex-col w-full">
-      <main className="overflow-y-auto overflow-x-hidden">
+    <div className="flex flex-col w-full min-h-0">
+      <div className="flex-1">
         <div className=" sm:px-6 lg:px-14 py-4  mx-auto w-full">
           <div className="bg-background p-4 sm:p-6 rounded-sm mb-6">
             {/* <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
@@ -527,24 +527,23 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               <TwitterCard
                 name="AIBTC"
                 username="aibtcdev"
-                tweet={`AIBTC order — LA interviews 🌴
+                tweet={`AIBTC order — community call recruiting  📡
 
-hit the streets of LA and record a video asking a stranger:
+invite talented builders to weekly aibtc community calls
 
-• "What do you love about LA?"
-• "What's one thing you'd fix about LA?"
+1️⃣ tag someone building with ai and btc
+2️⃣ mention what they're building
+3️⃣ link to the aibtc weekly call
 
-quote this post with the video and neighborhood you were in
+approved entries earn btc
 
-approved entries earn $50 BTC
-
-details in next post`}
-                date="Nov 25, 2025"
+details in thread 👇`}
+                date="Dev 10, 2025"
                 // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                // link="https://x.com/aibtcdev/status/1990455534554841152"
-                title="The Current Order"
+                // link="https://x.com/aibtcdev/status/1995580321014976795"
+                title="AIBTC Current Order"
               />
             </div>
           </div>
@@ -625,7 +624,7 @@ details in next post`}
             </DialogContent>
           </Dialog>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

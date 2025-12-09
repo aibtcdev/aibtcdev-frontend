@@ -90,7 +90,7 @@ const VotingProgressChart = ({
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
-    // Calculate if requirements are met
+    // Calculate if requirements are met (using exact floating point comparison)
     const metQuorum = calculations.participationRate >= quorumPercentage;
     const metThreshold =
       calculations.totalVotes > 0
@@ -127,7 +127,7 @@ const VotingProgressChart = ({
         return "Met";
       }
       return percentage !== undefined
-        ? `In Progress (${percentage.toFixed(1)}%)`
+        ? `In Progress (${percentage.toFixed(4)}%)`
         : "In Progress";
     }
 
@@ -492,7 +492,7 @@ const VotingProgressChart = ({
                       decimals={8}
                       variant="abbreviated"
                     />{" "}
-                    ({enhancedCalculations.votesForPercent.toFixed(1)}%)
+                    ({enhancedCalculations.votesForPercent.toFixed(4)}%)
                   </span>
                 ) : (
                   <span className="text-destructive">Failed to fetch</span>
@@ -507,7 +507,7 @@ const VotingProgressChart = ({
                       decimals={8}
                       variant="abbreviated"
                     />{" "}
-                    ({enhancedCalculations.votesAgainstPercent.toFixed(1)}%)
+                    ({enhancedCalculations.votesAgainstPercent.toFixed(4)}%)
                   </span>
                 ) : (
                   <span className="text-destructive">Failed to fetch</span>
@@ -592,7 +592,7 @@ const VotingProgressChart = ({
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-sm flex-shrink-0" />
             <span className="break-words">
-              Approval: {enhancedCalculations.approvalRate.toFixed(1)}% of votes
+              Approval: {enhancedCalculations.approvalRate.toFixed(4)}% of votes
               cast
             </span>
           </div>
@@ -658,7 +658,7 @@ const VotingProgressChart = ({
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              {enhancedCalculations.participationRate.toFixed(1)}% of{" "}
+              {enhancedCalculations.participationRate.toFixed(4)}% of{" "}
               {enhancedCalculations.quorumPercentage}% required
             </div>
           </div>
@@ -715,7 +715,7 @@ const VotingProgressChart = ({
               </span>
             </div>
             <div className="text-xs text-muted-foreground">
-              {enhancedCalculations.approvalRate.toFixed(1)}% of{" "}
+              {enhancedCalculations.approvalRate.toFixed(4)}% of{" "}
               {enhancedCalculations.thresholdPercentage}% required
             </div>
           </div>

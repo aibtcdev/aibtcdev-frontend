@@ -73,7 +73,7 @@ export function DAOTabLayout({
             </div>
           </div>
         ) : (
-          <div className="bg-card/30 backdrop-blur-sm">{children}</div>
+          <div className="bg-card/30">{children}</div>
         )}
       </div>
     </div>

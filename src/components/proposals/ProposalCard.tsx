@@ -15,9 +15,9 @@ import { useProposalStatus } from "@/hooks/useProposalStatus";
 import { useProposalVote } from "@/hooks/useProposalVote";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
 import { safeNumberFromBigInt } from "@/utils/proposal";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface ProposalCardProps {
   proposal: Proposal | ProposalWithDAO;
@@ -101,7 +101,7 @@ export default function ProposalCard({
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);
     const thresholdPercentage = safeNumberFromBigInt(proposal.voting_threshold);
 
-    // Calculate if requirements are met
+    // Calculate if requirements are met (using exact floating point comparison)
     const metQuorum = calculations.participationRate >= quorumPercentage;
     const metThreshold =
       calculations.totalVotes > 0
@@ -125,7 +125,7 @@ export default function ProposalCard({
     }
 
     if (isActive) {
-      return percentage !== undefined ? `${percentage.toFixed(1)}%` : "0%";
+      return percentage !== undefined ? `${percentage.toFixed(4)}%` : "0%";
     }
 
     return met ? "Passed" : "Failed";
@@ -162,7 +162,7 @@ export default function ProposalCard({
         href={`/proposals/${proposal.id}`}
         className="block group cursor-pointer"
       >
-        <div className="py-4 px-8 rounded-sm mb-3 bg-background  group-hover:bg-black transition-colors duration-300 max-w-full overflow-hidden">
+        <div className="py-4 px-8 rounded-sm mb-3 bg-background  group-hover:bg-black transition-colors duration-300 max-w-full">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-3">
             <div className="flex-1 min-w-0">
