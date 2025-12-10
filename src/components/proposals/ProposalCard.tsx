@@ -125,7 +125,12 @@ export default function ProposalCard({
     }
 
     if (isActive) {
-      return percentage !== undefined ? `${percentage.toFixed(4)}%` : "0%";
+      if (percentage !== undefined) {
+        // Remove trailing zeros and unnecessary decimal point
+        const formatted = percentage.toFixed(4).replace(/\.?0+$/, "");
+        return `${formatted}%`;
+      }
+      return "0%";
     }
 
     return met ? "Passed" : "Failed";
