@@ -185,7 +185,7 @@ function ProposalCard({
 
     const liquidTokensNum = Number(proposal.liquid_tokens) || 0;
     const votesForNum = voteSummary.votesFor;
-    const votesAgainstNum = voteSummary.votesAgainst || 0;
+    // const votesAgainstNum = voteSummary.votesAgainst || 0;
     const totalVotesNum = voteSummary.totalVotes || 0;
 
     const quorumPercentage = safeNumberFromBigInt(proposal.voting_quorum);

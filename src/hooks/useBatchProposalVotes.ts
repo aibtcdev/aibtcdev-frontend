@@ -3,8 +3,6 @@ import { useMemo } from "react";
 import {
   fetchBatchProposalVotes,
   fetchBatchProposalVetos,
-  type VoteSummary,
-  type VetoSummary,
 } from "@/services/vote.service";
 import type { Proposal } from "@/types";
 
