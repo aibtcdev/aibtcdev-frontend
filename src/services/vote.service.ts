@@ -340,3 +340,188 @@ export async function getProposalVotes(
     throw error; // Re-throw for React Query
   }
 }
+
+/**
+ * Fetches votes for multiple proposals in a single query
+ * @param proposalIds - Array of proposal UUIDs
+ * @returns Promise<Map<string, VoteSummary>> Map of proposalId to vote summary
+ */
+export interface VoteSummary {
+  proposalId: string;
+  votesFor: number;
+  votesAgainst: number;
+  totalVotes: number;
+  votes: Vote[];
+}
+
+export async function fetchBatchProposalVotes(
+  proposalIds: string[]
+): Promise<Map<string, VoteSummary>> {
+  if (!proposalIds || proposalIds.length === 0) {
+    return new Map();
+  }
+
+  // Remove duplicates
+  const uniqueIds = Array.from(new Set(proposalIds));
+
+  const { data, error } = await supabase
+    .from("votes")
+    .select(
+      `
+      id,
+      created_at,
+      dao_id,
+      wallet_id,
+      profile_id,
+      answer,
+      proposal_id,
+      reasoning,
+      evaluation,
+      tx_id,
+      address,
+      amount,
+      prompt,
+      confidence,
+      voted,
+      evaluation_score,
+      flags,
+      daos ( id, name ),
+      proposals ( 
+        id, 
+        proposal_id,
+        title,
+        content,
+        status,
+        passed,
+        vote_start,
+        vote_end,
+        exec_start,
+        exec_end
+      )
+    `
+    )
+    .in("proposal_id", uniqueIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching batch votes:", error);
+    throw error;
+  }
+
+  // Group votes by proposal_id and calculate summaries
+  const voteMap = new Map<string, VoteSummary>();
+
+  // Initialize all proposal IDs with empty summaries
+  uniqueIds.forEach((id) => {
+    voteMap.set(id, {
+      proposalId: id,
+      votesFor: 0,
+      votesAgainst: 0,
+      totalVotes: 0,
+      votes: [],
+    });
+  });
+
+  if (data) {
+    (data as unknown as VoteWithRelations[]).forEach((vote) => {
+      const summary = voteMap.get(vote.proposal_id);
+      if (summary) {
+        const amount = vote.amount ? parseFloat(vote.amount) : 1;
+
+        if (vote.answer === true) {
+          summary.votesFor += amount;
+        } else {
+          summary.votesAgainst += amount;
+        }
+        summary.totalVotes += amount;
+
+        // Transform and add to votes array
+        summary.votes.push({
+          id: vote.id,
+          created_at: vote.created_at,
+          dao_id: vote.dao_id,
+          dao_name: vote.daos?.name || "Unknown DAO",
+          wallet_id: vote.wallet_id,
+          profile_id: vote.profile_id,
+          answer: vote.answer,
+          proposal_id: vote.proposal_id,
+          proposal_title: vote.proposals?.title || "Unknown Proposal",
+          proposal_content: vote.proposals?.content || "",
+          reasoning: vote.reasoning,
+          evaluation: vote.evaluation,
+          tx_id: vote.tx_id,
+          address: vote.address,
+          amount: vote.amount,
+          prompt: vote.prompt,
+          confidence: vote.confidence ?? null,
+          voted: vote.voted,
+          evaluation_score: vote.evaluation_score ?? null,
+          flags: vote.flags ?? null,
+          proposal_status: vote.proposals?.status || null,
+          proposal_passed: vote.proposals?.passed ?? null,
+          vote_start: vote.proposals?.vote_start || null,
+          vote_end: vote.proposals?.vote_end || null,
+          exec_start: vote.proposals?.exec_start || null,
+          exec_end: vote.proposals?.exec_end || null,
+          blockchain_proposal_id: vote.proposals?.proposal_id || null,
+        });
+      }
+    });
+  }
+
+  return voteMap;
+}
+
+/**
+ * Fetches vetos for multiple proposals in a single query
+ * @param proposalIds - Array of proposal UUIDs
+ * @returns Promise<Map<string, VetoSummary>> Map of proposalId to veto summary
+ */
+export interface VetoSummary {
+  proposalId: string;
+  totalVetoAmount: number;
+  rawTotalVetoAmount: string;
+}
+
+export async function fetchBatchProposalVetos(
+  proposalIds: string[]
+): Promise<Map<string, VetoSummary>> {
+  if (!proposalIds || proposalIds.length === 0) {
+    return new Map();
+  }
+
+  const uniqueIds = Array.from(new Set(proposalIds));
+
+  const { data, error } = await supabase
+    .from("vetos") // Adjust table name if different
+    .select("id, proposal_id, amount")
+    .in("proposal_id", uniqueIds);
+
+  if (error) {
+    console.error("Error fetching batch vetos:", error);
+    throw error;
+  }
+
+  // Initialize all proposal IDs with empty summaries
+  const vetoMap = new Map<string, VetoSummary>();
+  uniqueIds.forEach((id) => {
+    vetoMap.set(id, {
+      proposalId: id,
+      totalVetoAmount: 0,
+      rawTotalVetoAmount: "0",
+    });
+  });
+
+  if (data) {
+    data.forEach((veto) => {
+      const summary = vetoMap.get(veto.proposal_id);
+      if (summary) {
+        const amount = veto.amount ? parseFloat(veto.amount) : 0;
+        summary.totalVetoAmount += amount;
+        summary.rawTotalVetoAmount = summary.totalVetoAmount.toString();
+      }
+    });
+  }
+
+  return vetoMap;
+}
