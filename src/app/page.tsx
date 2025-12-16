@@ -46,7 +46,7 @@ function PageContent() {
       <div className="flex justify-center items-center min-h-[400px] w-full">
         <div className="text-center space-y-4">
           <Loader />
-          <p className="text-zinc-400">Loading proposals...</p>
+          <p className="text-zinc-400">Loading contributions...</p>
         </div>
       </div>
     );
