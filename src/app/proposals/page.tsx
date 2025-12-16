@@ -40,10 +40,10 @@ export default function AllProposalsPage() {
       <div className="flex justify-center items-center min-h-[200px] w-full">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">
-            Error Loading Proposals
+            Error Loading Contributions
           </h2>
           <p className="text-muted-foreground">
-            Failed to load proposals. Please try again later.
+            Failed to load contributions. Please try again later.
           </p>
         </div>
       </div>
