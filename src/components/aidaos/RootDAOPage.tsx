@@ -527,22 +527,20 @@ export function RootDAOPage({ children, daoName }: RootDAOPageProps) {
               <TwitterCard
                 name="AIBTC"
                 username="aibtcdev"
-                tweet={`AIBTC order — community call recruiting  📡
+                tweet={`aibtc order — community call recruiting  🧑‍💻
 
-invite talented builders to weekly aibtc community calls
+warmly and naturally reply to builders working with ai and btc, inviting them to the next aibtc weekly call to discuss the ai × btc convergence
 
-1️⃣ tag someone building with ai and btc
-2️⃣ mention what they're building
-3️⃣ link to the aibtc weekly call
+include the x space link so they can rsvp
 
-approved entries earn btc
+approved replies earn btc
 
-details in thread 👇`}
-                date="Dev 10, 2025"
+details below 👇`}
+                date="Dec 16, 2025"
                 // time="8:14 PM"
                 avatarUrl="/logos/aibtcdev-avatar-250px.png"
                 verified={true}
-                link="https://x.com/aibtcdev/status/1998419647918698867" // x post link
+                link="https://x.com/aibtcdev/status/2000954562358993028" // x post link
                 title="AIBTC Current Order"
               />
             </div>
