@@ -138,8 +138,8 @@ const cleanSummary = (
 
 function NewProposalCard({
   proposal,
-  tokenSymbol = "",
-  showDAOInfo = false,
+  // tokenSymbol = "",
+  // showDAOInfo = false,
   voteData,
   vetoData,
   currentBlockHeight,
