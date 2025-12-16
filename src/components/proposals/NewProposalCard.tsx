@@ -17,6 +17,7 @@ import { TokenBalance } from "../reusables/BalanceDisplay";
 import { ProposalStatusBadge } from "./ProposalBadge";
 import { cn } from "@/lib/utils";
 import { getProposalStatus, safeNumberFromBigInt } from "@/utils/proposal";
+import { useProposalVote } from "@/hooks/useProposalVote";
 import type {
   ProposalVoteData,
   ProposalVetoData,
@@ -144,6 +145,12 @@ function NewProposalCard({
   vetoData,
   currentBlockHeight,
 }: NewProposalCardProps) {
+  // Use the same vote hook as VoteStatusChart for consistent data
+  const { voteDisplayData, calculations, hasData } = useProposalVote({
+    proposal: proposal,
+    fallbackVotesFor: voteData?.rawVotesFor,
+    fallbackVotesAgainst: voteData?.rawVotesAgainst,
+  });
   const router = useRouter();
 
   // Compute status from props
@@ -160,8 +167,18 @@ function NewProposalCard({
     };
   }, [proposal, currentBlockHeight]);
 
-  // Use pre-fetched vote data - exact same logic as ProposalCard
+  // Use vote data from useProposalVote hook (same as VoteStatusChart)
   const voteSummary = useMemo(() => {
+    if (hasData && voteDisplayData && calculations) {
+      return {
+        votesFor: calculations.votesForNum,
+        votesAgainst: calculations.votesAgainstNum,
+        totalVotes: calculations.totalVotes,
+        hasVoteData: true,
+      };
+    }
+
+    // Fallback to pre-fetched batch data if available
     if (voteData?.hasVoteData) {
       return {
         votesFor: voteData.votesFor,
@@ -171,7 +188,7 @@ function NewProposalCard({
       };
     }
 
-    // Fallback to proposal props
+    // Final fallback to proposal props
     const hasVoteData =
       proposal.votes_for != null && proposal.votes_against != null;
 
@@ -192,7 +209,14 @@ function NewProposalCard({
       totalVotes: votesFor + votesAgainst,
       hasVoteData: true,
     };
-  }, [voteData, proposal.votes_for, proposal.votes_against]);
+  }, [
+    hasData,
+    voteDisplayData,
+    calculations,
+    voteData,
+    proposal.votes_for,
+    proposal.votes_against,
+  ]);
 
   // Memoize reference extraction
   const references = useMemo(
@@ -214,8 +238,13 @@ function NewProposalCard({
     [proposal.created_at]
   );
 
-  // Check if vetoed
-  const isVetoed = vetoData?.vetoExceedsForVote && !isActive;
+  // Check if vetoed - use calculations if available, fallback to prop
+  const isVetoed =
+    !isActive &&
+    ((calculations && vetoData?.totalVetoAmount
+      ? vetoData.totalVetoAmount > calculations.votesForNum
+      : false) ||
+      (vetoData?.vetoExceedsForVote ?? false));
 
   // Enhanced calculations for quorum and threshold display
   const enhancedCalculations = useMemo(() => {
@@ -247,7 +276,9 @@ function NewProposalCard({
       metThreshold,
     };
   }, [
-    voteSummary,
+    voteSummary.hasVoteData,
+    voteSummary.votesFor,
+    voteSummary.totalVotes,
     proposal.liquid_tokens,
     proposal.voting_quorum,
     proposal.voting_threshold,
@@ -413,17 +444,15 @@ function NewProposalCard({
               <ThumbsUp
                 className={cn(
                   "h-5 w-5 transition-colors",
-                  voteSummary.hasVoteData &&
-                    status !== "PENDING" &&
-                    status !== "DRAFT" &&
+                  voteSummary.totalVotes !== null &&
+                    voteSummary.totalVotes > 0 &&
                     (voteSummary.votesFor || 0) > 0
                     ? "text-success fill-success"
                     : "text-muted-foreground group-hover/btn:text-success"
                 )}
               />
-              {voteSummary.hasVoteData &&
-                status !== "PENDING" &&
-                status !== "DRAFT" && (
+              {voteSummary.totalVotes !== null &&
+                voteSummary.totalVotes > 0 && (
                   <span
                     className={cn(
                       "text-sm font-medium",
@@ -451,17 +480,15 @@ function NewProposalCard({
               <ThumbsDown
                 className={cn(
                   "h-5 w-5 transition-colors",
-                  voteSummary.hasVoteData &&
-                    status !== "PENDING" &&
-                    status !== "DRAFT" &&
+                  voteSummary.totalVotes !== null &&
+                    voteSummary.totalVotes > 0 &&
                     (voteSummary.votesAgainst || 0) > 0
                     ? "text-destructive fill-destructive"
                     : "text-muted-foreground group-hover/btn:text-destructive"
                 )}
               />
-              {voteSummary.hasVoteData &&
-                status !== "PENDING" &&
-                status !== "DRAFT" && (
+              {voteSummary.totalVotes !== null &&
+                voteSummary.totalVotes > 0 && (
                   <span
                     className={cn(
                       "text-sm font-medium",
