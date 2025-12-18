@@ -139,8 +139,6 @@ const cleanSummary = (
 
 function NewProposalCard({
   proposal,
-  // tokenSymbol = "",
-  // showDAOInfo = false,
   voteData,
   vetoData,
   currentBlockHeight,
@@ -301,21 +299,23 @@ function NewProposalCard({
 
   return (
     <Link href={`/proposals/${proposal.id}`} className="block group h-full">
-      <article className="bg-card rounded-lg hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col">
+      <article className="bg-card rounded-sm hover:shadow-lg transition-all duration-200 overflow-hidden h-full flex flex-col ">
         {/* Header */}
-        <div className="p-4 pb-3 flex-1">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="p-4 flex-1">
+          {/* Top row - User info and Status Badge */}
+          <div className="flex items-start justify-between mb-3">
+            {/* Left side - Avatar and User info */}
+            <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <User2 className="w-5 h-5 text-primary" />
+              <div className="flex-shrink-0 w-10 h-10 rounded-sm bg-primary/20 flex items-center justify-center">
+                <User2 className="w-7 h-7 text-primary" />
               </div>
 
               {/* User info and timestamp */}
-              <div className="flex items-center gap-2 flex-wrap min-h-[40px]">
+              <div className="flex flex-col">
                 {references.username ? (
                   <span
-                    className="text-sm font-semibold hover:underline cursor-pointer"
+                    className="text-sm font-semibold hover:underline cursor-pointer text-foreground"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -332,7 +332,7 @@ function NewProposalCard({
                   </span>
                 ) : (
                   <span
-                    className="text-sm font-semibold hover:underline cursor-pointer"
+                    className="text-sm font-semibold hover:underline cursor-pointer text-foreground"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -346,116 +346,142 @@ function NewProposalCard({
                     @{truncateString(proposal.creator, 4, 4)}
                   </span>
                 )}
-
-                <span className="text-sm text-muted-foreground">·</span>
-                <span className="text-sm text-muted-foreground">{timeAgo}</span>
+                <span className="text-xs text-muted-foreground">{timeAgo}</span>
               </div>
             </div>
 
             {/* Status Badge - top right */}
             <div className="flex-shrink-0">
-              <ProposalStatusBadge proposal={proposal} size="sm" />
+              <ProposalStatusBadge proposal={proposal} size="md" />
             </div>
           </div>
 
-          {/* Title and summary - full width */}
-          <div className="mb-3">
-            {/* Proposal title */}
-            <h3 className="text-lg font-bold text-foreground mb-3 group-hover:text-primary transition-colors leading-snug">
+          {/* Title */}
+          <div className="mb-1">
+            <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
               {proposal.proposal_id && (
-                <span className="text-muted-foreground">
-                  #{proposal.proposal_id}{" "}
-                </span>
+                <span className="text-primary">#{proposal.proposal_id} </span>
               )}
               {proposal.title}
             </h3>
-
-            {/* Summary */}
-            {cleanedSummary && (
-              <p className="text-base text-muted-foreground mb-0 line-clamp-3 leading-relaxed">
-                {cleanedSummary}
-              </p>
-            )}
           </div>
 
-          {/* Quorum and Threshold Badges - below summary */}
-          {showBadges && enhancedCalculations && (
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Quorum Badge */}
+          {/* Summary */}
+          {cleanedSummary && (
+            <p className="text-md text-muted-foreground mb-2 line-clamp-4 leading-relaxed">
+              {cleanedSummary}
+            </p>
+          )}
+        </div>
+
+        {/* Quorum and Threshold Badges */}
+        {showBadges && enhancedCalculations && (
+          <div className="flex items-center gap-3 px-4 pb-3">
+            {/* Quorum */}
+            <div
+              className={cn(
+                "rounded-sm px-2 py-1 border flex items-center gap-2",
+                isActive
+                  ? enhancedCalculations.metQuorum
+                    ? "bg-success/10 border-success/30"
+                    : "bg-card border-border"
+                  : enhancedCalculations.metQuorum
+                    ? "bg-success/10 border-success/30"
+                    : "bg-destructive/10 border-destructive/30"
+              )}
+            >
+              <span className="text-xs">QUORUM:</span>
               <span
                 className={cn(
-                  "text-xs px-2 py-0.5 rounded-sm border font-medium",
+                  "text-xs uppercase font-bold",
                   isActive
                     ? enhancedCalculations.metQuorum
-                      ? "bg-success/10 border-success/20 text-success"
-                      : "bg-primary/10 border-primary/20 text-primary"
+                      ? "text-success"
+                      : "text-foreground"
                     : enhancedCalculations.metQuorum
-                      ? "bg-success/10 border-success/20 text-success"
-                      : "bg-destructive/10 border-destructive/20 text-destructive"
+                      ? "text-success"
+                      : "text-destructive"
                 )}
               >
-                Quorum:{" "}
                 {getStatusText(
                   enhancedCalculations.metQuorum,
                   enhancedCalculations.participationRate
                 )}
               </span>
+            </div>
 
-              {/* Threshold Badge */}
+            {/* Threshold */}
+            <div
+              className={cn(
+                "rounded-sm px-2 py-1 border flex items-center gap-2",
+                isActive
+                  ? enhancedCalculations.metThreshold
+                    ? "bg-success/10 border-success/30"
+                    : "bg-card border-border"
+                  : enhancedCalculations.metThreshold
+                    ? "bg-success/10 border-success/30"
+                    : "bg-destructive/10 border-destructive/30"
+              )}
+            >
+              <span className="  text-xs">THRESHOLD:</span>
               <span
                 className={cn(
-                  "text-xs px-2 py-0.5 rounded-sm border font-medium",
+                  "text-xs uppercase font-bold",
                   isActive
                     ? enhancedCalculations.metThreshold
-                      ? "bg-success/10 border-success/20 text-success"
-                      : "bg-primary/10 border-primary/20 text-primary"
+                      ? "text-success"
+                      : "text-foreground"
                     : enhancedCalculations.metThreshold
-                      ? "bg-success/10 border-success/20 text-success"
-                      : "bg-destructive/10 border-destructive/20 text-destructive"
+                      ? "text-success"
+                      : "text-destructive"
                 )}
               >
-                Threshold:{" "}
                 {getStatusText(
                   enhancedCalculations.metThreshold,
                   enhancedCalculations.approvalRate
                 )}
               </span>
-
-              {isVetoed && (
-                <span className="text-xs px-2 py-0.5 bg-destructive/10 text-destructive rounded-full">
-                  Vetoed
-                </span>
-              )}
             </div>
-          )}
-        </div>
+
+            {/* Vetoed Badge */}
+            {isVetoed && (
+              <div className="rounded-sm px-1 border bg-destructive/10 border-destructive/30">
+                <span className="text-xs text-destructive uppercase">
+                  VETOED
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Vote Actions Bar */}
-        <div className="border-t border-border px-4 py-2">
-          <div className="flex items-center justify-around">
+        <div className="border-t border-border">
+          <div className="flex items-center px-6 py-4">
             {/* Thumbs Up (For) */}
             <button
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-success/10 transition-colors group/btn"
+              className="flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-success/10 transition-colors group/btn mr-auto"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
             >
-              <ThumbsUp
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  voteSummary.totalVotes !== null &&
-                    voteSummary.totalVotes > 0 &&
-                    (voteSummary.votesFor || 0) > 0
-                    ? "text-success fill-success"
-                    : "text-muted-foreground group-hover/btn:text-success"
-                )}
-              />
+              <div className="w-8 h-8 rounded-sm bg-success/10 flex items-center justify-center">
+                <ThumbsUp
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    voteSummary.totalVotes !== null &&
+                      voteSummary.totalVotes > 0 &&
+                      (voteSummary.votesFor || 0) > 0
+                      ? "text-success"
+                      : "text-muted-foreground group-hover/btn:text-success"
+                  )}
+                />
+              </div>
               {voteSummary.totalVotes !== null &&
                 voteSummary.totalVotes > 0 && (
                   <span
                     className={cn(
-                      "text-sm font-medium",
+                      "text-sm font-bold",
                       (voteSummary.votesFor || 0) > 0
                         ? "text-success"
                         : "text-muted-foreground"
@@ -471,27 +497,29 @@ function NewProposalCard({
 
             {/* Thumbs Down (Against) */}
             <button
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-destructive/10 transition-colors group/btn"
+              className="flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-destructive/10 transition-colors group/btn mr-auto"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
             >
-              <ThumbsDown
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  voteSummary.totalVotes !== null &&
-                    voteSummary.totalVotes > 0 &&
-                    (voteSummary.votesAgainst || 0) > 0
-                    ? "text-destructive fill-destructive"
-                    : "text-muted-foreground group-hover/btn:text-destructive"
-                )}
-              />
+              <div className="w-8 h-8 rounded-sm bg-destructive/10 flex items-center justify-center">
+                <ThumbsDown
+                  className={cn(
+                    "h-4 w-4 transition-colors",
+                    voteSummary.totalVotes !== null &&
+                      voteSummary.totalVotes > 0 &&
+                      (voteSummary.votesAgainst || 0) > 0
+                      ? "text-destructive"
+                      : "text-muted-foreground group-hover/btn:text-destructive"
+                  )}
+                />
+              </div>
               {voteSummary.totalVotes !== null &&
                 voteSummary.totalVotes > 0 && (
                   <span
                     className={cn(
-                      "text-sm font-medium",
+                      "text-sm font-bold",
                       (voteSummary.votesAgainst || 0) > 0
                         ? "text-destructive"
                         : "text-muted-foreground"
@@ -505,10 +533,10 @@ function NewProposalCard({
                 )}
             </button>
 
-            {/* Reference Link */}
+            {/* Reference Link or View */}
             {references.referenceLink ? (
               <button
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors group/btn"
+                className="flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-muted/10 transition-colors group/btn ml-auto"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -521,22 +549,22 @@ function NewProposalCard({
                   }
                 }}
               >
-                <ExternalLink className="h-5 w-5 text-muted-foreground group-hover/btn:text-primary" />
-                <span className="text-sm font-medium text-muted-foreground group-hover/btn:text-primary">
+                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover/btn:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground group-hover/btn:text-foreground">
                   Post
                 </span>
               </button>
             ) : (
               <button
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-primary/10 transition-colors group/btn"
+                className="flex items-center gap-2 px-3 py-2 rounded-sm hover:bg-muted/10 transition-colors group/btn ml-auto"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   router.push(`/proposals/${proposal.id}`);
                 }}
               >
-                <MessageCircle className="h-5 w-5 text-muted-foreground group-hover/btn:text-primary" />
-                <span className="text-sm font-medium text-muted-foreground group-hover/btn:text-primary">
+                <MessageCircle className="h-4 w-4 text-muted-foreground group-hover/btn:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground group-hover/btn:text-foreground">
                   View
                 </span>
               </button>

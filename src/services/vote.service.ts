@@ -364,48 +364,64 @@ export async function fetchBatchProposalVotes(
   // Remove duplicates
   const uniqueIds = Array.from(new Set(proposalIds));
 
-  const { data, error } = await supabase
-    .from("votes")
-    .select(
-      `
-      id,
-      created_at,
-      dao_id,
-      wallet_id,
-      profile_id,
-      answer,
-      proposal_id,
-      reasoning,
-      evaluation,
-      tx_id,
-      address,
-      amount,
-      prompt,
-      confidence,
-      voted,
-      evaluation_score,
-      flags,
-      daos ( id, name ),
-      proposals ( 
-        id, 
-        proposal_id,
-        title,
-        content,
-        status,
-        passed,
-        vote_start,
-        vote_end,
-        exec_start,
-        exec_end
-      )
-    `
-    )
-    .in("proposal_id", uniqueIds)
-    .order("created_at", { ascending: false });
+  // Chunk the IDs to avoid URL length limits (max 50 IDs per request)
+  const CHUNK_SIZE = 50;
+  const chunks: string[][] = [];
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueIds.slice(i, i + CHUNK_SIZE));
+  }
 
-  if (error) {
-    console.error("Error fetching batch votes:", error);
-    throw error;
+  let allData: VoteWithRelations[] = [];
+
+  // Fetch all chunks
+  for (const chunk of chunks) {
+    const { data, error } = await supabase
+      .from("votes")
+      .select(
+        `
+        id,
+        created_at,
+        dao_id,
+        wallet_id,
+        profile_id,
+        answer,
+        proposal_id,
+        reasoning,
+        evaluation,
+        tx_id,
+        address,
+        amount,
+        prompt,
+        confidence,
+        voted,
+        evaluation_score,
+        flags,
+        daos ( id, name ),
+        proposals (
+          id,
+          proposal_id,
+          title,
+          content,
+          status,
+          passed,
+          vote_start,
+          vote_end,
+          exec_start,
+          exec_end
+        )
+      `
+      )
+      .in("proposal_id", chunk)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching batch votes:", error);
+      throw error;
+    }
+
+    if (data) {
+      allData = allData.concat(data as unknown as VoteWithRelations[]);
+    }
   }
 
   // Group votes by proposal_id and calculate summaries
@@ -422,8 +438,8 @@ export async function fetchBatchProposalVotes(
     });
   });
 
-  if (data) {
-    (data as unknown as VoteWithRelations[]).forEach((vote) => {
+  if (allData.length > 0) {
+    allData.forEach((vote) => {
       const summary = voteMap.get(vote.proposal_id);
       if (summary) {
         const amount = vote.amount ? parseFloat(vote.amount) : 1;
@@ -492,14 +508,30 @@ export async function fetchBatchProposalVetos(
 
   const uniqueIds = Array.from(new Set(proposalIds));
 
-  const { data, error } = await supabase
-    .from("vetos") // Adjust table name if different
-    .select("id, proposal_id, amount")
-    .in("proposal_id", uniqueIds);
+  // Chunk the IDs to avoid URL length limits (max 50 IDs per request)
+  const CHUNK_SIZE = 50;
+  const chunks: string[][] = [];
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    chunks.push(uniqueIds.slice(i, i + CHUNK_SIZE));
+  }
 
-  if (error) {
-    console.error("Error fetching batch vetos:", error);
-    throw error;
+  let allData: Array<{ id: string; proposal_id: string; amount: string }> = [];
+
+  // Fetch all chunks
+  for (const chunk of chunks) {
+    const { data, error } = await supabase
+      .from("vetos")
+      .select("id, proposal_id, amount")
+      .in("proposal_id", chunk);
+
+    if (error) {
+      console.error("Error fetching batch vetos:", error);
+      throw error;
+    }
+
+    if (data) {
+      allData = allData.concat(data);
+    }
   }
 
   // Initialize all proposal IDs with empty summaries
@@ -512,8 +544,8 @@ export async function fetchBatchProposalVetos(
     });
   });
 
-  if (data) {
-    data.forEach((veto) => {
+  if (allData.length > 0) {
+    allData.forEach((veto) => {
       const summary = vetoMap.get(veto.proposal_id);
       if (summary) {
         const amount = veto.amount ? parseFloat(veto.amount) : 0;
