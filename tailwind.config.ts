@@ -110,11 +110,22 @@ const config: Config = {
             opacity: ".9",
           },
         },
+        "christmas-glow": {
+          "0%, 100%": {
+            boxShadow:
+              "0 0 20px rgba(220, 38, 38, 0.6), 0 0 40px rgba(34, 197, 94, 0.4), 0 0 60px rgba(220, 38, 38, 0.3)",
+          },
+          "50%": {
+            boxShadow:
+              "0 0 30px rgba(34, 197, 94, 0.7), 0 0 50px rgba(220, 38, 38, 0.5), 0 0 70px rgba(34, 197, 94, 0.4)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-slow": "pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "christmas-glow": "christmas-glow 2s ease-in-out infinite",
       },
     },
   },

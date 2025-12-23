@@ -174,10 +174,10 @@ export default function ProposalEvaluationPage() {
         <div className="text-center p-6 bg-destructive/10 border border-destructive/20 rounded-sm max-w-md">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2 text-foreground">
-            Error Loading Proposals
+            Error Loading Contributions
           </h2>
           <p className="text-muted-foreground">
-            Failed to load proposals. Please try again later.
+            Failed to load contributions. Please try again later.
           </p>
         </div>
       </div>
