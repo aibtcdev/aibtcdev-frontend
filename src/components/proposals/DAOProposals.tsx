@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import ProposalCard from "@/components/proposals/ProposalCard";
+import NewProposalCard from "@/components/proposals/NewProposalCard";
 import type { Proposal } from "@/types";
 import { FileText, Loader2, Search, X } from "lucide-react";
 import { DAOTabLayout } from "@/components/aidaos/DAOTabLayout";
@@ -185,11 +185,11 @@ const DAOProposals = ({
             </Button>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
             {visibleProposals.map((proposal) => {
               const data = proposalDataMap[proposal.id];
               return (
-                <ProposalCard
+                <NewProposalCard
                   key={proposal.id}
                   proposal={proposal}
                   tokenSymbol={tokenSymbol}
