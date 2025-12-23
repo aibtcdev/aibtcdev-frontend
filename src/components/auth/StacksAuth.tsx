@@ -337,7 +337,11 @@ export default function StacksAuth({
         onClick={handleAuth}
         disabled={isLoading}
         variant="primary"
-        className="flex items-center gap-1 px-2 py-1 sm:px-6 sm:py-3 text-xs sm:text-base font-inter font-bold text-primary-foreground bg-primary rounded-sm sm:rounded-sm hover:scale-105 hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 ease-in-out motion-reduce:transition-none"
+        className="flex items-center gap-1 px-2 py-1 sm:px-6 sm:py-3 text-xs sm:text-base font-inter font-bold text-primary-foreground bg-primary rounded-sm sm:rounded-sm hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 ease-in-out motion-reduce:transition-none"
+        style={{
+          boxShadow:
+            "0 0 25px rgba(220, 38, 38, 0.7), 0 0 50px rgba(34, 197, 94, 0.5), 0 0 75px rgba(220, 38, 38, 0.4)",
+        }}
         aria-label={isLoading ? "Connecting wallet" : "Connect wallet"}
       >
         {isLoading ? (
