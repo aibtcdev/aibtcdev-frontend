@@ -1236,7 +1236,7 @@ export function ProposalSubmission({
         <div className="flex-1 space-y-6 relative min-h-[250px] md:min-h-0">
           {/* Locked Overlay for Unauthenticated Users */}
           {!hasAccessToken && (
-            <div className="absolute inset-0 bg-zinc-900 rounded-sm flex flex-col items-center justify-center z-10">
+            <div className="absolute inset-0 bg-background rounded-sm flex flex-col items-center justify-center z-10">
               <div className="text-center space-y-4 max-w-md mx-auto px-6">
                 <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto">
                   <Lock className="w-8 h-8 text-primary" />
@@ -1245,6 +1245,9 @@ export function ProposalSubmission({
                   <h3 className="text-xl font-bold mb-2">
                     Connect your testnet Bitcoin Wallet.
                   </h3>
+                </div>
+                <div className="flex justify-center">
+                  <AuthButton buttonText="Connect Wallet" />
                 </div>
               </div>
             </div>
@@ -1717,10 +1720,8 @@ export function ProposalSubmission({
         )}
 
         {/* Footer CTA */}
-        <div className="pt-6">
-          {!hasAccessToken ? (
-            <AuthButton buttonText="Connect Wallet" />
-          ) : (
+        {hasAccessToken && (
+          <div className="pt-6">
             <div>
               <Button
                 onClick={handleSubmit}
@@ -1809,8 +1810,8 @@ export function ProposalSubmission({
                 )}
               </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ----------------------------- Result modal ----------------------------- */}
