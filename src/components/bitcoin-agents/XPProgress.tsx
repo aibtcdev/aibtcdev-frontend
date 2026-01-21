@@ -27,16 +27,17 @@ export function XPProgress({
   className,
 }: XPProgressProps) {
   const currentLevelIndex = LEVEL_ORDER.indexOf(level);
-  const nextLevel = LEVEL_ORDER[currentLevelIndex + 1];
-
-  const currentThreshold = XP_THRESHOLDS[level];
-  const nextThreshold = nextLevel ? XP_THRESHOLDS[nextLevel] : XP_THRESHOLDS.legendary * 2;
-
-  const xpInCurrentLevel = xp - currentThreshold;
-  const xpNeededForNext = nextThreshold - currentThreshold;
-  const progress = Math.min((xpInCurrentLevel / xpNeededForNext) * 100, 100);
-
+  const nextLevel = currentLevelIndex < LEVEL_ORDER.length - 1
+    ? LEVEL_ORDER[currentLevelIndex + 1]
+    : undefined;
   const isMaxLevel = level === "legendary";
+
+  const currentThreshold = XP_THRESHOLDS[level] ?? 0;
+  const nextThreshold = nextLevel ? XP_THRESHOLDS[nextLevel] : currentThreshold;
+
+  const xpInCurrentLevel = Math.max(0, xp - currentThreshold);
+  const xpNeededForNext = Math.max(1, nextThreshold - currentThreshold); // Prevent division by zero
+  const progress = isMaxLevel ? 100 : Math.min((xpInCurrentLevel / xpNeededForNext) * 100, 100);
 
   return (
     <div className={cn("space-y-1", className)}>

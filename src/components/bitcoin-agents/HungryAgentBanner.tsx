@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { fetchBitcoinAgents } from "@/services/bitcoin-agents.service";
 import type { BitcoinAgent } from "@/types";
 import Link from "next/link";
+
+// Hunger thresholds
+const HUNGER_WARNING_THRESHOLD = 30;
+const HUNGER_CRITICAL_THRESHOLD = 10;
 
 interface HungryAgentBannerProps {
   ownerAddress?: string;
@@ -17,35 +21,41 @@ export function HungryAgentBanner({ ownerAddress }: HungryAgentBannerProps) {
   const [criticalAgents, setCriticalAgents] = useState<BitcoinAgent[]>([]);
   const [isDismissed, setIsDismissed] = useState(false);
 
-  useEffect(() => {
+  const loadAgents = useCallback(async () => {
     if (!ownerAddress) return;
 
-    loadAgents();
-    // Check every 5 minutes
-    const interval = setInterval(loadAgents, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [ownerAddress]);
-
-  async function loadAgents() {
     try {
       const { agents } = await fetchBitcoinAgents({ owner: ownerAddress, status: "alive" });
 
       const hungry = agents.filter((a) => {
         const hunger = a.computed_hunger ?? a.hunger;
-        return hunger <= 30 && hunger > 10;
+        return hunger <= HUNGER_WARNING_THRESHOLD && hunger > HUNGER_CRITICAL_THRESHOLD;
       });
 
       const critical = agents.filter((a) => {
         const hunger = a.computed_hunger ?? a.hunger;
-        return hunger <= 10;
+        return hunger <= HUNGER_CRITICAL_THRESHOLD;
       });
 
       setHungryAgents(hungry);
       setCriticalAgents(critical);
     } catch (error) {
+      // Silently fail - banner is non-critical
       console.error("Failed to check agent status:", error);
     }
-  }
+  }, [ownerAddress]);
+
+  useEffect(() => {
+    if (!ownerAddress) return;
+
+    // Load immediately
+    loadAgents();
+
+    // Check every 5 minutes
+    const interval = setInterval(loadAgents, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [ownerAddress, loadAgents]);
 
   if (isDismissed || (hungryAgents.length === 0 && criticalAgents.length === 0)) {
     return null;

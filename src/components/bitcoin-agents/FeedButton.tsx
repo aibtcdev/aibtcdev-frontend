@@ -35,6 +35,7 @@ export function FeedButton({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [paymentInfo, setPaymentInfo] = useState<{
     cost_sats: number;
     payment_address: string;
@@ -44,6 +45,7 @@ export function FeedButton({
   const handleFeed = async (tier: number) => {
     setSelectedTier(tier);
     setIsLoading(true);
+    setError(null);
 
     try {
       const result = await requestFeedAgent(agentId, tier);
@@ -56,11 +58,19 @@ export function FeedButton({
         cost_sats: result.cost_sats,
         payment_address: result.payment_address,
       });
-    } catch (error) {
-      console.error("Failed to request feed:", error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to request feed. Please try again.";
+      setError(message);
+      console.error("Failed to request feed:", err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetState = () => {
+    setPaymentInfo(null);
+    setSelectedTier(null);
+    setError(null);
   };
 
   const tiers = Object.entries(foodTiers).map(([key, value]) => ({
@@ -87,6 +97,12 @@ export function FeedButton({
           </DialogDescription>
         </DialogHeader>
 
+        {error && (
+          <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm mb-3">
+            {error}
+          </div>
+        )}
+
         {!paymentInfo ? (
           <div className="grid gap-3">
             {tiers.map((tier) => (
@@ -95,7 +111,7 @@ export function FeedButton({
                 variant="outline"
                 className="h-auto py-4 justify-between"
                 onClick={() => handleFeed(tier.tier)}
-                disabled={isLoading && selectedTier === tier.tier}
+                disabled={isLoading}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">
@@ -108,7 +124,12 @@ export function FeedButton({
                     </p>
                   </div>
                 </div>
-                <Badge variant="secondary">{tier.cost} sats</Badge>
+                <div className="flex items-center gap-2">
+                  {isLoading && selectedTier === tier.tier && (
+                    <span className="animate-spin">⏳</span>
+                  )}
+                  <Badge variant="secondary">{tier.cost} sats</Badge>
+                </div>
               </Button>
             ))}
           </div>
@@ -131,10 +152,7 @@ export function FeedButton({
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => {
-                setPaymentInfo(null);
-                setSelectedTier(null);
-              }}
+              onClick={resetState}
             >
               Choose Different Food
             </Button>
