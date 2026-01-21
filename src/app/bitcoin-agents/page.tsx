@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,11 +40,7 @@ export default function BitcoinAgentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"xp" | "hunger" | "age">("xp");
 
-  useEffect(() => {
-    loadData();
-  }, [statusFilter, levelFilter]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -65,7 +61,11 @@ export default function BitcoinAgentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [statusFilter, levelFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Filter and sort agents
   const filteredAgents = agents

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,6 @@ import {
   fetchBitcoinAgentById,
   fetchFoodTiers,
   fetchAgentCapabilities,
-  visitAgent,
 } from "@/services/bitcoin-agents.service";
 import type { BitcoinAgent, FoodTier, AgentCapabilities } from "@/types";
 import Link from "next/link";
@@ -37,13 +36,7 @@ export default function BitcoinAgentDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isNaN(agentId)) {
-      loadData();
-    }
-  }, [agentId]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -68,7 +61,13 @@ export default function BitcoinAgentDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [agentId]);
+
+  useEffect(() => {
+    if (!isNaN(agentId)) {
+      loadData();
+    }
+  }, [agentId, loadData]);
 
   if (isLoading) {
     return (

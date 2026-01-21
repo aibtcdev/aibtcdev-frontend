@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,12 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { requestMintAgent, fetchFoodTiers } from "@/services/bitcoin-agents.service";
 import Link from "next/link";
-import { useEffect } from "react";
 
 const BITCOIN_FACES_API = "https://bitcoinfaces.xyz/api";
 
 export default function MintAgentPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [previewSeed, setPreviewSeed] = useState("");
   const [isLoading, setIsLoading] = useState(false);
