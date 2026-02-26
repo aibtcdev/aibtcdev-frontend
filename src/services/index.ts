@@ -5,6 +5,7 @@ export * from "./supabase";
 export * from "./agent.service";
 export * from "./agent-prompt.service";
 export * from "./airdrop.service";
+export * from "./bitcoin-agents.service";
 export * from "./chain-state.service";
 export * from "./dao.service";
 export * from "./job.service";
